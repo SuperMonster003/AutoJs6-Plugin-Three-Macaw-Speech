@@ -46,7 +46,7 @@ The README.md file is currently available in the following languages:
 
 The plugin is a separately installed APK. AutoJs6 scripts use it through the global `speech` module; the speech synthesis also registers as an Android system TTS engine, so the AutoJs6 `tts` module and other apps can choose it. Recognition and synthesis models are not bundled with the APK but downloaded on demand from the plugin screen or a script; only the voice activity detection model is built in.
 
-> This is a development preview: AutoJs6 can discover the plugin and it loads the speech runtime, but recognition, wake words, synthesis, model downloads, the plugin screens and the `speech` script module are not delivered yet; the current icon is temporary and will be replaced. The text below describes the design goals of 1.0.0; see the roadmap for progress.
+> This is a development preview: AutoJs6 can discover the plugin and it loads the speech runtime, but recognition, wake words, synthesis, model downloads, the plugin screens and the `speech` script module are not delivered yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.
 
 ******
 
@@ -181,7 +181,6 @@ _2026/10/16_
 
 - `Hint` Development preview: AutoJs6 can discover the plugin and it loads the speech runtime; speech recognition, wake words, text-to-speech, model downloads, the plugin screens and the speech script module are not delivered yet
 - `Hint` Requires AutoJs6 6.8.0 (5451) or later (the exact minimum build will be filled in once the host changes land)
-- `Hint` The current icon is temporary and will be replaced
 - `Feature` Plugin skeleton: Wake activation protocol, Plugin Center identity service and speech capability service
 - `Feature` Built-in sherpa-onnx 1.13.8 speech runtime and silero VAD v5 voice activity detection model, with one package per ABI for 4 ABIs
 - `Feature` README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources

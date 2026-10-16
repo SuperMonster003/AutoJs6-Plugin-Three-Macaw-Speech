@@ -9,8 +9,7 @@
       "released_date": "2026/10/16",
       "hint": [
         "Préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal; la reconnaissance vocale, les mots de réveil, la synthèse vocale, le téléchargement des modèles, les écrans du plugin et le module de script speech ne sont pas encore livrés",
-        "Nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)",
-        "L'icône actuelle est provisoire et sera remplacée"
+        "Nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)"
       ],
       "feature": [
         "Squelette du plugin: protocole d'activation Wake, service d'identité du centre des plugins et service de capacité vocale",

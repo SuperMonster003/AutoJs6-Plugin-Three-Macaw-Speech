@@ -256,7 +256,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P2 | 资产 + 1.0.0 | Shared-Assets `speech-models` 类别, 精选目录审核, 插件模型存储与目录刷新, `speech-models-v1` 发布 | 未开始 |
 | P3 | 1.0.0 | 识别, VAD 与唤醒词: 采集, 流式会话, 文件识别, 唤醒会话, 设备矩阵与性能基线 | 未开始 |
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 未开始 |
-| P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标 | 未开始 |
+| P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标 | 进行中 (P5.5 定稿图稿已于 2026-10-16 替换; 启动器 alias 随 P5.1) |
 | P6 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P7 | 1.1.0 | 候选: 内置语音助手, 标点恢复, 说话人识别, 非 WAV 解码, MCP 工具, 更多语言 | 未开始 |
 
@@ -464,7 +464,8 @@ P0 (骨架 + AAR)
 
 ### P5.5 图标
 
-- [ ] (插件) 维护者提供源图 -> `.python/icons/three-macaw-ic-launcher-light.png` / `-dark.png` -> Icon Studio 配方 (几何与颜色按黑白规范) -> 24 项资源 + 四个启动器 alias -> `--check` 确定性通过; 索引 `catalog-icons` 登记图稿 (P6.4).
+- [x] (插件) 维护者提供源图 -> `.python/icons/three-macaw-ic-launcher-light.png` / `-dark.png` -> Icon Studio 配方 (几何与颜色按黑白规范) -> 重算资源 -> `--check` 确定性通过. 证据: 与本条记录同一提交. 源图是维护者 2026-10-16 经两轮比较选定的定稿 (浅色版按亮度分段色调映射, 不是反色; 暗色版提亮声波), 字节原样复制; 两张均为 830 x 830 RGBA, alpha 逐像素相同, 全部像素 R=G=B, 透明占 64.3%, 不透明像素灰阶浅色 39 - 78 (40 级), 暗色 134 - 253 (100 级). 内容地址 `726b2b45...` (light, 亮色主题) 与 `da03ee67...` (dark, 暗色主题) 放入 `.icons/assets/`; 配方 `baseline` 仍引用 P0 占位图, 两份占位资产按工作台应用时的做法保留. 生成内核仍是仓库自带的 1.3.0 `icon_studio_runtime.py` (未升级), 未使用工作台. 几何沿用 Optical geometry v1 默认值 (normalized, scale 1.0, 偏移 0 / 0; 原值并非为占位图调整): 视觉尺寸 V = 0.5206 (目标 0.52), 列表圆最大半径 190.2 / 216 px, 自适应前景最大半径 126.6 / 132 px, 无错误与提醒; 着墨质心偏右 8.1 px 属鹦鹉身体的自然重心, 按规范 4.2 不强制归零. 色调由 `mask` 改为 `grayscale` (锚点字段仍为 `#272727` / `#d8d8d8`, 底色 `#fafafa` / `#212121`): `mask` 会把翅膀, 喙与声波的灰阶层次压成单一颜色, 按黑白规范第 2 节 (不把灰阶原稿涂成纯色) 与 3-Stamp Mail 的先例保留灰阶; 输出亮色灰阶 37 - 82, 暗色 137 - 255, 两主题 alpha 相同. `py .python/generate_icon_studio.py` 重写 9 张 PNG, `--check` 校验 17 项 (16 项输出 + Manifest 图标引用) 通过, 再次生成无字节变化. 亮暗底对照图 (插件中心与系统圆形 36 / 48 / 64 / 96 / 432 px, 圆角方形, `mask` 对比, 15 个 Three 插件 48 / 64 px 横向比较) 已交维护者审阅; 合成图不等于真机验收. 10 种语言 changelog 删除 "当前图标为临时图案" 提示, README 与插件中心说明的同类句子一并删除后重新生成. 偏差: 原计划的 "24 项资源 + 四个启动器 alias" 依赖首个界面的启动器入口, 移到下一条.
+- [ ] (插件) 启动器资源与四个 alias: P5.1 的 `HomeActivity` 加入 MAIN / LAUNCHER alias 时, 配方改为 `launcher=true` 并补充 `ic_launcher_system*` 输出与 auto XML (从同一配方渲染, 不另调几何; 自适应前景已满足 33 dp 安全圆), `--check` 确定性通过; 索引 `catalog-icons` 登记图稿 (P6.4).
 
 ---
 

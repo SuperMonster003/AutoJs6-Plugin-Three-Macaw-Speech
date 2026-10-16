@@ -9,8 +9,7 @@
       "released_date": "2026/10/16",
       "hint": [
         "Versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz; el reconocimiento de voz, las palabras de activación, la síntesis de voz, la descarga de modelos, las pantallas del complemento y el módulo de script speech aún no están disponibles",
-        "Requiere AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)",
-        "El icono actual es provisional y se sustituirá"
+        "Requiere AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)"
       ],
       "feature": [
         "Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz",

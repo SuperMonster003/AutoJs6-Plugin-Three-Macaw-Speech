@@ -1,6 +1,6 @@
 3-Macaw Speech s'appuie sur [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) pour exécuter hors ligne, sur l'appareil, la reconnaissance vocale, la détection d'activité vocale, la détection de mots de réveil et la synthèse vocale neuronale. Tout est calculé localement et aucun son n'est envoyé.
 
-> Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal, mais la reconnaissance, les mots de réveil, la synthèse, le téléchargement des modèles, les écrans du plugin et le module de script `speech` ne sont pas encore livrés; l'icône actuelle est provisoire et sera remplacée. La suite décrit les objectifs de conception de la 1.0.0; consultez la feuille de route pour l'avancement.
+> Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal, mais la reconnaissance, les mots de réveil, la synthèse, le téléchargement des modèles, les écrans du plugin et le module de script `speech` ne sont pas encore livrés. La suite décrit les objectifs de conception de la 1.0.0; consultez la feuille de route pour l'avancement.
 
 ### Points Forts
 

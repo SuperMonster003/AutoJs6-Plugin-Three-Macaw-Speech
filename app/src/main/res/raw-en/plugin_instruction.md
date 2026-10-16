@@ -1,6 +1,6 @@
 3-Macaw Speech uses [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) to run speech recognition, voice activity detection, wake word detection and neural text-to-speech offline on the device. Everything is computed locally and no audio is uploaded.
 
-> This is a development preview: AutoJs6 can discover the plugin and it loads the speech runtime, but recognition, wake words, synthesis, model downloads, the plugin screens and the `speech` script module are not delivered yet; the current icon is temporary and will be replaced. The text below describes the design goals of 1.0.0; see the roadmap for progress.
+> This is a development preview: AutoJs6 can discover the plugin and it loads the speech runtime, but recognition, wake words, synthesis, model downloads, the plugin screens and the `speech` script module are not delivered yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.
 
 ### Features
 

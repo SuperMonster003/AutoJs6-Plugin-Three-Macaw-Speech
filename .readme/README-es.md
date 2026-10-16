@@ -46,7 +46,7 @@ El README.md actual admite los siguientes idiomas:
 
 El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.
 
-> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz, pero el reconocimiento, las palabras de activación, la síntesis, la descarga de modelos, las pantallas del complemento y el módulo de script `speech` aún no están disponibles; el icono actual es provisional y se sustituirá. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.
+> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz, pero el reconocimiento, las palabras de activación, la síntesis, la descarga de modelos, las pantallas del complemento y el módulo de script `speech` aún no están disponibles. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.
 
 ******
 
@@ -181,7 +181,6 @@ _2026/10/16_
 
 - `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz; el reconocimiento de voz, las palabras de activación, la síntesis de voz, la descarga de modelos, las pantallas del complemento y el módulo de script speech aún no están disponibles
 - `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
-- `Aviso` El icono actual es provisional y se sustituirá
 - `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 - `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI
 - `Función` README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON

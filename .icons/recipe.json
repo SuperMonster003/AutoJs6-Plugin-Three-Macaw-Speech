@@ -9,8 +9,8 @@
   "launcher": false,
   "params": {
     "sources": {
-      "day": "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc",
-      "night": "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef",
+      "day": "726b2b45b00a57af1df8cb5ec3e7572c0cdab7c6e028040c0ae77f6ebe7ad224",
+      "night": "da03ee67abb5737a14be9a34112bdfb7f024d42177c3b20ba8f4df4acc409a24",
       "alphaMode": "alpha"
     },
     "geometry": {
@@ -20,7 +20,7 @@
       "offsetY": 0.0
     },
     "day": {
-      "mode": "mask",
+      "mode": "grayscale",
       "foreground": "#272727",
       "brightness": 1.0,
       "contrast": 1.0,
@@ -29,7 +29,7 @@
       "invert": false
     },
     "night": {
-      "mode": "mask",
+      "mode": "grayscale",
       "foreground": "#d8d8d8",
       "brightness": 1.0,
       "contrast": 1.0,
@@ -134,8 +134,10 @@
     }
   },
   "assets": [
-    "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc",
-    "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef"
+    "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef",
+    "726b2b45b00a57af1df8cb5ec3e7572c0cdab7c6e028040c0ae77f6ebe7ad224",
+    "da03ee67abb5737a14be9a34112bdfb7f024d42177c3b20ba8f4df4acc409a24",
+    "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc"
   ],
   "legacyGenerator": null,
   "backgroundDefaults": {

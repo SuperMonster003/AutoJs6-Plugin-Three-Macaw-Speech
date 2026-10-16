@@ -46,7 +46,7 @@ Le README.md actuel prend en charge les langues suivantes:
 
 Le plugin est un APK installé séparément. Les scripts AutoJs6 l'utilisent via le module global `speech`; la synthèse vocale est aussi enregistrée comme moteur TTS du système Android, de sorte que le module `tts` d'AutoJs6 et les autres applications peuvent la choisir. Les modèles de reconnaissance et de synthèse ne sont pas inclus dans l'APK mais téléchargés à la demande depuis l'écran du plugin ou un script; seul le modèle de détection d'activité vocale est intégré.
 
-> Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal, mais la reconnaissance, les mots de réveil, la synthèse, le téléchargement des modèles, les écrans du plugin et le module de script `speech` ne sont pas encore livrés; l'icône actuelle est provisoire et sera remplacée. La suite décrit les objectifs de conception de la 1.0.0; consultez la feuille de route pour l'avancement.
+> Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal, mais la reconnaissance, les mots de réveil, la synthèse, le téléchargement des modèles, les écrans du plugin et le module de script `speech` ne sont pas encore livrés. La suite décrit les objectifs de conception de la 1.0.0; consultez la feuille de route pour l'avancement.
 
 ******
 
@@ -181,7 +181,6 @@ _2026/10/16_
 
 - `Note` Préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal; la reconnaissance vocale, les mots de réveil, la synthèse vocale, le téléchargement des modèles, les écrans du plugin et le module de script speech ne sont pas encore livrés
 - `Note` Nécessite AutoJs6 6.8.0 (5451) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)
-- `Note` L'icône actuelle est provisoire et sera remplacée
 - `Fonctionnalité` Squelette du plugin: protocole d'activation Wake, service d'identité du centre des plugins et service de capacité vocale
 - `Fonctionnalité` Moteur vocal sherpa-onnx 1.13.8 et modèle de détection d'activité vocale silero VAD v5 intégrés, avec un paquet par ABI pour 4 ABI
 - `Fonctionnalité` README, instructions du centre des plugins et journaux des modifications en 10 langues, générés à partir de sources JSON

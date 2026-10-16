@@ -9,8 +9,7 @@
       "released_date": "2026/10/16",
       "hint": [
         "開發預覽: 插件可以被 AutoJs6 識別並載入語音運行時, 語音識別, 喚醒詞, 語音合成, 模型下載, 插件介面與 speech 腳本模組尚未交付",
-        "需要 AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 或更高版本 (準確的最低版本號待宿主側改動落地後回填)",
-        "目前圖標為臨時圖案, 正式圖標有待替換"
+        "需要 AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 或更高版本 (準確的最低版本號待宿主側改動落地後回填)"
       ],
       "feature": [
         "插件骨架: Wake 啟動協議, 插件中心身份服務與語音能力服務",
