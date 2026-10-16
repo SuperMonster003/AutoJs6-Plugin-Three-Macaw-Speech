@@ -1,0 +1,29 @@
+{
+  "changelog_label_hint": "ヒント",
+  "changelog_label_feature": "機能",
+  "changelog_label_fix": "修正",
+  "changelog_label_improvement": "改善",
+  "changelog_label_dependency": "依存関係",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/10/16",
+      "hint": [
+        "開発プレビュー: AutoJs6 はプラグインを検出でき, プラグインは音声ランタイムを読み込みます. 音声認識, ウェイクワード, 音声合成, モデルのダウンロード, プラグイン画面, speech スクリプトモジュールはまだ提供されていません",
+        "AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 以降が必要です (正確な最低バージョンはホスト側の変更が反映された後に記入されます)",
+        "現在のアイコンは仮のもので, 後で差し替えられます"
+      ],
+      "feature": [
+        "プラグインの骨組み: Wake 有効化プロトコル, プラグインセンターの識別サービス, 音声機能サービス",
+        "sherpa-onnx {{ sherpa_onnx_version }} 音声ランタイムと silero VAD v5 音声区間検出モデルを内蔵し, 4 つの ABI ごとにパッケージを提供",
+        "10 言語の README, プラグインセンターの説明, 変更履歴を JSON ソースから一括生成"
+      ],
+      "dependency": [
+        "sherpa-onnx {{ sherpa_onnx_version }} を追加",
+        "Jetpack Compose BOM {{ compose_bom }} を追加",
+        "AndroidX Activity Compose 1.12.2 を追加",
+        "AndroidX Core KTX 1.15.0 を追加",
+        "Kotlin Coroutines 1.11.0 を追加"
+      ]
+    }
+  }
+}

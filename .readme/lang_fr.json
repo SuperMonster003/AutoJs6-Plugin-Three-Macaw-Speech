@@ -1,0 +1,75 @@
+{
+  "$name": "Français",
+  "text_current_lowercase": "actuel",
+  "text_plugin_synopsis": "Reconnaissance vocale hors ligne, détection de mots de réveil, détection d'activité vocale et synthèse vocale neuronale, utilisable comme moteur TTS du système",
+  "h3_languages_with_ascii": "Langues (Languages)",
+  "p_languages_all_supported_for_readme": "Le README.md actuel prend en charge les langues suivantes",
+  "h3_introduction": "Introduction",
+  "h3_features": "Points Forts",
+  "h3_usage": "Utilisation",
+  "h3_script_api": "API De Script",
+  "h3_faq": "FAQ",
+  "h3_security": "Permissions Et Sécurité",
+  "h3_plugin_interface": "Interface Du Plugin",
+  "p_plugin_interface": "Les informations suivantes s'adressent aux développeurs de l'hôte AutoJs6 et de plugins; l'hôte utilise ces identifiants pour découvrir le plugin et négocier les capacités",
+  "h3_roadmap": "Feuille De Route",
+  "text_link_roadmap": "Voir ROADMAP.md",
+  "h3_release_history": "Historique Des Versions",
+  "h5_for_more_release_history": "Pour plus d'historique des versions",
+  "h3_build": "Compilation",
+  "p_build_intro": "Cette section s'adresse aux développeurs souhaitant compiler le plugin depuis les sources.",
+  "h3_license": "Licence",
+  "h3_links": "Liens",
+  "text_link_autojs6": "Projet AutoJs6",
+  "p_roadmap": "Les plans, décisions de conception et l'avancement sont suivis sous forme de liste à cocher dans ROADMAP.md. Les éléments non cochés sont des intentions, pas des fonctionnalités de la version actuelle.",
+  "p_introduction_what": "3-Macaw Speech s'appuie sur [sherpa-onnx]({{ sherpa_onnx_url }}) pour exécuter hors ligne, sur l'appareil, la reconnaissance vocale, la détection d'activité vocale, la détection de mots de réveil et la synthèse vocale neuronale. Tout est calculé localement et aucun son n'est envoyé.",
+  "p_introduction_how": "Le plugin est un APK installé séparément. Les scripts AutoJs6 l'utilisent via le module global `speech`; la synthèse vocale est aussi enregistrée comme moteur TTS du système Android, de sorte que le module `tts` d'AutoJs6 et les autres applications peuvent la choisir. Les modèles de reconnaissance et de synthèse ne sont pas inclus dans l'APK mais téléchargés à la demande depuis l'écran du plugin ou un script; seul le modèle de détection d'activité vocale est intégré.",
+  "p_status_note": "Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal, mais la reconnaissance, les mots de réveil, la synthèse, le téléchargement des modèles, les écrans du plugin et le module de script `speech` ne sont pas encore livrés; l'icône actuelle est provisoire et sera remplacée. La suite décrit les objectifs de conception de la 1.0.0; consultez la feuille de route pour l'avancement.",
+  "features": [
+    "Reconnaissance vocale: dictée en continu depuis le microphone (résultats partiels et finaux en temps réel) et reconnaissance de fichiers WAV, avec des modèles hors ligne pour le chinois, l'anglais, le chinois et l'anglais mélangés, le japonais, le coréen et le cantonais.",
+    "Détection d'activité vocale: le silero VAD v5 intégré découpe l'audio en segments de parole et termine aussi automatiquement les phrases dictées.",
+    "Mots de réveil: saisissez le mot-clé en texte brut (par exemple `小六小六` ou `hey macaw`) sans entraîner de modèle; après le réveil, la dictée peut démarrer automatiquement.",
+    "Synthèse vocale: plusieurs voix neuronales chinoises et anglaises, synthétisées dans des fichiers WAV ou utilisées comme moteur TTS du système par le module `tts` d'AutoJs6 et d'autres applications.",
+    "Gestion des modèles: téléchargement depuis un catalogue signé, activation seulement après vérification SHA-256 de chaque fichier, et import de modèles locaux; les modèles réservés à un usage non commercial affichent leur licence avant le téléchargement."
+  ],
+  "usage_steps": [
+    "Mettez à jour AutoJs6 vers la version interne {{ required_host_version_code }} ({{ required_host_version_name }}) ou ultérieure.",
+    "Téléchargez depuis [Releases]({{ repo_url }}/releases) l'APK correspondant à l'ABI de l'appareil (choisissez `universal` en cas de doute) et installez-le, puis autorisez-le et activez-le dans le centre des plugins d'AutoJs6.",
+    "Ouvrez l'écran du plugin pour accorder l'autorisation du microphone et télécharger les modèles nécessaires, puis utilisez le module `speech` dans vos scripts."
+  ],
+  "p_usage_note": "Le plugin prend en charge les appareils sous Android {{ min_android_version }} (API {{ android_min_sdk }}) ou ultérieur. Il existe un paquet par ABI et un paquet `universal` pour tous les appareils.",
+  "h3_models": "Modèles",
+  "p_models_intro": "Les modèles de reconnaissance, de mots de réveil et de synthèse occupent chacun de 30 Mo à 350 Mo, ils ne sont donc pas inclus dans l'APK. Le plugin les télécharge depuis des publications immuables du dépôt de ressources partagées d'AutoJs6 et se replie sur l'adresse amont de sherpa-onnx si le miroir est indisponible; dans les deux cas, chaque fichier doit passer sa vérification SHA-256 avant l'activation du modèle.",
+  "p_models_license": "Chaque modèle indique sa licence. Les modèles réservés à un usage non commercial (par exemple un modèle de synthèse entraîné sur le corpus DataBaker) affichent un avertissement avant le téléchargement, et les scripts doivent passer explicitement `acceptLicense: true`.",
+  "p_script_api_intro": "Les scripts utilisent ces capacités via le module global `speech` (aussi disponible sous `$speech`; il s'agit du projet de conception de la 1.0.0, la documentation de la version publiée fait foi)",
+  "api_points": [
+    "`speech.listen(options)` ouvre une session de dictée qui transmet les résultats par des événements tels que `partial`, `final` et `end`; `speech.recognize(path)` reconnaît un fichier WAV.",
+    "`speech.wake(keywords, options)` ouvre une session de mots de réveil; `thenListen` lance automatiquement la dictée après un réveil.",
+    "`speech.synthesize(text, path)` synthétise dans un fichier WAV; `speech.speak(text)` et `tts(text, {engine})` parlent via le moteur TTS du système; `speech.models` gère les modèles."
+  ],
+  "faq": [
+    {
+      "q": "La reconnaissance et la synthèse nécessitent-elles Internet?",
+      "a": "Non. Une fois les modèles téléchargés, tout s'exécute sur l'appareil et aucun son n'est envoyé. Le plugin ne se connecte que pour télécharger des modèles et actualiser le catalogue."
+    },
+    {
+      "q": "Pourquoi le plugin demande-t-il lui-même l'autorisation du microphone?",
+      "a": "L'audio est enregistré dans le processus du plugin et ne transite jamais par AutoJs6. AutoJs6 transmet ses capacités de premier plan au plugin lors de la liaison, les scripts peuvent donc aussi dicter en arrière-plan. Accordez l'autorisation du microphone sur l'écran du plugin avant la première utilisation."
+    },
+    {
+      "q": "Quel paquet installer?",
+      "a": "La plupart des téléphones utilisent `arm64-v8a`. Si vous ne connaissez pas l'ABI de l'appareil, installez `universal`: il fonctionne partout mais il est plus volumineux."
+    }
+  ],
+  "p_security_intro": "Le plugin réduit autant que possible ses autorisations:",
+  "security_points": [
+    "Microphone: l'audio n'est enregistré que pour la dictée, les mots de réveil et l'écran d'essai, et le microphone est libéré dès la fin de la session ou du script.",
+    "Réseau: utilisé uniquement pour télécharger les modèles et actualiser le catalogue signé; la reconnaissance et la synthèse restent hors ligne.",
+    "Stockage: les modèles résident dans le répertoire privé du plugin et les modèles locaux sont importés via le sélecteur de fichiers du système, aucune autorisation de stockage n'est donc demandée.",
+    "Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement."
+  ],
+  "p_license": "Le code du projet est publié sous la [Mozilla Public License 2.0]({{ license_url }}). Le moteur vocal sherpa-onnx utilise la licence Apache-2.0, onnxruntime et silero VAD la licence MIT; la licence de chaque modèle figure dans le catalogue des modèles.",
+  "text_link_third_party": "Mentions tierces (THIRD_PARTY_NOTICES.md)",
+  "text_link_sherpa_onnx": "Projet sherpa-onnx",
+  "p_instruction_docs": "L'avancement et la conception sont disponibles sur la [page du projet]({{ repo_url }})."
+}

@@ -1,0 +1,29 @@
+{
+  "changelog_label_hint": "Hint",
+  "changelog_label_feature": "Feature",
+  "changelog_label_fix": "Fix",
+  "changelog_label_improvement": "Improvement",
+  "changelog_label_dependency": "Dependency",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/10/16",
+      "hint": [
+        "Development preview: AutoJs6 can discover the plugin and it loads the speech runtime; speech recognition, wake words, text-to-speech, model downloads, the plugin screens and the speech script module are not delivered yet",
+        "Requires AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) or later (the exact minimum build will be filled in once the host changes land)",
+        "The current icon is temporary and will be replaced"
+      ],
+      "feature": [
+        "Plugin skeleton: Wake activation protocol, Plugin Center identity service and speech capability service",
+        "Built-in sherpa-onnx {{ sherpa_onnx_version }} speech runtime and silero VAD v5 voice activity detection model, with one package per ABI for 4 ABIs",
+        "README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources"
+      ],
+      "dependency": [
+        "Attach sherpa-onnx {{ sherpa_onnx_version }}",
+        "Attach Jetpack Compose BOM {{ compose_bom }}",
+        "Attach AndroidX Activity Compose 1.12.2",
+        "Attach AndroidX Core KTX 1.15.0",
+        "Attach Kotlin Coroutines 1.11.0"
+      ]
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "changelog_label_hint": "힌트",
+  "changelog_label_feature": "기능",
+  "changelog_label_fix": "수정",
+  "changelog_label_improvement": "개선",
+  "changelog_label_dependency": "의존성",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/10/16",
+      "hint": [
+        "개발 미리보기: AutoJs6가 플러그인을 인식하고 플러그인은 음성 런타임을 불러옵니다. 음성 인식, 호출어, 음성 합성, 모델 다운로드, 플러그인 화면, speech 스크립트 모듈은 아직 제공되지 않습니다",
+        "AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 이상이 필요합니다 (정확한 최소 버전은 호스트 쪽 변경이 반영된 뒤 기입됩니다)",
+        "현재 아이콘은 임시 디자인이며 이후 교체됩니다"
+      ],
+      "feature": [
+        "플러그인 골격: Wake 활성화 프로토콜, 플러그인 센터 식별 서비스, 음성 기능 서비스",
+        "sherpa-onnx {{ sherpa_onnx_version }} 음성 런타임과 silero VAD v5 음성 구간 감지 모델을 내장하고 4가지 ABI별로 설치 파일 제공",
+        "10개 언어의 README, 플러그인 센터 안내, 변경 기록을 JSON 원본에서 일괄 생성"
+      ],
+      "dependency": [
+        "sherpa-onnx {{ sherpa_onnx_version }} 추가",
+        "Jetpack Compose BOM {{ compose_bom }} 추가",
+        "AndroidX Activity Compose 1.12.2 추가",
+        "AndroidX Core KTX 1.15.0 추가",
+        "Kotlin Coroutines 1.11.0 추가"
+      ]
+    }
+  }
+}

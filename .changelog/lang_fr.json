@@ -1,0 +1,29 @@
+{
+  "changelog_label_hint": "Note",
+  "changelog_label_feature": "Fonctionnalité",
+  "changelog_label_fix": "Correctif",
+  "changelog_label_improvement": "Amélioration",
+  "changelog_label_dependency": "Dépendance",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/10/16",
+      "hint": [
+        "Préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal; la reconnaissance vocale, les mots de réveil, la synthèse vocale, le téléchargement des modèles, les écrans du plugin et le module de script speech ne sont pas encore livrés",
+        "Nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)",
+        "L'icône actuelle est provisoire et sera remplacée"
+      ],
+      "feature": [
+        "Squelette du plugin: protocole d'activation Wake, service d'identité du centre des plugins et service de capacité vocale",
+        "Moteur vocal sherpa-onnx {{ sherpa_onnx_version }} et modèle de détection d'activité vocale silero VAD v5 intégrés, avec un paquet par ABI pour 4 ABI",
+        "README, instructions du centre des plugins et journaux des modifications en 10 langues, générés à partir de sources JSON"
+      ],
+      "dependency": [
+        "Ajout de sherpa-onnx {{ sherpa_onnx_version }}",
+        "Ajout de Jetpack Compose BOM {{ compose_bom }}",
+        "Ajout de AndroidX Activity Compose 1.12.2",
+        "Ajout de AndroidX Core KTX 1.15.0",
+        "Ajout de Kotlin Coroutines 1.11.0"
+      ]
+    }
+  }
+}

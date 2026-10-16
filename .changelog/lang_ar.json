@@ -1,0 +1,29 @@
+{
+  "changelog_label_hint": "تلميح",
+  "changelog_label_feature": "ميزة",
+  "changelog_label_fix": "إصلاح",
+  "changelog_label_improvement": "تحسين",
+  "changelog_label_dependency": "تبعية",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/10/16",
+      "hint": [
+        "معاينة للتطوير: يتعرف AutoJs6 على الإضافة وتحمّل الإضافة بيئة تشغيل الكلام, ولم تُسلَّم بعد ميزات التعرف على الكلام وكلمات التنبيه وتحويل النص إلى كلام وتنزيل النماذج وشاشات الإضافة ووحدة السكربت speech",
+        "يتطلب AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) أو أحدث (سيُحدَّد الحد الأدنى الدقيق للإصدار بعد اكتمال تغييرات المضيف)",
+        "الأيقونة الحالية مؤقتة وسيتم استبدالها"
+      ],
+      "feature": [
+        "هيكل الإضافة: بروتوكول التفعيل Wake, وخدمة الهوية في مركز الإضافات, وخدمة قدرات الكلام",
+        "بيئة تشغيل الكلام sherpa-onnx {{ sherpa_onnx_version }} ونموذج اكتشاف النشاط الصوتي silero VAD v5 مدمجان, مع حزمة لكل ABI من 4 أنواع",
+        "ملفات README وتعليمات مركز الإضافات وسجلات التغييرات بعشر لغات, مولَّدة من مصادر JSON"
+      ],
+      "dependency": [
+        "إرفاق sherpa-onnx {{ sherpa_onnx_version }}",
+        "إرفاق Jetpack Compose BOM {{ compose_bom }}",
+        "إرفاق AndroidX Activity Compose 1.12.2",
+        "إرفاق AndroidX Core KTX 1.15.0",
+        "إرفاق Kotlin Coroutines 1.11.0"
+      ]
+    }
+  }
+}

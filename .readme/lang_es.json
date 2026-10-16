@@ -1,0 +1,75 @@
+{
+  "$name": "Español",
+  "text_current_lowercase": "actual",
+  "text_plugin_synopsis": "Reconocimiento de voz sin conexión, detección de palabras de activación, detección de actividad de voz y síntesis de voz neuronal, utilizable como motor TTS del sistema",
+  "h3_languages_with_ascii": "Idiomas (Languages)",
+  "p_languages_all_supported_for_readme": "El README.md actual admite los siguientes idiomas",
+  "h3_introduction": "Introducción",
+  "h3_features": "Funciones Destacadas",
+  "h3_usage": "Uso",
+  "h3_script_api": "API De Script",
+  "h3_faq": "Preguntas Frecuentes",
+  "h3_security": "Permisos Y Seguridad",
+  "h3_plugin_interface": "Interfaz Del Plugin",
+  "p_plugin_interface": "La siguiente información está dirigida a los desarrolladores del host AutoJs6 y de plugins; el host usa estos identificadores para descubrir el plugin y negociar capacidades",
+  "h3_roadmap": "Hoja De Ruta",
+  "text_link_roadmap": "Ver ROADMAP.md",
+  "h3_release_history": "Historial De Versiones",
+  "h5_for_more_release_history": "Para más historial de versiones",
+  "h3_build": "Compilación",
+  "p_build_intro": "Esta sección está dirigida a desarrolladores que quieran compilar el plugin desde el código fuente.",
+  "h3_license": "Licencia",
+  "h3_links": "Enlaces",
+  "text_link_autojs6": "Proyecto AutoJs6",
+  "p_roadmap": "Los planes, las decisiones de diseño y el progreso se registran como lista de verificación en ROADMAP.md. Los elementos sin marcar son planes, no funciones de la versión actual.",
+  "p_introduction_what": "3-Macaw Speech usa [sherpa-onnx]({{ sherpa_onnx_url }}) para ejecutar sin conexión, en el propio dispositivo, el reconocimiento de voz, la detección de actividad de voz, la detección de palabras de activación y la síntesis de voz neuronal. Todo se calcula localmente y no se envía ningún audio.",
+  "p_introduction_how": "El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.",
+  "p_status_note": "Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz, pero el reconocimiento, las palabras de activación, la síntesis, la descarga de modelos, las pantallas del complemento y el módulo de script `speech` aún no están disponibles; el icono actual es provisional y se sustituirá. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.",
+  "features": [
+    "Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos WAV, con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.",
+    "Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.",
+    "Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.",
+    "Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.",
+    "Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga."
+  ],
+  "usage_steps": [
+    "Actualice AutoJs6 a la versión interna {{ required_host_version_code }} ({{ required_host_version_name }}) o posterior.",
+    "Descargue desde [Releases]({{ repo_url }}/releases) el APK que corresponda a la ABI del dispositivo (elija `universal` si tiene dudas) e instálelo; después autorícelo y actívelo en el centro de complementos de AutoJs6.",
+    "Abra la pantalla del complemento para conceder el permiso del micrófono y descargar los modelos necesarios; después use el módulo `speech` en los scripts."
+  ],
+  "p_usage_note": "El complemento admite dispositivos con Android {{ min_android_version }} (API {{ android_min_sdk }}) o posterior. Hay un paquete por ABI y un paquete `universal` para todos los dispositivos.",
+  "h3_models": "Modelos",
+  "p_models_intro": "Los modelos de reconocimiento, de palabras de activación y de síntesis ocupan entre 30 MB y 350 MB cada uno, por lo que no se incluyen en el APK. El complemento los descarga de publicaciones inmutables del repositorio de recursos compartidos de AutoJs6 y recurre a la dirección original de sherpa-onnx si el espejo no está disponible; en ambos casos cada archivo debe superar su comprobación SHA-256 antes de activar el modelo.",
+  "p_models_license": "Cada modelo indica su licencia. Los modelos restringidos a uso no comercial (por ejemplo, un modelo de síntesis entrenado con el corpus DataBaker) muestran un aviso antes de la descarga, y los scripts deben pasar `acceptLicense: true` explícitamente.",
+  "p_script_api_intro": "Los scripts usan estas capacidades mediante el módulo global `speech` (también disponible como `$speech`; es el borrador de diseño de la 1.0.0, prevalece la documentación de la versión publicada)",
+  "api_points": [
+    "`speech.listen(options)` abre una sesión de dictado que informa de los resultados mediante eventos como `partial`, `final` y `end`; `speech.recognize(path)` reconoce un archivo WAV.",
+    "`speech.wake(keywords, options)` abre una sesión de palabras de activación; `thenListen` inicia el dictado automáticamente tras la activación.",
+    "`speech.synthesize(text, path)` sintetiza en un archivo WAV; `speech.speak(text)` y `tts(text, {engine})` hablan mediante el motor TTS del sistema; `speech.models` gestiona los modelos."
+  ],
+  "faq": [
+    {
+      "q": "El reconocimiento y la síntesis necesitan Internet?",
+      "a": "No. Una vez descargados los modelos, todo se ejecuta en el dispositivo y no se envía ningún audio. El complemento solo se conecta para descargar modelos y actualizar el catálogo."
+    },
+    {
+      "q": "Por qué el complemento solicita el permiso del micrófono por sí mismo?",
+      "a": "El audio se graba dentro del proceso del complemento y nunca pasa por AutoJs6. AutoJs6 transfiere sus capacidades de primer plano al complemento al vincularlo, por lo que los scripts también pueden dictar en segundo plano. Conceda el permiso del micrófono en la pantalla del complemento antes del primer uso."
+    },
+    {
+      "q": "Qué paquete debo instalar?",
+      "a": "La mayoría de los teléfonos necesitan `arm64-v8a`. Si no conoce la ABI del dispositivo, instale `universal`: funciona en todos los dispositivos, pero ocupa más."
+    }
+  ],
+  "p_security_intro": "El complemento reduce al máximo sus permisos:",
+  "security_points": [
+    "Micrófono: el audio solo se graba para el dictado, las palabras de activación y la pantalla de prueba, y el micrófono se libera en cuanto termina la sesión o el script.",
+    "Red: solo se usa para descargar modelos y actualizar el catálogo firmado; el reconocimiento y la síntesis funcionan sin conexión.",
+    "Almacenamiento: los modelos se guardan en el directorio privado del complemento y los modelos locales se importan mediante el selector de archivos del sistema, por lo que no se solicita permiso de almacenamiento.",
+    "Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente."
+  ],
+  "p_license": "El código del proyecto se publica bajo la [Mozilla Public License 2.0]({{ license_url }}). El motor de voz sherpa-onnx usa la licencia Apache-2.0, y onnxruntime y silero VAD usan la licencia MIT; la licencia de cada modelo figura en el catálogo de modelos.",
+  "text_link_third_party": "Avisos de terceros (THIRD_PARTY_NOTICES.md)",
+  "text_link_sherpa_onnx": "Proyecto sherpa-onnx",
+  "p_instruction_docs": "El progreso y el diseño están disponibles en la [página del proyecto]({{ repo_url }})."
+}

@@ -1,0 +1,29 @@
+{
+  "changelog_label_hint": "提示",
+  "changelog_label_feature": "新增",
+  "changelog_label_fix": "修复",
+  "changelog_label_improvement": "优化",
+  "changelog_label_dependency": "依赖",
+  "$data": {
+    "v1.0.0": {
+      "released_date": "2026/10/16",
+      "hint": [
+        "开发预览: 插件可以被 AutoJs6 识别并加载语音运行时, 语音识别, 唤醒词, 语音合成, 模型下载, 插件界面与 speech 脚本模块尚未交付",
+        "需要 AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 或更高版本 (准确的最低版本号待宿主侧改动落地后回填)",
+        "当前图标为临时图案, 正式图标待替换"
+      ],
+      "feature": [
+        "插件骨架: Wake 激活协议, 插件中心身份服务与语音能力服务",
+        "内置 sherpa-onnx {{ sherpa_onnx_version }} 语音运行时与 silero VAD v5 语音活动检测模型, 按 4 种 ABI 分别提供安装包",
+        "10 种语言的 README, 插件中心说明与更新日志, 由 JSON 源文件统一生成"
+      ],
+      "dependency": [
+        "附加 sherpa-onnx 版本 {{ sherpa_onnx_version }}",
+        "附加 Jetpack Compose BOM 版本 {{ compose_bom }}",
+        "附加 AndroidX Activity Compose 版本 1.12.2",
+        "附加 AndroidX Core KTX 版本 1.15.0",
+        "附加 Kotlin Coroutines 版本 1.11.0"
+      ]
+    }
+  }
+}
