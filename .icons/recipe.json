@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": "1.3.0",
+  "profile": "neutral-v1",
+  "repository": "AutoJs6-Plugin-Three-Macaw-Speech",
+  "packages": [
+    "io.github.supermonster003.autojs6.plugin.three.macaw.speech"
+  ],
+  "launcher": false,
+  "params": {
+    "sources": {
+      "day": "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc",
+      "night": "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef",
+      "alphaMode": "alpha"
+    },
+    "geometry": {
+      "mode": "normalized",
+      "scale": 1.0,
+      "offsetX": 0.0,
+      "offsetY": 0.0
+    },
+    "day": {
+      "mode": "mask",
+      "foreground": "#272727",
+      "brightness": 1.0,
+      "contrast": 1.0,
+      "gamma": 1.0,
+      "threshold": 128,
+      "invert": false
+    },
+    "night": {
+      "mode": "mask",
+      "foreground": "#d8d8d8",
+      "brightness": 1.0,
+      "contrast": 1.0,
+      "gamma": 1.0,
+      "threshold": 128,
+      "invert": false
+    },
+    "backgrounds": {
+      "day": "#fafafa",
+      "night": "#212121"
+    }
+  },
+  "baseline": {
+    "params": {
+      "sources": {
+        "day": "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc",
+        "night": "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef",
+        "alphaMode": "alpha"
+      },
+      "geometry": {
+        "mode": "normalized",
+        "scale": 1.0,
+        "offsetX": 0.0,
+        "offsetY": 0.0
+      },
+      "day": {
+        "mode": "mask",
+        "foreground": "#272727",
+        "brightness": 1.0,
+        "contrast": 1.0,
+        "gamma": 1.0,
+        "threshold": 128,
+        "invert": false
+      },
+      "night": {
+        "mode": "mask",
+        "foreground": "#d8d8d8",
+        "brightness": 1.0,
+        "contrast": 1.0,
+        "gamma": 1.0,
+        "threshold": 128,
+        "invert": false
+      },
+      "backgrounds": {
+        "day": "#fafafa",
+        "night": "#212121"
+      }
+    },
+    "day": "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc",
+    "night": "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef"
+  },
+  "outputs": {
+    "app/src/main/res/mipmap/ic_plugin_center.png": {
+      "role": "ui-day"
+    },
+    "app/src/main/res/mipmap-night/ic_plugin_center.png": {
+      "role": "ui-night"
+    },
+    "app/src/main/res/raw/keep_plugin_center_icon.xml": {
+      "role": "keep-rule"
+    },
+    "app/src/main/res/mipmap/ic_launcher.png": {
+      "role": "ui-day"
+    },
+    "app/src/main/res/mipmap-night/ic_launcher.png": {
+      "role": "ui-night"
+    },
+    "app/src/main/res/values/icon_studio_backgrounds.xml": {
+      "role": "background-color",
+      "theme": "day"
+    },
+    "app/src/main/res/values-night/icon_studio_backgrounds.xml": {
+      "role": "background-color",
+      "theme": "night"
+    },
+    "app/src/main/res/raw/keep_icon_studio_background.xml": {
+      "role": "background-keep"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application.png": {
+      "role": "legacy-day"
+    },
+    "app/src/main/res/mipmap-night/ic_icon_studio_application.png": {
+      "role": "legacy-night"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application_foreground.png": {
+      "role": "adaptive-day"
+    },
+    "app/src/main/res/mipmap-night/ic_icon_studio_application_foreground.png": {
+      "role": "adaptive-night"
+    },
+    "app/src/main/res/mipmap/ic_icon_studio_application_monochrome.png": {
+      "role": "mono"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_icon_studio_application.xml": {
+      "role": "application-adaptive"
+    },
+    "app/src/main/res/mipmap-night-anydpi-v26/ic_icon_studio_application.xml": {
+      "role": "application-adaptive"
+    },
+    "app/src/main/res/raw/keep_icon_studio_application.xml": {
+      "role": "application-keep"
+    }
+  },
+  "assets": [
+    "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc",
+    "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef"
+  ],
+  "legacyGenerator": null,
+  "backgroundDefaults": {
+    "day": "#fafafa",
+    "night": "#212121"
+  },
+  "systemIcon": true,
+  "originalSources": {},
+  "systemIconMinSdk": 24,
+  "systemIconObsolete": []
+}

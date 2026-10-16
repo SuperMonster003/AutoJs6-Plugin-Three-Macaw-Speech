@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_models">Модели</string>
+    <string name="home_section_status">Состояние</string>
+    <string name="home_section_tryout">Попробовать</string>
+    <string name="plugin_description">Офлайн-распознавание речи, обнаружение слов активации, определение речевой активности и нейросетевой синтез речи с регистрацией в качестве системного движка TTS</string>
+    <string name="release_history">История выпусков</string>
+    <string name="settings">Настройки</string>
+    <string name="settings_appearance">Оформление</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_launcher_icon">Значок запуска</string>
+    <string name="settings_night_mode">Ночной режим</string>
+    <string name="settings_theme_color">Цвет темы</string>
+</resources>

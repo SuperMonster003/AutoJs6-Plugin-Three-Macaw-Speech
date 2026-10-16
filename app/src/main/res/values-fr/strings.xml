@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_models">Modèles</string>
+    <string name="home_section_status">État</string>
+    <string name="home_section_tryout">Essayer</string>
+    <string name="plugin_description">Reconnaissance vocale hors ligne, détection de mots de réveil, détection d\'activité vocale et synthèse vocale neuronale, utilisable comme moteur TTS du système</string>
+    <string name="release_history">Historique des versions</string>
+    <string name="settings">Paramètres</string>
+    <string name="settings_appearance">Apparence</string>
+    <string name="settings_language">Langue</string>
+    <string name="settings_launcher_icon">Icône du lanceur</string>
+    <string name="settings_night_mode">Mode nuit</string>
+    <string name="settings_theme_color">Couleur du thème</string>
+</resources>

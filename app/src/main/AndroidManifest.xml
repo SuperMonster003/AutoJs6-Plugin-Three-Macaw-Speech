@@ -1,8 +1,84 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Build skeleton only; the identity, activation entry, services and permissions are declared in the next commit. -->
+    <uses-permission android:name="org.autojs.permission.PLUGIN" />
+
+    <!--
+        Roadmap D29: the plugin records audio itself (D6); the microphone foreground service only serves the standalone
+        tryout screen and the 1.1.0 assistant, scripts rely on the host binding with BIND_INCLUDE_CAPABILITIES (D22).
+        INTERNET only downloads models and refreshes the signed catalog; POST_NOTIFICATIONS shows download progress.
+        No storage permission: models live in private storage and imports go through the system file picker (D23).
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- The launcher entry, the system TTS engine service and the screens arrive in roadmap P4 / P5. -->
     <application
         android:allowBackup="false"
-        android:label="@string/app_name" />
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
+        android:label="@string/app_name"
+        android:enableOnBackInvokedCallback="true"
+        android:supportsRtl="true"
+        android:icon="@mipmap/ic_icon_studio_application"
+        android:roundIcon="@mipmap/ic_icon_studio_application">
+
+        <!-- Every packaged sherpa-onnx, onnxruntime and Compose library is 16 KB aligned in all four ABIs (roadmap D14). -->
+        <meta-data
+            android:name="org.autojs.plugin.contract.NATIVE_PAGE_ALIGNMENT"
+            android:value="16384" />
+
+        <meta-data
+            android:name="org.autojs.plugin.WAKE_ACTIVITY"
+            android:value=".WakeActivity" />
+
+        <meta-data
+            android:name="org.autojs.plugin.info.AUTHOR"
+            android:value="@string/plugin_author" />
+
+        <activity
+            android:name=".WakeActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:finishOnTaskLaunch="true"
+            android:permission="org.autojs.permission.PLUGIN"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <category android:name="android.intent.category.DEFAULT" />
+                <action android:name="org.autojs.plugin.action.WAKE" />
+            </intent-filter>
+        </activity>
+
+        <!-- Plugin Center identity (roadmap 5.5, category three-macaw-speech, engine speech). -->
+        <service
+            android:name=".service.ThreeMacawSpeechInfoService"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN">
+            <meta-data
+                android:name="requiresHostVersion"
+                android:value="@string/plugin_requires_host_version" />
+            <intent-filter>
+                <action android:name="org.autojs.plugin.INFO" />
+                <category android:name="three-macaw-speech" />
+            </intent-filter>
+        </service>
+
+        <!-- Speech capability (roadmap D21 / 5.5); placeholder Binder until the host contract of roadmap P1.1. -->
+        <service
+            android:name=".service.ThreeMacawSpeechService"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN">
+            <meta-data
+                android:name="requiresHostVersion"
+                android:value="@string/plugin_requires_host_version" />
+            <intent-filter>
+                <action android:name="org.autojs.plugin.SPEECH" />
+                <category android:name="speech" />
+            </intent-filter>
+        </service>
+
+    </application>
 
 </manifest>

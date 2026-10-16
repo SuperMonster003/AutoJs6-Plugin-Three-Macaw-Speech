@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_models">Models</string>
+    <string name="home_section_status">Status</string>
+    <string name="home_section_tryout">Try it out</string>
+    <string name="plugin_description">Offline speech recognition, wake word detection, voice activity detection and neural text-to-speech, usable as the system TTS engine</string>
+    <string name="release_history">Release history</string>
+    <string name="settings">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_launcher_icon">Launcher icon</string>
+    <string name="settings_night_mode">Night mode</string>
+    <string name="settings_theme_color">Theme color</string>
+</resources>

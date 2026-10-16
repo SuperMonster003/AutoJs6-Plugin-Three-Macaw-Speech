@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_models">モデル</string>
+    <string name="home_section_status">状態</string>
+    <string name="home_section_tryout">お試し</string>
+    <string name="plugin_description">オフライン音声認識, ウェイクワード検出, 音声区間検出, ニューラル音声合成を提供し, システムの TTS エンジンとして登録可能</string>
+    <string name="release_history">リリース履歴</string>
+    <string name="settings">設定</string>
+    <string name="settings_appearance">外観</string>
+    <string name="settings_language">言語</string>
+    <string name="settings_launcher_icon">ランチャーアイコン</string>
+    <string name="settings_night_mode">ナイトモード</string>
+    <string name="settings_theme_color">テーマ色</string>
+</resources>

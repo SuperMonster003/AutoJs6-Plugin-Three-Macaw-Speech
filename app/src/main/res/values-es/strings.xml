@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_models">Modelos</string>
+    <string name="home_section_status">Estado</string>
+    <string name="home_section_tryout">Probar</string>
+    <string name="plugin_description">Reconocimiento de voz sin conexión, detección de palabras de activación, detección de actividad de voz y síntesis de voz neuronal, utilizable como motor TTS del sistema</string>
+    <string name="release_history">Historial de versiones</string>
+    <string name="settings">Ajustes</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_language">Idioma</string>
+    <string name="settings_launcher_icon">Icono del lanzador</string>
+    <string name="settings_night_mode">Modo nocturno</string>
+    <string name="settings_theme_color">Color del tema</string>
+</resources>

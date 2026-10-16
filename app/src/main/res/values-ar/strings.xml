@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_section_models">النماذج</string>
+    <string name="home_section_status">الحالة</string>
+    <string name="home_section_tryout">تجربة</string>
+    <string name="plugin_description">التعرف على الكلام دون اتصال, واكتشاف كلمة التنبيه, واكتشاف النشاط الصوتي, وتحويل النص إلى كلام بالشبكات العصبية, مع إمكانية استخدامه كمحرك TTS للنظام</string>
+    <string name="release_history">سجل الإصدارات</string>
+    <string name="settings">الإعدادات</string>
+    <string name="settings_appearance">المظهر</string>
+    <string name="settings_language">اللغة</string>
+    <string name="settings_launcher_icon">رمز المشغل</string>
+    <string name="settings_night_mode">الوضع الليلي</string>
+    <string name="settings_theme_color">لون السمة</string>
+</resources>
