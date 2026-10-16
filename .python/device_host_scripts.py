@@ -10,7 +10,9 @@ Scripts start through AutoJs6's RunIntentActivity (no instrumentation, so every 
 a JSON result next to themselves in shared storage, which AutoJs6 reads and writes with all-files access. Audio for the
 microphone runs is played by the script with `media.playMusic` through the device speaker at the current media volume
 (raised to 40 % for the run when lower, then restored). Every run samples `procState/capability` of AutoJs6 and of the plugin process
-and whether the plugin's microphone foreground service is in the foreground. Output: one line per item, no transcript.
+and whether the plugin's microphone foreground service is in the foreground; `listen` and `late` also count the plugin's
+activity starts that Android blocked (logcat, with the caller's process state).
+Output: one line per item, no transcript.
 A secure lock screen keeps activities from starting: unlock the device first. Nothing here answers a system dialog.
 """
 import json
@@ -162,6 +164,20 @@ def states(serial):
     return f"host {process_state(serial, HOST, HOST)}, plugin {process_state(serial, PLUGIN, PLUGIN)}, fgs {foreground_service(serial)}"
 
 
+def device_clock(serial):
+    """The device time in the format `logcat -T` takes."""
+    return adb(serial, "shell", "date", "'+%m-%d %H:%M:%S.000'")
+
+
+def system_refusals(serial, since):
+    """Activity starts of the plugin that the background activity start rules blocked since `since`, with the caller's
+    process states (a refused microphone service already arrives as a `warning`; ColorOS drops the plugin's own log)."""
+    log = adb(serial, "logcat", "-d", "-T", since, check=False).splitlines()
+    blocked = [line for line in log if "Background activity launch blocked" in line and f"callingPackage: {PLUGIN};" in line]
+    callers = sorted({part.split(":", 1)[1].strip() for line in blocked for part in line.split(";") if part.strip().startswith("callingUidProcState:")})
+    return f"plugin activity starts blocked {len(blocked)} (caller {', '.join(callers) or '-'})"
+
+
 def media_volume(serial):
     """(command, current, maximum) of the music stream, or None when the shell has no volume command."""
     for command in (["cmd", "media_session", "volume"], ["media", "volume"]):
@@ -291,6 +307,7 @@ def run_listen(serial, late=False):
     prepare(serial)
     total = PHASE_SECONDS * 3 + 6
     values = {"duration": total * 1000 + (8000 if late else 0), "delay": 6000}
+    since = device_clock(serial)
     if not start(serial, name, values):
         print(f"{label(serial)}: {name}: BLOCKED the script did not start (unlock the device; AutoJs6 needs all-files access)")
         return False
@@ -345,6 +362,7 @@ def run_listen(serial, late=False):
         print(f"    {phase}: {verdict} {kinds}; {sampled[phase]}")
     for warning in sorted(set(r["warnings"])):
         print(f"    warning: {warning[:240]}")
+    print(f"    system: {system_refusals(serial, since)}")
     return True
 
 
