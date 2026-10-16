@@ -15,6 +15,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.MicrophonePermissionActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ThreeMacawSpeechInfoService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ThreeMacawSpeechService
 import org.autojs.plugin.common.api.IPluginInfoProvider
@@ -110,8 +111,8 @@ class ThreeMacawSpeechContractTest {
             )
             assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, capabilities.getLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION))
             assertEquals(1, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION))
-            // Roadmap P2.3 / P2.4: model management is advertised, the bundled catalog is version 1.
-            assertArrayEquals(arrayOf(SpeechContract.FEATURE_MODELS), capabilities.getStringArray(ThreeMacawSpeechContract.CAPABILITY_FEATURES))
+            // Roadmap P2.3 / P2.4 / P3: model management, recognition, VAD and wake words are advertised, the bundled catalog is version 1.
+            assertArrayEquals(FEATURES, capabilities.getStringArray(ThreeMacawSpeechContract.CAPABILITY_FEATURES))
             assertEquals(1, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION, -1))
         }
     }
@@ -129,7 +130,7 @@ class ThreeMacawSpeechContractTest {
             // Real Parcels with the transaction codes of the AIDL order (getInfo = 1, getCapabilities = 2, ...).
             val capabilities = requireNotNull(transactBundle(binder, TRANSACTION_GET_CAPABILITIES))
             assertEquals(SpeechContract.CONTRACT_VERSION, capabilities.getInt(SpeechContract.KEY_CONTRACT_VERSION))
-            assertArrayEquals(arrayOf(SpeechContract.FEATURE_MODELS), capabilities.getStringArray(SpeechCapabilityKeys.FEATURES))
+            assertArrayEquals(FEATURES, capabilities.getStringArray(SpeechCapabilityKeys.FEATURES))
             assertTrue(capabilities.getInt(SpeechCapabilityKeys.CATALOG_VERSION) >= 1)
             assertEquals("sherpa-onnx", capabilities.getString(SpeechCapabilityKeys.ENGINE_NAME))
             assertEquals(BuildConfig.SHERPA_ONNX_VERSION, capabilities.getString(SpeechCapabilityKeys.ENGINE_VERSION))
@@ -152,8 +153,8 @@ class ThreeMacawSpeechContractTest {
 
             val unknown = Bundle().apply { putString(SpeechOptionKeys.MODEL, "tts.no.such.model") }
             assertEquals(SpeechErrorCodes.MODEL_MISSING, transactBundle(binder, TRANSACTION_REMOVE_MODEL, unknown)?.getString(SpeechContract.KEY_ERROR_CODE))
-            // Recognition arrives with roadmap P3: answered, not refused at the Binder level.
-            assertEquals(SpeechErrorCodes.ENGINE_FAILED, transactBundle(binder, TRANSACTION_RECOGNIZE_FILE, null, nullDescriptorFirst = true)?.getString(SpeechContract.KEY_ERROR_CODE))
+            // Roadmap P3.3: a missing audio descriptor is answered with IO_FAILED, not refused at the Binder level.
+            assertEquals(SpeechErrorCodes.IO_FAILED, transactBundle(binder, TRANSACTION_RECOGNIZE_FILE, null, nullDescriptorFirst = true)?.getString(SpeechContract.KEY_ERROR_CODE))
         }
     }
 
@@ -182,7 +183,10 @@ class ThreeMacawSpeechContractTest {
             packageInfo.providers.orEmpty().filter { it.exported }.map { it.name to it.readPermission }
         val (library, own) = exported.partition { it.first in LIBRARY_COMPONENTS }
         assertEquals(
-            setOf("$packageName.WakeActivity", ThreeMacawSpeechInfoService::class.java.name, ThreeMacawSpeechService::class.java.name),
+            setOf(
+                "$packageName.WakeActivity", MicrophonePermissionActivity::class.java.name, ThreeMacawSpeechInfoService::class.java.name,
+                ThreeMacawSpeechService::class.java.name,
+            ),
             own.map { it.first }.toSet(),
         )
         own.forEach { (name, permission) -> assertEquals("$name must require the plugin permission", PLUGIN_PERMISSION, permission) }
@@ -319,6 +323,10 @@ class ThreeMacawSpeechContractTest {
         const val TRANSACTION_LIST_MODELS = IBinder.FIRST_CALL_TRANSACTION + 2
         const val TRANSACTION_REMOVE_MODEL = IBinder.FIRST_CALL_TRANSACTION + 5
         const val TRANSACTION_RECOGNIZE_FILE = IBinder.FIRST_CALL_TRANSACTION + 6
+
+        val FEATURES = arrayOf(
+            SpeechContract.FEATURE_MODELS, SpeechContract.FEATURE_ASR, SpeechContract.FEATURE_ASR_STREAMING, SpeechContract.FEATURE_VAD, SpeechContract.FEATURE_KWS,
+        )
 
         /**
          * Added by AndroidX to the merged Manifest on its own (core 1.9+ declares the dynamic receiver permission).

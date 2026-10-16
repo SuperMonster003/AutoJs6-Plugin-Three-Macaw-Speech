@@ -1,6 +1,6 @@
 3-Macaw Speech usa [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) para ejecutar sin conexión, en el propio dispositivo, el reconocimiento de voz, la detección de actividad de voz, la detección de palabras de activación y la síntesis de voz neuronal. Todo se calcula localmente y no se envía ningún audio.
 
-> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que carga el motor de voz y descarga y gestiona modelos, pero el reconocimiento, las palabras de activación, la síntesis, las pantallas del complemento y el módulo de script `speech` aún no están disponibles. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.
+> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz y detecta actividad de voz y palabras de activación, pero la síntesis y las pantallas del complemento aún no se entregan, y la versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe los objetivos de diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.
 
 ### Funciones Destacadas
 

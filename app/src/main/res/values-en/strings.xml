@@ -4,7 +4,10 @@
     <string name="home_section_status">Status</string>
     <string name="home_section_tryout">Try it out</string>
     <string name="notification_catalog_refresh_title">Refreshing the model catalog</string>
+    <string name="notification_channel_microphone">Microphone</string>
     <string name="notification_channel_model_operations">Model downloads</string>
+    <string name="notification_microphone_text">A script is using the microphone for speech recognition or wake words</string>
+    <string name="notification_microphone_title">Listening</string>
     <string name="notification_model_download_title">Downloading %1$s</string>
     <string name="notification_model_import_title">Importing a model</string>
     <string name="plugin_description">Offline speech recognition, wake word detection, voice activity detection and neural text-to-speech, usable as the system TTS engine</string>

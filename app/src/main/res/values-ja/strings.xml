@@ -4,7 +4,10 @@
     <string name="home_section_status">状態</string>
     <string name="home_section_tryout">お試し</string>
     <string name="notification_catalog_refresh_title">モデルカタログを更新しています</string>
+    <string name="notification_channel_microphone">マイク</string>
     <string name="notification_channel_model_operations">モデルのダウンロード</string>
+    <string name="notification_microphone_text">スクリプトが音声認識またはウェイクワード検出のためにマイクを使用しています</string>
+    <string name="notification_microphone_title">音声を聞き取っています</string>
     <string name="notification_model_download_title">%1$s をダウンロードしています</string>
     <string name="notification_model_import_title">モデルをインポートしています</string>
     <string name="plugin_description">オフライン音声認識, ウェイクワード検出, 音声区間検出, ニューラル音声合成を提供し, システムの TTS エンジンとして登録可能</string>

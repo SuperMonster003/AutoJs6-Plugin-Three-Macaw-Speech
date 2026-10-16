@@ -24,7 +24,7 @@
   "p_roadmap": "Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. Unchecked items are plans, not features of the current version.",
   "p_introduction_what": "3-Macaw Speech uses [sherpa-onnx]({{ sherpa_onnx_url }}) to run speech recognition, voice activity detection, wake word detection and neural text-to-speech offline on the device. Everything is computed locally and no audio is uploaded.",
   "p_introduction_how": "The plugin is a separately installed APK. AutoJs6 scripts use it through the global `speech` module; the speech synthesis also registers as an Android system TTS engine, so the AutoJs6 `tts` module and other apps can choose it. Recognition and synthesis models are not bundled with the APK but downloaded on demand from the plugin screen or a script; only the voice activity detection model is built in.",
-  "p_status_note": "This is a development preview: AutoJs6 can discover the plugin, which loads the speech runtime and downloads and manages models, but recognition, wake words, synthesis, the plugin screens and the `speech` script module are not delivered yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.",
+  "p_status_note": "This is a development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech and detects voice activity and wake words, but synthesis and the plugin screens are not delivered yet, and the AutoJs6 release with the `speech` script module is not published yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.",
   "features": [
     "Speech recognition: streaming dictation from the microphone (partial and final results in real time) and WAV file recognition, with offline models for Chinese, English, mixed Chinese and English, Japanese, Korean and Cantonese.",
     "Voice activity detection: the built-in silero VAD v5 splits audio into speech segments on its own and also ends dictation sentences automatically.",
@@ -54,7 +54,7 @@
     },
     {
       "q": "Why does the plugin request the microphone permission itself?",
-      "a": "Audio is recorded inside the plugin process and never passes through AutoJs6. AutoJs6 hands its foreground capabilities to the plugin when it binds, so scripts can dictate in the background too. Grant the microphone permission on the plugin screen before the first use."
+      "a": "Audio is recorded inside the plugin process and never passes through AutoJs6. AutoJs6 hands its foreground capabilities to the plugin when it binds, and the plugin holds a microphone foreground service during a microphone session, so dictation goes on after AutoJs6 moves to the background or the screen turns off. Grant the microphone permission on the plugin screen before the first use."
     },
     {
       "q": "Which package should I install?",

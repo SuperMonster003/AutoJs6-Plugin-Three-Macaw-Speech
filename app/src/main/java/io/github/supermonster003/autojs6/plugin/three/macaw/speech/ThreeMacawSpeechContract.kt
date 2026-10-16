@@ -49,12 +49,14 @@ internal object ThreeMacawSpeechContract {
 
     /**
      * Optional features this build implements: model management (`models`: install, import, remove, default model and
-     * catalog refresh, roadmap P2.3 / P2.4). Roadmap P3 / P4 add `asr`, `asrStreaming`, `vad`, `kws`, `tts` and
-     * `ttsSystemEngine` as each one lands, and the host never relies on a feature that is not advertised.
-     * zh-CN: 本构建实现的可选功能: 模型管理 (`models`: 安装, 导入, 删除, 默认模型与目录刷新, 路线图 P2.3 / P2.4). 路线图 P3 / P4 在各项
-     * 落地时依次加入 `asr`, `asrStreaming`, `vad`, `kws`, `tts` 与 `ttsSystemEngine`, 宿主不会依赖未声明的功能.
+     * catalog refresh, roadmap P2.3 / P2.4), file and external PCM recognition (`asr`), microphone dictation
+     * (`asrStreaming`), voice activity detection (`vad`) and wake sessions (`kws`, roadmap P3). Roadmap P4 adds `tts`
+     * and `ttsSystemEngine`; the host never relies on a feature that is not advertised.
+     * zh-CN: 本构建实现的可选功能: 模型管理 (`models`: 安装, 导入, 删除, 默认模型与目录刷新, 路线图 P2.3 / P2.4), 文件与外部 PCM 识别 (`asr`),
+     * 麦克风听写 (`asrStreaming`), 语音活动检测 (`vad`) 与唤醒会话 (`kws`, 路线图 P3). 路线图 P4 加入 `tts` 与 `ttsSystemEngine`; 宿主不会依赖
+     * 未声明的功能.
      */
-    val FEATURES: List<String> = listOf("models")
+    val FEATURES: List<String> = listOf("models", "asr", "asrStreaming", "vad", "kws")
 
     /**
      * Version of the model catalog bundled in `assets/catalog/catalog-v1.json` (roadmap D28, P2.4); `BundledCatalogTest`

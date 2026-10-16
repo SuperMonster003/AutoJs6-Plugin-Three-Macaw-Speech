@@ -46,7 +46,7 @@ El README.md actual admite los siguientes idiomas:
 
 El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.
 
-> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que carga el motor de voz y descarga y gestiona modelos, pero el reconocimiento, las palabras de activación, la síntesis, las pantallas del complemento y el módulo de script `speech` aún no están disponibles. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.
+> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz y detecta actividad de voz y palabras de activación, pero la síntesis y las pantallas del complemento aún no se entregan, y la versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe los objetivos de diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.
 
 ******
 
@@ -120,7 +120,7 @@ No. Una vez descargados los modelos, todo se ejecuta en el dispositivo y no se e
 
 #### Por qué el complemento solicita el permiso del micrófono por sí mismo?
 
-El audio se graba dentro del proceso del complemento y nunca pasa por AutoJs6. AutoJs6 transfiere sus capacidades de primer plano al complemento al vincularlo, por lo que los scripts también pueden dictar en segundo plano. Conceda el permiso del micrófono en la pantalla del complemento antes del primer uso.
+El audio se graba dentro del proceso del complemento y nunca pasa por AutoJs6. AutoJs6 cede sus capacidades de primer plano al complemento al vincularlo, y el complemento mantiene un servicio en primer plano de tipo micrófono durante una sesión de micrófono, de modo que el dictado continúa cuando AutoJs6 pasa a segundo plano o se apaga la pantalla. Conceda el permiso del micrófono en la pantalla del complemento antes del primer uso.
 
 #### Qué paquete debo instalar?
 
@@ -179,11 +179,16 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 _2026/10/16_
 
-- `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que carga el motor de voz y descarga y gestiona modelos; el reconocimiento de voz, las palabras de activación, la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no están disponibles
+- `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, y detecta actividad de voz y palabras de activación; la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no se entregan
 - `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
 - `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 - `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI
 - `Función` Gestión de modelos: descarga los modelos de voz sin conexión del catálogo firmado desde las publicaciones de los recursos compartidos de AutoJs6, con las publicaciones oficiales de sherpa-onnx como alternativa; cada archivo se verifica con SHA-256 antes de usarse, con descargas reanudables, importación local (tar, tar.bz2, zip), eliminación y modelos predeterminados; los modelos limitados a uso no comercial o sin licencia declarada requieren aceptar antes su licencia
+- `Función` Reconocimiento de voz de archivos WAV (enteros de 8, 16, 24 o 32 bits o coma flotante, cualquier frecuencia de muestreo y número de canales, remuestreados a 16 kHz mono en el complemento) con segmentos con marcas de tiempo, además de etiquetas de idioma, emoción y evento para los modelos SenseVoice; los modelos en streaming admiten palabras clave favorecidas
+- `Función` Sesiones de dictado en el micrófono o con PCM de 16 kHz suministrado: informan de la disponibilidad, los resultados parciales y finales, los puntos finales, la actividad de voz y el final; el silencio que cierra una frase, el tiempo de espera sin voz y la duración máxima son ajustables; los modelos en streaming actualizan los resultados parciales palabra por palabra, los modelos sin conexión segmento por segmento
+- `Función` Detección de actividad de voz: lista los segmentos de voz de un archivo WAV con el silero VAD incluido
+- `Función` Palabras de activación: detección de palabras clave de vocabulario abierto; las palabras clave en chino se deletrean en pinyin según su lectura habitual, las palabras en inglés en los fonemas del léxico del modelo, y también se pueden escribir directamente los tokens del modelo; una detección puede iniciar un dictado sobre la misma grabación
+- `Función` Durante una sesión de micrófono, el complemento sigue grabando con un servicio en primer plano de tipo micrófono y su notificación, de modo que una sesión iniciada con AutoJs6 en primer plano continúa cuando AutoJs6 pasa a segundo plano o se apaga la pantalla; solo se ejecuta una sesión de micrófono a la vez; sin el permiso del micrófono, las sesiones fallan con PERMISSION_DENIED e indican la pantalla de permisos
 - `Función` README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON
 - `Dependencia` Se agrega sherpa-onnx 1.13.8
 - `Dependencia` Se agrega Jetpack Compose BOM 2026.09.00

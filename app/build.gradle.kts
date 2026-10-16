@@ -126,6 +126,20 @@ run {
     names.forEach { name -> verifiedFile(entries.getValue("$name.path"), entries["$name.sha256"], name) }
 }
 
+run {
+    // Device test recordings (roadmap P3.5): androidTest assets only, each pinned to its upstream archive member.
+    val entries = readLock("locks/test-audio.lock")
+    val names = entries.keys.filter { it.endsWith(".path") }.map { it.removeSuffix(".path") }.sorted()
+    check(entries.keys == setOf("format") + names.flatMap { name -> listOf("path", "sha256", "url", "member", "license").map { "$name.$it" } }) {
+        "Unexpected keys in locks/test-audio.lock"
+    }
+    names.forEach { name ->
+        val path = entries.getValue("$name.path")
+        check(path == "app/src/androidTest/assets/test-audio/$name.wav") { "test-audio $name must live in the androidTest assets" }
+        verifiedFile(path, entries["$name.sha256"], "test-audio $name")
+    }
+}
+
 android {
     namespace = globalApplicationId
     compileSdk = versions.sdkVersionCompile

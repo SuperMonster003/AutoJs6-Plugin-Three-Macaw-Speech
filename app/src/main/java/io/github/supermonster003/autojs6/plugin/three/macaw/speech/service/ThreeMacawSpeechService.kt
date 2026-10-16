@@ -5,12 +5,14 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Binder
 import android.os.Bundle
 import android.os.IBinder
 import android.os.ParcelFileDescriptor
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ThreeMacawSpeechContract
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CancelToken
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Importer
@@ -19,6 +21,10 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Mo
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationCancelledException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationListener
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationResult
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationSession
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
 import org.autojs.plugin.speech.api.ISpeechPlugin
@@ -50,18 +56,21 @@ class ThreeMacawSpeechService : Service() {
 }
 
 /**
- * `ISpeechPlugin` of contract version 1. Model management is implemented (roadmap P2.3 / P2.4: `listModels`,
- * `installModel`, `cancelOperation`, `removeModel`, `importModel`, `setDefaultModel`, `refreshCatalog`; long
- * operations run on the model thread and report through `ISpeechProgressCallback`). Recognition, voice activity,
- * sessions and synthesis answer `ENGINE_FAILED` until roadmap P3 / P4; the plugin does not advertise those features,
- * so the host does not call them.
- * zh-CN: 契约版本 1 的 `ISpeechPlugin`. 已实现模型管理 (路线图 P2.3 / P2.4: `listModels`, `installModel`, `cancelOperation`,
- * `removeModel`, `importModel`, `setDefaultModel`, `refreshCatalog`; 长操作在模型线程上运行, 经 `ISpeechProgressCallback` 报告).
- * 识别, 语音活动检测, 会话与合成在路线图 P3 / P4 之前应答 `ENGINE_FAILED`; 插件不声明这些功能, 宿主因此不会调用它们.
+ * `ISpeechPlugin` of contract version 1. Model management (roadmap P2.3 / P2.4: `listModels`, `installModel`,
+ * `cancelOperation`, `removeModel`, `importModel`, `setDefaultModel`, `refreshCatalog`; long operations run on the
+ * model thread and report through `ISpeechProgressCallback`), file recognition and voice activity detection (P3.3, on
+ * the calling Binder thread), dictation sessions (P3.2) and wake sessions (P3.4) on [SpeechRuntime]. Synthesis answers
+ * `ENGINE_FAILED` until roadmap P4; the plugin does not advertise `tts`, so the host does not call it.
+ * zh-CN: 契约版本 1 的 `ISpeechPlugin`. 模型管理 (路线图 P2.3 / P2.4: `listModels`, `installModel`, `cancelOperation`, `removeModel`,
+ * `importModel`, `setDefaultModel`, `refreshCatalog`; 长操作在模型线程上运行, 经 `ISpeechProgressCallback` 报告), 文件识别与语音活动检测
+ * (P3.3, 在调用方 Binder 线程上), 听写会话 (P3.2) 与唤醒会话 (P3.4) 基于 [SpeechRuntime]. 合成在路线图 P4 之前应答 `ENGINE_FAILED`; 插件不声明
+ * `tts`, 宿主因此不会调用它.
  */
 internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.Stub() {
 
     private val manager: ModelManager get() = SpeechModels.get(context)
+
+    private val runtime: SpeechRuntime get() = SpeechRuntime.get(context)
 
     override fun getInfo(): PluginInfo = context.pluginRuntimeFields().toPluginInfo()
 
@@ -102,21 +111,70 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
 
     override fun removeModel(request: Bundle?): Bundle = answering {
         checkContract(request)
-        val removed = manager.remove(modelId(request))
+        val id = modelId(request)
+        val removed = manager.remove(id)
+        if (removed) runtime.engines.evict(id)
         SpeechBundles.answer { putBoolean(SpeechResultKeys.REMOVED, removed) }
     }
 
-    override fun recognizeFile(audio: ParcelFileDescriptor?, options: Bundle?): Bundle =
-        SpeechBundles.failure(SpeechErrorCodes.ENGINE_FAILED, "File recognition arrives with roadmap P3; the plugin does not advertise the asr feature yet")
+    /** Blocks the calling Binder thread until the file is recognized (the host calls it from its IO dispatcher). zh-CN: 阻塞调用方 Binder 线程直到识别完成. */
+    override fun recognizeFile(audio: ParcelFileDescriptor?, options: Bundle?): Bundle = answering {
+        val request = SpeechOptions.recognize(options?.let(::BundleOptionSource))
+        val source = audio ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "An audio descriptor is required")
+        SpeechBundles.transcript(runtime.recognizeFile(source, request))
+    }
 
-    override fun detectVoice(audio: ParcelFileDescriptor?, options: Bundle?): Bundle =
-        SpeechBundles.failure(SpeechErrorCodes.ENGINE_FAILED, "Voice activity detection arrives with roadmap P3; the plugin does not advertise the vad feature yet")
+    override fun detectVoice(audio: ParcelFileDescriptor?, options: Bundle?): Bundle = answering {
+        val request = SpeechOptions.vad(options?.let(::BundleOptionSource))
+        val source = audio ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "An audio descriptor is required")
+        SpeechBundles.voiceActivity(runtime.detectVoice(source, request))
+    }
 
-    override fun openSession(options: Bundle?, callback: ISpeechSessionCallback?): ISpeechSession =
-        throw SpeechBundles.thrown(SpeechErrorCodes.ENGINE_FAILED, "Dictation sessions arrive with roadmap P3")
+    /**
+     * Opens a dictation session at once (roadmap D30): options, permission, model and admission are checked here and
+     * thrown as `CODE: detail`; the model loads on the plugin's loader thread and `ready` follows.
+     * zh-CN: 立即打开听写会话 (路线图 D30): 选项, 权限, 模型与准入在此检查并以 `CODE: detail` 抛出; 模型在插件的加载线程上加载, 随后发出 `ready`.
+     */
+    override fun openSession(options: Bundle?, callback: ISpeechSessionCallback?): ISpeechSession = throwing {
+        val listen = SpeechOptions.listen(options?.let(::BundleOptionSource))
+        val listener = callback ?: invalid("A session callback is required")
+        if (!listen.isExternal) runtime.requireMicrophone()
+        val model = runtime.resolve(SpeechContract.KIND_ASR, listen.model)
+        val warnings = runtime.warnings(model, listen.language, listen.hotwords)
+        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal)
+        try {
+            val id = runtime.nextId(if (listen.isExternal) "external" else "listen")
+            DictationBinder(runtime, slot, listener, listen.isExternal) { events -> DictationSession(id, listen, events) }.also { it.open(model, warnings) }
+        } catch (t: Throwable) {
+            runtime.sessions.release(slot)
+            throw t
+        }
+    }
 
-    override fun openWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?): ISpeechSession =
-        throw SpeechBundles.thrown(SpeechErrorCodes.ENGINE_FAILED, "Wake sessions arrive with roadmap P3")
+    /**
+     * Opens a wake session at once (roadmap D18): the keywords are spelled in the model's tokens here, so a keyword the
+     * model cannot spell fails the call with `INVALID_OPTIONS`.
+     * zh-CN: 立即打开唤醒会话 (路线图 D18): 关键词在此按模型 token 拼写, 模型无法拼写的关键词使调用以 `INVALID_OPTIONS` 失败.
+     */
+    override fun openWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?): ISpeechSession = throwing {
+        val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
+        val listener = callback ?: invalid("A wake callback is required")
+        val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
+        runtime.requireMicrophone()
+        val keywordModel = runtime.resolve(SpeechContract.KIND_KWS, wake.model)
+        val listenModel = wake.thenListen?.let { runtime.resolve(SpeechContract.KIND_ASR, it.model) }
+        val buffer = runtime.keywordBuffer(keywordModel, wake.keywords)
+        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true)
+        try {
+            val id = runtime.nextId("wake")
+            WakeBinder(runtime, slot, listener, listen) { events, listenEvents ->
+                WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
+            }.also { it.open(keywordModel, buffer, listenModel) }
+        } catch (t: Throwable) {
+            runtime.sessions.release(slot)
+            throw t
+        }
+    }
 
     override fun synthesizeToFile(request: Bundle?, output: ParcelFileDescriptor?, callback: ISpeechProgressCallback?): Int =
         throw SpeechBundles.thrown(SpeechErrorCodes.ENGINE_FAILED, "Synthesis arrives with roadmap P4")
@@ -226,15 +284,15 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
 
     private inline fun answering(block: () -> Bundle): Bundle = try {
         block()
-    } catch (e: ModelException) {
+    } catch (e: SpeechException) {
         SpeechBundles.failure(e)
     } catch (e: RuntimeException) {
         SpeechBundles.failure(SpeechErrorCodes.INTERNAL, e.message ?: e.javaClass.simpleName)
     }
 
-    private inline fun throwing(block: () -> Int): Int = try {
+    private inline fun <T> throwing(block: () -> T): T = try {
         block()
-    } catch (e: ModelException) {
+    } catch (e: SpeechException) {
         throw SpeechBundles.thrown(e)
     }
 

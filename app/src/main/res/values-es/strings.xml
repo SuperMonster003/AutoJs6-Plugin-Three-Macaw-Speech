@@ -4,7 +4,10 @@
     <string name="home_section_status">Estado</string>
     <string name="home_section_tryout">Probar</string>
     <string name="notification_catalog_refresh_title">Actualizando el catálogo de modelos</string>
+    <string name="notification_channel_microphone">Micrófono</string>
     <string name="notification_channel_model_operations">Descargas de modelos</string>
+    <string name="notification_microphone_text">Un script está usando el micrófono para el reconocimiento de voz o las palabras de activación</string>
+    <string name="notification_microphone_title">Escuchando</string>
     <string name="notification_model_download_title">Descargando %1$s</string>
     <string name="notification_model_import_title">Importando un modelo</string>
     <string name="plugin_description">Reconocimiento de voz sin conexión, detección de palabras de activación, detección de actividad de voz y síntesis de voz neuronal, utilizable como motor TTS del sistema</string>

@@ -75,8 +75,9 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `the wake activity follows the activation contract and is the only activity`() {
-        val wake = application.children("activity").single()
+    fun `the wake activity follows the activation contract`() {
+        assertEquals(listOf(".WakeActivity", ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity"), application.children("activity").map { it.android("name") })
+        val wake = application.children("activity").first()
         assertEquals(".WakeActivity", wake.android("name"))
         assertEquals("true", wake.android("exported"))
         assertEquals("true", wake.android("excludeFromRecents"))
@@ -84,6 +85,36 @@ class ManifestContractTest {
         assertEquals(PLUGIN_PERMISSION, wake.android("permission"))
         assertEquals("@android:style/Theme.NoDisplay", wake.android("theme"))
         assertFilter(wake, action = "org.autojs.plugin.action.WAKE", category = DEFAULT_CATEGORY)
+    }
+
+    @Test
+    fun `the microphone permission activity is protected, translucent and has no filter`() {
+        val activity = application.children("activity").single { it.android("name") == ".service.MicrophonePermissionActivity" }
+        assertEquals("true", activity.android("exported"))
+        assertEquals(PLUGIN_PERMISSION, activity.android("permission"))
+        assertEquals("true", activity.android("excludeFromRecents"))
+        assertEquals("@android:style/Theme.Translucent.NoTitleBar", activity.android("theme"))
+        assertTrue("opened by component name only (roadmap P3.1)", activity.children("intent-filter").isEmpty())
+    }
+
+    @Test
+    fun `the microphone start activity is internal and transparent`() {
+        val activity = application.children("activity").single { it.android("name") == ".service.MicrophoneStartActivity" }
+        assertEquals("false", activity.android("exported"))
+        assertEquals("true", activity.android("excludeFromRecents"))
+        assertEquals("true", activity.android("noHistory"))
+        assertEquals("", activity.android("taskAffinity"))
+        assertEquals("@android:style/Theme.Translucent.NoTitleBar", activity.android("theme"))
+        assertTrue(activity.children("intent-filter").isEmpty())
+    }
+
+    @Test
+    fun `the microphone service is internal and of type microphone`() {
+        val service = service(".service.MicrophoneService")
+        assertEquals("false", service.android("exported"))
+        assertEquals("microphone", service.android("foregroundServiceType"))
+        assertNull(service.androidOrNull("permission"))
+        assertTrue("started by the plugin only", service.children("intent-filter").isEmpty())
     }
 
     @Test
@@ -109,7 +140,7 @@ class ManifestContractTest {
     @Test
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
-            listOf(".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService"),
+            listOf(".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService"),
             application.children("service").map { it.android("name") },
         )
         val info = service(".service.ThreeMacawSpeechInfoService")

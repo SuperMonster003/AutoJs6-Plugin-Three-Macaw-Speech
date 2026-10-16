@@ -8,13 +8,18 @@
     "v1.0.0": {
       "released_date": "2026/10/16",
       "hint": [
-        "Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que carga el motor de voz y descarga y gestiona modelos; el reconocimiento de voz, las palabras de activación, la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no están disponibles",
+        "Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, y detecta actividad de voz y palabras de activación; la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no se entregan",
         "Requiere AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)"
       ],
       "feature": [
         "Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz",
         "Motor de voz sherpa-onnx {{ sherpa_onnx_version }} y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI",
         "Gestión de modelos: descarga los modelos de voz sin conexión del catálogo firmado desde las publicaciones de los recursos compartidos de AutoJs6, con las publicaciones oficiales de sherpa-onnx como alternativa; cada archivo se verifica con SHA-256 antes de usarse, con descargas reanudables, importación local (tar, tar.bz2, zip), eliminación y modelos predeterminados; los modelos limitados a uso no comercial o sin licencia declarada requieren aceptar antes su licencia",
+        "Reconocimiento de voz de archivos WAV (enteros de 8, 16, 24 o 32 bits o coma flotante, cualquier frecuencia de muestreo y número de canales, remuestreados a 16 kHz mono en el complemento) con segmentos con marcas de tiempo, además de etiquetas de idioma, emoción y evento para los modelos SenseVoice; los modelos en streaming admiten palabras clave favorecidas",
+        "Sesiones de dictado en el micrófono o con PCM de 16 kHz suministrado: informan de la disponibilidad, los resultados parciales y finales, los puntos finales, la actividad de voz y el final; el silencio que cierra una frase, el tiempo de espera sin voz y la duración máxima son ajustables; los modelos en streaming actualizan los resultados parciales palabra por palabra, los modelos sin conexión segmento por segmento",
+        "Detección de actividad de voz: lista los segmentos de voz de un archivo WAV con el silero VAD incluido",
+        "Palabras de activación: detección de palabras clave de vocabulario abierto; las palabras clave en chino se deletrean en pinyin según su lectura habitual, las palabras en inglés en los fonemas del léxico del modelo, y también se pueden escribir directamente los tokens del modelo; una detección puede iniciar un dictado sobre la misma grabación",
+        "Durante una sesión de micrófono, el complemento sigue grabando con un servicio en primer plano de tipo micrófono y su notificación, de modo que una sesión iniciada con AutoJs6 en primer plano continúa cuando AutoJs6 pasa a segundo plano o se apaga la pantalla; solo se ejecuta una sesión de micrófono a la vez; sin el permiso del micrófono, las sesiones fallan con PERMISSION_DENIED e indican la pantalla de permisos",
         "README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON"
       ],
       "dependency": [

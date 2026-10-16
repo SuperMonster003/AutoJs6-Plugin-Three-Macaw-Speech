@@ -4,7 +4,10 @@
     <string name="home_section_status">État</string>
     <string name="home_section_tryout">Essayer</string>
     <string name="notification_catalog_refresh_title">Actualisation du catalogue de modèles</string>
+    <string name="notification_channel_microphone">Microphone</string>
     <string name="notification_channel_model_operations">Téléchargements de modèles</string>
+    <string name="notification_microphone_text">Un script utilise le microphone pour la reconnaissance vocale ou les mots de réveil</string>
+    <string name="notification_microphone_title">Écoute en cours</string>
     <string name="notification_model_download_title">Téléchargement de %1$s</string>
     <string name="notification_model_import_title">Importation du modèle</string>
     <string name="plugin_description">Reconnaissance vocale hors ligne, détection de mots de réveil, détection d\'activité vocale et synthèse vocale neuronale, utilisable comme moteur TTS du système</string>

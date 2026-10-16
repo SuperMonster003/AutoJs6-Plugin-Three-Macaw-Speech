@@ -4,7 +4,10 @@
     <string name="home_section_status">状态</string>
     <string name="home_section_tryout">试听试说</string>
     <string name="notification_catalog_refresh_title">正在刷新模型目录</string>
+    <string name="notification_channel_microphone">麦克风</string>
     <string name="notification_channel_model_operations">模型下载</string>
+    <string name="notification_microphone_text">脚本正在使用麦克风进行语音识别或唤醒词检测</string>
+    <string name="notification_microphone_title">正在收音</string>
     <string name="notification_model_download_title">正在下载 %1$s</string>
     <string name="notification_model_import_title">正在导入模型</string>
     <string name="plugin_description">离线语音识别, 唤醒词检测, 语音活动检测与神经网络语音合成, 可注册为系统 TTS 引擎</string>

@@ -4,7 +4,10 @@
     <string name="home_section_status">الحالة</string>
     <string name="home_section_tryout">تجربة</string>
     <string name="notification_catalog_refresh_title">جارٍ تحديث كتالوج النماذج</string>
+    <string name="notification_channel_microphone">الميكروفون</string>
     <string name="notification_channel_model_operations">تنزيلات النماذج</string>
+    <string name="notification_microphone_text">يستخدم برنامج نصي الميكروفون للتعرف على الكلام أو لكلمات التنبيه</string>
+    <string name="notification_microphone_title">جارٍ الاستماع</string>
     <string name="notification_model_download_title">جارٍ تنزيل %1$s</string>
     <string name="notification_model_import_title">جارٍ استيراد نموذج</string>
     <string name="plugin_description">التعرف على الكلام دون اتصال, واكتشاف كلمة التنبيه, واكتشاف النشاط الصوتي, وتحويل النص إلى كلام بالشبكات العصبية, مع إمكانية استخدامه كمحرك TTS للنظام</string>

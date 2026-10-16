@@ -1,13 +1,20 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.service
 
 import android.os.Bundle
+import android.os.Parcel
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CommercialUse
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscript
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.OptionSource
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechWarning
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceActivity
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.autojs.plugin.speech.api.SpeechLimits
 import org.autojs.plugin.speech.api.SpeechModelKeys
+import org.autojs.plugin.speech.api.SpeechResultKeys
 
 /**
  * Bundle encoding of the speech contract on the plugin side (`docs/dev/speech-plugin-protocol-v1.md`): every answer
@@ -28,7 +35,7 @@ internal object SpeechBundles {
         putString(SpeechContract.KEY_ERROR_MESSAGE, bounded(message ?: code))
     }
 
-    fun failure(error: ModelException): Bundle = failure(error.code, error.message)
+    fun failure(error: SpeechException): Bundle = failure(error.code, error.message)
 
     /** The exception a Binder call throws for [code] (decoded by the host's `SpeechErrorCodes.decode`). */
     fun thrown(code: String, message: String?): RuntimeException {
@@ -36,7 +43,7 @@ internal object SpeechBundles {
         return if (code == SpeechErrorCodes.INVALID_OPTIONS || code == SpeechErrorCodes.MODEL_MISSING) IllegalArgumentException(text) else IllegalStateException(text)
     }
 
-    fun thrown(error: ModelException): RuntimeException = thrown(error.code, error.message)
+    fun thrown(error: SpeechException): RuntimeException = thrown(error.code, error.message)
 
     /**
      * One model as `SpeechModelKeys`. The contract's `commercialUse` is a Boolean, so the catalog value `"unknown"`
@@ -73,5 +80,121 @@ internal object SpeechBundles {
         while (end > 0 && message.substring(0, end).toByteArray(Charsets.UTF_8).size > SpeechLimits.MAX_ERROR_MESSAGE_BYTES - 3) end--
         if (end > 0 && message[end - 1].isHighSurrogate()) end--
         return message.substring(0, end) + "..."
+    }
+
+    // Session events (ISpeechSessionCallback / ISpeechWakeCallback) and recognition answers (roadmap P3).
+
+    fun ready(sessionId: String, modelId: String, round: Int?): Bundle = answer {
+        putString(SpeechResultKeys.SESSION_ID, sessionId)
+        putString(SpeechResultKeys.MODEL_ID, modelId)
+        round?.let { putInt(SpeechResultKeys.ROUND, it) }
+    }
+
+    fun partial(text: String, segmentIndex: Int): Bundle = answer {
+        putString(SpeechResultKeys.TEXT, text)
+        putInt(SpeechResultKeys.SEGMENT_INDEX, segmentIndex)
+    }
+
+    fun utterance(utterance: Utterance): Bundle = answer { putUtterance(utterance, withIndex = true) }
+
+    fun activity(active: Boolean): Bundle = answer { putBoolean(SpeechResultKeys.ACTIVE, active) }
+
+    fun end(reason: String, text: String?, round: Int?): Bundle = answer {
+        putString(SpeechResultKeys.REASON, reason)
+        text?.let { putString(SpeechResultKeys.TEXT, it) }
+        round?.let { putInt(SpeechResultKeys.ROUND, it) }
+    }
+
+    fun wake(keyword: String, score: Float, timestampMillis: Long, round: Int?): Bundle = answer {
+        putString(SpeechResultKeys.KEYWORD, keyword)
+        putFloat(SpeechResultKeys.SCORE, score)
+        putLong(SpeechResultKeys.TIMESTAMP_MILLIS, timestampMillis)
+        round?.let { putInt(SpeechResultKeys.ROUND, it) }
+    }
+
+    fun snapshot(sessionId: String, state: String, modelId: String?, text: String): Bundle = answer {
+        putString(SpeechResultKeys.SESSION_ID, sessionId)
+        putString(SpeechResultKeys.STATE, state)
+        modelId?.let { putString(SpeechResultKeys.MODEL_ID, it) }
+        putString(SpeechResultKeys.TEXT, text)
+    }
+
+    /**
+     * A `recognizeFile` answer; when the segments would push it past `SpeechLimits.MAX_EVENT_BYTES` their texts are
+     * left out (the whole text stays) and a warning says so.
+     * zh-CN: `recognizeFile` 应答; 语音段会使其超过 `SpeechLimits.MAX_EVENT_BYTES` 时省略各段文本 (保留全文) 并给出警告.
+     */
+    fun transcript(result: FileTranscript): Bundle {
+        fun build(withSegmentText: Boolean, warnings: List<SpeechWarning>) = answer {
+            putString(SpeechResultKeys.TEXT, result.text)
+            putParcelableArrayList(SpeechResultKeys.SEGMENTS, ArrayList(result.segments.map { segment ->
+                Bundle().apply { putUtterance(if (withSegmentText) segment else segment.copy(text = ""), withIndex = false) }
+            }))
+            result.language?.let { putString(SpeechResultKeys.LANGUAGE, it) }
+            putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)
+            putString(SpeechResultKeys.MODEL_ID, result.modelId)
+            putParcelableArrayList(SpeechResultKeys.WARNINGS, ArrayList(warnings.map { problem(it.code, it.message) }))
+        }
+        val full = build(true, result.warnings)
+        if (parcelSize(full) <= SpeechLimits.MAX_EVENT_BYTES) return full
+        val notice = SpeechWarning(SpeechErrorCodes.LIMIT_EXCEEDED, "Segment texts were left out to keep the answer below ${SpeechLimits.MAX_EVENT_BYTES} bytes")
+        return build(false, result.warnings + notice)
+    }
+
+    fun voiceActivity(result: VoiceActivity): Bundle = answer {
+        putParcelableArrayList(SpeechResultKeys.SEGMENTS, ArrayList(result.segments.map { (start, end) ->
+            Bundle().apply {
+                putLong(SpeechResultKeys.START_MILLIS, start)
+                putLong(SpeechResultKeys.END_MILLIS, end)
+            }
+        }))
+        putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)
+    }
+
+    /** A warning or error Bundle (`errorCode`, `errorMessage`). zh-CN: 警告或错误 Bundle (`errorCode`, `errorMessage`). */
+    fun problem(code: String, message: String?): Bundle = answer {
+        putString(SpeechContract.KEY_ERROR_CODE, code)
+        putString(SpeechContract.KEY_ERROR_MESSAGE, bounded(message ?: code))
+    }
+
+    fun parcelSize(bundle: Bundle): Int {
+        val parcel = Parcel.obtain()
+        return try {
+            bundle.writeToParcel(parcel, 0)
+            parcel.dataSize()
+        } finally {
+            parcel.recycle()
+        }
+    }
+
+    private fun Bundle.putUtterance(utterance: Utterance, withIndex: Boolean) {
+        putString(SpeechResultKeys.TEXT, utterance.text)
+        if (withIndex) putInt(SpeechResultKeys.SEGMENT_INDEX, utterance.segmentIndex)
+        putLong(SpeechResultKeys.START_MILLIS, utterance.startMillis)
+        putLong(SpeechResultKeys.END_MILLIS, utterance.endMillis)
+        utterance.language?.let { putString(SpeechResultKeys.LANGUAGE, it) }
+        if (utterance.emotion != null || utterance.event != null) {
+            putBundle(SpeechResultKeys.TAGS, Bundle().apply {
+                utterance.emotion?.let { putString(SpeechResultKeys.TAG_EMOTION, it) }
+                utterance.event?.let { putString(SpeechResultKeys.TAG_EVENT, it) }
+            })
+        }
+    }
+}
+
+/**
+ * A request Bundle as [OptionSource]: nested Bundles and lists of Bundles are wrapped the same way.
+ * zh-CN: 作为 [OptionSource] 的请求 Bundle: 嵌套 Bundle 与 Bundle 列表同样包装.
+ */
+internal class BundleOptionSource(private val bundle: Bundle) : OptionSource {
+    override fun has(key: String): Boolean = bundle.containsKey(key)
+
+    override fun value(key: String): Any? {
+        @Suppress("DEPRECATION")
+        return when (val value = bundle.get(key)) {
+            is Bundle -> BundleOptionSource(value)
+            is List<*> -> value.map { item -> if (item is Bundle) BundleOptionSource(item) else item }
+            else -> value
+        }
     }
 }

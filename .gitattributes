@@ -36,3 +36,6 @@ app/src/main/assets/catalog/** -text
 app/src/test/resources/model-fixtures/** -text
 *.tar binary
 *.bz2 binary
+
+# Upstream data kept byte for byte (third_party/README.md)
+third_party/** -text

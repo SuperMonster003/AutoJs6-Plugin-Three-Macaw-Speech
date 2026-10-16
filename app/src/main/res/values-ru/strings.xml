@@ -4,7 +4,10 @@
     <string name="home_section_status">Состояние</string>
     <string name="home_section_tryout">Попробовать</string>
     <string name="notification_catalog_refresh_title">Обновление каталога моделей</string>
+    <string name="notification_channel_microphone">Микрофон</string>
     <string name="notification_channel_model_operations">Загрузка моделей</string>
+    <string name="notification_microphone_text">Скрипт использует микрофон для распознавания речи или слов активации</string>
+    <string name="notification_microphone_title">Идёт прослушивание</string>
     <string name="notification_model_download_title">Загрузка: %1$s</string>
     <string name="notification_model_import_title">Импорт модели</string>
     <string name="plugin_description">Офлайн-распознавание речи, обнаружение слов активации, определение речевой активности и нейросетевой синтез речи с регистрацией в качестве системного движка TTS</string>

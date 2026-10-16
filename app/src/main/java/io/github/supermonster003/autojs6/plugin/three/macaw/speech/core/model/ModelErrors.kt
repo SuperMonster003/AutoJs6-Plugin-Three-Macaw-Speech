@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 
 /**
@@ -7,11 +8,7 @@ import org.autojs.plugin.speech.api.SpeechErrorCodes
  * `SpeechErrorCodes`). Messages are English, as the protocol requires.
  * zh-CN: 模型或目录操作的失败, 带宿主展示给脚本的契约错误码 (路线图 D27, `SpeechErrorCodes`). 按协议要求, 信息为英文.
  */
-open class ModelException(val code: String, message: String, cause: Throwable? = null) : Exception(message, cause) {
-    init {
-        require(SpeechErrorCodes.isKnown(code)) { "Unknown speech error code: $code" }
-    }
-}
+open class ModelException(code: String, message: String, cause: Throwable? = null) : SpeechException(code, message, cause)
 
 /**
  * A catalog that is malformed, wrongly signed, rolled back or not ours; reported as `MODEL_CHECKSUM_MISMATCH`, the code

@@ -3,9 +3,10 @@
     <uses-permission android:name="org.autojs.permission.PLUGIN" />
 
     <!--
-        Roadmap D29: the plugin records audio itself (D6); the microphone foreground service only serves the standalone
-        tryout screen and the 1.1.0 assistant, scripts rely on the host binding with BIND_INCLUDE_CAPABILITIES (D22).
-        FOREGROUND_SERVICE_DATA_SYNC keeps model downloads alive (roadmap P2.3, ModelOperationService).
+        Roadmap D29: the plugin records audio itself (D6). The host binding with BIND_INCLUDE_CAPABILITIES (D22) lends it
+        the microphone while AutoJs6 may record; for the time after that, every microphone session of a script holds the
+        microphone foreground service MicrophoneService (appendix D Q5 (a), P3.1), as will the tryout screen and the
+        1.1.0 assistant. FOREGROUND_SERVICE_DATA_SYNC keeps model downloads alive (roadmap P2.3, ModelOperationService).
         INTERNET only downloads models and refreshes the signed catalog; POST_NOTIFICATIONS shows download progress.
         No storage permission: models live in private storage and imports go through the system file picker (D23).
     -->
@@ -86,6 +87,29 @@
             android:name=".service.ModelOperationService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- Microphone sessions of scripts (roadmap P3.1, appendix D Q5 (a)); internal, started when a session opens. -->
+        <service
+            android:name=".service.MicrophoneService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- API 34+: starts MicrophoneService while the plugin is visible for a moment (roadmap P3.1); internal. -->
+        <activity
+            android:name=".service.MicrophoneStartActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!-- The system dialog for RECORD_AUDIO that PERMISSION_DENIED names until the home screen of roadmap P5.1. -->
+        <activity
+            android:name=".service.MicrophonePermissionActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
     </application>
 
