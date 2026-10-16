@@ -1,0 +1,13 @@
+# sherpa-onnx Android runtime (roadmap D13, P0.2; appendix D Q2 decided (b) on 2026-10-16).
+# The official GitHub Release asset of tag v1.13.8 (commit 11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf, published 2026-09-10),
+#   Apache-2.0, bundling onnxruntime (MIT). Maven Central has no k2-fsa coordinate (com/k2fsa returns 404 and a search for
+#   g:com.k2fsa.sherpa.onnx finds nothing); JitPack's com.github.k2-fsa.sherpa-onnx:sherpa-onnx:v1.13.8 is a re-upload of
+#   this asset with the same SHA-256, but JitPack rebuilds on demand, so the file is staged here and pinned instead.
+#   See libs/README.md and docs/development/native-abi-report.md.
+format=1
+sherpa-onnx.file=sherpa-onnx-1.13.8.aar
+sherpa-onnx.version=1.13.8
+sherpa-onnx.sha256=633c24321e06b1fe79feafa03ea16cbc0f8a286641e2da3559bac91bdb13bd96
+sherpa-onnx.url=https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-1.13.8.aar
+sherpa-onnx.commit=11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf
+sherpa-onnx.license=Apache-2.0

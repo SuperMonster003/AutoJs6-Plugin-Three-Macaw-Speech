@@ -1,0 +1,17 @@
+# Voice activity detection assets (roadmap D5 / D10, P0.2), checked by app/build.gradle.kts during configuration.
+# silero-vad: the model the APK bundles, the sherpa-onnx asr-models release asset silero_vad_v5.onnx; byte-identical to
+#   files/silero_vad.onnx of snakers4/silero-vad tag v5.0 (Git blob d0ccd9d7fc1f98033c04b4a2b03ed0e07e842a13), MIT.
+# test-recording: the device test input only (androidTest assets, never in the plugin APK), the sherpa-onnx asr-models release
+#   asset test_silero_vad.wav (16 kHz mono PCM16, 60 s); byte-identical to tests/data/test.wav of snakers4/silero-vad
+#   (Git blob 0b1b64ecd9b316445e06cfd5b6b709b0e5fcf18f), MIT.
+format=1
+silero-vad.path=app/src/main/assets/vad/silero_vad_v5.onnx
+silero-vad.sha256=6b99cbfd39246b6706f98ec13c7c50c6b299181f2474fa05cbc8046acc274396
+silero-vad.url=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad_v5.onnx
+silero-vad.upstream=https://github.com/snakers4/silero-vad/blob/v5.0/files/silero_vad.onnx
+silero-vad.license=MIT
+test-recording.path=app/src/androidTest/assets/test_silero_vad.wav
+test-recording.sha256=89f17d9c94c4b31eb320f424628bcbc920abaddbee6e2760fd868bfb1d9a2e47
+test-recording.url=https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/test_silero_vad.wav
+test-recording.upstream=https://github.com/snakers4/silero-vad/blob/master/tests/data/test.wav
+test-recording.license=MIT
