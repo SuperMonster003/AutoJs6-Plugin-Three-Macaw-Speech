@@ -1,6 +1,6 @@
 # 3-Macaw Speech Roadmap
 
-更新日期: 2026-10-16
+更新日期: 2026-10-17
 
 本文是 `AutoJs6-Plugin-Three-Macaw-Speech` (显示名 `3-Macaw Speech`; 基于 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 为 AutoJs6 脚本提供离线语音识别, 语音活动检测, 唤醒词检测与神经网络语音合成, 并把合成能力注册为 Android 系统 TTS 引擎; 脚本侧挂载为全局模块 `speech`, 有独立启动入口) 的可执行状态表.
 以 2026-10-16 的宿主本地代码快照 (`AutoJs6 master@33a1514b74`, `VERSION_NAME=6.8.0` 尚未发布, `VERSION_BUILD=3796` + `VERSION_CODE_OFFSET=1652`, 即 versionCode 5448; 宿主 `tts` 模块已有平台无关的 `TtsBackend` 边界与引擎查询 API), 平台版本插件 `1.9.1`, sherpa-onnx `v1.13.8` (2026-09-10, Apache-2.0), `AutoJs6-Shared-Assets main` (ace-fonts v4 已发布, codegen-models 待发布 v1) 为起点, 每个条目均可独立 Check 并落地, 后续会话按阶段逐步推进.
@@ -41,7 +41,7 @@
 
 ## 2. 派生技术决策
 
-D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定.
+D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定.
 
 | 编号 | 决策 | 含义 | 推翻点 |
 | --- | --- | --- | --- |
@@ -67,12 +67,19 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D32 | 版本与许可 | 插件 `VERSION_NAME` 从 1.0.0 开始, `VERSION_BUILD` = 提交数 + 1; 仓库许可 MPL-2.0 (与官方插件一致), `THIRD_PARTY_NOTICES.md` 记录 sherpa-onnx (Apache-2.0), onnxruntime (MIT), silero VAD (MIT), Compose / AndroidX (Apache-2.0), 宿主 AAR (MPL-2.0); 模型许可逐条写在目录中, 不写在仓库许可里. 2026-10-16 许可复核 (维护者选推荐项): 官方 AAR 4 个 ABI 的 `libsherpa-onnx-jni.so` 静态链接 eSpeak NG 与 UCD Tools (GPL-3.0-or-later), 仍保留官方 AAR; 插件源码保持 MPL-2.0, APK 整体按 GPL-3.0-or-later 传播 (MPL-2.0 第 3.3 节允许); `THIRD_PARTY_NOTICES.md` 列出 JNI 库内全部 11 个静态组件, GPL 小节与 Unicode 数据小节; 对应源码随每个 Release 附件提供 (P6.4), GPL 全文与声明进关于页 (P5.2), sherpa-onnx 移除 eSpeak NG 后迁移 (附录 D Q9). 证据见 P0.1. | P0.1 |
 | D33 | 首页结构 | 单页: 顶栏右侧 "试听试说" 与 "设置" 两个图标; 状态卡 4 行 (运行时版本, 已装模型数与目录版本, 麦克风权限 + 一键申请, 系统 TTS 引擎是否选中 + 打开系统设置) 下方带 "试听试说" 按钮; 再往下按 识别 / 唤醒词 / 合成 / VAD 4 组列出目录模型与导入的模型. 与 3-Maple Image 的单页 + 顶栏动作一致; 未采用底部导航与 "首页只放入口". | P5.1 (已定) |
 | D34 | 界面下载与计量网络 (附录 D Q7 (a)) | 计量网络上点下载时弹确认框, 写明下载大小, 框内有 "不再询问" 复选框; 设置页 "资源" 组的 "允许计量网络下载" 开关可改回. 离线时下载按钮不可用并显示离线提示, 导入仍可用. 判断离线与计量用 `ConnectivityManager`, 为此追加 `ACCESS_NETWORK_STATE` (D29). 脚本 `installModel` 不受影响 (P2.3). | P5.1 (已定) |
-| D35 | 识别与合成设置的作用范围 | 端点灵敏度, VAD 开关, 说话人, 语速与按语言的默认语音只作用于试听试说页与系统 TTS 引擎 (引擎使用说话人与按语言的默认语音, 语速由请求决定); 脚本始终用协议默认值 (`silenceEndMillis` 1200 ms, VAD 开, 模型默认说话人, 语速 1.0), 行为与文档一致, 不随设备上的设置变化. 默认模型本来就是全局的 (`setDefaultModel`); 模型空闲释放时间属于资源管理, 对脚本同样生效 (D39). | P5.2 (已定) |
+| D35 | 识别与合成设置的作用范围 | 端点灵敏度, VAD 开关, 说话人, 语速与按语言的默认语音只作用于试听试说页与系统 TTS 引擎 (引擎使用说话人与按语言的默认语音, 语速由请求决定); 脚本始终用协议默认值 (`silenceEndMillis` 1200 ms, VAD 开, 模型默认说话人, 语速 1.0), 行为与文档一致, 不随设备上的设置变化. 默认模型本来就是全局的 (`setDefaultModel`); 模型空闲释放时间属于资源管理, 对脚本同样生效 (D39). P5.6 起端点灵敏度与 VAD 开关也作用于系统语音输入 (D44). | P5.2 (已定) |
 | D36 | 更新检查 | 沿用 3-Stone AI: 打开首页时自动检查, 每 12 小时最多一次; 连接 15 s / 读取 20 s / 总 30 s 超时, 手动检查可取消; 发现新版对话框: 查看发行版 / 稍后 / Neutral 发行历史, 内容区 "忽略此版本" 复选框; 设置页有自动检查开关与 "管理已忽略的版本". 数据源 GitHub `releases/latest`; 仓库尚无 Release (HTTP 404) 时手动检查显示 "尚未发布", 自动检查不打扰. | P5.4 (已定) |
 | D37 | 试听试说的 TTS 播放 | 复用 `synthesizeToFile` 写缓存 WAV, 合成时显示按句进度, 完成后 `MediaPlayer` 播放; "保存到文件" 用系统文件选择器把同一份 WAV 复制出去, 播放与保存的声音完全一致; 文本上限 500 字. 未采用经系统引擎边合成边播 (保存要再合成一遍). | P5.3 (已定) |
 | D38 | 界面导入本地模型 | 来源为文件 (tar / tar.bz2 / zip, `OpenDocument` 复制到 `cacheDir/imports`) 或 SAF 文件夹 (`OpenDocumentTree`, `DocumentTree` 适配 `ImportTree`). 先按目录 `files[]` 的大小与 SHA-256 自动匹配, 命中即以目录身份登记, 需要时先弹 D11 许可提示; 不匹配时 (`NoCatalogMatchException`, 错误码 `INVALID_OPTIONS`) 弹表单填 种类 / 模型类型 / 名称 / 语言 / ID, 用同一个文件重试. | P5.1 (已定) |
 | D39 | 设置预设 | 端点灵敏度 3 档: 灵敏 600 ms / 标准 1200 ms (协议默认) / 宽松 2000 ms; 模型空闲释放 4 档: 1 / 5 (默认, D30) / 15 / 30 分钟, 写入 `EngineCache.idleMillis` 后立即生效; 语速 0.5 - 2.0, 步长 0.1. 存储值超出预设时按 `SpeechPreferencePolicy` 夹取. 未采用 4 档端点与 "不释放". | P5.2 (已定) |
 | D40 | 关于页的许可全文 | GPL-3.0 全文 (`https://www.gnu.org/licenses/gpl-3.0.txt`) 与 Unicode 使用条款 (`csukuangfj/espeak-ng` 提交 `ed530aa` 的 `src/ucd-tools/COPYING.UCD`) 2026-10-16 经维护者同意下载入库 `third_party/licenses/`, SHA-256 与来源记入 `locks/legal-texts.lock`; 构建任务 `generateLegalAssets` 校验锁文件后与 `LICENSE`, `THIRD_PARTY_NOTICES.md` 一起复制进生成的 `assets/legal/`, `src/main/assets` 不留副本 (D32). | P5.2 (已定) |
+| D41 | 系统语音输入入口: 1.0.0 的 `ACTION_RECOGNIZE_SPEECH` Activity | 随 1.0.0 发布 (P5.6). 插件导出 `ui.voice.VoiceInputActivity`, 应答 `android.speech.action.RECOGNIZE_SPEECH` + DEFAULT, 不受插件权限保护 (任何应用都可调用, 例如 3-Stove Agent 的麦克风按钮), 只经 `RecognizerIntent.EXTRA_RESULTS` 返回识别文字: 不返回音频, 不改模型或设置, 不启动下载; 识别经进程内 `SpeechPluginBinder.openSession` 运行 (与试听试说页同一路径, 共用唯一的麦克风, D16), 识别文字不写日志 (附录 D Q8 (a)). 不实现 `RecognitionService` (SpeechRecognizer API: 用户需在系统设置里选默认识别服务, API 31+ 还要按调用方 AttributionSource 校验麦克风权限), 列入 P7. 不新增权限 (D29), 不改宿主契约, `speechFeatures` 不变. | P5.6 (已定) |
+| D42 | 语音输入界面: 底部弹层 | 透明窗口 + 半透明遮罩 + 底部卡片, 调用方界面仍可见: 标题 (调用方的 `EXTRA_PROMPT`, 否则默认提示), 麦克风图标随语音活动脉动 (契约没有电平事件, 按 VAD 事件), partial 灰字实时显示, "停止" (提前结束并返回已识别的文字) 与 "取消" 两个按钮; 点遮罩或返回键等同取消. 外观跟随插件 / 宿主 (D26), 收音期间不因外观变化重建. | P5.6 (已定) |
+| D43 | 默认启用 + 设置开关 | 组件默认启用; 设置页 "识别" 组新增 "作为系统语音输入" 开关, 关闭即以 `DONT_KILL_APP` 禁用该组件 (PackageManager 组件状态即设置本身, 不另存偏好, 与启动器 alias 同法). 设备已有 Google 等识别 Activity 时调用方会先弹系统选择器 (2026-10-16 实测 Sony XQ-AT72 / XQ-DQ72 已有 Google 的两个处理者, G8441 没有), 不想看到选择器的用户可关闭开关. | P5.6 (已定) |
+| D44 | 一次输入的结束与时长 | 首句 `final` 即以 `RESULT_OK` 返回 (静音端点, 或点 "停止" 后会话 `finish` 给出的末句); 静音时长取设置页端点灵敏度 (600 / 1200 / 2000 ms, D39), 调用方给 `EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS` 时优先 (夹到 300 - 5000 ms); VAD 开关取设置页 (D35 的作用范围随之扩展); 开始收音后 8 s 内没有语音返回 `RESULT_NO_MATCH`; 单句上限 60 s, 到点按 "停止" 处理. 结果为空同样返回 `RESULT_NO_MATCH`. | P5.6 (已定) |
+| D45 | `EXTRA_LANGUAGE` 只用于选模型 | 默认识别模型的语言覆盖该语言 (按主语言子标签比较, `zh-CN` / `zh-Hans-CN` 匹配 `zh`) 就用它, 否则取覆盖它的已装识别模型 (目录推荐优先, 再按模型 ID), 都不覆盖仍用默认模型; SenseVoice 保持自动识别语种 (不传 `language`), 中文界面说英文也能识别. 没有 `EXTRA_LANGUAGE` 时用默认模型. | P5.6 (已定) |
+| D46 | 其他 `RecognizerIntent` extra: 最小集合 + 偏置词 | `EXTRA_PROMPT` 显示为弹层标题 (截断到 200 字符); `EXTRA_MAX_RESULTS` 接受, 只返回 1 条 (模型只有一个假设), 不返回 `EXTRA_CONFIDENCE_SCORES`; `EXTRA_PARTIAL_RESULTS` 忽略 (只对 SpeechRecognizer 有意义, partial 在弹层内显示); `EXTRA_BIASING_STRINGS` (API 33+) 映射为热词 (去空白与重复, 截到 `SpeechLimits.MAX_HOTWORDS` 200 条, 每条至多 `MAX_TOKEN_CHARS` 128 字符), 只对带 `bpe.vocab` 的 transducer 模型生效 (D17), 其他模型不传, 不产生 warning; `EXTRA_RESULTS_PENDINGINTENT`, `EXTRA_GET_AUDIO`, `EXTRA_LANGUAGE_MODEL`, `EXTRA_PREFER_OFFLINE` 等忽略. 维护者在 "最小集合" 之外加选了偏置词. | P5.6 (已定) |
+| D47 | 异常时弹层内引导 | 未授权麦克风: 弹层内直接弹系统权限对话框, 授权后立即开始; 拒绝后显示说明 + "打开应用设置" (回到弹层时重新检查). 没有识别模型: 显示说明 + "安装模型" (打开首页识别组). 麦克风被脚本占用 (`SESSION_BUSY`): 显示说明. 返回码: 用户取消 (取消按钮, 遮罩, 返回键) 为 `RESULT_CANCELED`; 无语音或空结果为 `RESULT_NO_MATCH`; 显示引导后关闭弹层时按原因返回: 权限被拒, 麦克风被占用或录音失败为 `RESULT_AUDIO_ERROR`, 没有模型, 模型加载或引擎失败为 `RESULT_SERVER_ERROR` ("安装模型" 同样以 `RESULT_SERVER_ERROR` 结束弹层). 未采用 "立即返回错误码" 与 "无模型时禁用入口". | P5.6 (已定) |
 
 ---
 
@@ -83,12 +90,14 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 - 脚本 API `speech` 全集 (附录 B) 与 10 种语言的文档, d.ts, 离线文档, Ace 声明同步.
 - 流式与文件识别, VAD, 唤醒词, 神经网络 TTS (系统引擎 + Binder), 模型目录与下载 / 导入 / 管理.
 - 独立界面: 首页 (模型管理), 设置, 试听试说, 发行历史, 更新检查.
+- 系统语音输入入口: `ACTION_RECOGNIZE_SPEECH` 底部弹层, 其他应用 (如 3-Stove Agent) 的麦克风按钮可用离线识别 (P5.6, D41-D47).
 - 宿主契约 `speech-api`, 插件中心注册, 安装向导条目, 官方索引登记; Shared-Assets `speech-models` 类别与 `speech-models-v1` 发布.
 - 宿主样例脚本: 听写到文件, 语音命令交给 `ai.agent.run`, 唤醒词 + 听写, TTS 播报.
 
 非目标 (不做或排到 1.1.0 之后, 评估记录见附录 G):
 
 - 内置语音助手 (常驻唤醒, 悬浮麦克风, 直调 3-Stove Agent) (1.1.0, P7).
+- 系统识别服务 `RecognitionService` (SpeechRecognizer API) (P7 候选, D41).
 - 在线识别 / 合成服务对接 (云 ASR / TTS API).
 - 标点恢复模型, 说话人识别 / 分离, 语种识别, 音频事件标签 (1.1.0 候选).
 - 非 WAV 音频解码 (MP3 / AAC / OGG), 系统音频 / 通话录音抓取.
@@ -195,6 +204,7 @@ ttsengine/
   ThreeMacawSpeechTtsEngineService TextToSpeechService (D19), CheckVoiceDataActivity, GetSampleTextActivity, TtsSettingsActivity (P5.2 之前的设置占位)
 ui/
   HomeActivity, HomeScreen, ModelListScreen, TryoutScreen (试听试说), SettingsActivity, ReleaseHistoryActivity, theme/
+  voice/VoiceInputActivity          ACTION_RECOGNIZE_SPEECH 底部弹层 (P5.6), VoiceInputRequest (extra 解析与选模型, 纯 JVM)
 data/
   PreferencesStore                 DataStore: 默认模型, 释放时间, 端点参数, 外观四项
 ```
@@ -264,7 +274,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P2 | 资产 + 1.0.0 | Shared-Assets `speech-models` 类别, 精选目录审核, 插件模型存储与目录刷新, `speech-models-v1` 发布 | 已完成 (2026-10-16; P2.5 Release `speech-models-v1` 已发布) |
 | P3 | 1.0.0 | 识别, VAD 与唤醒词: 采集, 流式会话, 文件识别, 唤醒会话, 设备矩阵与性能基线 | 已完成 (2026-10-16 提交 `f630d71`; 宿主 `allowActivityStarts` 与协议文档同日完成, 宿主本地提交 `7bf397c71` / `8943a55ea`, API 35 后台与熄屏有声); 剩余: 16 KB 页设备未执行 |
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 已完成 (2026-10-16 提交 `17771c1`, 设备 API 28 / 33 / 35); 剩余: P4.3 宿主条目的缺口 (无插件时 `speech.speak` 的错误码, `warnings` 未转交, 说话人名字与默认说话人), TalkBack / 随选朗读未试 |
-| P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标 | 已完成 (2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
+| P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标, 系统语音输入入口 | 已完成 (2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33; P5.6 系统语音输入 (D41-D47) 提交 `fed02d7`, Sony G8441 / XQ-AT72 / XQ-DQ72 与 API 24 / 36.1 AVD, 3-Stove Agent 实测通过); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
 | P6 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
 | P7 | 1.1.0 | 候选: 内置语音助手, 标点恢复, 说话人识别, 非 WAV 解码, MCP 工具, 更多语言 | 未开始 |
 
@@ -477,6 +487,20 @@ P0 (骨架 + AAR)
 - [x] (插件) 维护者提供源图 -> `.python/icons/three-macaw-ic-launcher-light.png` / `-dark.png` -> Icon Studio 配方 (几何与颜色按黑白规范) -> 重算资源 -> `--check` 确定性通过. 证据: 与本条记录同一提交. 源图是维护者 2026-10-16 经两轮比较选定的定稿 (浅色版按亮度分段色调映射, 不是反色; 暗色版提亮声波), 字节原样复制; 两张均为 830 x 830 RGBA, alpha 逐像素相同, 全部像素 R=G=B, 透明占 64.3%, 不透明像素灰阶浅色 39 - 78 (40 级), 暗色 134 - 253 (100 级). 内容地址 `726b2b45...` (light, 亮色主题) 与 `da03ee67...` (dark, 暗色主题) 放入 `.icons/assets/`; 配方 `baseline` 仍引用 P0 占位图, 两份占位资产按工作台应用时的做法保留. 生成内核仍是仓库自带的 1.3.0 `icon_studio_runtime.py` (未升级), 未使用工作台. 几何沿用 Optical geometry v1 默认值 (normalized, scale 1.0, 偏移 0 / 0; 原值并非为占位图调整): 视觉尺寸 V = 0.5206 (目标 0.52), 列表圆最大半径 190.2 / 216 px, 自适应前景最大半径 126.6 / 132 px, 无错误与提醒; 着墨质心偏右 8.1 px 属鹦鹉身体的自然重心, 按规范 4.2 不强制归零. 色调由 `mask` 改为 `grayscale` (锚点字段仍为 `#272727` / `#d8d8d8`, 底色 `#fafafa` / `#212121`): `mask` 会把翅膀, 喙与声波的灰阶层次压成单一颜色, 按黑白规范第 2 节 (不把灰阶原稿涂成纯色) 与 3-Stamp Mail 的先例保留灰阶; 输出亮色灰阶 37 - 82, 暗色 137 - 255, 两主题 alpha 相同. `py .python/generate_icon_studio.py` 重写 9 张 PNG, `--check` 校验 17 项 (16 项输出 + Manifest 图标引用) 通过, 再次生成无字节变化. 亮暗底对照图 (插件中心与系统圆形 36 / 48 / 64 / 96 / 432 px, 圆角方形, `mask` 对比, 15 个 Three 插件 48 / 64 px 横向比较) 已交维护者审阅; 合成图不等于真机验收. 10 种语言 changelog 删除 "当前图标为临时图案" 提示, README 与插件中心说明的同类句子一并删除后重新生成. 偏差: 原计划的 "24 项资源 + 四个启动器 alias" 依赖首个界面的启动器入口, 移到下一条.
 - [x] (插件) 启动器资源与四个 alias: P5.1 的 `HomeActivity` 加入 MAIN / LAUNCHER alias 时, 配方改为 `launcher=true` 并补充 `ic_launcher_system*` 输出与 auto XML (从同一配方渲染, 不另调几何; 自适应前景已满足 33 dp 安全圆), `--check` 确定性通过; 索引 `catalog-icons` 登记图稿 (P6.4). 证据: 提交 `3464346`; 配方 `launcher=true`, 仓库自带的 Icon Studio 1.3.0 内核从同一几何渲染 `ic_launcher_system` / `_light` / `_auto`, 前景, `ic_launcher_monochrome` 与固定底色的自适应 XML, Auto 位图与自适应文件作为内容地址原件 (`.icons/assets/` 新增 4 份), 底色写入 `values/launcher_icons.xml`; `py .python/generate_icon_studio.py --check` 校验 28 项通过, 再次生成无字节变化. Manifest 四个 alias `.launcher.{AdaptiveLight,AdaptiveDark,AdaptiveAuto,Transparent}IconAlias` 指向 `HomeActivity`, 默认启用 Auto; `LauncherIcons` 切换, `LauncherIconUpdateReceiver` 在更新后修复. E3 `ThreeMacawSpeechContractTest#theLauncherOpensTheHomeScreenThroughOneAlias` 在 API 24 / 35 AVD 通过 (只有一个 alias 启用, 启动器 Intent 解析到首页), `ManifestContractTest` 审查 alias 与图标引用. 未执行: 真实桌面上切换图标后的显示 (维护者). 索引 `catalog-icons` 登记留在 P6.4 (R5).
 
+### P5.6 系统语音输入入口 (D41-D47)
+
+背景: 3-Stove Agent 的语音输入发出 `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` (`ui/SpeechInput.kt`), 只有设备上有能处理它的 Activity 时才显示麦克风按钮; P5 之前本插件只注册了系统 TTS 引擎, 没有识别入口, Stove 因此用不到 Macaw 的离线识别 (维护者 2026-10-16 询问两者联动).
+
+- [x] (插件) `ui/voice/VoiceInputActivity` (导出, 无插件权限, `ACTION_RECOGNIZE_SPEECH` + DEFAULT) 与纯 JVM 的 `VoiceInputPolicy` (extra 解析, 选模型, 返回码): 底部弹层 (D42), 首句即返回与时长 (D44), 选模型 (D45), extras (D46), 弹层内引导与返回码 (D47); 识别复用试听试说页的进程内 `SpeechPluginBinder` 听写路径; 设置页 "识别" 组的 "作为系统语音输入" 开关 (D43); 10 种语言文案; `ManifestContractTest` 与设备 `ThreeMacawSpeechContractTest` 的导出审查; `AGENTS.md` 的界面说明. 证据: 提交 `fed02d7`; `ui/voice/VoiceInputActivity` (透明窗口主题 `Theme.ThreeMacawSpeech.VoiceInput` 与 `StandaloneActivity.translucentWindow`; 底部卡片: 提示, 随 VAD 脉动的麦克风, partial 灰字, 停止与取消; 四种引导: 麦克风权限, 无识别模型, 麦克风被占用, 识别失败; 留在调用方任务中, `excludeFromRecents`, 收音期间不因外观变化重建, `onStop` 时取消), `VoiceInputController` (进程内 `SpeechPluginBinder.openSession`: 设置页的 VAD 与端点, `timeoutMillis` 8000, `maxDurationMillis` 60000, 不传 `language`, 热词只给带 `bpe.vocab` 的 transducer, 第一个非空 final 即完成, 识别文字不写日志), `VoiceInputPolicy` (纯 JVM 规则), `VoiceInputComponent` (开关即组件状态, 启用时恢复 Manifest 默认值). 10 种语言新增 20 个文案 (阿拉伯语中的品牌名加 FSI / PDI), `settings_endpoint_message` 与 `settings_scope_note` 改为包含系统语音输入; changelog 1.0.0 新增一条 feature, README 新增功能, 安全条目与常见问题各一条 (10 种语言, 重新生成, `--check` 通过); `.python/device_ui_run.py voice` 与 `.python/device_stove_voice.py` (E4); `SpeechModelSetupDeviceTest` 新增 `-e macawModelIds` 以便给新 AVD 只装指定模型. 偏差: 契约没有电平事件, 麦克风按 VAD 状态脉动 (D42 已写明); 录音失败与引擎失败在契约中同为 `ENGINE_FAILED`, 按会话是否已 `ready` (麦克风已启动) 分为 `RESULT_AUDIO_ERROR` 与 `RESULT_SERVER_ERROR`; 偏置词中超过 128 字符的条目整条丢弃而不截断 (截断后是另一个词), `/` 改为空格; 空的 final (噪声) 不结束输入, 继续收音直到超时. 不新增权限, 宿主契约与 `speechFeatures` 不变.
+- [x] (测试) E2: `VoiceInputPolicyTest` (选模型, 静音时长夹取, 偏置词截断, 提示截断, 返回码映射); E3: `VoiceInputDeviceTest` 以 `startActivityForResult` 发 `ACTION_RECOGNIZE_SPEECH`, 测试录音经扬声器播放, 核对 `EXTRA_RESULTS` 与 CER, 另测取消与无语音; 设置开关切换组件状态. 证据: E2 `VoiceInputPolicyTest` 8 项, `ManifestContractTest` 新增 1 项 (共 14 项), 单元测试共 230 项通过; `lintDebug` 通过且无新代码的警告. E3 2026-10-16: `ThreeMacawSpeechContractTest` 7/7 (新增 `theVoiceInputAnswersRecognizeSpeechUntilTheSettingTurnsItOff`: 打开时本包的 `RECOGNIZE_SPEECH` 恰好解析到弹层, 关闭开关后解析为空, 事后恢复; 导出审查把弹层列为无权限组件) 在 API 24 AVD (emulator-5600) 与 Sony XQ-DQ72 (QV770340J7, API 33) 通过. `VoiceInputDeviceTest` (`py .python/device_ui_run.py voice <serial>`; 测试录音 `en.wav` 经手机扬声器以 70% 媒体音量播放, 事后还原) 在 XQ-DQ72 (API 33) 与 XQ-AT72 (QV710AF65F, API 31) 各 4/4: 请求带 `EXTRA_LANGUAGE=zh-CN`, `EXTRA_MAX_RESULTS=5`, `EXTRA_PARTIAL_RESULTS`, 偏置词与提示, 默认模型 SenseVoice 自动识别英文录音, `EXTRA_RESULTS` 恰好 1 条, 107 字符, CER 0.000, 录音结束后 946 / 1101 ms 返回, 收音中显示 "正在收音"; 说话 3.5 s 时点停止, 以 `RESULT_OK` 返回已听到的 55 / 49 字符; 取消为 `RESULT_CANCELED`; 不说话 8.3 / 8.4 s 后为 `RESULT_NO_MATCH`; 脚本会话占用麦克风时显示占用引导, 关闭得 `RESULT_AUDIO_ERROR`; 每项之后脚本会话都能立即打开 (麦克风已释放). API 36.1 16 KB AVD (本会话以只读方式启动的 emulator-5606, 装 `asr.zipformer-streaming.en.2023-06-26.int8`, 以 `pm grant` 授予麦克风): 该 AVD 上 Compose 测试规则的 Espresso 调用 API 36 已删除的 `InputManager.getInstance`, instrumentation 无法运行 (测试库问题), 改以 `am start` 核对: 打开会话时透明 `MicrophoneStartActivity` 在新任务中短暂置顶后结束, 弹层只 pause 不 stop, `MicrophoneService` 以 microphone 类型在前台, 静音 8 s 后 `RESULT_NO_MATCH`, 返回键为 `RESULT_CANCELED` 且服务随即结束. 截图 `.bak/visual/1.0.0/<serial>/voice-*.png` (不入库) 由本会话审阅. 未执行: 未授权时的系统权限对话框与 "打开应用设置" 路径 (需维护者在手机上操作), 无模型引导的真机截图 (映射由 JVM 覆盖), 偏置词对 transducer 识别效果的度量 (只验证了请求被接受; 两台 Sony 的默认模型为 SenseVoice, 偏置词被丢弃), API 34+ 真机.
+- [x] (测试) E4: Sony 真机上 3-Stove Agent 设置里的 "启用语音输入" 可用, 任务台麦克风按钮经本插件识别并把文字填入目标输入框; 手机上的权限对话框与系统选择器由维护者操作. 证据: 2026-10-16 `py .python/device_stove_voice.py BH900ASK9E`, Sony G8441 (API 28, 宿主 5456, 3-Stove Agent 1.3.0 versionCode 182): 装新版插件前设备上没有任何 `RECOGNIZE_SPEECH` 处理者, 之后只有本插件的弹层一个; Stove 设置的 "Enable voice input" 显示 "可用" 的说明 (而不是 "没有语音识别应用"), 任务台出现麦克风按钮; 按下后弹出本插件弹层 (G8441 上模型加载约 3 s), AutoJs6 脚本延时经扬声器播放 `en.wav`, 弹层以 `RESULT_OK` 返回 105 字符并回到 Stove, 目标输入框 105 字符, CER 0.069 (扬声器起播时截掉首词的一部分). 截图 `.bak/visual/1.0.0/BH900ASK9E/stove-voice-{sheet,result}.png` 由本会话审阅. 脚本只点 Stove 的普通按钮 (麦克风, 菜单, 设置), 不点任何权限对话框或选择器. 未执行: XQ-AT72 上同时有 Google 的识别 Activity, Stove 的按钮会先弹系统选择器, 需维护者在手机上选择 3-Macaw Speech.
+
+P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话处理):
+
+- (3-Stove Agent) 设置说明 `settings_voice_unavailable` 只建议安装 Google 等识别应用, 可补充 "安装 3-Macaw Speech 并下载识别模型即可离线识别" (10 种语言); `settings_voice_note` 的 "本插件不录音" 仍然准确.
+- (3-Stove Agent) 设备上有多个识别应用时 Android 每次弹选择器 (可勾 "始终"); Stove 若想默认用离线识别, 可在 3-Macaw Speech 的弹层可解析时对 `RecognizerIntent` 设 `setPackage`, 需 Stove 自己的设置项与评审.
+- (文档, P6.1) `speech.md` 或插件页加 "系统语音输入" 小节 (其他应用经 `ACTION_RECOGNIZE_SPEECH` 使用离线识别, 设置开关, 返回码); 宿主代码无需改动.
+
 ---
 
 ## P6: 文档, 声明, 四仓库同步, 样例与发布
@@ -513,6 +537,7 @@ P0 (骨架 + AAR)
 | 说话人识别 / 验证 | 3D-Speaker 模型, `speech.speaker.*` (注册, 比对), 用于 "只听主人" | 隐私文案 |
 | 说话人分离, 语种识别, 音频事件标签 | 上游已有模型与 API | 需求验证 |
 | 非 WAV 解码 | `MediaCodec` 解码 MP3 / AAC / OGG 为 PCM | D15 推翻 |
+| 系统识别服务 (D41) | 导出 `android.speech.RecognitionService`, 让使用 `SpeechRecognizer` API 的应用 (partial 回调, 连续识别) 也能用离线识别; 用户需在系统设置里选默认识别服务, API 31+ 按调用方 `AttributionSource` 校验麦克风权限并归属数据 | P5.6 稳定; 系统设置入口在各 ROM 上的可达性 |
 | MCP 工具 | 经 `plugin-tool-api` 暴露 "听一句话" / "朗读" 工具给 MCP Server 与 Agent | 宿主 plugin-tool 发现落地 |
 | 更多语言模型 | 日 / 韩 / 粤 (SenseVoice 已含), 俄 / 法 / 西 / 阿 流式模型, 多语 TTS (piper 各语种) | 目录 v2 审核 |
 | NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型 | 上游稳定性 |
