@@ -66,7 +66,7 @@
 
 ******
 
-1. 將 AutoJs6 升級到內部版本號 5448 (6.8.0) 或更高版本.
+1. 將 AutoJs6 升級到內部版本號 5451 (6.8.0) 或更高版本.
 2. 從 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) 下載與裝置 ABI 對應的 APK (不確定時選擇 `universal`) 並安裝, 然後在 AutoJs6 的插件中心授權並啟用.
 3. 打開插件介面授予咪高峰權限並下載需要的模型, 然後在腳本中使用 `speech` 模組.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/16_
 
 - `提示` 開發預覽: 插件可以被 AutoJs6 識別並載入語音運行時, 語音識別, 喚醒詞, 語音合成, 模型下載, 插件介面與 speech 腳本模組尚未交付
-- `提示` 需要 AutoJs6 6.8.0 (5448) 或更高版本 (準確的最低版本號待宿主側改動落地後回填)
+- `提示` 需要 AutoJs6 6.8.0 (5451) 或更高版本 (準確的最低版本號待宿主側改動落地後回填)
 - `提示` 目前圖標為臨時圖案, 正式圖標有待替換
 - `新增` 插件骨架: Wake 啟動協議, 插件中心身份服務與語音能力服務
 - `新增` 內置 sherpa-onnx 1.13.8 語音運行時與 silero VAD v5 語音活動偵測模型, 按 4 種 ABI 分別提供安裝套件

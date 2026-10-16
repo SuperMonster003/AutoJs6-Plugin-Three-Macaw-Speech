@@ -66,7 +66,7 @@ El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo 
 
 ******
 
-1. Actualice AutoJs6 a la versión interna 5448 (6.8.0) o posterior.
+1. Actualice AutoJs6 a la versión interna 5451 (6.8.0) o posterior.
 2. Descargue desde [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) el APK que corresponda a la ABI del dispositivo (elija `universal` si tiene dudas) e instálelo; después autorícelo y actívelo en el centro de complementos de AutoJs6.
 3. Abra la pantalla del complemento para conceder el permiso del micrófono y descargar los modelos necesarios; después use el módulo `speech` en los scripts.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 _2026/10/16_
 
 - `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz; el reconocimiento de voz, las palabras de activación, la síntesis de voz, la descarga de modelos, las pantallas del complemento y el módulo de script speech aún no están disponibles
-- `Aviso` Requiere AutoJs6 6.8.0 (5448) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
+- `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
 - `Aviso` El icono actual es provisional y se sustituirá
 - `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 - `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI

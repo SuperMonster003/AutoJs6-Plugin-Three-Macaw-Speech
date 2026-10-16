@@ -66,7 +66,7 @@ Le plugin est un APK installé séparément. Les scripts AutoJs6 l'utilisent via
 
 ******
 
-1. Mettez à jour AutoJs6 vers la version interne 5448 (6.8.0) ou ultérieure.
+1. Mettez à jour AutoJs6 vers la version interne 5451 (6.8.0) ou ultérieure.
 2. Téléchargez depuis [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) l'APK correspondant à l'ABI de l'appareil (choisissez `universal` en cas de doute) et installez-le, puis autorisez-le et activez-le dans le centre des plugins d'AutoJs6.
 3. Ouvrez l'écran du plugin pour accorder l'autorisation du microphone et télécharger les modèles nécessaires, puis utilisez le module `speech` dans vos scripts.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ Les plans, décisions de conception et l'avancement sont suivis sous forme de li
 _2026/10/16_
 
 - `Note` Préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal; la reconnaissance vocale, les mots de réveil, la synthèse vocale, le téléchargement des modèles, les écrans du plugin et le module de script speech ne sont pas encore livrés
-- `Note` Nécessite AutoJs6 6.8.0 (5448) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)
+- `Note` Nécessite AutoJs6 6.8.0 (5451) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)
 - `Note` L'icône actuelle est provisoire et sera remplacée
 - `Fonctionnalité` Squelette du plugin: protocole d'activation Wake, service d'identité du centre des plugins et service de capacité vocale
 - `Fonctionnalité` Moteur vocal sherpa-onnx 1.13.8 et modèle de détection d'activité vocale silero VAD v5 intégrés, avec un paquet par ABI pour 4 ABI

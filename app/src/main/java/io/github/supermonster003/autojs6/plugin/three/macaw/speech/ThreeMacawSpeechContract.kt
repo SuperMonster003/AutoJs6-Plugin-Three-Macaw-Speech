@@ -28,12 +28,13 @@ internal object ThreeMacawSpeechContract {
     const val CAPABILITY_DESCRIPTOR = "org.autojs.plugin.speech.api.ISpeechPlugin"
 
     /**
-     * Placeholder minimum host build at the roadmap baseline (D28), mirrored by `plugin_requires_host_version` in
-     * `app/build.gradle.kts`; P1.3 and P6.4 replace both together.
-     * zh-CN: 路线图基线的最低宿主构建号占位值 (D28), 与 `app/build.gradle.kts` 中的 `plugin_requires_host_version` 一致; P1.3 与
-     * P6.4 同时替换两者.
+     * Temporary minimum host build of roadmap P1.3 (D28): the host build that ships the speech module, equal to
+     * `SpeechPluginIds.REQUIRED_HOST_VERSION_CODE` of the staged contract and mirrored by `plugin_requires_host_version` in
+     * `app/build.gradle.kts`; P6.4 replaces both together with the final value.
+     * zh-CN: 路线图 P1.3 的临时最低宿主构建号 (D28): 提供 speech 模块的宿主构建, 与暂存契约的 `SpeechPluginIds.REQUIRED_HOST_VERSION_CODE`
+     * 相同, 并与 `app/build.gradle.kts` 中的 `plugin_requires_host_version` 一致; P6.4 同时以最终值替换两者.
      */
-    const val REQUIRED_HOST_VERSION = 5448L
+    const val REQUIRED_HOST_VERSION = 5451L
 
     /** Speech contract version (roadmap D21 / D28). zh-CN: 语音契约版本 (路线图 D21 / D28). */
     const val CONTRACT_VERSION = 1

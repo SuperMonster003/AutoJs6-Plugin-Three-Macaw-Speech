@@ -19,12 +19,13 @@ plugins {
 
 val globalApplicationId = "io.github.supermonster003.autojs6.plugin.three.macaw.speech"
 
-// Minimum host build (roadmap D28): placeholder at the roadmap baseline 5448 (host 33a1514b74, VERSION_BUILD 3796 + 1652);
-// P1.3 writes the temporary value and P6.4 the final one. Keep it in sync with ThreeMacawSpeechContract.REQUIRED_HOST_VERSION
-// and .readme/common.json.
-// zh-CN: 最低宿主构建号 (路线图 D28): 当前为路线图基线 5448 的占位值 (宿主 33a1514b74, VERSION_BUILD 3796 + 1652); P1.3 写入临时值,
-// P6.4 回填最终值. 与 ThreeMacawSpeechContract.REQUIRED_HOST_VERSION 及 .readme/common.json 保持一致.
-val requiredHostVersion = 5448
+// Minimum host build (roadmap D28): the P1.3 temporary value 5451, the host build that ships the speech module (VERSION_BUILD
+// 3798 + 1 + 1652, equal to SpeechPluginIds.REQUIRED_HOST_VERSION_CODE of speech-api.aar); P6.4 writes the final one. Keep it in
+// sync with ThreeMacawSpeechContract.REQUIRED_HOST_VERSION and .readme/common.json.
+// zh-CN: 最低宿主构建号 (路线图 D28): P1.3 的临时值 5451, 即提供 speech 模块的宿主构建 (VERSION_BUILD 3798 + 1 + 1652, 与 speech-api.aar
+// 的 SpeechPluginIds.REQUIRED_HOST_VERSION_CODE 相同); P6.4 回填最终值. 与 ThreeMacawSpeechContract.REQUIRED_HOST_VERSION 及
+// .readme/common.json 保持一致.
+val requiredHostVersion = 5451
 
 // The four ABIs of the sherpa-onnx AAR (roadmap D14), in the order PluginInfo.supportedAbis reports them.
 // zh-CN: sherpa-onnx AAR 的四个 ABI (路线图 D14), 顺序与 PluginInfo.supportedAbis 一致.

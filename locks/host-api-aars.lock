@@ -1,7 +1,12 @@
-# Host API release AARs (roadmap P0.1; speech-api joins in P1.1).
+# Host API release AARs (roadmap P0.1, P1.1).
 # common-plugin-api: :plugin-api:common-plugin-api:assembleRelease on host snapshot 6c151c900e (6.8.0, build 5352);
 #   the module last changed at host commit aa8ebaf72e (2026-10-07) and is unchanged at the roadmap baseline 33a1514b74,
-#   so this is the byte-identical artifact Batch Rename stages. See libs/README.md.
+#   so this is the byte-identical artifact Batch Rename stages. Rebuilt on 2026-10-16 next to speech-api (host 51b6bd3b7):
+#   byte-identical. See libs/README.md.
+# speech-api: :plugin-api:speech-api:assembleRelease on 2026-10-16 from the host sources of commit 1d6280bf8 (6.8.0, build
+#   5451), which introduces plugin-api/speech-api (contract version 1, roadmap D21); unchanged up to 51b6bd3b7.
 format=1
 common-plugin-api.file=common-plugin-api.aar
 common-plugin-api.sha256=ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a
+speech-api.file=speech-api.aar
+speech-api.sha256=74f29a089c7da86c07920a956455b18e8039def5f006c7fddf78af1db33cd1f2

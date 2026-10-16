@@ -66,7 +66,7 @@ The plugin is a separately installed APK. AutoJs6 scripts use it through the glo
 
 ******
 
-1. Update AutoJs6 to internal build 5448 (6.8.0) or later.
+1. Update AutoJs6 to internal build 5451 (6.8.0) or later.
 2. Download the APK that matches the device ABI from [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) (choose `universal` if unsure) and install it, then authorize and enable it in the AutoJs6 Plugin Center.
 3. Open the plugin screen to grant the microphone permission and download the models you need, then use the `speech` module in scripts.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 _2026/10/16_
 
 - `Hint` Development preview: AutoJs6 can discover the plugin and it loads the speech runtime; speech recognition, wake words, text-to-speech, model downloads, the plugin screens and the speech script module are not delivered yet
-- `Hint` Requires AutoJs6 6.8.0 (5448) or later (the exact minimum build will be filled in once the host changes land)
+- `Hint` Requires AutoJs6 6.8.0 (5451) or later (the exact minimum build will be filled in once the host changes land)
 - `Hint` The current icon is temporary and will be replaced
 - `Feature` Plugin skeleton: Wake activation protocol, Plugin Center identity service and speech capability service
 - `Feature` Built-in sherpa-onnx 1.13.8 speech runtime and silero VAD v5 voice activity detection model, with one package per ABI for 4 ABIs

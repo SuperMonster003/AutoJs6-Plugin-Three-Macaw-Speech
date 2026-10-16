@@ -13,12 +13,16 @@ process and needs the AIDL stubs and constants at run time.
 | File | Host module | Content | SHA-256 |
 | --- | --- | --- | --- |
 | `common-plugin-api.aar` | `plugin-api/common-plugin-api` | `PluginInfo`, `IPluginInfoProvider`, `PluginActions`, `PluginCapabilityKeys`, `AutoJs6HostSettingsContract` | `ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a` |
+| `speech-api.aar` | `plugin-api/speech-api` | `ISpeechPlugin`, `ISpeechSession`, the session, wake and progress callbacks, `SpeechPluginActions`, `SpeechPluginIds`, `SpeechContract`, `SpeechCapabilityKeys`, `SpeechLimits`, `SpeechOptionKeys`, `SpeechResultKeys`, `SpeechModelKeys`, `SpeechErrorCodes` | `74f29a089c7da86c07920a956455b18e8039def5f006c7fddf78af1db33cd1f2` |
 
-Provenance (2026-10-16): assembled with `:plugin-api:common-plugin-api:assembleRelease` on the host
-snapshot `6c151c900e` (6.8.0, versionCode 5352). The module last changed at host commit `aa8ebaf72e` and
-is unchanged at the roadmap baseline `33a1514b74`, so this is the byte-identical artifact that Batch
-Rename stages. The speech contract `speech-api.aar` joins in roadmap P1.1 (D21), built from the host
-commit that introduces `plugin-api/speech-api`.
+Provenance (2026-10-16): `common-plugin-api.aar` was assembled with `:plugin-api:common-plugin-api:assembleRelease`
+on the host snapshot `6c151c900e` (6.8.0, versionCode 5352). The module last changed at host commit `aa8ebaf72e`
+and is unchanged at the roadmap baseline `33a1514b74`, so this is the byte-identical artifact that Batch Rename
+stages; rebuilt next to `speech-api` it is still byte-identical. `speech-api.aar` (contract version 1, roadmap
+P1.1 / D21) was assembled with `:plugin-api:speech-api:assembleRelease` from the sources of host commit
+`1d6280bf8` (6.8.0, versionCode 5451), which introduces `plugin-api/speech-api`; the module is unchanged up to
+`51b6bd3b7`. Its `SpeechPluginIds.REQUIRED_HOST_VERSION_CODE` (5451) is the minimum host build the plugin declares
+(roadmap D28, temporary until P6.4).
 
 ## sherpa-onnx runtime (lock `../locks/sherpa-onnx.lock`, roadmap D13 / P0.2)
 

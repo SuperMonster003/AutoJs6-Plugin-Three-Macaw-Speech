@@ -66,7 +66,7 @@
 
 ******
 
-1. حدّث AutoJs6 إلى الإصدار الداخلي 5448 (6.8.0) أو أحدث.
+1. حدّث AutoJs6 إلى الإصدار الداخلي 5451 (6.8.0) أو أحدث.
 2. نزّل من [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) ملف APK المطابق لـ ABI الجهاز (اختر `universal` إن لم تكن متأكدا) وثبّته, ثم امنحه الإذن وفعّله في مركز الإضافات في AutoJs6.
 3. افتح شاشة الإضافة لمنح إذن الميكروفون وتنزيل النماذج التي تحتاجها, ثم استخدم الوحدة `speech` في السكربتات.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/16_
 
 - `تلميح` معاينة للتطوير: يتعرف AutoJs6 على الإضافة وتحمّل الإضافة بيئة تشغيل الكلام, ولم تُسلَّم بعد ميزات التعرف على الكلام وكلمات التنبيه وتحويل النص إلى كلام وتنزيل النماذج وشاشات الإضافة ووحدة السكربت speech
-- `تلميح` يتطلب AutoJs6 6.8.0 (5448) أو أحدث (سيُحدَّد الحد الأدنى الدقيق للإصدار بعد اكتمال تغييرات المضيف)
+- `تلميح` يتطلب AutoJs6 6.8.0 (5451) أو أحدث (سيُحدَّد الحد الأدنى الدقيق للإصدار بعد اكتمال تغييرات المضيف)
 - `تلميح` الأيقونة الحالية مؤقتة وسيتم استبدالها
 - `ميزة` هيكل الإضافة: بروتوكول التفعيل Wake, وخدمة الهوية في مركز الإضافات, وخدمة قدرات الكلام
 - `ميزة` بيئة تشغيل الكلام sherpa-onnx 1.13.8 ونموذج اكتشاف النشاط الصوتي silero VAD v5 مدمجان, مع حزمة لكل ABI من 4 أنواع

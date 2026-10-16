@@ -66,7 +66,7 @@
 
 ******
 
-1. AutoJs6 を内部バージョン 5448 (6.8.0) 以降に更新します.
+1. AutoJs6 を内部バージョン 5451 (6.8.0) 以降に更新します.
 2. [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) からデバイスの ABI に合った APK をダウンロードしてインストールし (不明な場合は `universal` を選択), AutoJs6 のプラグインセンターで許可して有効にします.
 3. プラグイン画面でマイクの権限を許可し, 必要なモデルをダウンロードしてから, スクリプトで `speech` モジュールを使います.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/16_
 
 - `ヒント` 開発プレビュー: AutoJs6 はプラグインを検出でき, プラグインは音声ランタイムを読み込みます. 音声認識, ウェイクワード, 音声合成, モデルのダウンロード, プラグイン画面, speech スクリプトモジュールはまだ提供されていません
-- `ヒント` AutoJs6 6.8.0 (5448) 以降が必要です (正確な最低バージョンはホスト側の変更が反映された後に記入されます)
+- `ヒント` AutoJs6 6.8.0 (5451) 以降が必要です (正確な最低バージョンはホスト側の変更が反映された後に記入されます)
 - `ヒント` 現在のアイコンは仮のもので, 後で差し替えられます
 - `機能` プラグインの骨組み: Wake 有効化プロトコル, プラグインセンターの識別サービス, 音声機能サービス
 - `機能` sherpa-onnx 1.13.8 音声ランタイムと silero VAD v5 音声区間検出モデルを内蔵し, 4 つの ABI ごとにパッケージを提供

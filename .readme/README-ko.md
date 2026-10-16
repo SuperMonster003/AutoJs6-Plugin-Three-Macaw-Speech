@@ -66,7 +66,7 @@
 
 ******
 
-1. AutoJs6를 내부 버전 5448 (6.8.0) 이상으로 업데이트합니다.
+1. AutoJs6를 내부 버전 5451 (6.8.0) 이상으로 업데이트합니다.
 2. [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases)에서 기기 ABI에 맞는 APK를 내려받아 설치하고 (확실하지 않으면 `universal` 선택), AutoJs6 플러그인 센터에서 승인하고 활성화합니다.
 3. 플러그인 화면에서 마이크 권한을 허용하고 필요한 모델을 내려받은 뒤, 스크립트에서 `speech` 모듈을 사용합니다.
 
@@ -155,7 +155,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5448
+minimum host build: 5451
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
 
@@ -180,7 +180,7 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/16_
 
 - `힌트` 개발 미리보기: AutoJs6가 플러그인을 인식하고 플러그인은 음성 런타임을 불러옵니다. 음성 인식, 호출어, 음성 합성, 모델 다운로드, 플러그인 화면, speech 스크립트 모듈은 아직 제공되지 않습니다
-- `힌트` AutoJs6 6.8.0 (5448) 이상이 필요합니다 (정확한 최소 버전은 호스트 쪽 변경이 반영된 뒤 기입됩니다)
+- `힌트` AutoJs6 6.8.0 (5451) 이상이 필요합니다 (정확한 최소 버전은 호스트 쪽 변경이 반영된 뒤 기입됩니다)
 - `힌트` 현재 아이콘은 임시 디자인이며 이후 교체됩니다
 - `기능` 플러그인 골격: Wake 활성화 프로토콜, 플러그인 센터 식별 서비스, 음성 기능 서비스
 - `기능` sherpa-onnx 1.13.8 음성 런타임과 silero VAD v5 음성 구간 감지 모델을 내장하고 4가지 ABI별로 설치 파일 제공

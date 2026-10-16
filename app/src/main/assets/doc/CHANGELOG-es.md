@@ -9,7 +9,7 @@
 ###### 2026/10/16
 
 * `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz; el reconocimiento de voz, las palabras de activación, la síntesis de voz, la descarga de modelos, las pantallas del complemento y el módulo de script speech aún no están disponibles
-* `Aviso` Requiere AutoJs6 6.8.0 (5448) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
+* `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
 * `Aviso` El icono actual es provisional y se sustituirá
 * `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 * `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI

@@ -42,8 +42,8 @@ class PluginRuntimeInfoTest {
         assertEquals("Oct 16, 2026", fields.versionDate)
         // Roadmap D14: sherpa-onnx ships native code for exactly four ABIs, reported in the split order.
         assertEquals(SUPPORTED_ABIS, fields.supportedAbis)
-        // Roadmap D28: the placeholder floor is the roadmap baseline; P1.3 and P6.4 raise it.
-        assertEquals(5448L, fields.requiredHostVersion)
+        // Roadmap D28: the P1.3 temporary floor is the host build that ships the speech module; P6.4 raises it.
+        assertEquals(5451L, fields.requiredHostVersion)
         assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
         assertEquals(1, fields.contractVersion)
         assertEquals("the skeleton advertises no optional feature yet", emptyList<String>(), fields.features)

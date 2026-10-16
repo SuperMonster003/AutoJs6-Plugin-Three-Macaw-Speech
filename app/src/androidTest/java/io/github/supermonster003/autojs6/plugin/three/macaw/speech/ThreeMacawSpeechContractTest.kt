@@ -20,6 +20,9 @@ import org.autojs.plugin.common.api.IPluginInfoProvider
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
+import org.autojs.plugin.speech.api.ISpeechPlugin
+import org.autojs.plugin.speech.api.SpeechPluginActions
+import org.autojs.plugin.speech.api.SpeechPluginIds
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -106,12 +109,14 @@ class ThreeMacawSpeechContractTest {
 
     @Test
     fun capabilityServiceIsDiscoverableAndRejectsCallsUntilTheContractLands() {
+        // Discovered with the literals of the staged host contract speech-api.aar (roadmap P1.1).
         val serviceInfo = discoverSingleService(
-            ThreeMacawSpeechContract.SERVICE_ACTION, ThreeMacawSpeechContract.SERVICE_CATEGORY, ThreeMacawSpeechService::class.java.name,
+            SpeechPluginActions.SPEECH, SpeechPluginActions.SERVICE_CATEGORY, ThreeMacawSpeechService::class.java.name,
         )
-        assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION.toString(), serviceInfo.metaData?.get(PluginCapabilityKeys.REQUIRES_HOST_VERSION)?.toString())
+        assertEquals(SpeechPluginActions.PLUGIN_PERMISSION, serviceInfo.permission)
+        assertEquals(SpeechPluginIds.REQUIRED_HOST_VERSION_CODE.toString(), serviceInfo.metaData?.get(PluginCapabilityKeys.REQUIRES_HOST_VERSION)?.toString())
         withBoundService(serviceInfo) { binder ->
-            assertEquals(ThreeMacawSpeechContract.CAPABILITY_DESCRIPTOR, binder.interfaceDescriptor)
+            assertEquals(ISpeechPlugin.DESCRIPTOR, binder.interfaceDescriptor)
             // Placeholder until roadmap P1.1: every transaction is refused instead of answered with guesses.
             val data = Parcel.obtain()
             val reply = Parcel.obtain()
