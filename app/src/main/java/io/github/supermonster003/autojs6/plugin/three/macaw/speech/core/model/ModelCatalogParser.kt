@@ -79,10 +79,13 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
     }
 
     private fun version(value: Any?, modelId: String, kind: String, repository: String, catalogVersion: Int, generated: Timestamp): CatalogModelVersion {
+        // `mirror` is written as null for upstream-only versions (Shared-Assets 89f04a6); a missing key is read the same
+        // way, the one place where the plugin is more lenient than the reference validator.
+        // zh-CN: 仅上游版本的 `mirror` 写为 null (Shared-Assets 89f04a6); 缺省的键按同样方式读取, 这是插件唯一比参考校验器宽松之处.
         val item = fields(
             value,
-            listOf("versionCode", "modelType", "languages", "sampleRate", "releasedAt", "license", "runtime", "sourceUrl", "mirror", "upstream", "files"),
-            listOf("speakers", "deprecated", "revoked"),
+            listOf("versionCode", "modelType", "languages", "sampleRate", "releasedAt", "license", "runtime", "sourceUrl", "upstream", "files"),
+            listOf("mirror", "speakers", "deprecated", "revoked"),
             name = "catalog version",
         )
         val code = integer(item["versionCode"], "versionCode").toInt()

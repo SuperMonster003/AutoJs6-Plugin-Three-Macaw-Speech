@@ -19,24 +19,25 @@ class ModelCatalogParserTest {
     private val parser = ModelCatalogParser()
 
     @Test
-    fun `the bundled catalog parses with its ten models`() {
+    fun `the bundled catalog parses and every version can be installed from upstream`() {
+        // Structural checks only: the Shared-Assets pending catalog may still be regenerated, the detailed rules are
+        // tested on the synthetic fixture below.
         val bytes = Files.readAllBytes(RepositoryFiles.path("app/src/main/assets/catalog/catalog-v1.json"))
         val catalog = parser.parse(bytes)
-        assertEquals(1, catalog.catalogVersion)
-        assertEquals("speech-models-v1", catalog.releaseTag)
-        assertEquals(10, catalog.models.size)
-        // Appendix D Q10: the 2025 Chinese streaming model is listed but never mirrored.
-        assertEquals(listOf("asr.zipformer-streaming.zh.2025-06-30.int8"), catalog.models.filter { it.latestVersion.mirror == null }.map { it.modelId })
-        val aishell = catalog.model("tts.vits.icefall.zh-aishell3")!!
-        val version = aishell.installableVersion!!
-        assertEquals(CommercialUse.UNKNOWN, version.license.commercialUse)
-        assertTrue(version.license.requiresAcceptance)
-        assertEquals(174, version.speakers)
-        assertEquals(listOf("lexicon.txt"), version.runtimeConfig["lexicon"])
-        assertEquals(31559701L, version.upstream.single().size)
+        assertEquals("speech-models-v${catalog.catalogVersion}", catalog.releaseTag)
+        assertTrue(catalog.models.isNotEmpty())
         assertEquals(setOf("asr", "kws", "tts"), catalog.models.map { it.kind }.toSet())
-        // Catalog order among the recommended Chinese voices: kokoro and matcha are not recommended, aishell3 is.
-        assertEquals(aishell.modelId, catalog.recommendedModel("tts", "zh")?.modelId)
+        catalog.models.flatMap { it.versions }.forEach { version ->
+            val mapped = version.upstream.flatMap { part ->
+                when (part) {
+                    is UpstreamPart.TarBz2 -> part.members.values
+                    is UpstreamPart.RawFile -> listOf(part.path)
+                }
+            }
+            assertEquals(version.files.map { it.path }.toSet(), mapped.toSet())
+            version.mirror?.let { assertEquals(CatalogRules.archiveSize(version.files.map { file -> file.size }), it.size) }
+        }
+        CatalogRules.KINDS.forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
     }
 
     @Test
@@ -67,6 +68,10 @@ class ModelCatalogParserTest {
         assertEquals(version.upstreamBytes, version.downloadBytes)
         val wrongSource = text.replace(mirrorJson, "\"mirror\": null").replace(tiny.sourceUrl, tiny.sourceUrl.replace("speech-models-v1", "speech-models-v2"))
         assertThrows(CatalogException::class.java) { parser.parse(wrongSource.toByteArray()) }
+        // A missing key reads like null (more lenient than the reference validator, which requires the key).
+        val missing = text.replace("$mirrorJson,", "")
+        assertTrue(missing != text)
+        assertNull(parser.parse(missing.toByteArray()).model("tts.test.tiny")!!.latestVersion.mirror)
     }
 
     @Test
