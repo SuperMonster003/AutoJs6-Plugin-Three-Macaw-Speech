@@ -252,7 +252,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | 阶段 | 版本 | 主题 | 状态 |
 | --- | --- | --- | --- |
 | P0 | 1.0.0 | 仓库骨架: 构建链, sherpa-onnx AAR 接入, ABI 拆分与 16 KB 校验, 资源, 文档生成器, CI | 已完成 (2026-10-16; 工作流待首次推送后的远端运行) |
-| P1 | 宿主 6.8.0 | 宿主契约 `speech-api`, 绑定能力, 注册, 脚本 API `speech` | 进行中 (2026-10-16 宿主本地提交 `b91aef068` .. `51b6bd3b7`; 余 P1.2 后台麦克风实测) |
+| P1 | 宿主 6.8.0 | 宿主契约 `speech-api`, 绑定能力, 注册, 脚本 API `speech` | 已完成 (2026-10-16 宿主本地提交 `b91aef068` .. `51b6bd3b7`, `bd410162c`; 后台麦克风按附录 D Q5 (a) 在 P3.1 补插件前台服务) |
 | P2 | 资产 + 1.0.0 | Shared-Assets `speech-models` 类别, 精选目录审核, 插件模型存储与目录刷新, `speech-models-v1` 发布 | 未开始 |
 | P3 | 1.0.0 | 识别, VAD 与唤醒词: 采集, 流式会话, 文件识别, 唤醒会话, 设备矩阵与性能基线 | 未开始 |
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 未开始 |
@@ -325,7 +325,7 @@ P0 (骨架 + AAR)
 
 - [x] (宿主) `AidlPluginHost` 增加可选绑定参数 `includeCapabilities` (API 29+ 追加 `BIND_INCLUDE_CAPABILITIES`, 可选 `BIND_IMPORTANT`), 默认关闭, 仅 `SpeechPluginHost` 开启; JVM 测试 flags 组合. 证据: 宿主提交 `b91aef068`; 新参数 `includeCapabilities` 与 `important` 默认 false, flags 由纯函数 `AidlPluginHost.bindFlags` 计算 (专用租约与连接池两条绑定路径共用); `AidlPluginHostBindFlagsTest` (6 项: 框架常量值, 未开启时仅 `BIND_AUTO_CREATE`, API 28 / 29 边界, speech 组合, API 34 的 `BIND_ALLOW_ACTIVITY_STARTS` 与外部服务 flag) 通过.
 - [x] (宿主) `core/plugin/speech/SpeechPluginHost.kt`: `discover` / `select` / 会话代理 (`SpeechSessionProxy` 持有会话 Binder 与回调 Stub, 宿主侧 `linkToDeath` 插件进程), 操作 ID 与取消, 文件 pfd 的只读 grant. 证据: 宿主提交 `1d6280bf8`; `SpeechPluginHost` (选择按引擎 `speech` / 变体 `default`, 校验契约版本与 `requiresHostVersion >= 5451`, 按功能拒绝未声明的调用, 缺失 / 停用 / 不兼容分别映射 `PLUGIN_UNAVAILABLE` / `PLUGIN_DISABLED` / `PLUGIN_INCOMPATIBLE`), `SpeechSessionProxy` 与 `SpeechWakeSessionProxy` (每个会话一个专用绑定租约, `linkToDeath` 插件进程, 死亡时合成 `error(SESSION_CLOSED)` + `end(error)`), `SpeechEventGate` (唯一 `end`), `SpeechProgressBinder` (操作 id, 调用方取消或超时时 `cancelOperation`), `SpeechAudioInput` (只读 pfd, 宿主先查 WAV 头与 200 MiB) 与 `SpeechOutputFile` (合成输出暂存在目标旁, 校验后原子改名); JVM `SpeechErrorMapperTest` (4), `SpeechEventGateTest` (3), `SpeechAudioTest` (4) 通过; 设备往返见 P1.4 测试条目 (假插件 `test-apps/speech-provider-conformance`, 独立 uid, 含进程死亡用例).
-- [ ] (测试) 真机验证 (API 31 Sony, 33 Sony / Redmi, 35 Xiaomi Pad / OnePlus, 36 Samsung): 宿主脚本在后台 (其他应用在前台, 以及熄屏) 时插件 `AudioRecord` 读到的不是静音帧; 记录每台结果; 不成立的机型按 D22 备选并写入附录 D Q5.
+- [x] (测试) 真机验证 (API 31 Sony, 33 Sony / Redmi, 35 Xiaomi Pad / OnePlus, 36 Samsung): 宿主脚本在后台 (其他应用在前台, 以及熄屏) 时插件 `AudioRecord` 读到的不是静音帧; 记录每台结果; 不成立的机型按 D22 备选并写入附录 D Q5. 证据: 宿主提交 `bd410162c` 的 `test-apps/speech-provider-conformance/run_microphone_probe.py` (脚本经 `RunIntentActivity` 启动, 不用 instrumentation, 宿主保持真实进程状态; 假插件在独立 uid 进程用 `AudioRecord` 每 500 ms 报告一次是否有声或被静音; 前台, HOME 退到后台, 熄屏各 8 秒, 每段采样宿主与插件进程的 procState / capability), 2026-10-16, AutoJs6 均未开前台服务: Sony XQ-AT72 (QV710AF65F, API 31), AutoJs6 无障碍服务已绑定: 三段均有声, 插件进程的 procState / capability 与宿主一致 (后台均为 `5/LCMN`, 熄屏均为 `6/LCMN`), 即 `BIND_INCLUDE_CAPABILITIES` 生效; OnePlus OPD2413 (63751f63, API 35), 无障碍服务未启用: 前台有声 (宿主 `2/LCMNFUA`, 插件 `3/LCMNFUA`), 后台与熄屏被静音 (两个进程均为 `15/-------`; 首轮后台 15 个与熄屏 14 个事件全部被静音, 最终版复测后台 15 个中 14 个被静音, 仅切换瞬间 1 个有声, 熄屏 15 个全部被静音); Xiaomi Pad 23046RP50C (968e9f18, API 35), 无障碍服务已启用但系统一直未能绑定: 首轮与最终版复测相同, 前台有声 (`2/LCMNFUA`, `3/LCMNFUA`), 后台 15 个事件中 14 个被静音 (仅切换瞬间 1 个有声), 熄屏 15 个全部被静音 (两个进程均为 `15/-------`). 复测由维护者解锁两台设备后运行最终版探针 (`bd410162c`), 退出码 0. 结论: 插件能录音当且仅当 AutoJs6 自身持有麦克风能力 (界面可见, 无障碍服务已绑定或 microphone 前台服务); 宿主在后台且无此能力时插件同样被静音, 按 D22 备选处理, 附录 D Q5 定为 (a), 实现列入 P3.1. 未执行: API 33 (Sony XQ-DQ72 QV770340J7 本轮离线, Redmi 22120RN86C 保留旧宿主未改动), API 36 (Samsung 未连接); 两者留给 P3.5 设备矩阵 (1.0.0 要求 API 31 / 33 / 35 / 36 各测一次后台麦克风).
 
 ### P1.3 注册, 协议文档, changelog 与版本回填
 
@@ -385,6 +385,8 @@ P0 (骨架 + AAR)
 
 - [ ] (插件) `MicrophoneSource`: `AudioRecord` (`VOICE_RECOGNITION` 源, 16 kHz, 单声道, 20 ms 帧), 权限检查, 独占与排队 (`SESSION_BUSY`), 读取线程, 静音检测 (连续零帧上报 `warning`), 释放; `SherpaRuntime` 线程与模型生命周期 (加载, 共享, 空闲释放, 内存上报).
 - [ ] (插件) 会话表与 `linkToDeath`; 每 token 麦克风会话上限 1, PCM 会话上限 4; 超时 (`timeoutMillis`, `maxDurationMillis`) 与自动结束.
+- [ ] (插件) 后台麦克风备选 (D22, 附录 D Q5 (a)): 麦克风会话 (含唤醒) 开启时插件启动 `microphone` 类型前台服务 (通知标明正在录音), 会话结束即停止; 须在插件仍继承宿主麦克风能力时启动 (宿主界面可见, 或宿主自身持有能力), 之后宿主退到后台或熄屏不被静音; 宿主已在后台且无能力时启动被拒的报错 (错误码与文案) 在实现时实测确定, 同步协议文档与 `api/speech.md`. P1.2 实测见上文: API 35 上宿主在后台时插件读到静音帧.
+- [ ] (测试) 真机: 宿主界面可见时开启麦克风会话, 退到后台与熄屏各 8 秒仍有声 (阶段划分同宿主 `run_microphone_probe.py`); 宿主已在后台时开启的结果与报错.
 - [ ] (测试) instrumentation: 权限缺失 -> `PERMISSION_DENIED`; 两个会话争用 -> `SESSION_BUSY`; 宿主进程被杀 -> 麦克风 1 秒内释放 (`AudioManager` 活动录音查询).
 
 ### P3.2 流式识别会话 (D17)
@@ -741,7 +743,7 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q2 | sherpa-onnx AAR 来源 | (a) Maven Central 坐标 (若 1.13.8 存在且字节一致); (b) `libs/` + 锁文件 | P0.2 已定 (b): Maven Central 无坐标, JitPack 只是同字节转存且按需重建 (D13) |
 | Q3 | 镜像归档格式 | (a) 未压缩 `tar` (模型本身已是二进制, 解包快); (b) `zip` (Android 原生, 可随机访问); (c) 与上游一致 `tar.bz2` | P2.1 已定 (a): 规范 USTAR (只含普通文件, 按路径排序, 0644, uid / gid 0, mtime 0, 末尾两个零块), 由标准库写出, 字节与 Python / zlib / bzip2 版本无关, 体积可由 `files[]` 算出; zip 需要确定的 deflate 或存储模式, tar.bz2 解压慢 (Shared-Assets `c7d1adf`) |
 | Q4 | 唤醒词原文转 token | (a) 上游 Kotlin API 已内置 (spike 结论); (b) 插件内置拼音表 + BPE 编码; (c) 关键词只接受拼音 / 英文 token (不推荐) | P3.4 spike 后 |
-| Q5 | 后台麦克风不成立的机型 | (a) 插件自身 microphone 前台服务; (b) 文档声明限制 | P1.2 实测后 |
+| Q5 | 后台麦克风不成立的机型 | (a) 插件自身 microphone 前台服务; (b) 文档声明限制 | 已定 (a) (2026-10-16 按推荐项, P1.2 实测: API 35 上宿主在后台且自身无麦克风能力时插件读到静音帧); 实现列入 P3.1, D29 的前台服务用途随之扩展到脚本的麦克风会话 |
 | Q6 | 系统 TTS 引擎的双语 Voice 报告方式 | (a) 每个说话人报告 zh-CN 与 en-US 两个 Voice; (b) 只报告 zh-CN 并在 `onIsLanguageAvailable` 对 en 返回 `LANG_AVAILABLE` | P4.2 |
 | Q7 | 模型下载是否默认允许计量网络 | (a) 默认询问 (与 3-Stone AI 一致); (b) 默认允许 | P2.3 |
 | Q8 | 识别结果是否默认写入宿主控制台日志 | (a) 不记录 (隐私); (b) 仅 `final` 级别 debug 日志 | 已定 (a) 不记录 (2026-10-16 按推荐项, P1.4) |
