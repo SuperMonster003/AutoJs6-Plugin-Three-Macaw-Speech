@@ -1,7 +1,9 @@
 # Third-party notices
 
 3-Macaw Speech is licensed under the Mozilla Public License 2.0 (see `LICENSE`). The APK bundles the
-components below; their licenses apply to those components only. Speech recognition, wake word and
+components below; their licenses apply to those components only. The native speech runtime contains
+GPL-3.0-or-later code, so the APK as a whole is conveyed under the GPL-3.0-or-later (see
+"GPL-3.0-or-later code in the speech runtime" below). Speech recognition, wake word and
 text-to-speech models are not part of this repository or the APK: each model is downloaded on demand
 and its own license is listed in the model catalog (roadmap D11 / D24).
 
@@ -9,7 +11,7 @@ and its own license is listed in the model catalog (roadmap D11 / D24).
 
 | Artifact | Version | Source | License |
 | --- | --- | --- | --- |
-| sherpa-onnx Android AAR (`libs/sherpa-onnx-1.13.8.aar`: Kotlin API and `libsherpa-onnx-jni.so`) | 1.13.8 | https://github.com/k2-fsa/sherpa-onnx (release `v1.13.8`, commit `11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf`) | Apache-2.0 |
+| sherpa-onnx Android AAR (`libs/sherpa-onnx-1.13.8.aar`: Kotlin API and `libsherpa-onnx-jni.so`) | 1.13.8 | https://github.com/k2-fsa/sherpa-onnx (release `v1.13.8`, commit `11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf`) | Apache-2.0 (sherpa-onnx code; for the statically linked components see below) |
 | ONNX Runtime (`libonnxruntime.so`, bundled in the sherpa-onnx AAR) | 1.28.2 | https://github.com/microsoft/onnxruntime | MIT |
 | silero VAD v5 model (`app/src/main/assets/vad/silero_vad_v5.onnx`) | v5.0 | https://github.com/snakers4/silero-vad (`files/silero_vad.onnx` at tag `v5.0`, redistributed by sherpa-onnx as `silero_vad_v5.onnx`) | MIT |
 
@@ -19,6 +21,55 @@ not packaged. Provenance and SHA-256 digests are recorded in `locks/sherpa-onnx.
 
 The device tests (not the APK) use `app/src/androidTest/assets/test_silero_vad.wav`, the
 `tests/data/test.wav` recording of silero-vad (MIT), redistributed by sherpa-onnx as `test_silero_vad.wav`.
+
+### Statically linked into `libsherpa-onnx-jni.so`
+
+The official AAR builds the libraries below into `libsherpa-onnx-jni.so` for all four ABIs (evidence in
+roadmap D32 / P0.1: strings compiled from their sources and the `_deps/<name>-src` build paths). Versions
+are the ones that the `cmake/*.cmake` files of sherpa-onnx `v1.13.8` and kaldi-decoder `v0.3.0` pin by
+URL and SHA-256.
+
+| Component | Version | Source | License |
+| --- | --- | --- | --- |
+| eSpeak NG (`espeak-ng` library; MBROLA, Klatt, speechPlayer and asynchronous output disabled) | commit `ed530aa113046142eb5115cf2fc9157854d0ffe1` | https://github.com/csukuangfj/espeak-ng (fork of https://github.com/espeak-ng/espeak-ng), archive SHA-256 `e4e262cbe34f7fe21f91f1ba3397f2728e1f30eafbae7853f2b753a9ed13f0dd` | GPL-3.0-or-later |
+| UCD Tools (`ucd` library, `src/ucd-tools` of the same eSpeak NG tree) | same commit | same | GPL-3.0-or-later; its tables are generated from the Unicode Character Database (see "Unicode data" below) |
+| piper-phonemize | commit `f3ff95afc03640bc1399e113e83361192a2fafb4` | https://github.com/csukuangfj/piper-phonemize (fork of https://github.com/rhasspy/piper-phonemize), archive SHA-256 `d9cca4e2bdc7d6dd8dffb96a4668283dbd3f77a9c194a3e530c1e8eba9406a5d` | MIT, Copyright (c) 2023 Michael Hansen; includes the header-only uni-algo (Public Domain) |
+| kaldi-native-fbank | `v1.22.3` | https://github.com/csukuangfj/kaldi-native-fbank | Apache-2.0 |
+| kaldi-decoder | `v0.3.0` | https://github.com/k2-fsa/kaldi-decoder | Apache-2.0 |
+| kaldifst | `v1.8.0` | https://github.com/k2-fsa/kaldifst | Apache-2.0 |
+| OpenFst | `v1.8.5-2026-07-09` | https://github.com/csukuangfj/openfst (fork of OpenFst, https://www.openfst.org) | Apache-2.0 |
+| Eigen (header-only) | `5.0.1` | https://gitlab.com/libeigen/eigen | MPL-2.0 |
+| simple-sentencepiece | `v0.7` | https://github.com/pkufool/simple-sentencepiece | Apache-2.0 |
+| JSON for Modern C++ (header-only) | `v3.12.0` | https://github.com/nlohmann/json | MIT, Copyright (c) 2013-2025 Niels Lohmann |
+| hclust-cpp (fastcluster) | `2026-02-25` | https://github.com/csukuangfj/hclust-cpp | BSD-2-Clause, Copyright (c) 2011 Daniel Müllner, Copyright (c) 2018 Christoph Dalitz |
+
+### GPL-3.0-or-later code in the speech runtime
+
+eSpeak NG and UCD Tools are licensed under the GNU General Public License version 3 or later.
+sherpa-onnx builds them for its text-to-speech front end (`SHERPA_ONNX_ENABLE_TTS`, on in the official
+Android build), so `libsherpa-onnx-jni.so` contains their code on every device, whether or not a voice
+that uses eSpeak NG (piper, kokoro) is installed. Upstream plans to remove eSpeak NG and
+piper-phonemize in sherpa-onnx 2.0.0 (https://github.com/k2-fsa/sherpa-onnx/issues/3731); the plugin
+will move to such a release and drop this section (roadmap appendix D Q9).
+
+- License of the APK: the source code in this repository stays under MPL-2.0. MPL-2.0 section 3.3
+  allows combining it with GPL-3.0-or-later code (no file here carries the "Incompatible With Secondary
+  Licenses" notice), so the APK as a whole is conveyed under the terms of the GPL-3.0-or-later. The
+  Apache-2.0, MIT, BSD-2-Clause, MPL-2.0 and Public Domain components listed in this file are
+  compatible with it.
+- License text: https://www.gnu.org/licenses/gpl-3.0.txt. The About page of the plugin will carry the
+  full text and these notices inside the APK (roadmap P5.2).
+- Corresponding source: every GitHub Release of the plugin attaches, next to its APKs, an archive with
+  the sherpa-onnx `v1.13.8` source and build scripts plus every dependency archive that its build pins
+  by URL and SHA-256 (the components above), with its SHA-256 recorded in the release (roadmap P6.4).
+  The source of the plugin itself is this repository at the release tag. ONNX Runtime 1.28.2 (MIT) is a
+  separate prebuilt library whose source is https://github.com/microsoft/onnxruntime at tag `v1.28.2`.
+
+### Unicode data
+
+The UCD Tools tables are derived from the Unicode Character Database, Copyright (c) 1991-2014 Unicode,
+Inc. All rights reserved. They are distributed under the Unicode Terms of Use, whose full text is
+`src/ucd-tools/COPYING.UCD` of the eSpeak NG tree above (also in the corresponding source archive).
 
 ## AutoJs6 host contract libraries
 
@@ -42,5 +93,7 @@ Provenance and SHA-256 digests are recorded in `locks/host-api-aars.lock` and `l
 Jetpack Compose `ui-graphics` depends on `androidx.graphics:graphics-path`, whose
 `libandroidx.graphics.path.so` (Apache-2.0) is packaged for arm64-v8a, armeabi-v7a, x86_64 and x86.
 
-The Apache License 2.0 text is available at https://www.apache.org/licenses/LICENSE-2.0 and the MIT
-license texts in the upstream repositories linked above.
+The Apache License 2.0 text is available at https://www.apache.org/licenses/LICENSE-2.0, the GNU
+General Public License version 3 at https://www.gnu.org/licenses/gpl-3.0.txt and the Mozilla Public
+License 2.0 in `LICENSE`; the MIT, BSD-2-Clause and Public Domain texts are in the upstream repositories
+linked above.

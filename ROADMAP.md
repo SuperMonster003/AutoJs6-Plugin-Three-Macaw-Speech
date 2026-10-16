@@ -64,7 +64,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D29 | 权限 | 插件声明 `RECORD_AUDIO`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MICROPHONE` (仅独立界面的试听与 1.1.0 助手使用前台服务; 脚本路径依赖 D22 的绑定能力), `INTERNET` (仅模型下载与目录刷新), `POST_NOTIFICATIONS` (下载进度通知); 不申请存储权限. 脚本首次调用麦克风而插件未获 `RECORD_AUDIO` 时报 `PERMISSION_DENIED`, 宿主提示打开插件界面一键申请. | P0.1 |
 | D30 | 线程与资源 | 插件进程内 ASR, TTS, 下载各一条专用线程; 模型按需加载, 空闲 5 分钟 (可配置) 后释放; Binder 主路径不做模型加载, `openSession` 立即返回, 加载完成后推送 `ready` 事件, 失败推送 `error`. 多个脚本同时请求同一模型时共享已加载实例. | P3.1 |
 | D31 | 体积预算 | 每 ABI release APK <= 20 MB (AAR 单 ABI 约 12-15 MB + VAD 2.2 MB + Compose); Universal <= 60 MB. 超出时先裁 Compose 依赖与 R8 配置, 再考虑 AAR 瘦身. P0.2 决定: 原生库压缩存储 (`packaging.jniLibs.useLegacyPackaging = true`, 安装时解压到 `nativeLibraryDir`); 若不压缩, arm64-v8a 包内仅 sherpa-onnx + onnxruntime 就有 27.0 MB, Universal 达 108 MB, 必然超预算. 代价是设备上同时占用 APK 与解压后的库 (arm64-v8a 约 12 + 27 MB). 实测见 P0.2. | P0.2 |
-| D32 | 版本与许可 | 插件 `VERSION_NAME` 从 1.0.0 开始, `VERSION_BUILD` = 提交数 + 1; 仓库许可 MPL-2.0 (与官方插件一致), `THIRD_PARTY_NOTICES.md` 记录 sherpa-onnx (Apache-2.0), onnxruntime (MIT), silero VAD (MIT), Compose / AndroidX (Apache-2.0), 宿主 AAR (MPL-2.0); 模型许可逐条写在目录中, 不写在仓库许可里. | P0.1 |
+| D32 | 版本与许可 | 插件 `VERSION_NAME` 从 1.0.0 开始, `VERSION_BUILD` = 提交数 + 1; 仓库许可 MPL-2.0 (与官方插件一致), `THIRD_PARTY_NOTICES.md` 记录 sherpa-onnx (Apache-2.0), onnxruntime (MIT), silero VAD (MIT), Compose / AndroidX (Apache-2.0), 宿主 AAR (MPL-2.0); 模型许可逐条写在目录中, 不写在仓库许可里. 2026-10-16 许可复核 (维护者选推荐项): 官方 AAR 4 个 ABI 的 `libsherpa-onnx-jni.so` 静态链接 eSpeak NG 与 UCD Tools (GPL-3.0-or-later), 仍保留官方 AAR; 插件源码保持 MPL-2.0, APK 整体按 GPL-3.0-or-later 传播 (MPL-2.0 第 3.3 节允许); `THIRD_PARTY_NOTICES.md` 列出 JNI 库内全部 11 个静态组件, GPL 小节与 Unicode 数据小节; 对应源码随每个 Release 附件提供 (P6.4), GPL 全文与声明进关于页 (P5.2), sherpa-onnx 移除 eSpeak NG 后迁移 (附录 D Q9). 证据见 P0.1. | P0.1 |
 
 ---
 
@@ -243,7 +243,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | 发布文件名 | `autojs6-plugin-three-macaw-speech-v{VERSION_NAME}-{ABI}-{CRC32}.apk` (4 ABI + `universal`, D14) |
 | 索引清单 | `release-manifests/io.github.supermonster003.autojs6.plugin.three.macaw.speech/<versionCode>.json` |
 | 图标 | 维护者提供 `three-macaw-ic-launcher-light.png` / `-dark.png` 两张黑白源图, Icon Studio 合成 (P5.5); 源图到位前 P0.1 用临时图案占位并在 README 标注 |
-| 许可证 | MPL-2.0 (`LICENSE` 完整文本); `THIRD_PARTY_NOTICES.md` 见 D32 |
+| 许可证 | 源码 MPL-2.0 (`LICENSE` 完整文本); APK 整体按 GPL-3.0-or-later 传播 (运行时静态链接 eSpeak NG); `THIRD_PARTY_NOTICES.md` 见 D32 |
 
 ---
 
@@ -292,7 +292,7 @@ P0 (骨架 + AAR)
 - [x] (插件) Manifest: `org.autojs.permission.PLUGIN`, `WAKE_ACTIVITY` 与 `WakeActivity`, `ThreeMacawSpeechInfoService` (INFO), `ThreeMacawSpeechService` (SPEECH, 骨架实现只返回 `getInfo` 与 `getCapabilities`), D29 权限声明, `android:allowBackup="false"`; TTS 引擎服务与界面在 P4 / P5 补齐. 证据: 提交 `343591f`; `service.ThreeMacawSpeechInfoService` (INFO, category `three-macaw-speech`) 与 `service.ThreeMacawSpeechService` (`org.autojs.plugin.SPEECH`, category `speech`) 均 exported 且受 PLUGIN 权限保护, 服务带 `requiresHostVersion` meta-data (5448 占位); D29 五项权限, 无存储权限; `allowBackup=false` + `dataExtractionRules` + `fullBackupContent=false`; `NATIVE_PAGE_ALIGNMENT=16384`; 无启动器入口. `ManifestContractTest` (JVM) 与 `ThreeMacawSpeechContractTest` (5 台设备, 见 P0.3) 验证. 偏差: 宿主契约 `ISpeechPlugin` 在 P1.1 才有, 插件内不得复制 AIDL, 因此能力服务暂返回只携带 `org.autojs.plugin.speech.api.ISpeechPlugin` 描述符的占位 Binder (拒绝全部事务, 与 Batch Rename P0 同法); `getInfo` 由 INFO 服务提供, `getCapabilities` 的内容在 `PluginInfo.capabilities` 中 (`speechContractVersion=1`, `speechFeatures=[]`, `speechCatalogVersion=0`; 键名按 D28 暂存于 `ThreeMacawSpeechContract`, P1.1 改用 `SpeechCapabilityKeys`). AndroidX 合并进来的 `ProfileInstallReceiver` 受系统 `DUMP` 权限保护, 设备测试显式核对.
 - [x] (插件) 10 语言 `strings.xml` (`plugin_description`, 首页 / 设置骨架文案), `strings_donottranslate.xml`, 排序与 ASCII 标点扫描; 临时启动器图标 (Icon Studio 以临时图案生成 `mipmap/ic_launcher.png` 系列与 `ic_icon_studio_application`), README 标注 "正式图标待维护者源图". 证据: 提交 `343591f` (字符串与图标), `a828ea1` (README 标注); 11 个 values 目录各 11 条字符串 (描述, 3 个首页分组, 发行历史, 设置与外观四项), 术语沿用 3-Maple Image; `StringResourceParityTest`, `ApplicationTextPunctuationTest` 与 `check_repository.py` 通过. Icon Studio 1.3 配方 (`neutral-v1`, Three 底色 `#FAFAFA` / `#212121`) 从临时 "麦克风 + 声波" 源图 `.python/icons/three-macaw-ic-launcher-light.png` / `-dark.png` 生成 17 项资源, `--check` 通过. 偏差: 不可翻译项全部由 `resValue` 生成, 因此没有 `strings_donottranslate.xml`; 启动器四个 alias 随 P5 界面加入, 本阶段配方 `launcher=false`.
 - [x] (插件) 复制宿主 `.gitignore` / `sign.properties` / `app/sm003.jks`, `git check-ignore` 验证; `AGENTS.md` 裁剪版 (本地, 忽略); `.readme` / `.changelog` JSON 与模板, `.python/generate_markdown.py` + `--check`, `check_repository.py`. 证据: 提交 `9a901ec` (`.gitignore`, 以 Batch Rename 的插件版为准, 含宿主规则并补 `*.keystore`, `*.pre-platform-versions.bak`, `.kotlin/`), `a828ea1` (文档源与工具); 签名文件与宿主字节一致, `check_repository.py` 用 `git check-ignore` 确认 `AGENTS.md`, `CLAUDE.md`, `sign.properties`, `app/sm003.jks`, `local.properties` 与迁移备份均被忽略; `generate_markdown.py --check` 为 36 个产物; 本地 `AGENTS.md` 已按本仓库裁剪.
-- [x] (插件) `LICENSE` (MPL-2.0 全文), `THIRD_PARTY_NOTICES.md` 初稿 (D32), `RIGHTS_AND_TAKEDOWN.md` (沿用 3-Stamp Mail 的短篇双语版本). 证据: 提交 `a828ea1`; `THIRD_PARTY_NOTICES.md` 列出 sherpa-onnx 1.13.8 (Apache-2.0, tag 提交), onnxruntime 1.28.2 (MIT), silero VAD v5 (MIT), 测试录音 (MIT, 不进 APK), 宿主 AAR (MPL-2.0) 与 AndroidX; `HostApiAarLockTest` / `NativeRuntimeLockTest` 保证其与锁文件一致.
+- [x] (插件) `LICENSE` (MPL-2.0 全文), `THIRD_PARTY_NOTICES.md` 初稿 (D32), `RIGHTS_AND_TAKEDOWN.md` (沿用 3-Stamp Mail 的短篇双语版本). 证据: 提交 `a828ea1`; `THIRD_PARTY_NOTICES.md` 列出 sherpa-onnx 1.13.8 (Apache-2.0, tag 提交), onnxruntime 1.28.2 (MIT), silero VAD v5 (MIT), 测试录音 (MIT, 不进 APK), 宿主 AAR (MPL-2.0) 与 AndroidX; `HostApiAarLockTest` / `NativeRuntimeLockTest` 保证其与锁文件一致. 2026-10-16 补充 (D32 许可复核, 与本条记录同一提交): `libsherpa-onnx-jni.so` 与 `libsherpa-onnx-c-api.so` 在 4 个 ABI 上都命中 11/11 条 eSpeak NG 源码字符串 (error.c 状态码文案如 `Wrong version of espeak-ng-data`, dictionary.c 的 `Can't read dictionary file: '%s'`, `/usr/share/espeak-ng-data`, `ESPEAK_DATA_PATH`), piper-phonemize (`Failed to set eSpeak-ng voice`) 与 sherpa 胶水 (`piper-phonemize-lexicon.cc`) 也全部命中, `libonnxruntime.so` 与 `libsherpa-onnx-cxx-api.so` 为 0; 静态链接且符号隐藏 (动态符号表无 `espeak_*` 导出, 先前 "含 espeak 符号" 是 `OfflineSpeaker` 的大小写误匹配); 2026-10-16 构建的 release universal APK 中 4 个 `libsherpa-onnx-jni.so` 结果相同. 来源: sherpa-onnx `v1.13.8` 默认开启 `SHERPA_ONNX_ENABLE_TTS`, 由 `cmake/espeak-ng-for-piper.cmake` 构建 csukuangfj/espeak-ng `ed530aa` 的 `espeak-ng` 与 `ucd`, 由 `cmake/piper-phonemize.cmake` 构建 csukuangfj/piper-phonemize `f3ff95a` (该提交为 MIT, 分叉 master 后来改为 GPL-3.0); 构建路径 `_deps/<name>-src` 另证 kaldi-decoder, kaldifst, OpenFst, simple-sentencepiece. 上游 AAR, `LICENSE` 与 README 都没有第三方许可清单; k2-fsa/sherpa-onnx#3731 (2026-07-08 开启, 未关闭) 计划在 2.0.0 移除 eSpeak NG 与 piper-phonemize, #3969 中上游建议只用 ASR 的用户以 `-DSHERPA_ONNX_ENABLE_TTS=OFF` 自编译. 维护者 2026-10-16 四项均选推荐项: 保留官方 AAR 并声明 GPL, 对应源码随插件 Release 附件提供 (P6.4), GPL 全文先链接 gnu.org 并在关于页内置 (P5.2), 一并补齐其余 8 个宽松许可静态组件. `THIRD_PARTY_NOTICES.md` 因此新增静态组件表 (11 项, 版本取自 sherpa-onnx `v1.13.8` 与 kaldi-decoder `v0.3.0` 的 cmake 固定值), GPL 小节与 Unicode 数据小节.
 
 ### P0.2 sherpa-onnx 接入, ABI 拆分与 16 KB 校验
 
@@ -448,7 +448,7 @@ P0 (骨架 + AAR)
 
 ### P5.2 设置页
 
-- [ ] (插件) 外观四项 (语言, 夜间模式, 主题色, 启动器图标; 默认跟随宿主), 识别 (默认模型, 端点灵敏度, VAD 开关), 合成 (默认模型, 说话人, 语速), 资源 (模型空闲释放时间, 目录刷新, 回收未引用文件), 关于 (版本, 发行历史, 更新检查, 第三方声明); 按 `AUTOJS6_PLUGIN_STANDALONE_SETTINGS_AGENTS.md` 的列表密度, 对话框与保存语义.
+- [ ] (插件) 外观四项 (语言, 夜间模式, 主题色, 启动器图标; 默认跟随宿主), 识别 (默认模型, 端点灵敏度, VAD 开关), 合成 (默认模型, 说话人, 语速), 资源 (模型空闲释放时间, 目录刷新, 回收未引用文件), 关于 (版本, 发行历史, 更新检查, 第三方声明: APK 内置 `THIRD_PARTY_NOTICES.md` 的内容, GPL-3.0 全文, Unicode 使用条款与对应源码的位置, 满足 GPL-3.0 第 4 条与第 5(d) 条, D32); 按 `AUTOJS6_PLUGIN_STANDALONE_SETTINGS_AGENTS.md` 的列表密度, 对话框与保存语义.
 - [ ] (测试) API 24 与 35 截图核对, 大字号, RTL (ar), 夜间.
 
 ### P5.3 试听试说
@@ -487,6 +487,7 @@ P0 (骨架 + AAR)
 - [ ] (插件) D28 回填 `REQUIRES_HOST_VERSION`; R1-R4.
 - [ ] (索引) R5: `official-repositories.json`, `release-manifests`, `catalog-icons`, 索引生成与 Markdown.
 - [ ] (发布) 核对 Release 附件 (5 个 APK + SHA256SUMS), 真机安装正式包一次, 记录 E5.
+- [ ] (发布) 对应源码 (D32, GPL-3.0 第 6(d) 条): 按 sherpa-onnx `v1.13.8` 及 kaldi-decoder `v0.3.0` 的 cmake 固定 URL 与 SHA-256 收集 sherpa-onnx 源码与构建脚本, eSpeak NG, piper-phonemize, kaldi-native-fbank, kaldi-decoder, kaldifst, OpenFst, Eigen, simple-sentencepiece, nlohmann/json, hclust-cpp, 逐个校验上游 SHA-256 后打成确定性归档, 与 APK 并列作为每个 Release 的附件, 归档 SHA-256 写入锁文件与 SHA256SUMS; README 许可小节写明 APK 整体按 GPL-3.0-or-later 传播. 更换 AAR 版本时重做.
 
 ---
 
@@ -744,6 +745,7 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q6 | 系统 TTS 引擎的双语 Voice 报告方式 | (a) 每个说话人报告 zh-CN 与 en-US 两个 Voice; (b) 只报告 zh-CN 并在 `onIsLanguageAvailable` 对 en 返回 `LANG_AVAILABLE` | P4.2 |
 | Q7 | 模型下载是否默认允许计量网络 | (a) 默认询问 (与 3-Stone AI 一致); (b) 默认允许 | P2.3 |
 | Q8 | 识别结果是否默认写入宿主控制台日志 | (a) 不记录 (隐私); (b) 仅 `final` 级别 debug 日志 | 已定 (a) 不记录 (2026-10-16 按推荐项, P1.4) |
+| Q9 | 运行时内 eSpeak NG (GPL-3.0-or-later) 的处理 | (a) 保留官方 AAR, 声明 GPL 并随 Release 提供对应源码; (b) 自编译 `SHERPA_ONNX_ENABLE_TTS=OFF` (1.0.0 失去 TTS, 推翻 D2 / D3 / D13); (c) 自编译保留 TTS 但剔除 eSpeak NG (需改 sherpa-onnx 源码, piper 不可用); (d) 暂停发布等 sherpa-onnx 2.0.0 | 已定 (a) (2026-10-16 按推荐项, D32); sherpa-onnx 发布移除 eSpeak NG 的版本 (k2-fsa/sherpa-onnx#3731) 后重新评估: 迁移并删去 GPL 小节与对应源码附件, 同时核对 piper / kokoro 改用 lexicon 后的目录变化 |
 
 ---
 
