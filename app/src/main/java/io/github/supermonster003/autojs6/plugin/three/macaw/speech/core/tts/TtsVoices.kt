@@ -128,7 +128,15 @@ data class TtsVoice(
  * [TtsSpeakerHints] 指定的说话人), 编号最小的说话人. 说话人的首要语言可以不同于模型首个语言 ([TtsModelVoices.speakerLanguages]): 此时该说话人在
  * 其首要语言下的语音不带后缀. 纯 Kotlin.
  */
-class TtsVoiceTable(private val models: List<TtsModelVoices>, catalogLanguageCodes: Collection<String> = emptyList()) {
+class TtsVoiceTable(
+    private val models: List<TtsModelVoices>,
+    catalogLanguageCodes: Collection<String> = emptyList(),
+    /**
+     * Voices the settings screen chose per language (language code -> voice name, roadmap P5.2); they win over the rules
+     * above while they still exist. zh-CN: 设置页按语言选定的语音 (语言代码 -> 语音名, 路线图 P5.2); 仍存在时优先于上述规则.
+     */
+    preferredVoices: Map<String, String> = emptyMap(),
+) {
 
     val voices: List<TtsVoice> = models.flatMap { model ->
         val tags = model.languages.map(::languageTag).distinct()
@@ -140,6 +148,12 @@ class TtsVoiceTable(private val models: List<TtsModelVoices>, catalogLanguageCod
     }
 
     private val byName: Map<String, TtsVoice> = voices.associateBy { it.name }
+
+    private val preferred: Map<String, TtsVoice> = preferredVoices.mapNotNull { (language, name) ->
+        val voice = byName[name] ?: return@mapNotNull null
+        val code = iso3Language(language) ?: return@mapNotNull null
+        if (voice.iso3Language == code) code to voice else null
+    }.toMap()
 
     /** ISO 639-2 code -> catalog code of every language a catalog model speaks. zh-CN: 目录模型所说的每种语言. */
     private val catalogLanguages: Map<String, String> = catalogLanguageCodes.mapNotNull { code -> iso3Language(code)?.let { it to Locale.forLanguageTag(code).language } }.toMap()
@@ -176,6 +190,7 @@ class TtsVoiceTable(private val models: List<TtsModelVoices>, catalogLanguageCod
             return byName[voiceName(model.modelId, model.defaultSpeaker)]
         }
         val lang = iso3Language(language) ?: return null
+        preferred[lang]?.let { return it }
         val wanted = country?.let(::iso3Country)
         val order = models.withIndex().associate { it.value.modelId to it.index }
         val defaults = models.filter { it.isDefault }.map { it.modelId }.toSet()

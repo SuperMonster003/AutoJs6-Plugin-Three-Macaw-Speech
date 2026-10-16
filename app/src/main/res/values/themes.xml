@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Window theme of the plugin's Compose screens (roadmap P5): no action bar, the neutral page background of the
+        standalone settings specification (section 6); Compose draws everything else from MacawPalette.
+    -->
+    <style name="Theme.ThreeMacawSpeech" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/macaw_window_background</item>
+        <item name="android:colorBackground">@color/macaw_window_background</item>
+    </style>
+
+    <color name="macaw_window_background">#F3F4F5</color>
+</resources>

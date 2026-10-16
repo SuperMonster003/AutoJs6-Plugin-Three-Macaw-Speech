@@ -73,8 +73,10 @@ will move to such a release and drop this section (roadmap appendix D Q9).
   Licenses" notice), so the APK as a whole is conveyed under the terms of the GPL-3.0-or-later. The
   Apache-2.0, MIT, BSD-2-Clause, MPL-2.0 and Public Domain components listed in this file are
   compatible with it.
-- License text: https://www.gnu.org/licenses/gpl-3.0.txt. The About page of the plugin will carry the
-  full text and these notices inside the APK (roadmap P5.2).
+- License text: `third_party/licenses/GPL-3.0.txt` (https://www.gnu.org/licenses/gpl-3.0.txt). The APK
+  carries it, this file, `LICENSE` and the Unicode Terms of Use in `assets/legal/`; the About page of the
+  plugin (Settings > About > Licenses and notices) shows them, states that the APK comes without any
+  warranty and where the corresponding source is (GPL-3.0 sections 4 and 5(d), roadmap P5.2).
 - Corresponding source: every GitHub Release of the plugin attaches, next to its APKs, an archive with
   the sherpa-onnx `v1.13.8` source and build scripts plus every dependency archive that its build pins
   by URL and SHA-256 (the components above), with its SHA-256 recorded in the release (roadmap P6.4).
@@ -83,9 +85,10 @@ will move to such a release and drop this section (roadmap appendix D Q9).
 
 ### Unicode data
 
-The UCD Tools tables are derived from the Unicode Character Database, Copyright (c) 1991-2014 Unicode,
+The UCD Tools tables are derived from the Unicode Character Database, Copyright (c) 1991-2018 Unicode,
 Inc. All rights reserved. They are distributed under the Unicode Terms of Use, whose full text is
-`src/ucd-tools/COPYING.UCD` of the eSpeak NG tree above (also in the corresponding source archive).
+`src/ucd-tools/COPYING.UCD` of the eSpeak NG tree above (also in the corresponding source archive); the
+APK carries the same bytes as `assets/legal/COPYING.UCD` (`third_party/licenses/COPYING.UCD`).
 
 ## AutoJs6 host contract libraries
 
@@ -104,6 +107,7 @@ Provenance and SHA-256 digests are recorded in `locks/host-api-aars.lock` and `l
 | AndroidX Activity Compose (`androidx.activity:activity-compose`) | 1.12.2 | Apache-2.0 |
 | AndroidX Core KTX (`androidx.core:core-ktx`) | 1.15.0 | Apache-2.0 |
 | Kotlin Coroutines (`org.jetbrains.kotlinx:kotlinx-coroutines-android`) | 1.11.0 | Apache-2.0 |
+| Material Color Utilities, Kotlin port by MaterialKolor (`com.materialkolor:material-color-utilities`; the theme accent of the plugin's screens) | 4.1.1 | MIT (https://github.com/jordond/materialkolor) |
 | Kotlin standard library (`org.jetbrains.kotlin:kotlin-stdlib`, added by the Android Gradle Plugin) | follows the build's Kotlin version | Apache-2.0 |
 
 Jetpack Compose `ui-graphics` depends on `androidx.graphics:graphics-path`, whose

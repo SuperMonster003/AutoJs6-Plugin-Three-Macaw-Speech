@@ -17,3 +17,14 @@ Why a table of its own (roadmap D18, appendix D Q4): sherpa-onnx 1.13.8 accepts 
 library carries no pinyin conversion. The plugin spells every Chinese character of a keyword with its customary
 reading from this table and splits the syllable into the initial and the tonal final of the zh-en keyword spotter
 (`phone+ppinyin`, pypinyin with `strict=False`); English words come from the model's own `en.phone` lexicon.
+
+## License texts
+
+The About page shows these texts from the APK (roadmap D32, P5.2); the build copies them, together with `LICENSE` and
+`THIRD_PARTY_NOTICES.md`, into the generated `assets/legal/` folder and refuses other bytes (`locks/legal-texts.lock`).
+Both were downloaded on 2026-10-16 with the maintainer's consent.
+
+| Path | Upstream | License | SHA-256 |
+| --- | --- | --- | --- |
+| `licenses/GPL-3.0.txt` | https://www.gnu.org/licenses/gpl-3.0.txt | the text itself (verbatim copies allowed) | `3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986` |
+| `licenses/COPYING.UCD` | `src/ucd-tools/COPYING.UCD` of https://github.com/csukuangfj/espeak-ng at `ed530aa113046142eb5115cf2fc9157854d0ffe1` | Unicode Terms of Use | `be029c50df83105a810e391778b6edcb522d6cb4b4e142332aca54437a499bf7` |

@@ -269,6 +269,8 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
                     putInt(SpeechResultKeys.CATALOG_VERSION, result.catalogVersion)
                     putBoolean(SpeechResultKeys.UPDATED, result.updated)
                 }
+                // Only the settings screen recycles; the contract has no such call. zh-CN: 只有设置页会回收; 契约没有此调用.
+                is OperationResult.Recycled -> SpeechBundles.answer {}
             }
             runCatching { callback?.onCompleted(opId, bundle) }
         }

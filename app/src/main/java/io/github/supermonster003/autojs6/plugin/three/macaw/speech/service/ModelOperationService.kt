@@ -25,10 +25,11 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Mo
  * model operations (downloads, imports, catalog refreshes) are queued or running; it stops itself when the queue is
  * empty. Android may refuse to start it while the plugin is in the background (API 31+): the operations then continue
  * without it, and an interrupted download resumes from its partial file on the next request. The notification is
- * silent and needs `POST_NOTIFICATIONS` on API 33+ to be visible; the plugin never asks for it on its own.
+ * silent and needs `POST_NOTIFICATIONS` on API 33+ to be visible; the home screen asks for it once, at the first
+ * download (roadmap P5.1), and script calls never ask.
  * zh-CN: 数据同步前台服务 (路线图 P2.3), 在模型操作 (下载, 导入, 目录刷新) 排队或运行期间以进度通知保持插件进程存活, 队列清空后自行停止.
  * 插件在后台时 Android 可能拒绝启动它 (API 31+): 操作照常继续, 被中断的下载会在下次请求时从部分文件续传. 通知为静默通知, 在 API 33+ 需要
- * `POST_NOTIFICATIONS` 才可见; 插件不会自行申请该权限.
+ * `POST_NOTIFICATIONS` 才可见; 首页在第一次下载时申请一次 (路线图 P5.1), 脚本调用从不申请.
  */
 class ModelOperationService : Service() {
 

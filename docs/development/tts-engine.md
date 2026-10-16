@@ -62,11 +62,13 @@ death of the host's callback Binder) fails the operation with `SESSION_CANCELLED
 ## System TTS engine
 
 Manifest: the service with the `android.intent.action.TTS_SERVICE` filter and the `android.speech.tts` meta-data
-(`res/xml/tts_engine.xml`, whose `settingsActivity` is the placeholder `TtsSettingsActivity` until the settings screen of
-roadmap P5.2), plus `CheckVoiceDataActivity` (`CHECK_TTS_DATA`), `GetSampleTextActivity` (`GET_SAMPLE_TEXT`) and the
-placeholder for `INSTALL_TTS_DATA`. These four are the only exported components without the plugin permission: Android's
+(`res/xml/tts_engine.xml`, whose `settingsActivity` is the plugin's `ui.settings.SettingsActivity`, opened at the synthesis
+group since roadmap P5.2), plus `CheckVoiceDataActivity` (`CHECK_TTS_DATA`), `GetSampleTextActivity` (`GET_SAMPLE_TEXT`)
+and the home screen `ui.home.HomeActivity` for `INSTALL_TTS_DATA` (scrolled to the synthesis models). The engine and the
+two data activities are exported without the plugin permission, like the settings and home screens: Android's
 `TextToSpeech` binds the engine from the client app's own process and the system settings start the activities. They
-only synthesize or answer what the engine can speak.
+only synthesize or answer what the engine can speak. The settings' per-language default voices and the speaker of
+each model feed the engine's voice table; speed and pitch come from the request.
 
 ### Voice names (appendix D Q6)
 

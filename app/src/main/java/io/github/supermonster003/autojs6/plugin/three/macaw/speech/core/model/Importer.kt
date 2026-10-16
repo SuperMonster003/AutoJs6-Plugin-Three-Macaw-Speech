@@ -90,12 +90,7 @@ class Importer(
                 if (requested != null) {
                     throw IntegrityException("The import does not contain the files of ${requested.modelId}")
                 }
-                if (request.modelId == null) {
-                    throw ModelException(
-                        SpeechErrorCodes.INVALID_OPTIONS,
-                        "The import matches no catalog model; model, kind, modelType, name and languages are required",
-                    )
-                }
+                if (request.modelId == null) throw NoCatalogMatchException()
                 val files = placeCustomFiles(extracted, staging)
                 InstalledModel(
                     modelId = request.modelId,

@@ -8,7 +8,7 @@
     "v1.0.0": {
       "released_date": "2026/10/16",
       "hint": [
-        "Préversion de développement: AutoJs6 détecte le plugin, qui télécharge et gère les modèles, reconnaît la parole dans des fichiers WAV, du PCM fourni et au microphone, détecte l'activité vocale et les mots de réveil et synthétise la parole, y compris comme moteur TTS du système; les écrans du plugin et le module de script speech ne sont pas encore livrés",
+        "Préversion de développement: AutoJs6 détecte le plugin, qui télécharge et gère les modèles, reconnaît la parole dans des fichiers WAV, du PCM fourni et au microphone, détecte l'activité vocale et les mots de réveil et synthétise la parole, y compris comme moteur TTS du système; les écrans du plugin permettent de gérer et d'essayer les modèles; la version d'AutoJs6 avec le module de script speech n'est pas encore publiée",
         "Nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)"
       ],
       "feature": [
@@ -22,6 +22,13 @@
         "Pendant une session au microphone, le plugin continue d'enregistrer avec un service de premier plan de type microphone et sa notification, si bien qu'une session commencée alors qu'AutoJs6 est au premier plan continue quand AutoJs6 passe en arrière-plan ou que l'écran s'éteint; une seule session au microphone à la fois; sans l'autorisation du microphone, les sessions échouent avec PERMISSION_DENIED en indiquant l'écran d'autorisation",
         "Synthèse vocale: les modèles de synthèse installés (VITS, Matcha et Kokoro; le catalogue compte 5 modèles chinois et anglais) transforment jusqu'à 8000 caractères de texte en fichier WAV phrase par phrase, à la fréquence d'échantillonnage du modèle; le locuteur et la vitesse (de 0.5 à 2 fois) se choisissent, la progression compte les caractères traités et la synthèse peut être annulée à tout moment; un modèle à un seul locuteur ignore le locuteur choisi et le signale",
         "Moteur TTS du système: une fois un modèle de synthèse installé, 3-Macaw Speech peut être choisi dans les réglages de synthèse vocale du système, et le module tts d'AutoJs6 comme les autres applications lisent à voix haute avec lui; chaque locuteur est une voix, les modèles bilingues ajoutent une voix anglaise pour chaque locuteur et la vitesse d'élocution suit le réglage du système ou de l'application; sans modèle installé, le moteur signale des données vocales manquantes",
+        "Écran d'accueil: affiche la version du moteur vocal, le nombre de modèles installés, l'autorisation du microphone (avec un bouton pour l'accorder) et indique si 3-Macaw Speech est le moteur TTS préféré du système",
+        "Modèles sur l'écran d'accueil, classés en reconnaissance, mots de réveil, synthèse et détection d'activité vocale, avec leur taille, leurs langues et leur licence: télécharger, suspendre, reprendre, annuler, supprimer et définir par défaut; la progression du téléchargement s'affiche aussi dans une notification; les modèles réservés à un usage non commercial ou sans licence déclarée demandent d'abord d'accepter leur licence, et un téléchargement sur données mobiles ou sur un autre réseau facturé à l'usage demande confirmation avant de commencer",
+        "Import d'un modèle local depuis une archive tar, tar.bz2 ou zip ou depuis un dossier: les fichiers qui correspondent à un modèle du catalogue sont enregistrés comme ce modèle, les autres deviennent un modèle personnalisé une fois sa catégorie, son type de modèle, son nom, ses langues et son ID renseignés",
+        "Essayer: dictée en direct (résultats partiels en gris) avec choix du modèle et de la langue, essai des mots de réveil qui liste les détections avec leur mot clé et leur score, et synthèse vocale de votre texte avec choix du modèle, du locuteur et de la vitesse, à écouter ou à enregistrer en fichier WAV; quitter l'écran libère le microphone",
+        "Paramètres: langue, mode nuit, couleur du thème et icône du lanceur (qui suivent AutoJs6 par défaut); modèles de reconnaissance et de synthèse par défaut, sensibilité de fin de phrase, détection d'activité vocale, locuteur, vitesse et voix par défaut par langue pour l'écran d'essai et le moteur TTS du système (les scripts gardent les valeurs par défaut documentées); délai avant la libération des modèles inactifs, actualisation du catalogue et nettoyage des fichiers restants; le bouton de réglages de 3-Macaw Speech dans les réglages de synthèse vocale du système ouvre cet écran",
+        "À propos: version, historique des versions inclus dans le plugin, recherche de mises à jour (automatique au plus une fois toutes les 12 heures, une version peut être ignorée) ainsi que licences et mentions: l'application dans son ensemble est distribuée sous la GNU GPL 3.0 ou ultérieure, sans aucune garantie, avec les mentions de tiers, le texte complet de la GPL, les conditions d'utilisation d'Unicode et l'emplacement de la source correspondante",
+        "Icône du lanceur: icône adaptative (claire), icône adaptative (sombre), icône adaptative (automatique, par défaut) ou icône à fond transparent",
         "README, instructions du centre des plugins et journaux des modifications en 10 langues, générés à partir de sources JSON"
       ],
       "dependency": [
@@ -29,7 +36,8 @@
         "Ajout de Jetpack Compose BOM {{ compose_bom }}",
         "Ajout de AndroidX Activity Compose 1.12.2",
         "Ajout de AndroidX Core KTX 1.15.0",
-        "Ajout de Kotlin Coroutines 1.11.0"
+        "Ajout de Kotlin Coroutines 1.11.0",
+        "Ajout de Material Color Utilities (MaterialKolor) 4.1.1"
       ]
     }
   }

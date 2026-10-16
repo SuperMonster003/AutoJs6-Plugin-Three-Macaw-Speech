@@ -1,0 +1,13 @@
+# License texts the About page carries inside the APK (roadmap D32, P5.2: GPL-3.0 sections 4 and 5(d)), checked by
+# app/build.gradle.kts during configuration and copied with LICENSE and THIRD_PARTY_NOTICES.md into the generated
+# assets/legal/ folder of every build. Downloaded on 2026-10-16 with the maintainer's consent, kept byte for byte.
+# gpl-3.0: the GNU General Public License version 3 as the FSF publishes it.
+# unicode-terms: the Unicode Terms of Use of the UCD Tools tables, src/ucd-tools/COPYING.UCD of the eSpeak NG tree
+#   that sherpa-onnx v1.13.8 statically links (csukuangfj/espeak-ng at the commit of THIRD_PARTY_NOTICES.md).
+format=1
+gpl-3.0.path=third_party/licenses/GPL-3.0.txt
+gpl-3.0.sha256=3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986
+gpl-3.0.url=https://www.gnu.org/licenses/gpl-3.0.txt
+unicode-terms.path=third_party/licenses/COPYING.UCD
+unicode-terms.sha256=be029c50df83105a810e391778b6edcb522d6cb4b4e142332aca54437a499bf7
+unicode-terms.url=https://raw.githubusercontent.com/csukuangfj/espeak-ng/ed530aa113046142eb5115cf2fc9157854d0ffe1/src/ucd-tools/COPYING.UCD

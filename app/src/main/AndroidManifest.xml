@@ -16,9 +16,11 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Roadmap P5.1 (appendix D Q7): the home screen asks before a download on a metered network and waits offline. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- The launcher entry and the screens arrive in roadmap P5; the system TTS engine (roadmap P4.2) is below. -->
+    <!-- The screens and the launcher entry are roadmap P5; the system TTS engine (roadmap P4.2) is below. -->
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -27,7 +29,8 @@
         android:enableOnBackInvokedCallback="true"
         android:supportsRtl="true"
         android:icon="@mipmap/ic_icon_studio_application"
-        android:roundIcon="@mipmap/ic_icon_studio_application">
+        android:roundIcon="@mipmap/ic_icon_studio_application"
+        android:theme="@style/Theme.ThreeMacawSpeech">
 
         <!-- Every packaged sherpa-onnx, onnxruntime and Compose library is 16 KB aligned in all four ABIs (roadmap D14). -->
         <meta-data
@@ -54,6 +57,102 @@
                 <action android:name="org.autojs.plugin.action.WAKE" />
             </intent-filter>
         </activity>
+
+        <!--
+            The plugin's screens (roadmap D7 / D26, P5). The home screen is the launcher target: the launcher entry is one
+            of four fixed aliases that persist the icon choice as component state (icon specification section 4, roadmap
+            P5.5); only the automatic alias is enabled by default. The home screen also answers INSTALL_TTS_DATA of the
+            system TTS settings (it opens at the synthesis models), and the settings screen is the engine's settingsActivity
+            (res/xml/tts_engine.xml), so both are exported without a permission: they only show the plugin's own screens.
+        -->
+        <activity
+            android:name=".ui.home.HomeActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity-alias
+            android:name=".launcher.AdaptiveLightIconAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_system_light"
+            android:roundIcon="@mipmap/ic_launcher_system_light"
+            android:targetActivity=".ui.home.HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.AdaptiveDarkIconAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_system"
+            android:roundIcon="@mipmap/ic_launcher_system"
+            android:targetActivity=".ui.home.HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.AdaptiveAutoIconAlias"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_system_auto"
+            android:roundIcon="@mipmap/ic_launcher_system_auto"
+            android:targetActivity=".ui.home.HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".launcher.TransparentIconAlias"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:targetActivity=".ui.home.HomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="true"
+            android:label="@string/settings_title" />
+        <activity
+            android:name=".ui.tryout.TryoutActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.release.ReleaseHistoryActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".ui.about.NoticesActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false" />
+        <activity
+            android:name=".ui.about.LegalDocumentActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false" />
+        <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
+        <receiver
+            android:name=".ui.appearance.LauncherIconUpdateReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Plugin Center identity (roadmap 5.5, category three-macaw-speech, engine speech). -->
         <service
@@ -104,7 +203,7 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
-        <!-- The system dialog for RECORD_AUDIO that PERMISSION_DENIED names until the home screen of roadmap P5.1. -->
+        <!-- The system dialog for RECORD_AUDIO that PERMISSION_DENIED names (a contract entry beside the home screen's button). -->
         <activity
             android:name=".service.MicrophonePermissionActivity"
             android:excludeFromRecents="true"
@@ -113,10 +212,10 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!--
-            The Android system TTS engine (roadmap D3, D19, P4.2, appendix C.2). It and the three activities below are the
-            only exported components without the plugin permission: Android's TextToSpeech binds the engine from the
-            client app's own process, and the system TTS settings start the activities. None of them has a side effect
-            besides synthesis (voice check, sample text, the settings placeholder until roadmap P5.2).
+            The Android system TTS engine (roadmap D3, D19, P4.2, appendix C.2). It and the two activities below, besides the
+            screens above, are the only exported components without the plugin permission: Android's TextToSpeech binds
+            the engine from the client app's own process, and the system TTS settings start the activities. None of them
+            has a side effect besides synthesis (voice check, sample text).
         -->
         <service
             android:name=".ttsengine.ThreeMacawSpeechTtsEngineService"
@@ -154,16 +253,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".ttsengine.TtsSettingsActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
 
     </application>
 

@@ -39,6 +39,9 @@ sealed class OperationResult {
     /** [downloadedBytes]: bytes transferred by this operation (a resumed download counts only the rest). */
     data class Model(val entry: ModelEntry, val origin: String, val mirrorFailure: String?, val downloadedBytes: Long = 0) : OperationResult()
     data class Catalog(val catalogVersion: Int, val updated: Boolean) : OperationResult()
+
+    /** [ModelManager.recycle]: bytes and files freed. zh-CN: [ModelManager.recycle]: 释放的字节数与文件数. */
+    data class Recycled(val freedBytes: Long, val files: Int) : OperationResult()
 }
 
 /** Progress and completion of one operation id. zh-CN: 单个操作 ID 的进度与完成回调. */
@@ -68,6 +71,8 @@ class ModelManager(
     private val locale: () -> Locale = Locale::getDefault,
     private val executor: ExecutorService = Executors.newSingleThreadExecutor { Thread(it, "MacawModelOperations").apply { isDaemon = true } },
     private val log: (String) -> Unit = {},
+    /** Scratch directories [recycle] empties (the import copies). zh-CN: [recycle] 清空的临时目录 (导入副本). */
+    private val scratchDirectories: List<File> = emptyList(),
 ) {
 
     /** What runs now, for the foreground notification. zh-CN: 当前运行的内容, 供前台通知使用. */
@@ -80,9 +85,12 @@ class ModelManager(
     @Volatile
     var activity: ActivityListener? = null
 
-    private class Operation(val id: Int, val title: String, val listener: OperationListener, val cleanup: () -> Unit) {
+    private class Operation(val id: Int, val title: String, val listener: OperationListener, val cleanup: () -> Unit, val modelId: String?) {
         val cancel = CancelToken()
         @Volatile var started = false
+
+        /** Set by [cancel] when the partial download goes too (the screens' "cancel", not "pause"). */
+        @Volatile var discard = false
         @Volatile var done = 0L
         @Volatile var total = 0L
     }
@@ -223,7 +231,7 @@ class ModelManager(
         val model = catalogs.current().catalog.model(modelId)
             ?: throw ModelException(SpeechErrorCodes.MODEL_MISSING, "Unknown catalog model $modelId")
         model.installableVersion ?: throw ModelException(SpeechErrorCodes.MODEL_MISSING, "$modelId has no installable version")
-        return enqueue(title ?: model.localizedName(locale()), listener) { operation ->
+        return enqueue(title ?: model.localizedName(locale()), listener, modelId = modelId) { operation ->
             // Re-read the catalog on the worker: a refresh may have finished meanwhile.
             val snapshot = catalogs.current().catalog
             val current = snapshot.model(modelId) ?: throw ModelException(SpeechErrorCodes.MODEL_MISSING, "Unknown catalog model $modelId")
@@ -288,20 +296,104 @@ class ModelManager(
      */
     fun nextOperationId(): Int = ids.incrementAndGet()
 
-    /** Cancels a queued or running operation; unknown ids are ignored. zh-CN: 取消排队或运行中的操作; 忽略未知 ID. */
-    fun cancel(opId: Int) {
+    /**
+     * Cancels a queued or running operation; unknown ids are ignored. A cancelled download keeps its partial file, so
+     * installing the model again resumes it (the screens' "pause"); [discardPartial] deletes the partial files as well,
+     * once the operation has stopped writing (the screens' "cancel").
+     * zh-CN: 取消排队或运行中的操作; 忽略未知 ID. 被取消的下载保留部分文件, 再次安装即续传 (界面的 "暂停"); [discardPartial] 在操作停止写入后
+     * 同时删除部分文件 (界面的 "取消").
+     */
+    fun cancel(opId: Int, discardPartial: Boolean = false) {
         val operation = operations[opId] ?: return
+        if (discardPartial) operation.discard = true
         operation.cancel.cancel()
         val unstarted = synchronized(operation) { !operation.started && operations.remove(opId) != null }
         if (unstarted) {
             runCatching(operation.cleanup)
+            if (discardPartial) operation.modelId?.let(::discardDownload)
             runCatching { operation.listener.onFailed(opId, OperationCancelledException()) }
             publishActivity()
         }
     }
 
-    private fun enqueue(title: String, listener: OperationListener, cleanup: () -> Unit = {}, body: (Operation) -> OperationResult): Int {
-        val operation = Operation(ids.incrementAndGet(), title, listener, cleanup)
+    /**
+     * Bytes already downloaded for [modelId] (partial and complete download files of its catalog versions): non-zero
+     * after a paused or interrupted download.
+     * zh-CN: [modelId] 已下载的字节数 (其目录版本的部分与完整下载文件): 下载暂停或中断后不为零.
+     */
+    fun downloadedBytes(modelId: String): Long {
+        val model = catalogs.current().catalog.model(modelId) ?: return 0
+        return artifacts(model).sumOf { sha ->
+            listOf(File(downloadDirectory, "$sha.part"), File(downloadDirectory, "$sha.bin")).sumOf { if (it.isFile) it.length() else 0L }
+        }
+    }
+
+    /**
+     * Deletes the download files of [modelId] on the model thread, after the operations queued before; [onDone] runs there.
+     * zh-CN: 在模型线程上 (排在此前的操作之后) 删除 [modelId] 的下载文件; [onDone] 在该线程上运行.
+     */
+    fun discardDownload(modelId: String, onDone: () -> Unit = {}) {
+        executor.execute {
+            runCatching { discardDownloads(modelId) }.onFailure { log("Discarding the download of $modelId failed: $it") }
+            runCatching(onDone)
+        }
+    }
+
+    /**
+     * True when installing [modelId] needs the license confirmation of roadmap D11 (not accepted before).
+     * zh-CN: 安装 [modelId] 需要路线图 D11 的许可确认 (此前未接受) 时为真.
+     */
+    fun needsLicenseAcceptance(modelId: String): Boolean {
+        val version = catalogs.current().catalog.model(modelId)?.installableVersion ?: return false
+        return !licensePolicy.isAccepted(modelId, version)
+    }
+
+    /**
+     * Frees what no model refers to (the settings' "recycle unreferenced files", roadmap D23): download files that no
+     * artifact of the current catalog names (paused downloads stay), the import copies, and the store's interrupted
+     * staging, trash and broken version directories.
+     * zh-CN: 释放不被任何模型引用的内容 (设置页的 "回收未引用文件", 路线图 D23): 当前目录任何资源都不引用的下载文件 (暂停的下载保留), 导入副本,
+     * 以及存储中被中断的暂存, 回收站与损坏的版本目录.
+     */
+    fun recycle(title: String, listener: OperationListener): Int = enqueue(title, listener) {
+        val referenced = catalogs.current().catalog.models.flatMap(::artifacts).toSet()
+        var bytes = 0L
+        var files = 0
+        fun drop(file: File) {
+            file.walkBottomUp().filter { it.isFile }.forEach { bytes += it.length(); files++ }
+            file.deleteRecursively()
+        }
+        downloadDirectory.listFiles().orEmpty().filter { it.name.substringBefore('.') !in referenced }.forEach(::drop)
+        scratchDirectories.forEach { directory -> directory.listFiles().orEmpty().forEach(::drop) }
+        val before = usage(store.root)
+        store.reconcile()
+        val after = usage(store.root)
+        bytes += maxOf(0L, before.first - after.first)
+        files += maxOf(0, before.second - after.second)
+        log("Recycled $files files, $bytes bytes")
+        OperationResult.Recycled(bytes, files)
+    }
+
+    private fun usage(root: File): Pair<Long, Int> {
+        var bytes = 0L
+        var files = 0
+        root.walkBottomUp().filter { it.isFile }.forEach { bytes += it.length(); files++ }
+        return bytes to files
+    }
+
+    private fun artifacts(model: CatalogModel): List<String> =
+        model.versions.flatMap { version -> listOfNotNull(version.mirror?.sha256) + version.upstream.map { it.sha256 } }
+
+    private fun discardDownloads(modelId: String) {
+        val model = catalogs.current().catalog.model(modelId) ?: return
+        artifacts(model).forEach { sha ->
+            File(downloadDirectory, "$sha.part").delete()
+            File(downloadDirectory, "$sha.bin").delete()
+        }
+    }
+
+    private fun enqueue(title: String, listener: OperationListener, cleanup: () -> Unit = {}, modelId: String? = null, body: (Operation) -> OperationResult): Int {
+        val operation = Operation(ids.incrementAndGet(), title, listener, cleanup, modelId)
         operations[operation.id] = operation
         publishActivity()
         executor.execute {
@@ -323,6 +415,7 @@ class ModelManager(
                 Result.failure(ModelException(SpeechErrorCodes.INTERNAL, e.message ?: e.javaClass.simpleName, e))
             } finally {
                 runCatching(operation.cleanup)
+                if (operation.discard && operation.cancel.isCancelled) operation.modelId?.let { id -> runCatching { discardDownloads(id) } }
             }
             operations.remove(operation.id)
             publishActivity()
@@ -360,9 +453,7 @@ class ModelManager(
      * zh-CN: 删除当前目录资源不再引用的下载残留, 以及超过一周的导入副本或归档.
      */
     private fun recycleDownloads() {
-        val referenced = catalogs.current().catalog.models.flatMap { model ->
-            model.versions.flatMap { version -> listOfNotNull(version.mirror?.sha256) + version.upstream.map { it.sha256 } }
-        }.toSet()
+        val referenced = catalogs.current().catalog.models.flatMap(::artifacts).toSet()
         val limit = System.currentTimeMillis() - 7L * 24 * 3600 * 1000
         downloadDirectory.listFiles().orEmpty().forEach { file ->
             val sha = file.name.substringBefore('.')

@@ -6,7 +6,7 @@
   "packages": [
     "io.github.supermonster003.autojs6.plugin.three.macaw.speech"
   ],
-  "launcher": false,
+  "launcher": true,
   "params": {
     "sources": {
       "day": "726b2b45b00a57af1df8cb5ec3e7572c0cdab7c6e028040c0ae77f6ebe7ad224",
@@ -131,12 +131,59 @@
     },
     "app/src/main/res/raw/keep_icon_studio_application.xml": {
       "role": "application-keep"
+    },
+    "app/src/main/res/mipmap/ic_launcher_monochrome.png": {
+      "role": "mono"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system.png": {
+      "role": "legacy-night"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_foreground.png": {
+      "role": "adaptive-night"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_light.png": {
+      "role": "legacy-day"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_light_foreground.png": {
+      "role": "adaptive-day"
+    },
+    "app/src/main/res/mipmap/ic_launcher_system_auto.xml": {
+      "role": "keep",
+      "original": "2c9efc6043b903444f129a018e04f8b72198ae97bca3984fb22be9d02dec3bcd"
+    },
+    "app/src/main/res/mipmap-notnight/ic_launcher_system_auto.xml": {
+      "role": "keep",
+      "original": "e9f59c22fb4537122a8fadc90a4c0e88b5e2e9452eb138b1676e96a45f4e0e0e"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_system.xml": {
+      "role": "adaptive-background",
+      "original": "5a6b777b2031a6c70b7164e5a089ffd2dffcd20049d8a152a38beca94d6dfe84",
+      "theme": "night"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_system_auto.xml": {
+      "role": "adaptive-background",
+      "original": "5a6b777b2031a6c70b7164e5a089ffd2dffcd20049d8a152a38beca94d6dfe84",
+      "theme": "night"
+    },
+    "app/src/main/res/mipmap-anydpi-v26/ic_launcher_system_light.xml": {
+      "role": "adaptive-background",
+      "original": "dfc65ffef5957316aa345af6c3d5a53216b89b998a692519533bf8c6eccb5fa1",
+      "theme": "day"
+    },
+    "app/src/main/res/mipmap-notnight-anydpi-v26/ic_launcher_system_auto.xml": {
+      "role": "adaptive-background",
+      "original": "dfc65ffef5957316aa345af6c3d5a53216b89b998a692519533bf8c6eccb5fa1",
+      "theme": "day"
     }
   },
   "assets": [
     "070b13671fa598dab66c65c8474a9893edf88e0e72a167a1cc9265558f97ebef",
+    "2c9efc6043b903444f129a018e04f8b72198ae97bca3984fb22be9d02dec3bcd",
+    "5a6b777b2031a6c70b7164e5a089ffd2dffcd20049d8a152a38beca94d6dfe84",
     "726b2b45b00a57af1df8cb5ec3e7572c0cdab7c6e028040c0ae77f6ebe7ad224",
     "da03ee67abb5737a14be9a34112bdfb7f024d42177c3b20ba8f4df4acc409a24",
+    "dfc65ffef5957316aa345af6c3d5a53216b89b998a692519533bf8c6eccb5fa1",
+    "e9f59c22fb4537122a8fadc90a4c0e88b5e2e9452eb138b1676e96a45f4e0e0e",
     "ec13298d2eb77adbb938bc61ee4aa9f77f9c26d357af6bef0cc727a17e6aedfc"
   ],
   "legacyGenerator": null,

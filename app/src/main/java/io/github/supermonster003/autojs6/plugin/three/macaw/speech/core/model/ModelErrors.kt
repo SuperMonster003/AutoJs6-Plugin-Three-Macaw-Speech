@@ -43,3 +43,13 @@ class HttpStatusException(val status: Int, val url: String) :
     ModelException(SpeechErrorCodes.MODEL_DOWNLOAD_FAILED, "HTTP $status from ${redactQuery(url)}")
 
 internal fun redactQuery(url: String): String = url.substringBefore('?')
+
+/**
+ * An import whose files match no catalog version and that names no custom identity: the screens then ask for kind,
+ * model type, name, languages and id (roadmap P5.1); scripts see the same `INVALID_OPTIONS`.
+ * zh-CN: 文件不匹配任何目录版本且未给出自定义身份的导入: 界面随后询问种类, 模型类型, 名称, 语言与 ID (路线图 P5.1); 脚本看到的仍是 `INVALID_OPTIONS`.
+ */
+class NoCatalogMatchException : ModelException(
+    SpeechErrorCodes.INVALID_OPTIONS,
+    "The import matches no catalog model; model, kind, modelType, name and languages are required",
+)

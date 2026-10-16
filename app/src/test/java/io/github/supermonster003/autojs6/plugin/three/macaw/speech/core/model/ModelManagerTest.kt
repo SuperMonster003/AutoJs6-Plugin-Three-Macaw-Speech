@@ -331,4 +331,87 @@ class ModelManagerTest {
         assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS))
         assertEquals(listOf(kept.name), downloads.list()!!.toList())
     }
+
+    @Test
+    fun `pausing keeps the partial download and cancelling with discard deletes it`() {
+        val mirror = Fixtures.tiny.latestVersion.mirror!!
+        server.resource(mirror.url).bytesPerChunkDelayMillis = 300
+        val paused = RecordingListener()
+        val pausedId = manager.install("tts.test.tiny", false, paused)
+        assertTrue(server.transferStarted.await(10, TimeUnit.SECONDS))
+        Thread.sleep(150)
+        manager.cancel(pausedId)
+        paused.await()
+        assertEquals(SpeechErrorCodes.SESSION_CANCELLED, paused.error!!.code)
+        assertTrue("a paused download keeps its bytes", manager.downloadedBytes("tts.test.tiny") in 1..mirror.size)
+
+        // A queued download cancelled with discard drops its partial file once the running operation is done.
+        val noncommercial = Fixtures.catalog.model("asr.test.noncommercial")!!.latestVersion.mirror!!
+        server.resource(noncommercial.url).bytesPerChunkDelayMillis = 100
+        val running = RecordingListener()
+        manager.install("asr.test.noncommercial", true, running)
+        val queued = RecordingListener()
+        val queuedId = manager.install("tts.test.tiny", false, queued)
+        manager.cancel(queuedId, discardPartial = true)
+        assertEquals(SpeechErrorCodes.SESSION_CANCELLED, queued.await().error!!.code)
+        assertNotNull(running.await().result)
+        val done = java.util.concurrent.CountDownLatch(1)
+        manager.discardDownload("asr.test.noncommercial") { done.countDown() }
+        assertTrue(done.await(10, TimeUnit.SECONDS))
+        assertEquals("a discarded download leaves nothing", 0L, manager.downloadedBytes("tts.test.tiny"))
+        assertFalse(File(downloads, "${mirror.sha256}.part").exists())
+        assertNull(store.installed("tts.test.tiny"))
+    }
+
+    @Test
+    fun `discarding a paused download deletes its partial files on the model thread`() {
+        val mirror = Fixtures.tiny.latestVersion.mirror!!
+        File(downloads, "${mirror.sha256}.part").writeText("partial")
+        assertEquals(7L, manager.downloadedBytes("tts.test.tiny"))
+        val done = java.util.concurrent.CountDownLatch(1)
+        manager.discardDownload("tts.test.tiny") { done.countDown() }
+        assertTrue(done.await(10, TimeUnit.SECONDS))
+        assertEquals(0L, manager.downloadedBytes("tts.test.tiny"))
+        assertEquals("unknown ids have no download", 0L, manager.downloadedBytes("tts.unknown.model"))
+    }
+
+    @Test
+    fun `the license confirmation is needed until a license is accepted`() {
+        assertFalse("commercial models need no confirmation", manager.needsLicenseAcceptance("tts.test.tiny"))
+        assertTrue(manager.needsLicenseAcceptance("asr.test.noncommercial"))
+        assertTrue(manager.needsLicenseAcceptance("kws.test.unknown"))
+        assertNotNull(install("asr.test.noncommercial", acceptLicense = true).result)
+        assertFalse("the acceptance is remembered", manager.needsLicenseAcceptance("asr.test.noncommercial"))
+        assertFalse("unknown ids need no confirmation", manager.needsLicenseAcceptance("asr.unknown.model"))
+    }
+
+    @Test
+    fun `recycling frees unreferenced files and keeps installed models and paused downloads`() {
+        assertNotNull(install("tts.test.tiny").result)
+        val installedBytes = store.installed("tts.test.tiny")!!.installedBytes
+        val stale = File(downloads, "${"b".repeat(64)}.part").also { it.writeText("stale bytes") }
+        val paused = File(downloads, "${Fixtures.catalog.model("asr.test.noncommercial")!!.latestVersion.mirror!!.sha256}.part").also { it.writeText("resume") }
+        val imports = temporary.newFolder("imports")
+        File(imports, "copy.archive").writeText("import copy")
+        File(store.root, ".staging/left/file.bin").apply { parentFile!!.mkdirs(); writeText("staged") }
+        val recycler = ModelManager(
+            store = store,
+            catalogs = ModelCatalogRepository(temporary.newFolder(), Fixtures.catalogBytes, null, TestSigner().verifier(), server.transport),
+            installer = ModelInstaller(store, Downloader(server.transport), ArchiveExtractor(), downloads, freeSpace = { freeSpace }),
+            importer = Importer(store, ArchiveExtractor(), LicensePolicy(store), freeSpace = { freeSpace }),
+            licensePolicy = LicensePolicy(store),
+            downloadDirectory = downloads,
+            scratchDirectories = listOf(imports),
+        )
+        val listener = RecordingListener().also { recycler.recycle("recycle", it) }.await()
+        val result = listener.result as OperationResult.Recycled
+        assertFalse(stale.exists())
+        assertTrue("a paused download stays", paused.exists())
+        assertTrue(imports.list()!!.isEmpty())
+        assertFalse(File(store.root, ".staging").exists())
+        assertEquals("the installed model stays", installedBytes, store.installed("tts.test.tiny")!!.installedBytes)
+        // The manager's start already recycles stale downloads, so the operation counts the import copy and the staged file.
+        assertTrue("import copy and staged bytes: ${result.freedBytes}", result.freedBytes >= ("import copy".length + "staged".length).toLong())
+        assertTrue(result.files >= 2)
+    }
 }

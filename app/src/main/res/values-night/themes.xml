@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ThreeMacawSpeech" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/macaw_window_background</item>
+        <item name="android:colorBackground">@color/macaw_window_background</item>
+    </style>
+
+    <color name="macaw_window_background">#121212</color>
+</resources>

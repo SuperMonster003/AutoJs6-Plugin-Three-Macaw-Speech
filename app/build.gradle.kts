@@ -1,6 +1,9 @@
 import com.android.build.api.variant.FilterConfiguration
 import com.android.build.api.variant.VariantOutputConfiguration
+import org.gradle.api.file.ConfigurableFileCollection
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.DuplicatesStrategy
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.file.RelativePath
 import org.gradle.api.provider.Property
 import java.security.MessageDigest
@@ -140,6 +143,49 @@ run {
     }
 }
 
+// The legal texts of the About page (roadmap D32, P5.2): LICENSE and THIRD_PARTY_NOTICES.md of this repository and the two
+// downloaded texts of locks/legal-texts.lock, copied into the generated assets/legal/ folder of every variant.
+// zh-CN: 关于页的法律文本 (路线图 D32, P5.2): 本仓库的 LICENSE 与 THIRD_PARTY_NOTICES.md, 以及 locks/legal-texts.lock 中的两份下载文本,
+// 复制到每个变体生成的 assets/legal/ 文件夹.
+val legalTexts: Map<String, File> = run {
+    val entries = readLock("locks/legal-texts.lock")
+    val names = entries.keys.filter { it.endsWith(".path") }.map { it.removeSuffix(".path") }.sorted()
+    check(names == listOf("gpl-3.0", "unicode-terms")) { "locks/legal-texts.lock must list gpl-3.0 and unicode-terms" }
+    check(entries.keys == setOf("format") + names.flatMap { name -> listOf("path", "sha256", "url").map { "$name.$it" } }) { "Unexpected keys in locks/legal-texts.lock" }
+    mapOf(
+        "LICENSE.txt" to rootProject.file("LICENSE"),
+        "THIRD_PARTY_NOTICES.md" to rootProject.file("THIRD_PARTY_NOTICES.md"),
+        "GPL-3.0.txt" to verifiedFile(entries.getValue("gpl-3.0.path"), entries["gpl-3.0.sha256"], "gpl-3.0"),
+        "COPYING.UCD" to verifiedFile(entries.getValue("unicode-terms.path"), entries["unicode-terms.sha256"], "unicode-terms"),
+    )
+}
+
+abstract class LegalAssetsTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val sources: ConfigurableFileCollection
+
+    @get:Input
+    abstract val names: ListProperty<String>
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val folder = outputDirectory.get().asFile.resolve("legal")
+        folder.deleteRecursively()
+        folder.mkdirs()
+        sources.files.toList().zip(names.get()).forEach { (file, name) -> file.copyTo(folder.resolve(name)) }
+    }
+}
+
+val generateLegalAssets = tasks.register<LegalAssetsTask>("generateLegalAssets") {
+    sources.from(legalTexts.values.toList())
+    names.set(legalTexts.keys.toList())
+    outputDirectory.set(layout.buildDirectory.dir("generated/legal-assets"))
+}
+
 android {
     namespace = globalApplicationId
     compileSdk = versions.sdkVersionCompile
@@ -170,6 +216,10 @@ android {
     }
 
     testOptions { unitTests.isIncludeAndroidResources = true }
+
+    // The model fixtures of the JVM tests also serve the Compose instrumentation of the home screen (roadmap P5.1).
+    // zh-CN: JVM 测试的模型夹具同样供首页的 Compose instrumentation 使用 (路线图 P5.1).
+    sourceSets.getByName("androidTest").assets.directories.add(file("src/test/resources").absolutePath)
 
     lint {
         abortOnError = true
@@ -257,6 +307,7 @@ android {
 
 androidComponents {
     onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(generateLegalAssets, LegalAssetsTask::outputDirectory)
         variant.outputs.forEach { output ->
             val architecture = output.filters.find {
                 it.filterType == FilterConfiguration.FilterType.ABI
@@ -284,8 +335,8 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
 
-    // Jetpack Compose (roadmap D26): the BOM is the single version source; activity-compose follows it. The screens arrive
-    // in roadmap P5. zh-CN: Jetpack Compose (路线图 D26): BOM 是唯一的版本来源, activity-compose 随之; 界面在路线图 P5 加入.
+    // Jetpack Compose (roadmap D26): the BOM is the single version source; activity-compose follows it. The screens are
+    // roadmap P5. zh-CN: Jetpack Compose (路线图 D26): BOM 是唯一的版本来源, activity-compose 随之; 界面为路线图 P5.
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.runtime)
     implementation(libs.compose.ui)
@@ -293,11 +344,15 @@ dependencies {
     implementation(libs.compose.material3)
     implementation(libs.compose.activity)
     implementation(libs.compose.ui.tooling.preview)
+    // The HCT accent rule shared by the standalone plugins (roadmap P5.2). zh-CN: 各独立插件共用的 HCT 强调色规则 (路线图 P5.2).
+    implementation(libs.material.color.utilities)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.test.ext.junit)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }
 
 tasks {

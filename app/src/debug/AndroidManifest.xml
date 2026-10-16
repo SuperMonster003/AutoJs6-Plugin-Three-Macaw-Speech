@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!--
+            Debug builds only: an empty, internal host for the Compose instrumentation of roadmap P5 (the screens with fake
+            or private model managers). It replaces the exported activity of ui-test-manifest, which the Manifest audit of
+            ThreeMacawSpeechContractTest would refuse.
+        -->
+        <activity
+            android:name=".ComposeTestHostActivity"
+            android:exported="false" />
+    </application>
+</manifest>

@@ -1,12 +1,9 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
-import android.content.res.Configuration
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 
@@ -58,27 +55,5 @@ class GetSampleTextActivity : Activity() {
             "zho" to "\u4f60\u597d, \u8fd9\u662f\u79bb\u7ebf\u795e\u7ecf\u7f51\u7edc\u8bed\u97f3\u5408\u6210\u7684\u793a\u4f8b.",
             "eng" to "Hello, this is an example of offline neural speech synthesis.",
         )
-    }
-}
-
-/**
- * The settings entry of the engine (`settingsActivity` of `res/xml/tts_engine.xml`) and the answer to
- * `TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA`, until the settings screen of roadmap P5.2 replaces it: a dialog that
- * says how many speech synthesis models are installed and how to install more. No side effects.
- * zh-CN: 引擎的设置入口 (`res/xml/tts_engine.xml` 的 `settingsActivity`) 与 `TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA` 的应答, 直到路线图 P5.2 的
- * 设置页取代它: 一个对话框, 说明已安装多少语音合成模型以及如何安装更多. 无副作用.
- */
-class TtsSettingsActivity : Activity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val installed = SpeechRuntime.get(this).ttsModels().size
-        val night = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
-        AlertDialog.Builder(this, if (night) android.R.style.Theme_DeviceDefault_Dialog_Alert else android.R.style.Theme_DeviceDefault_Light_Dialog_Alert)
-            .setTitle(R.string.app_name)
-            .setMessage(getString(R.string.tts_settings_installed_models, installed) + "\n\n" + getString(R.string.tts_settings_message))
-            .setPositiveButton(android.R.string.ok, null)
-            .setOnDismissListener { finish() }
-            .show()
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    System TTS engine description (roadmap D3, appendix C.2): the settings entry is the placeholder activity of roadmap
-    P4.2 until the settings screen of P5.2 replaces it. Android needs the full class name here.
+    System TTS engine description (roadmap D3, appendix C.2): the settings entry is the plugin's settings screen (roadmap
+    P5.2), which opens at its synthesis group when the system settings start it. Android needs the full class name here.
 -->
 <tts-engine xmlns:android="http://schemas.android.com/apk/res/android"
-    android:settingsActivity="io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.TtsSettingsActivity" />
+    android:settingsActivity="io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.SettingsActivity" />

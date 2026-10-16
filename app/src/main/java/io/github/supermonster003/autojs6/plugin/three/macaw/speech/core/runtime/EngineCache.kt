@@ -39,11 +39,18 @@ fun interface IdleScheduler {
  * 从不关闭, 因此放不下的加载照常进行 (并记录日志). 纯 JVM.
  */
 class EngineCache(
-    private val idleMillis: Long,
+    idleMillis: Long,
     private val scheduler: IdleScheduler,
     private val log: (String) -> Unit = {},
     private val budgetBytes: Long = Long.MAX_VALUE,
 ) {
+
+    /**
+     * The idle time; the settings' "release idle models" changes it (roadmap P5.2) for instances released afterwards.
+     * zh-CN: 空闲时间; 设置页的 "空闲释放" 修改它 (路线图 P5.2), 对此后归还的实例生效.
+     */
+    @Volatile
+    var idleMillis: Long = idleMillis
 
     internal class Entry(val key: EngineKey) {
         var engine: Closeable? = null

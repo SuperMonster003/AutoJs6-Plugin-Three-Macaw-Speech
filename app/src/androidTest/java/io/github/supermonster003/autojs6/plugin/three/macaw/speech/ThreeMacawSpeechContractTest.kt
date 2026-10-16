@@ -21,7 +21,6 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.Three
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.CheckVoiceDataActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.GetSampleTextActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.ThreeMacawSpeechTtsEngineService
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.TtsSettingsActivity
 import org.autojs.plugin.common.api.IPluginInfoProvider
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
@@ -92,9 +91,19 @@ class ThreeMacawSpeechContractTest {
     }
 
     @Test
-    fun thereIsNoLauncherEntryBeforeTheScreensLand() {
+    fun theLauncherOpensTheHomeScreenThroughOneAlias() {
         val launcher = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setPackage(packageName)
-        assertEquals("roadmap P5 adds the launcher entry", emptyList<String>(), queryActivities(launcher))
+        val entries = queryActivities(launcher)
+        assertEquals("roadmap P5.5: one enabled launcher alias", 1, entries.size)
+        assertTrue(entries.single(), entries.single().startsWith("$packageName.launcher."))
+        val home = ComponentName(packageName, "$packageName.ui.home.HomeActivity")
+        assertTrue(context.packageManager.getActivityInfo(home, 0).enabled)
+        // Each alias keeps its own icon resource, the automatic one included (icon specification section 3).
+        val icons = listOf("AdaptiveLightIconAlias", "AdaptiveDarkIconAlias", "AdaptiveAutoIconAlias", "TransparentIconAlias").map { alias ->
+            context.packageManager.getActivityInfo(ComponentName(packageName, "$packageName.launcher.$alias"), PackageManager.MATCH_DISABLED_COMPONENTS).icon
+        }
+        assertEquals(4, icons.toSet().size)
+        assertEquals(context.resources.getIdentifier("ic_launcher_system_auto", "mipmap", packageName), icons[2])
     }
 
     @Test
@@ -186,7 +195,10 @@ class ThreeMacawSpeechContractTest {
             packageInfo.receivers.orEmpty().filter { it.exported }.map { it.name to it.permission } +
             packageInfo.providers.orEmpty().filter { it.exported }.map { it.name to it.readPermission }
         val (library, rest) = exported.partition { it.first in LIBRARY_COMPONENTS }
-        val (systemTts, own) = rest.partition { it.first in systemTtsComponents() }
+        val (screens, rest2) = rest.partition { it.first in screenEntries() || it.first.startsWith("$packageName.launcher.") }
+        val (systemTts, own) = rest2.partition { it.first in systemTtsComponents() }
+        screens.forEach { (name, permission) -> assertEquals("$name only shows the plugin's own screens", null, permission) }
+        assertTrue("the home and settings screens are exported", screens.map { it.first }.containsAll(screenEntries()))
         assertEquals(
             setOf(
                 "$packageName.WakeActivity", MicrophonePermissionActivity::class.java.name, ThreeMacawSpeechInfoService::class.java.name,
@@ -204,7 +216,7 @@ class ThreeMacawSpeechContractTest {
             setOf(
                 PLUGIN_PERMISSION, "android.permission.RECORD_AUDIO", "android.permission.FOREGROUND_SERVICE",
                 "android.permission.FOREGROUND_SERVICE_MICROPHONE", "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
-                "android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS",
+                "android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE", "android.permission.POST_NOTIFICATIONS",
             ),
             packageInfo.requestedPermissions.orEmpty().toSet() - MERGED_PLATFORM_PERMISSIONS,
         )
@@ -354,8 +366,10 @@ class ThreeMacawSpeechContractTest {
          */
         fun systemTtsComponents(): Set<String> = setOf(
             ThreeMacawSpeechTtsEngineService::class.java.name, CheckVoiceDataActivity::class.java.name, GetSampleTextActivity::class.java.name,
-            TtsSettingsActivity::class.java.name,
         )
+
+        /** Roadmap P5: the screens the launcher and the system TTS settings open. zh-CN: 启动器与系统 TTS 设置打开的界面. */
+        fun screenEntries(): Set<String> = setOf("$PACKAGE.ui.home.HomeActivity", "$PACKAGE.ui.settings.SettingsActivity")
 
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")
 

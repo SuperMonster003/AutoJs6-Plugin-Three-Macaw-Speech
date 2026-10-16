@@ -8,10 +8,10 @@ import android.os.Bundle
 
 /**
  * Asks for `RECORD_AUDIO` with the system dialog and closes (roadmap P3.1): the way to grant the microphone that a
- * `PERMISSION_DENIED` error names until the plugin's home screen (roadmap P5.1) asks for it itself. Exported behind
- * the plugin permission, so AutoJs6 (or `adb shell am start`) can open it; it has no side effect besides the request.
- * zh-CN: 以系统对话框申请 `RECORD_AUDIO` 后关闭 (路线图 P3.1): 在插件首页 (路线图 P5.1) 自行申请之前, `PERMISSION_DENIED` 错误所指明的麦克风
- * 授权途径. 以插件权限保护并导出, 因此 AutoJs6 (或 `adb shell am start`) 可以打开它; 除申请外没有副作用.
+ * `PERMISSION_DENIED` error names, next to the grant button of the home screen (roadmap P5.1). Exported behind the
+ * plugin permission, so AutoJs6 (or `adb shell am start`) can open it; it has no side effect besides the request.
+ * zh-CN: 以系统对话框申请 `RECORD_AUDIO` 后关闭 (路线图 P3.1): `PERMISSION_DENIED` 错误所指明的麦克风授权途径, 与首页 (路线图 P5.1) 的授权按钮
+ * 并存. 以插件权限保护并导出, 因此 AutoJs6 (或 `adb shell am start`) 可以打开它; 除申请外没有副作用.
  */
 class MicrophonePermissionActivity : Activity() {
 

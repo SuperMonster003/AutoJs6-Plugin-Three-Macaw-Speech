@@ -42,6 +42,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsM
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsSpeakerHints
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsSpeakers
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import java.io.Closeable
@@ -79,7 +80,10 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     private val idle: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { Thread(it, "MacawEngineIdle").apply { isDaemon = true } }
 
-    val engines = EngineCache(IDLE_MILLIS, IdleScheduler.of(idle), { Log.i(TAG, "$it; ${memory()}") }, engineBudget(context))
+    /** The settings screen's preferences (roadmap P5.2). zh-CN: 设置页的偏好 (路线图 P5.2). */
+    val preferences = SpeechPreferences(context)
+
+    val engines = EngineCache(preferences.idleMillis, IdleScheduler.of(idle), { Log.i(TAG, "$it; ${memory()}") }, engineBudget(context))
 
     private val speakerNames = ConcurrentHashMap<String, List<String>>()
 
@@ -103,9 +107,10 @@ internal class SpeechRuntime private constructor(val context: Context) {
     fun microphoneGranted(): Boolean = context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     /**
-     * `PERMISSION_DENIED` with the way to grant: until the plugin's own screen (roadmap P5.1) asks for it, the system
-     * permission dialog of [MicrophonePermissionActivity] does.
-     * zh-CN: 带授权方式的 `PERMISSION_DENIED`: 在插件自己的界面 (路线图 P5.1) 申请之前, 由 [MicrophonePermissionActivity] 的系统权限对话框申请.
+     * `PERMISSION_DENIED` with the way to grant: the system permission dialog of [MicrophonePermissionActivity], which
+     * a script host can start; the home screen's grant button (roadmap P5.1) asks the same.
+     * zh-CN: 带授权方式的 `PERMISSION_DENIED`: 脚本宿主可启动的 [MicrophonePermissionActivity] 系统权限对话框; 首页的授权按钮 (路线图 P5.1)
+     * 申请的是同一权限.
      */
     fun requireMicrophone() {
         if (microphoneGranted()) return
@@ -209,13 +214,15 @@ internal class SpeechRuntime private constructor(val context: Context) {
         val default = models.defaultModel(SpeechContract.KIND_TTS)?.modelId
         val voices = ttsModels().map { model ->
             val speakers = speakers(model)
+            // The settings' speaker (roadmap P5.2) is the engine's default; scripts keep the model default (SpeechSynthesis).
+            val chosen = preferences.speaker(model.modelId)?.takeIf { it < speakers.count } ?: speakers.defaultId
             TtsModelVoices(
                 model.modelId, model.languages, speakers.count, model.sampleRate, model.modelId == default, speakers.names,
-                TtsSpeakerHints.speakerLanguages(model.modelId, speakers.count), speakers.defaultId,
+                TtsSpeakerHints.speakerLanguages(model.modelId, speakers.count), chosen,
             )
         }
         val catalogLanguages = runCatching { models.list(kind = SpeechContract.KIND_TTS).flatMap { it.languages } }.getOrDefault(emptyList()).distinct()
-        return TtsVoiceTable(voices, catalogLanguages)
+        return TtsVoiceTable(voices, catalogLanguages, preferences.voices())
     }
 
     /**

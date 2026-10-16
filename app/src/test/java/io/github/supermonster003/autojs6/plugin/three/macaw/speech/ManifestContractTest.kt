@@ -36,6 +36,8 @@ class ManifestContractTest {
                 // Roadmap P2.3: the model download service.
                 "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
                 "android.permission.INTERNET",
+                // Roadmap P5.1: the metered network question and the offline notice of the home screen.
+                "android.permission.ACCESS_NETWORK_STATE",
                 "android.permission.POST_NOTIFICATIONS",
             ),
             manifest.children("uses-permission").map { it.android("name") },
@@ -78,8 +80,10 @@ class ManifestContractTest {
     fun `the wake activity follows the activation contract`() {
         assertEquals(
             listOf(
-                ".WakeActivity", ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
-                ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity", ".ttsengine.TtsSettingsActivity",
+                ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
+                ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
+                ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
             application.children("activity").map { it.android("name") },
         )
@@ -124,14 +128,46 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `no launcher entry before roadmap P5`() {
-        val categories = listOf("activity", "activity-alias")
-            .flatMap { application.children(it) }
-            .flatMap { it.children("intent-filter") }
-            .flatMap { it.children("category") }
-            .map { it.android("name") }
-        assertTrue("the launcher aliases arrive with the screens (roadmap P5)", "android.intent.category.LAUNCHER" !in categories)
-        assertTrue(application.children("activity-alias").isEmpty())
+    fun `the launcher entry is one of four aliases of the home screen`() {
+        val activities = application.children("activity")
+        val home = activities.single { it.android("name") == HOME }
+        assertTrue("the real activity has no launcher filter", home.children("intent-filter").none { filter ->
+            filter.children("category").any { it.android("name") == "android.intent.category.LAUNCHER" }
+        })
+        // Icon specification section 4: four fixed aliases after the real activity, only the automatic one enabled.
+        val aliases = application.children("activity-alias")
+        assertEquals(
+            listOf(
+                ".launcher.AdaptiveLightIconAlias" to "@mipmap/ic_launcher_system_light",
+                ".launcher.AdaptiveDarkIconAlias" to "@mipmap/ic_launcher_system",
+                ".launcher.AdaptiveAutoIconAlias" to "@mipmap/ic_launcher_system_auto",
+                ".launcher.TransparentIconAlias" to "@mipmap/ic_launcher",
+            ),
+            aliases.map { it.android("name") to it.android("icon") },
+        )
+        aliases.forEach { alias ->
+            assertEquals(HOME, alias.android("targetActivity"))
+            assertEquals(alias.android("icon"), alias.android("roundIcon"))
+            assertEquals("true", alias.android("exported"))
+            assertEquals(if (alias.android("name") == ".launcher.AdaptiveAutoIconAlias") "true" else "false", alias.android("enabled"))
+            assertFilter(alias, action = "android.intent.action.MAIN", category = "android.intent.category.LAUNCHER")
+        }
+        val names = activities.map { it.android("name") }
+        assertTrue("the real activity is declared before the aliases", names.indexOf(HOME) >= 0)
+        val receiver = application.children("receiver").single()
+        assertEquals(".ui.appearance.LauncherIconUpdateReceiver", receiver.android("name"))
+        assertEquals("false", receiver.android("exported"))
+        assertFilter(receiver, action = "android.intent.action.MY_PACKAGE_REPLACED", category = null)
+    }
+
+    @Test
+    fun `the plugin screens other than the two system entries are internal`() {
+        listOf(".ui.tryout.TryoutActivity", ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity").forEach { name ->
+            val activity = application.children("activity").single { it.android("name") == name }
+            assertEquals("$name is internal", "false", activity.android("exported"))
+            assertTrue(activity.children("intent-filter").isEmpty())
+        }
+        assertEquals("@style/Theme.ThreeMacawSpeech", application.android("theme"))
     }
 
     @Test
@@ -181,14 +217,13 @@ class ManifestContractTest {
         val description = RepositoryFiles.xml("app/src/main/res/xml/tts_engine.xml")
         assertEquals("tts-engine", description.tagName)
         assertEquals(
-            "the settings entry is the placeholder activity of roadmap P4.2, named in full",
-            "io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.TtsSettingsActivity",
+            "the settings entry is the settings screen of roadmap P5.2, named in full",
+            "io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.SettingsActivity",
             description.android("settingsActivity"),
         )
         mapOf(
             ".ttsengine.CheckVoiceDataActivity" to "android.speech.tts.engine.CHECK_TTS_DATA",
             ".ttsengine.GetSampleTextActivity" to "android.speech.tts.engine.GET_SAMPLE_TEXT",
-            ".ttsengine.TtsSettingsActivity" to "android.speech.tts.engine.INSTALL_TTS_DATA",
         ).forEach { (name, action) ->
             val activity = application.children("activity").single { it.android("name") == name }
             assertEquals("true", activity.android("exported"))
@@ -196,6 +231,15 @@ class ManifestContractTest {
             assertEquals("true", activity.android("excludeFromRecents"))
             assertFilter(activity, action = action, category = DEFAULT_CATEGORY)
         }
+        // INSTALL_TTS_DATA opens the home screen at the synthesis models; the settings screen has no filter.
+        val home = application.children("activity").single { it.android("name") == HOME }
+        assertEquals("true", home.android("exported"))
+        assertNull(home.androidOrNull("permission"))
+        assertFilter(home, action = "android.speech.tts.engine.INSTALL_TTS_DATA", category = DEFAULT_CATEGORY)
+        val settings = application.children("activity").single { it.android("name") == SETTINGS }
+        assertEquals("true", settings.android("exported"))
+        assertNull(settings.androidOrNull("permission"))
+        assertTrue(settings.children("intent-filter").isEmpty())
     }
 
     @Test
@@ -203,19 +247,20 @@ class ManifestContractTest {
         val components = listOf("activity", "activity-alias", "service", "receiver", "provider").flatMap { application.children(it) }
         val unprotected = components.filter { it.androidOrNull("exported") == "true" && it.androidOrNull("permission") != PLUGIN_PERMISSION }
         assertEquals(
-            "exported without the plugin permission: only the system TTS engine and its settings activities (roadmap P4.2)",
-            SYSTEM_TTS_COMPONENTS,
+            "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2) and the screen entries (P5)",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES,
             unprotected.map { it.android("name") }.toSet(),
         )
-        assertTrue("receivers and providers are not declared", application.children("receiver").isEmpty() && application.children("provider").isEmpty())
+        assertTrue("no provider is declared", application.children("provider").isEmpty())
+        assertTrue("the receiver is internal", application.children("receiver").all { it.android("exported") == "false" })
     }
 
     private fun service(name: String): Element = application.children("service").single { it.android("name") == name }
 
-    private fun assertFilter(component: Element, action: String, category: String) {
+    private fun assertFilter(component: Element, action: String, category: String?) {
         val filter = component.child("intent-filter")
         assertEquals(listOf(action), filter.children("action").map { it.android("name") })
-        assertEquals(listOf(category), filter.children("category").map { it.android("name") })
+        assertEquals(listOfNotNull(category), filter.children("category").map { it.android("name") })
         assertTrue(filter.children("data").isEmpty())
     }
 
@@ -231,7 +276,18 @@ class ManifestContractTest {
         /** Reached by Android's TextToSpeech and the system settings, which hold no plugin permission. zh-CN: 由不持有插件权限的系统访问. */
         val SYSTEM_TTS_COMPONENTS = setOf(
             ".ttsengine.ThreeMacawSpeechTtsEngineService", ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
-            ".ttsengine.TtsSettingsActivity",
+        )
+
+        const val HOME = ".ui.home.HomeActivity"
+        const val SETTINGS = ".ui.settings.SettingsActivity"
+
+        /**
+         * The screens the launcher and the system TTS settings open (roadmap P5): they show the plugin's own screens only.
+         * zh-CN: 启动器与系统 TTS 设置打开的界面 (路线图 P5): 只显示插件自己的界面.
+         */
+        val SCREEN_ENTRIES = setOf(
+            HOME, SETTINGS, ".launcher.AdaptiveLightIconAlias", ".launcher.AdaptiveDarkIconAlias", ".launcher.AdaptiveAutoIconAlias",
+            ".launcher.TransparentIconAlias",
         )
     }
 

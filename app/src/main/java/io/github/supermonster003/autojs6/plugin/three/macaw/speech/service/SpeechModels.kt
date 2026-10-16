@@ -83,6 +83,7 @@ internal object SpeechModels {
             downloadDirectory = downloads,
             builtins = listOf(bundledVad()),
             log = log,
+            scratchDirectories = listOf(importDirectory(context)),
         ).also { manager ->
             Log.i(TAG, "Catalog v${manager.catalogs.current().catalog.catalogVersion} (${manager.catalogs.current().trust})")
             manager.activity = ModelManager.ActivityListener { activity -> ModelOperationService.onActivity(context, activity) }
