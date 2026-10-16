@@ -118,6 +118,30 @@ class EngineCacheTest {
     }
 
     @Test
+    fun `the memory budget closes the idle instances released longest ago`() {
+        val budget = EngineCache(300_000, scheduler, budgetBytes = 1000)
+        val asr = budget.acquire(EngineKey("asr.a", 1, "greedy"), 400) { load("asr") }
+        val kws = budget.acquire(EngineKey("kws.a", 1, "kws"), 300) { load("kws") }
+        kws.close()
+        asr.close()
+        assertEquals(700L, budget.loadedBytes())
+        val tts = budget.acquire(EngineKey("tts.a", 1, "tts"), 500) { load("tts") }
+        assertTrue("the instance released first goes", kws.engine.closed)
+        assertFalse(asr.engine.closed)
+        assertEquals(900L, budget.loadedBytes())
+        val big = budget.acquire(EngineKey("tts.b", 1, "tts"), 800) { load("big") }
+        assertTrue(asr.engine.closed)
+        assertFalse("an instance in use is never closed, the load still happens", tts.engine.closed)
+        assertEquals(1300L, budget.loadedBytes())
+        assertEquals(setOf("tts.a", "tts.b"), budget.loaded().map { it.modelId }.toSet())
+        tts.close()
+        big.close()
+        val again = budget.acquire(EngineKey("tts.a", 1, "tts"), 500) { load("tts") }
+        assertSame("a loaded key is reused without eviction", tts.engine, again.engine)
+        again.close()
+    }
+
+    @Test
     fun `loading one key does not block another`() {
         val real = EngineCache(1000, IdleScheduler.of(Executors.newSingleThreadScheduledExecutor()))
         val started = CountDownLatch(1)

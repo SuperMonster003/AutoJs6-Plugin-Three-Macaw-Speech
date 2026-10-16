@@ -8,7 +8,7 @@
     "v1.0.0": {
       "released_date": "2026/10/16",
       "hint": [
-        "Development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech in WAV files, fed PCM and from the microphone, and detects voice activity and wake words; text-to-speech, the plugin screens and the speech script module are not delivered yet",
+        "Development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech in WAV files, fed PCM and from the microphone, detects voice activity and wake words, and synthesizes speech, also as the system TTS engine; the plugin screens and the speech script module are not delivered yet",
         "Requires AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) or later (the exact minimum build will be filled in once the host changes land)"
       ],
       "feature": [
@@ -20,6 +20,8 @@
         "Voice activity detection lists the speech segments of a WAV file with the bundled silero VAD",
         "Wake words: open-vocabulary keyword spotting; Chinese keywords are spelled in the pinyin of their customary reading, English words in the phones of the model's lexicon, and model tokens may be written directly; a hit can start a dictation round on the same recording",
         "During a microphone session the plugin keeps recording with a microphone foreground service and its notification, so a session started while AutoJs6 is in the foreground goes on after AutoJs6 moves to the background or the screen turns off; one microphone session runs at a time; without the microphone permission sessions fail with PERMISSION_DENIED and name the permission screen",
+        "Speech synthesis: the installed synthesis models (VITS, Matcha and Kokoro; the catalog has 5 Chinese and English models) turn up to 8000 characters of text into a WAV file sentence by sentence, at the model's sample rate; a speaker and a speed (0.5 to 2 times) can be chosen, progress counts the characters done, and the synthesis can be cancelled at any time; a model with a single speaker ignores a chosen speaker and says so",
+        "System TTS engine: once a synthesis model is installed, 3-Macaw Speech can be chosen in the text-to-speech settings of the system, and AutoJs6's tts module and other apps read aloud with it; every speaker is one voice, bilingual models add an English voice for every speaker, and the speech rate follows the system or app setting; without an installed model the engine reports missing voice data",
         "README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources"
       ],
       "dependency": [

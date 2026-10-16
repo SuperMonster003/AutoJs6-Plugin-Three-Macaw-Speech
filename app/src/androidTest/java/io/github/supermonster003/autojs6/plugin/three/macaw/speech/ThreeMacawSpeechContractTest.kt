@@ -18,6 +18,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.MicrophonePermissionActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ThreeMacawSpeechInfoService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ThreeMacawSpeechService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.CheckVoiceDataActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.GetSampleTextActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.ThreeMacawSpeechTtsEngineService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.TtsSettingsActivity
 import org.autojs.plugin.common.api.IPluginInfoProvider
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
@@ -181,7 +185,8 @@ class ThreeMacawSpeechContractTest {
             packageInfo.services.orEmpty().filter { it.exported }.map { it.name to it.permission } +
             packageInfo.receivers.orEmpty().filter { it.exported }.map { it.name to it.permission } +
             packageInfo.providers.orEmpty().filter { it.exported }.map { it.name to it.readPermission }
-        val (library, own) = exported.partition { it.first in LIBRARY_COMPONENTS }
+        val (library, rest) = exported.partition { it.first in LIBRARY_COMPONENTS }
+        val (systemTts, own) = rest.partition { it.first in systemTtsComponents() }
         assertEquals(
             setOf(
                 "$packageName.WakeActivity", MicrophonePermissionActivity::class.java.name, ThreeMacawSpeechInfoService::class.java.name,
@@ -190,6 +195,10 @@ class ThreeMacawSpeechContractTest {
             own.map { it.first }.toSet(),
         )
         own.forEach { (name, permission) -> assertEquals("$name must require the plugin permission", PLUGIN_PERMISSION, permission) }
+        // Roadmap P4.2: Android's TextToSpeech binds the engine from the client app and the system settings start its
+        // activities, so these four are exported without a permission.
+        assertEquals(systemTtsComponents(), systemTts.map { it.first }.toSet())
+        systemTts.forEach { (name, permission) -> assertEquals("$name is reached by the system", null, permission) }
         library.forEach { (name, permission) -> assertEquals("$name keeps its system protection", LIBRARY_COMPONENTS.getValue(name), permission) }
         assertEquals(
             setOf(
@@ -326,6 +335,7 @@ class ThreeMacawSpeechContractTest {
 
         val FEATURES = arrayOf(
             SpeechContract.FEATURE_MODELS, SpeechContract.FEATURE_ASR, SpeechContract.FEATURE_ASR_STREAMING, SpeechContract.FEATURE_VAD, SpeechContract.FEATURE_KWS,
+            SpeechContract.FEATURE_TTS, SpeechContract.FEATURE_TTS_SYSTEM_ENGINE,
         )
 
         /**
@@ -342,6 +352,11 @@ class ThreeMacawSpeechContractTest {
          * zh-CN: AndroidX 合并进来的导出库组件及保护它们的系统权限: Compose 引入 profileinstaller, 其接收器只响应持有 DUMP 的调用方
          * (adb 与系统).
          */
+        fun systemTtsComponents(): Set<String> = setOf(
+            ThreeMacawSpeechTtsEngineService::class.java.name, CheckVoiceDataActivity::class.java.name, GetSampleTextActivity::class.java.name,
+            TtsSettingsActivity::class.java.name,
+        )
+
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")
 
         /** The Parcelize-generated `CREATOR` is a JVM static field that Kotlin sources cannot name directly. */

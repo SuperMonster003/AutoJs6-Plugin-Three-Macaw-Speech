@@ -281,6 +281,13 @@ class ModelManager(
         OperationResult.Catalog(result.catalogVersion, result.updated)
     }
 
+    /**
+     * An operation id for work outside the model thread (syntheses, roadmap P4.3): ids stay unique across every operation
+     * of `ISpeechPlugin`, so `cancelOperation` reaches the right one.
+     * zh-CN: 模型线程以外工作 (合成, 路线图 P4.3) 的操作 ID: ID 在 `ISpeechPlugin` 的全部操作中保持唯一, `cancelOperation` 因此能找到正确的操作.
+     */
+    fun nextOperationId(): Int = ids.incrementAndGet()
+
     /** Cancels a queued or running operation; unknown ids are ignored. zh-CN: 取消排队或运行中的操作; 忽略未知 ID. */
     fun cancel(opId: Int) {
         val operation = operations[opId] ?: return

@@ -46,8 +46,8 @@ class PluginRuntimeInfoTest {
         assertEquals(5451L, fields.requiredHostVersion)
         assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
         assertEquals(1, fields.contractVersion)
-        // Roadmap P2.3 / P2.4: model management is the first optional feature; recognition and synthesis follow in P3 / P4.
-        assertEquals(listOf("models", "asr", "asrStreaming", "vad", "kws"), fields.features)
+        // Roadmap P2.3 / P2.4: model management, then recognition (P3), synthesis and the system TTS engine (P4).
+        assertEquals(listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine"), fields.features)
         assertEquals("the version of assets/catalog/catalog-v1.json (BundledCatalogTest)", 1, fields.catalogVersion)
     }
 

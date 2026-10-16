@@ -8,7 +8,7 @@
 
 ###### 2026/10/16
 
-* `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, y detecta actividad de voz y palabras de activación; la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no se entregan
+* `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, detecta actividad de voz y palabras de activación y sintetiza voz, también como motor TTS del sistema; las pantallas del complemento y el módulo de script speech aún no se entregan
 * `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
 * `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 * `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI
@@ -18,6 +18,8 @@
 * `Función` Detección de actividad de voz: lista los segmentos de voz de un archivo WAV con el silero VAD incluido
 * `Función` Palabras de activación: detección de palabras clave de vocabulario abierto; las palabras clave en chino se deletrean en pinyin según su lectura habitual, las palabras en inglés en los fonemas del léxico del modelo, y también se pueden escribir directamente los tokens del modelo; una detección puede iniciar un dictado sobre la misma grabación
 * `Función` Durante una sesión de micrófono, el complemento sigue grabando con un servicio en primer plano de tipo micrófono y su notificación, de modo que una sesión iniciada con AutoJs6 en primer plano continúa cuando AutoJs6 pasa a segundo plano o se apaga la pantalla; solo se ejecuta una sesión de micrófono a la vez; sin el permiso del micrófono, las sesiones fallan con PERMISSION_DENIED e indican la pantalla de permisos
+* `Función` Síntesis de voz: los modelos de síntesis instalados (VITS, Matcha y Kokoro; el catálogo tiene 5 modelos en chino e inglés) convierten hasta 8000 caracteres de texto en un archivo WAV frase por frase, con la frecuencia de muestreo del modelo; se pueden elegir el hablante y la velocidad (de 0.5 a 2 veces), el progreso cuenta los caracteres terminados y la síntesis se puede cancelar en cualquier momento; un modelo con un solo hablante ignora el hablante elegido y lo indica
+* `Función` Motor TTS del sistema: con un modelo de síntesis instalado, 3-Macaw Speech se puede elegir en los ajustes de texto a voz del sistema, y el módulo tts de AutoJs6 y otras aplicaciones leen en voz alta con él; cada hablante es una voz, los modelos bilingües añaden una voz en inglés para cada hablante y la velocidad de habla sigue el ajuste del sistema o de la aplicación; sin un modelo instalado, el motor indica que faltan datos de voz
 * `Función` README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON
 * `Dependencia` Se agrega sherpa-onnx 1.13.8
 * `Dependencia` Se agrega Jetpack Compose BOM 2026.09.00

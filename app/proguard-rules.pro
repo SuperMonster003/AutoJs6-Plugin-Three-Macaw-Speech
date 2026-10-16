@@ -12,6 +12,10 @@
 # 因此完整保留其 Kotlin API.
 -keep class com.k2fsa.sherpa.onnx.** { *; }
 
+# The TTS generation callback (roadmap P4.1): the JNI side calls invoke([F)Ljava/lang/Integer; of the object it is given.
+# zh-CN: TTS 生成回调 (路线图 P4.1): JNI 一侧按名称调用所给对象的 invoke([F)Ljava/lang/Integer;.
+-keep class io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsEngine$SampleCallback { *; }
+
 # PluginInfo in common-plugin-api carries the compile-time @Parcelize annotation, whose class is not on the runtime classpath.
 # zh-CN: common-plugin-api 中的 PluginInfo 带有编译期注解 @Parcelize, 其类不在运行时类路径上.
 -dontwarn kotlinx.parcelize.Parcelize

@@ -5,6 +5,9 @@ summarizes the results without transcripts.
     py .python/device_speech_run.py test <serial> <TestClass>[#method] [key=value ...]
     py .python/device_speech_run.py models <serial>          installs the three recognition models (about 430 MB)
     py .python/device_speech_run.py device <serial>          models, then every recognition device test
+    py .python/device_speech_run.py tts-models <serial> [ids] installs the five synthesis models (about 740 MB, roadmap P4.1)
+                                                            or the comma separated model ids given
+    py .python/device_speech_run.py tts <serial>             every synthesis device test (SpeechSynthesisDeviceTest)
 
 `install` installs the debug split of the device's primary ABI and the test APK with `adb install -r` (data and models
 are kept; nothing is uninstalled afterwards, unlike connectedDebugAndroidTest). `test` runs one class through
@@ -119,6 +122,11 @@ def main(argv):
         return 0 if run_test(serial, rest[0], rest[1:]) else 1
     if action == "models":
         return 0 if run_test(serial, "SpeechModelSetupDeviceTest", ["macawModels=true"]) else 1
+    if action == "tts-models":
+        wanted = rest[0] if rest else "true"
+        return 0 if run_test(serial, "SpeechSynthesisDeviceTest#test0InstallsTheSynthesisModels", [f"macawTtsModels={wanted}"]) else 1
+    if action == "tts":
+        return 0 if run_test(serial, "SpeechSynthesisDeviceTest", rest) else 1
     if action == "grant":
         grant(serial)
         return 0

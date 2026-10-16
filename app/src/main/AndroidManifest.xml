@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="org.autojs.permission.PLUGIN" />
 
@@ -17,7 +18,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- The launcher entry, the system TTS engine service and the screens arrive in roadmap P4 / P5. -->
+    <!-- The launcher entry and the screens arrive in roadmap P5; the system TTS engine (roadmap P4.2) is below. -->
     <application
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -68,7 +69,7 @@
             </intent-filter>
         </service>
 
-        <!-- Speech capability (roadmap D21 / 5.5): ISpeechPlugin of contract version 1; model management since roadmap P2.3. -->
+        <!-- Speech capability (roadmap D21 / 5.5): ISpeechPlugin of contract version 1; models since P2.3, recognition P3, synthesis P4. -->
         <service
             android:name=".service.ThreeMacawSpeechService"
             android:exported="true"
@@ -110,6 +111,59 @@
             android:exported="true"
             android:permission="org.autojs.permission.PLUGIN"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!--
+            The Android system TTS engine (roadmap D3, D19, P4.2, appendix C.2). It and the three activities below are the
+            only exported components without the plugin permission: Android's TextToSpeech binds the engine from the
+            client app's own process, and the system TTS settings start the activities. None of them has a side effect
+            besides synthesis (voice check, sample text, the settings placeholder until roadmap P5.2).
+        -->
+        <service
+            android:name=".ttsengine.ThreeMacawSpeechTtsEngineService"
+            android:exported="true"
+            android:label="@string/app_name"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.intent.action.TTS_SERVICE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.speech.tts"
+                android:resource="@xml/tts_engine" />
+        </service>
+
+        <activity
+            android:name=".ttsengine.CheckVoiceDataActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.CHECK_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ttsengine.GetSampleTextActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.GET_SAMPLE_TEXT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ttsengine.TtsSettingsActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.speech.tts.engine.INSTALL_TTS_DATA" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
     </application>
 

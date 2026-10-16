@@ -109,6 +109,40 @@ class SpeechOptionsTest {
         expect(SpeechErrorCodes.LIMIT_EXCEEDED) { SpeechOptions.wake(source("keywords" to listOf(mapOf("keyword" to "a")), "thenListen" to mapOf("maxDurationMillis" to 1_800_001L))) }
     }
 
+    @Test
+    fun `synthesize reads text, model, speaker, speed and format`() {
+        assertEquals(SynthesizeOptions("hello"), SpeechOptions.synthesize(source("text" to "hello")))
+        val options = SpeechOptions.synthesize(
+            source("contractVersion" to 1, "text" to "hi", "model" to "tts.x", "speaker" to " 12 ", "speed" to 1.5, "format" to "WAV", "futureKey" to true),
+        )
+        assertEquals(SynthesizeOptions("hi", "tts.x", "12", 1.5f, "wav"), options)
+        assertEquals("7", SpeechOptions.synthesize(source("text" to "hi", "speaker" to 7)).speaker)
+        assertEquals("SSB0005", SpeechOptions.synthesize(source("text" to "hi", "speaker" to "SSB0005")).speaker)
+        assertEquals(0.5f, SpeechOptions.synthesize(source("text" to "hi", "speed" to 0.5f)).speed)
+        assertEquals(2f, SpeechOptions.synthesize(source("text" to "hi", "speed" to 2)).speed)
+        val longest = "x".repeat(SpeechLimits.MAX_SYNTH_TEXT_CHARS)
+        assertEquals(longest, SpeechOptions.synthesize(source("text" to longest)).text)
+    }
+
+    @Test
+    fun `synthesize refusals carry INVALID_OPTIONS, LIMIT_EXCEEDED or PLUGIN_INCOMPATIBLE`() {
+        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.synthesize(source("contractVersion" to 2, "text" to "hi")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(null) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to " \n ")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to 3)) }
+        expect(SpeechErrorCodes.LIMIT_EXCEEDED) { SpeechOptions.synthesize(source("text" to "x".repeat(SpeechLimits.MAX_SYNTH_TEXT_CHARS + 1))) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speed" to 0.49)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speed" to 2.01)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speed" to Double.NaN)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speed" to "fast")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "format" to "mp3")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speaker" to "")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speaker" to -1)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speaker" to 1.5)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "speaker" to "s".repeat(SpeechLimits.MAX_TOKEN_CHARS + 1))) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to "hi", "model" to "")) }
+    }
+
     private fun source(vararg pairs: Pair<String, Any?>) = MapOptionSource(mapOf(*pairs))
 
     private fun expect(code: String, block: () -> Unit) {

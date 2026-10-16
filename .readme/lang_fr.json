@@ -24,7 +24,7 @@
   "p_roadmap": "Les plans, décisions de conception et l'avancement sont suivis sous forme de liste à cocher dans ROADMAP.md. Les éléments non cochés sont des intentions, pas des fonctionnalités de la version actuelle.",
   "p_introduction_what": "3-Macaw Speech s'appuie sur [sherpa-onnx]({{ sherpa_onnx_url }}) pour exécuter hors ligne, sur l'appareil, la reconnaissance vocale, la détection d'activité vocale, la détection de mots de réveil et la synthèse vocale neuronale. Tout est calculé localement et aucun son n'est envoyé.",
   "p_introduction_how": "Le plugin est un APK installé séparément. Les scripts AutoJs6 l'utilisent via le module global `speech`; la synthèse vocale est aussi enregistrée comme moteur TTS du système Android, de sorte que le module `tts` d'AutoJs6 et les autres applications peuvent la choisir. Les modèles de reconnaissance et de synthèse ne sont pas inclus dans l'APK mais téléchargés à la demande depuis l'écran du plugin ou un script; seul le modèle de détection d'activité vocale est intégré.",
-  "p_status_note": "Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin, qui télécharge et gère les modèles, reconnaît la parole et détecte l'activité vocale et les mots de réveil, mais la synthèse et les écrans du plugin ne sont pas encore livrés, et la version d'AutoJs6 qui fournit le module de script `speech` n'est pas encore publiée. Le texte ci-dessous décrit les objectifs de conception de la version 1.0.0; consultez la feuille de route pour l'avancement.",
+  "p_status_note": "Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin, qui télécharge et gère les modèles, reconnaît la parole, détecte l'activité vocale et les mots de réveil et synthétise la parole, y compris comme moteur TTS du système, mais les écrans du plugin ne sont pas encore livrés, et la version d'AutoJs6 qui fournit le module de script `speech` n'est pas encore publiée. Le texte ci-dessous décrit les objectifs de conception de la version 1.0.0; consultez la feuille de route pour l'avancement.",
   "features": [
     "Reconnaissance vocale: dictée en continu depuis le microphone (résultats partiels et finaux en temps réel) et reconnaissance de fichiers WAV, avec des modèles hors ligne pour le chinois, l'anglais, le chinois et l'anglais mélangés, le japonais, le coréen et le cantonais.",
     "Détection d'activité vocale: le silero VAD v5 intégré découpe l'audio en segments de parole et termine aussi automatiquement les phrases dictées.",
@@ -59,6 +59,10 @@
     {
       "q": "Quel paquet installer?",
       "a": "La plupart des téléphones utilisent `arm64-v8a`. Si vous ne connaissez pas l'ABI de l'appareil, installez `universal`: il fonctionne partout mais il est plus volumineux."
+    },
+    {
+      "q": "Comment utiliser 3-Macaw Speech comme moteur de synthèse vocale du système?",
+      "a": "Installez d'abord au moins un modèle de synthèse, puis choisissez 3-Macaw Speech comme moteur préféré dans les réglages de synthèse vocale du système (souvent sous Accessibilité ou Langues). Chaque locuteur d'un modèle est une voix nommée `<id du modèle>/<numéro du locuteur>`; les modèles bilingues proposent aussi `<id du modèle>/<numéro du locuteur>/en-US` pour l'anglais. Les scripts AutoJs6 peuvent aussi choisir le moteur sans changer le réglage du système: `tts(text, {engine: \"io.github.supermonster003.autojs6.plugin.three.macaw.speech\"})` ou `speech.speak(text)`."
     }
   ],
   "p_security_intro": "Le plugin réduit autant que possible ses autorisations:",
@@ -66,7 +70,7 @@
     "Microphone: l'audio n'est enregistré que pour la dictée, les mots de réveil et l'écran d'essai, et le microphone est libéré dès la fin de la session ou du script.",
     "Réseau: utilisé uniquement pour télécharger les modèles et actualiser le catalogue signé; la reconnaissance et la synthèse restent hors ligne.",
     "Stockage: les modèles résident dans le répertoire privé du plugin et les modèles locaux sont importés via le sélecteur de fichiers du système, aucune autorisation de stockage n'est donc demandée.",
-    "Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement."
+    "Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement; le moteur TTS du système et ses entrées de vérification des voix, de texte d'exemple et de réglages sont ouverts à toutes les applications, comme l'exige Android, et ne font que synthétiser la parole."
   ],
   "p_license": "Le code du projet est publié sous la [Mozilla Public License 2.0]({{ license_url }}). Le moteur vocal sherpa-onnx utilise la licence Apache-2.0, onnxruntime et silero VAD la licence MIT; la licence de chaque modèle figure dans le catalogue des modèles.",
   "text_link_third_party": "Mentions tierces (THIRD_PARTY_NOTICES.md)",

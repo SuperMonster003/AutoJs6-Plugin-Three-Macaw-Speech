@@ -21,4 +21,6 @@
     <string name="speech_model_license_commercial">La licence de ce modèle autorise un usage commercial. Lisez la fiche du modèle et sa licence avant toute utilisation.</string>
     <string name="speech_model_license_non_commercial">Ce modèle est réservé à un usage non commercial: sa licence ou les données utilisées pour son entraînement interdisent tout usage commercial. Le télécharger revient à accepter cette restriction.</string>
     <string name="speech_model_license_unknown">Le diffuseur de ce modèle ne déclare aucune licence: on ignore donc si un usage commercial est permis. Vérifiez vous-même la licence avant toute utilisation.</string>
+    <string name="tts_settings_installed_models">Modèles de synthèse vocale installés: %1$d</string>
+    <string name="tts_settings_message">L\'écran des réglages de 3-Macaw Speech arrivera dans une version ultérieure. Les voix de ce moteur de synthèse vocale proviennent des modèles de synthèse vocale installés dans le plugin; installez-les depuis un script AutoJs6 avec speech.models.install().</string>
 </resources>

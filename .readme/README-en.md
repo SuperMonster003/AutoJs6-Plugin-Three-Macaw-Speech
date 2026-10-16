@@ -46,7 +46,7 @@ The README.md file is currently available in the following languages:
 
 The plugin is a separately installed APK. AutoJs6 scripts use it through the global `speech` module; the speech synthesis also registers as an Android system TTS engine, so the AutoJs6 `tts` module and other apps can choose it. Recognition and synthesis models are not bundled with the APK but downloaded on demand from the plugin screen or a script; only the voice activity detection model is built in.
 
-> This is a development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech and detects voice activity and wake words, but synthesis and the plugin screens are not delivered yet, and the AutoJs6 release with the `speech` script module is not published yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.
+> This is a development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech, detects voice activity and wake words, and synthesizes speech, also as the system TTS engine, but the plugin screens are not delivered yet, and the AutoJs6 release with the `speech` script module is not published yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.
 
 ******
 
@@ -126,6 +126,10 @@ Audio is recorded inside the plugin process and never passes through AutoJs6. Au
 
 Most phones need `arm64-v8a`. If you are unsure about the device ABI, install `universal`: it works on every device but is larger.
 
+#### How do I use 3-Macaw Speech as the text-to-speech engine of the system?
+
+Install at least one synthesis model first, then choose 3-Macaw Speech as the preferred engine in the text-to-speech settings of the system (usually under Accessibility or Languages). Every speaker of a model is a voice named `<model id>/<speaker number>`; bilingual models also offer `<model id>/<speaker number>/en-US` for English. AutoJs6 scripts can pick the engine without changing the system setting: `tts(text, {engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech"})` or `speech.speak(text)`.
+
 ******
 
 ### Permissions and security
@@ -137,7 +141,7 @@ The plugin keeps its permission surface as small as possible:
 - Microphone: audio is recorded only for dictation, wake words and the tryout screen, and the microphone is released as soon as the session ends or the script exits.
 - Network: used only to download models and refresh the signed model catalog; recognition and synthesis stay offline.
 - Storage: models live in the private directory of the plugin and local models are imported through the system file picker, so no storage permission is requested.
-- Protected entries: the capability service and the activation entry require the AutoJs6 plugin permission (`org.autojs.permission.PLUGIN`), so other apps cannot call them directly.
+- Protected entries: the capability service and the activation entry require the AutoJs6 plugin permission (`org.autojs.permission.PLUGIN`), so other apps cannot call them directly; the system TTS engine and its voice check, sample text and settings entries are open to every app, as Android requires, and only synthesize speech.
 
 ******
 
@@ -179,7 +183,7 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 _2026/10/16_
 
-- `Hint` Development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech in WAV files, fed PCM and from the microphone, and detects voice activity and wake words; text-to-speech, the plugin screens and the speech script module are not delivered yet
+- `Hint` Development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech in WAV files, fed PCM and from the microphone, detects voice activity and wake words, and synthesizes speech, also as the system TTS engine; the plugin screens and the speech script module are not delivered yet
 - `Hint` Requires AutoJs6 6.8.0 (5451) or later (the exact minimum build will be filled in once the host changes land)
 - `Feature` Plugin skeleton: Wake activation protocol, Plugin Center identity service and speech capability service
 - `Feature` Built-in sherpa-onnx 1.13.8 speech runtime and silero VAD v5 voice activity detection model, with one package per ABI for 4 ABIs
@@ -189,6 +193,8 @@ _2026/10/16_
 - `Feature` Voice activity detection lists the speech segments of a WAV file with the bundled silero VAD
 - `Feature` Wake words: open-vocabulary keyword spotting; Chinese keywords are spelled in the pinyin of their customary reading, English words in the phones of the model's lexicon, and model tokens may be written directly; a hit can start a dictation round on the same recording
 - `Feature` During a microphone session the plugin keeps recording with a microphone foreground service and its notification, so a session started while AutoJs6 is in the foreground goes on after AutoJs6 moves to the background or the screen turns off; one microphone session runs at a time; without the microphone permission sessions fail with PERMISSION_DENIED and name the permission screen
+- `Feature` Speech synthesis: the installed synthesis models (VITS, Matcha and Kokoro; the catalog has 5 Chinese and English models) turn up to 8000 characters of text into a WAV file sentence by sentence, at the model's sample rate; a speaker and a speed (0.5 to 2 times) can be chosen, progress counts the characters done, and the synthesis can be cancelled at any time; a model with a single speaker ignores a chosen speaker and says so
+- `Feature` System TTS engine: once a synthesis model is installed, 3-Macaw Speech can be chosen in the text-to-speech settings of the system, and AutoJs6's tts module and other apps read aloud with it; every speaker is one voice, bilingual models add an English voice for every speaker, and the speech rate follows the system or app setting; without an installed model the engine reports missing voice data
 - `Feature` README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources
 - `Dependency` Attach sherpa-onnx 1.13.8
 - `Dependency` Attach Jetpack Compose BOM 2026.09.00

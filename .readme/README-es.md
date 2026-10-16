@@ -46,7 +46,7 @@ El README.md actual admite los siguientes idiomas:
 
 El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.
 
-> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz y detecta actividad de voz y palabras de activación, pero la síntesis y las pantallas del complemento aún no se entregan, y la versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe los objetivos de diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.
+> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz, detecta actividad de voz y palabras de activación y sintetiza voz, también como motor TTS del sistema, pero las pantallas del complemento aún no se entregan, y la versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe los objetivos de diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.
 
 ******
 
@@ -126,6 +126,10 @@ El audio se graba dentro del proceso del complemento y nunca pasa por AutoJs6. A
 
 La mayoría de los teléfonos necesitan `arm64-v8a`. Si no conoce la ABI del dispositivo, instale `universal`: funciona en todos los dispositivos, pero ocupa más.
 
+#### Cómo uso 3-Macaw Speech como motor de texto a voz del sistema?
+
+Instale primero al menos un modelo de síntesis y luego elija 3-Macaw Speech como motor preferido en los ajustes de texto a voz del sistema (suelen estar en Accesibilidad o en Idiomas). Cada hablante de un modelo es una voz llamada `<id del modelo>/<número de hablante>`; los modelos bilingües ofrecen además `<id del modelo>/<número de hablante>/en-US` para el inglés. Los scripts de AutoJs6 también pueden elegir el motor sin cambiar el ajuste del sistema: `tts(text, {engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech"})` o `speech.speak(text)`.
+
 ******
 
 ### Permisos Y Seguridad
@@ -137,7 +141,7 @@ El complemento reduce al máximo sus permisos:
 - Micrófono: el audio solo se graba para el dictado, las palabras de activación y la pantalla de prueba, y el micrófono se libera en cuanto termina la sesión o el script.
 - Red: solo se usa para descargar modelos y actualizar el catálogo firmado; el reconocimiento y la síntesis funcionan sin conexión.
 - Almacenamiento: los modelos se guardan en el directorio privado del complemento y los modelos locales se importan mediante el selector de archivos del sistema, por lo que no se solicita permiso de almacenamiento.
-- Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente.
+- Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente; el motor TTS del sistema y sus entradas de comprobación de voces, texto de ejemplo y ajustes están abiertos a todas las aplicaciones, como exige Android, y solo sintetizan voz.
 
 ******
 
@@ -179,7 +183,7 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 _2026/10/16_
 
-- `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, y detecta actividad de voz y palabras de activación; la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no se entregan
+- `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, detecta actividad de voz y palabras de activación y sintetiza voz, también como motor TTS del sistema; las pantallas del complemento y el módulo de script speech aún no se entregan
 - `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
 - `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 - `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI
@@ -189,6 +193,8 @@ _2026/10/16_
 - `Función` Detección de actividad de voz: lista los segmentos de voz de un archivo WAV con el silero VAD incluido
 - `Función` Palabras de activación: detección de palabras clave de vocabulario abierto; las palabras clave en chino se deletrean en pinyin según su lectura habitual, las palabras en inglés en los fonemas del léxico del modelo, y también se pueden escribir directamente los tokens del modelo; una detección puede iniciar un dictado sobre la misma grabación
 - `Función` Durante una sesión de micrófono, el complemento sigue grabando con un servicio en primer plano de tipo micrófono y su notificación, de modo que una sesión iniciada con AutoJs6 en primer plano continúa cuando AutoJs6 pasa a segundo plano o se apaga la pantalla; solo se ejecuta una sesión de micrófono a la vez; sin el permiso del micrófono, las sesiones fallan con PERMISSION_DENIED e indican la pantalla de permisos
+- `Función` Síntesis de voz: los modelos de síntesis instalados (VITS, Matcha y Kokoro; el catálogo tiene 5 modelos en chino e inglés) convierten hasta 8000 caracteres de texto en un archivo WAV frase por frase, con la frecuencia de muestreo del modelo; se pueden elegir el hablante y la velocidad (de 0.5 a 2 veces), el progreso cuenta los caracteres terminados y la síntesis se puede cancelar en cualquier momento; un modelo con un solo hablante ignora el hablante elegido y lo indica
+- `Función` Motor TTS del sistema: con un modelo de síntesis instalado, 3-Macaw Speech se puede elegir en los ajustes de texto a voz del sistema, y el módulo tts de AutoJs6 y otras aplicaciones leen en voz alta con él; cada hablante es una voz, los modelos bilingües añaden una voz en inglés para cada hablante y la velocidad de habla sigue el ajuste del sistema o de la aplicación; sin un modelo instalado, el motor indica que faltan datos de voz
 - `Función` README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON
 - `Dependencia` Se agrega sherpa-onnx 1.13.8
 - `Dependencia` Se agrega Jetpack Compose BOM 2026.09.00

@@ -21,4 +21,6 @@
     <string name="speech_model_license_commercial">このモデルのライセンスは商用利用を認めています. 使用前にモデルカードとライセンスをお読みください.</string>
     <string name="speech_model_license_non_commercial">このモデルは非商用目的でのみ使用できます: ライセンスまたは学習データが商用利用を禁止しています. ダウンロードすると, この制限に同意したものとみなされます.</string>
     <string name="speech_model_license_unknown">このモデルの公開者はライセンスを示していないため, 商用利用が認められるかは不明です. 使用前にご自身でライセンスを確認してください.</string>
+    <string name="tts_settings_installed_models">インストール済みの音声合成モデル: %1$d</string>
+    <string name="tts_settings_message">3-Macaw Speech の設定画面は今後のバージョンで提供されます. このテキスト読み上げエンジンの音声は, プラグインにインストールされた音声合成モデルから提供されます. AutoJs6 のスクリプトで speech.models.install() を使ってインストールしてください.</string>
 </resources>

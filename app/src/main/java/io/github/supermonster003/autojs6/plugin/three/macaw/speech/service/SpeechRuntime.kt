@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.service
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Debug
@@ -35,10 +36,17 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VadOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsEngine
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsEngineCore
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsModelVoices
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsSpeakerHints
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsSpeakers
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import java.io.Closeable
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -49,10 +57,13 @@ import java.util.concurrent.atomic.AtomicInteger
  * on a Binder main path for sessions) and are shared through the [EngineCache] (released after [IDLE_MILLIS] without
  * use); every session event and every audio frame is processed on the single ASR thread, in order; the microphone
  * records on a capture thread of its own; file calls run on the calling Binder thread, as the protocol allows, and
- * share the engines. [sessions] admits one microphone session and up to four external sessions per caller.
+ * share the engines. [sessions] admits one microphone session and up to four external sessions per caller. Synthesis
+ * (roadmap P4) shares the cache and its memory budget: Binder syntheses run one after another on the [tts] thread, the
+ * system TTS engine synthesizes on the thread Android gives it, and both use the same loaded models.
  * zh-CN: 插件进程的识别运行时 (路线图 D30, P3.1): 引擎在模型加载线程上加载 (会话从不在 Binder 主路径上加载), 经 [EngineCache] 共享 (无人使用
  * [IDLE_MILLIS] 后释放); 所有会话事件与音频帧在唯一的 ASR 线程上按序处理; 麦克风在独立的采集线程上录音; 文件调用按协议在调用方 Binder 线程上运行,
- * 共享引擎. [sessions] 准入一个麦克风会话, 以及每个调用方至多四个外部会话.
+ * 共享引擎. [sessions] 准入一个麦克风会话, 以及每个调用方至多四个外部会话. 合成 (路线图 P4) 共用缓存及其内存预算: Binder 合成在 [tts] 线程上
+ * 依次运行, 系统 TTS 引擎在 Android 分配的线程上合成, 两者使用相同的已加载模型.
  */
 internal class SpeechRuntime private constructor(val context: Context) {
 
@@ -63,9 +74,14 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     private val loader: ExecutorService = Executors.newSingleThreadExecutor { Thread(it, "MacawEngineLoad").apply { isDaemon = true } }
 
+    /** The synthesis thread of `synthesizeToFile` (roadmap D30). zh-CN: `synthesizeToFile` 的合成线程 (路线图 D30). */
+    val tts: ExecutorService = Executors.newSingleThreadExecutor { Thread(it, "MacawTts").apply { isDaemon = true } }
+
     private val idle: ScheduledExecutorService = Executors.newSingleThreadScheduledExecutor { Thread(it, "MacawEngineIdle").apply { isDaemon = true } }
 
-    val engines = EngineCache(IDLE_MILLIS, IdleScheduler.of(idle)) { Log.i(TAG, "$it; ${memory()}") }
+    val engines = EngineCache(IDLE_MILLIS, IdleScheduler.of(idle), { Log.i(TAG, "$it; ${memory()}") }, engineBudget(context))
+
+    private val speakerNames = ConcurrentHashMap<String, List<String>>()
 
     val sessions = SessionTable()
 
@@ -150,14 +166,57 @@ internal class SpeechRuntime private constructor(val context: Context) {
     /** A recognizer lease for [model]; loads on the calling thread. zh-CN: [model] 的识别器租约; 在调用线程上加载. */
     fun acquireAsr(model: InstalledModel, language: String?, hotwords: Boolean): EngineCache.Lease<out Closeable> = if (isOffline(model)) {
         val code = language?.let(::senseVoiceLanguage) ?: ""
-        engines.acquire(EngineKey(model.modelId, model.versionCode, "sense-voice:${code.ifEmpty { "auto" }}")) { SherpaEngines.offline(model, code) }
+        engines.acquire(EngineKey(model.modelId, model.versionCode, "sense-voice:${code.ifEmpty { "auto" }}"), model.installedBytes) { SherpaEngines.offline(model, code) }
     } else {
         val withHotwords = hotwords && supportsHotwords(model)
-        engines.acquire(EngineKey(model.modelId, model.versionCode, if (withHotwords) "hotwords" else "greedy")) { SherpaEngines.online(model, withHotwords) }
+        engines.acquire(EngineKey(model.modelId, model.versionCode, if (withHotwords) "hotwords" else "greedy"), model.installedBytes) { SherpaEngines.online(model, withHotwords) }
     }
 
     fun acquireKeywords(model: InstalledModel): EngineCache.Lease<KeywordEngine> =
-        engines.acquire(EngineKey(model.modelId, model.versionCode, "kws")) { SherpaEngines.keywords(model, emptyKeywords) }
+        engines.acquire(EngineKey(model.modelId, model.versionCode, "kws"), model.installedBytes) { SherpaEngines.keywords(model, emptyKeywords) }
+
+    // Synthesis (roadmap P4) ---------------------------------------------------------------------------------------------
+
+    /** A synthesizer lease for [model]; loads on the calling thread. zh-CN: [model] 的合成器租约; 在调用线程上加载. */
+    fun acquireTts(model: InstalledModel): EngineCache.Lease<TtsEngine> =
+        engines.acquire(EngineKey(model.modelId, model.versionCode, "tts"), TtsEngineCore.weight(model)) { TtsEngineCore.load(model) }
+
+    /** Loads [model] on the loader thread and leaves it idle in the cache, so the first sentence starts sooner. zh-CN: 预加载. */
+    fun preloadTts(model: InstalledModel) = load {
+        runCatching { acquireTts(model).close() }.onFailure { Log.w(TAG, "Preloading ${model.modelId} failed: ${it.message}") }
+    }
+
+    /** The speakers of [model] before it is loaded (catalog count, `speakers.txt` names). zh-CN: 加载前的 [model] 说话人. */
+    fun speakers(model: InstalledModel): TtsSpeakers {
+        val names = speakerNames.getOrPut("${model.modelId}/${model.versionCode}") { TtsEngineCore.speakers(model).names }
+        val count = maxOf(1, model.speakers ?: 1)
+        return TtsSpeakers(count, names, TtsSpeakerHints.defaultSpeaker(model.modelId, count))
+    }
+
+    /** Installed and intact TTS models, the default one first. zh-CN: 已安装且完整的 TTS 模型, 默认模型在前. */
+    fun ttsModels(): List<InstalledModel> {
+        val default = models.defaultModel(SpeechContract.KIND_TTS)?.modelId
+        return models.store.installed().filter { it.kind == SpeechContract.KIND_TTS && it.modelType in TtsEngineCore.MODEL_TYPES && models.store.isIntact(it) }
+            .sortedWith(compareByDescending<InstalledModel> { it.modelId == default }.thenBy { it.modelId })
+    }
+
+    /**
+     * The voices of the system TTS engine for the models installed now (roadmap D19, appendix D Q6); the TTS languages of
+     * the catalog tell `LANG_MISSING_DATA` from `LANG_NOT_SUPPORTED`.
+     * zh-CN: 当前已安装模型对应的系统 TTS 引擎语音 (路线图 D19, 附录 D Q6); 目录的 TTS 语言用于区分 `LANG_MISSING_DATA` 与 `LANG_NOT_SUPPORTED`.
+     */
+    fun voiceTable(): TtsVoiceTable {
+        val default = models.defaultModel(SpeechContract.KIND_TTS)?.modelId
+        val voices = ttsModels().map { model ->
+            val speakers = speakers(model)
+            TtsModelVoices(
+                model.modelId, model.languages, speakers.count, model.sampleRate, model.modelId == default, speakers.names,
+                TtsSpeakerHints.speakerLanguages(model.modelId, speakers.count), speakers.defaultId,
+            )
+        }
+        val catalogLanguages = runCatching { models.list(kind = SpeechContract.KIND_TTS).flatMap { it.languages } }.getOrDefault(emptyList()).distinct()
+        return TtsVoiceTable(voices, catalogLanguages)
+    }
 
     /**
      * A dictation on [engine] for a session or a wake round (roadmap D17): streaming models gate with the VAD when
@@ -295,6 +354,19 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
         fun get(context: Context): SpeechRuntime = instance ?: synchronized(this) {
             instance ?: SpeechRuntime(context.applicationContext).also { instance = it }
+        }
+
+        /**
+         * Memory budget of the loaded engines (roadmap P4.1): a quarter of the device memory, within 384 MiB and 1.5 GiB
+         * (about 0.9 GiB on a 3.7 GiB phone, enough for a streaming and an offline recognizer plus Kokoro).
+         * zh-CN: 已加载引擎的内存预算 (路线图 P4.1): 设备内存的四分之一, 介于 384 MiB 与 1.5 GiB 之间 (3.7 GiB 手机上约 0.9 GiB, 足以同时容纳一个流式
+         * 与一个离线识别器以及 Kokoro).
+         */
+        fun engineBudget(context: Context): Long {
+            val info = ActivityManager.MemoryInfo()
+            context.getSystemService(ActivityManager::class.java)?.getMemoryInfo(info)
+            val total = info.totalMem.takeIf { it > 0 } ?: (4L shl 30)
+            return (total / 4).coerceIn(384L shl 20, 1536L shl 20)
         }
 
         /** Native and Java heap of the process, for the logs of roadmap D30. zh-CN: 进程的原生堆与 Java 堆, 供路线图 D30 的日志使用. */

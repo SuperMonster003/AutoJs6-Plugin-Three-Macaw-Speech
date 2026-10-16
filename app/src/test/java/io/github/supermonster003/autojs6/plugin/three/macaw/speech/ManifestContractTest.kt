@@ -76,7 +76,13 @@ class ManifestContractTest {
 
     @Test
     fun `the wake activity follows the activation contract`() {
-        assertEquals(listOf(".WakeActivity", ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity"), application.children("activity").map { it.android("name") })
+        assertEquals(
+            listOf(
+                ".WakeActivity", ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity", ".ttsengine.TtsSettingsActivity",
+            ),
+            application.children("activity").map { it.android("name") },
+        )
         val wake = application.children("activity").first()
         assertEquals(".WakeActivity", wake.android("name"))
         assertEquals("true", wake.android("exported"))
@@ -140,7 +146,10 @@ class ManifestContractTest {
     @Test
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
-            listOf(".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService"),
+            listOf(
+                ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService",
+                ".ttsengine.ThreeMacawSpeechTtsEngineService",
+            ),
             application.children("service").map { it.android("name") },
         )
         val info = service(".service.ThreeMacawSpeechInfoService")
@@ -161,10 +170,43 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the system TTS engine follows appendix C2`() {
+        val engine = service(".ttsengine.ThreeMacawSpeechTtsEngineService")
+        assertEquals("true", engine.android("exported"))
+        assertNull("Android's TextToSpeech binds it from the client app", engine.androidOrNull("permission"))
+        assertEquals("@string/app_name", engine.android("label"))
+        assertNull(engine.androidOrNull("process"))
+        assertFilter(engine, action = "android.intent.action.TTS_SERVICE", category = DEFAULT_CATEGORY)
+        assertEquals(mapOf("android.speech.tts" to "@xml/tts_engine"), engine.children("meta-data").associate { it.android("name") to it.android("resource") })
+        val description = RepositoryFiles.xml("app/src/main/res/xml/tts_engine.xml")
+        assertEquals("tts-engine", description.tagName)
+        assertEquals(
+            "the settings entry is the placeholder activity of roadmap P4.2, named in full",
+            "io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.TtsSettingsActivity",
+            description.android("settingsActivity"),
+        )
+        mapOf(
+            ".ttsengine.CheckVoiceDataActivity" to "android.speech.tts.engine.CHECK_TTS_DATA",
+            ".ttsengine.GetSampleTextActivity" to "android.speech.tts.engine.GET_SAMPLE_TEXT",
+            ".ttsengine.TtsSettingsActivity" to "android.speech.tts.engine.INSTALL_TTS_DATA",
+        ).forEach { (name, action) ->
+            val activity = application.children("activity").single { it.android("name") == name }
+            assertEquals("true", activity.android("exported"))
+            assertNull("the system settings start $name", activity.androidOrNull("permission"))
+            assertEquals("true", activity.android("excludeFromRecents"))
+            assertFilter(activity, action = action, category = DEFAULT_CATEGORY)
+        }
+    }
+
+    @Test
     fun `every exported component requires the plugin permission`() {
         val components = listOf("activity", "activity-alias", "service", "receiver", "provider").flatMap { application.children(it) }
         val unprotected = components.filter { it.androidOrNull("exported") == "true" && it.androidOrNull("permission") != PLUGIN_PERMISSION }
-        assertTrue("exported without the plugin permission: ${unprotected.map { it.android("name") }}", unprotected.isEmpty())
+        assertEquals(
+            "exported without the plugin permission: only the system TTS engine and its settings activities (roadmap P4.2)",
+            SYSTEM_TTS_COMPONENTS,
+            unprotected.map { it.android("name") }.toSet(),
+        )
         assertTrue("receivers and providers are not declared", application.children("receiver").isEmpty() && application.children("provider").isEmpty())
     }
 
@@ -185,6 +227,12 @@ class ManifestContractTest {
     private companion object {
         const val PLUGIN_PERMISSION = "org.autojs.permission.PLUGIN"
         const val DEFAULT_CATEGORY = "android.intent.category.DEFAULT"
+
+        /** Reached by Android's TextToSpeech and the system settings, which hold no plugin permission. zh-CN: 由不持有插件权限的系统访问. */
+        val SYSTEM_TTS_COMPONENTS = setOf(
+            ".ttsengine.ThreeMacawSpeechTtsEngineService", ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
+            ".ttsengine.TtsSettingsActivity",
+        )
     }
 
 }

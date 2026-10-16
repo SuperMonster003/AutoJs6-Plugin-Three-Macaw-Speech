@@ -21,4 +21,6 @@
     <string name="speech_model_license_commercial">يسمح ترخيص هذا النموذج بالاستخدام التجاري. اقرأ بطاقة النموذج والترخيص قبل استخدامه.</string>
     <string name="speech_model_license_non_commercial">لا يجوز استخدام هذا النموذج إلا لأغراض غير تجارية: ترخيصه أو بيانات تدريبه تحظر الاستخدام التجاري. تنزيله يعني أنك تقبل هذا القيد.</string>
     <string name="speech_model_license_unknown">لم يعلن ناشر هذا النموذج عن أي ترخيص, لذا لا يُعرف ما إذا كان الاستخدام التجاري مسموحا. تحقق من الترخيص بنفسك قبل استخدامه.</string>
+    <string name="tts_settings_installed_models">نماذج تركيب الكلام المثبتة: %1$d</string>
+    <string name="tts_settings_message">ستتوفر شاشة إعدادات 3-Macaw Speech في إصدار لاحق. تأتي أصوات محرك تحويل النص إلى كلام هذا من نماذج تركيب الكلام المثبتة في الإضافة; ثبّتها من برنامج نصي في AutoJs6 باستخدام speech.models.install().</string>
 </resources>

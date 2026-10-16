@@ -249,9 +249,13 @@ object SherpaEngines {
 /**
  * File roles of an installed model for sherpa-onnx (roadmap P2.3 deviation 3): the catalog's `runtime.config`, or,
  * for imported models without one, roles inferred from the upstream file names (`encoder*.onnx`, `decoder*.onnx`,
- * `joiner*.onnx`, `model*.onnx`, int8 preferred for encoders, joiners and models; `tokens.txt`, `bpe.vocab`, `*.phone`).
+ * `joiner*.onnx`, `model*.onnx`, int8 preferred for encoders, joiners and models; `tokens.txt`, `bpe.vocab`, `*.phone`;
+ * for TTS models (roadmap P4.1) also `lexicon*.txt`, top-level `*.fst` / `*.far` rules, `voices.bin`,
+ * `espeak-ng-data/`, a `model-steps-*.onnx` acoustic model and a `hifigan*` / `vocos*` vocoder).
  * zh-CN: 已安装模型供 sherpa-onnx 使用的文件角色 (路线图 P2.3 偏差 3): 目录的 `runtime.config`; 没有它的导入模型按上游文件名推断角色
- * (`encoder*.onnx`, `decoder*.onnx`, `joiner*.onnx`, `model*.onnx`, 编码器, joiner 与模型优先 int8; `tokens.txt`, `bpe.vocab`, `*.phone`).
+ * (`encoder*.onnx`, `decoder*.onnx`, `joiner*.onnx`, `model*.onnx`, 编码器, joiner 与模型优先 int8; `tokens.txt`, `bpe.vocab`, `*.phone`;
+ * TTS 模型 (路线图 P4.1) 另有 `lexicon*.txt`, 顶层 `*.fst` / `*.far` 规则, `voices.bin`, `espeak-ng-data/`, `model-steps-*.onnx` 声学模型与
+ * `hifigan*` / `vocos*` 声码器).
  */
 class RuntimeRoles private constructor(private val roles: Map<String, Any>) {
 
@@ -271,6 +275,14 @@ class RuntimeRoles private constructor(private val roles: Map<String, Any>) {
 
     fun value(role: String): String = roles[role] as? String ?: ""
 
+    /** A directory role (`dataDir`): its absolute path, or null when the model has none. zh-CN: 目录角色 (`dataDir`) 的绝对路径. */
+    fun optionalDirectory(model: InstalledModel, role: String): String? {
+        val path = roles[role] as? String ?: return null
+        val directory = model.resolve(path)
+        if (!directory.isDirectory) throw SpeechException(SpeechErrorCodes.MODEL_MISSING, "${model.modelId} is incomplete: $path is missing")
+        return directory.path
+    }
+
     companion object {
         fun of(model: InstalledModel): RuntimeRoles {
             if (model.runtimeConfig.isNotEmpty()) return RuntimeRoles(model.runtimeConfig)
@@ -287,6 +299,17 @@ class RuntimeRoles private constructor(private val roles: Map<String, Any>) {
             names.firstOrNull { it.substringAfterLast('/') == "tokens.txt" }?.let { inferred["tokens"] = it }
             names.firstOrNull { it.substringAfterLast('/') == "bpe.vocab" }?.let { inferred["bpeVocab"] = it }
             names.filter { it.endsWith(".phone") }.takeIf { it.isNotEmpty() }?.let { inferred["lexicon"] = it }
+            if (model.kind == "tts") {
+                val top = names.filter { '/' !in it }
+                top.filter { it.startsWith("lexicon") && it.endsWith(".txt") }.takeIf { it.isNotEmpty() }?.let { inferred["lexicon"] = it }
+                top.filter { it.endsWith(".fst") }.takeIf { it.isNotEmpty() }?.let { inferred["ruleFsts"] = it }
+                top.filter { it.endsWith(".far") }.takeIf { it.isNotEmpty() }?.let { inferred["ruleFars"] = it }
+                top.firstOrNull { it == "voices.bin" }?.let { inferred["voices"] = it }
+                if (names.any { it.startsWith("espeak-ng-data/") }) inferred["dataDir"] = "espeak-ng-data"
+                top.firstOrNull { it.startsWith("model-steps") && it.endsWith(".onnx") }?.let { inferred["acousticModel"] = it }
+                top.firstOrNull { (it.startsWith("hifigan") || it.startsWith("vocos")) && it.endsWith(".onnx") }?.let { inferred["vocoder"] = it }
+                if (inferred["model"] == null) top.firstOrNull { it.endsWith(".onnx") && it != inferred["acousticModel"] && it != inferred["vocoder"] }?.let { inferred["model"] = it }
+            }
             return RuntimeRoles(inferred)
         }
     }

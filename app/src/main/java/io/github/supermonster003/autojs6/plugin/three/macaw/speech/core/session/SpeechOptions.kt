@@ -72,6 +72,19 @@ data class WakeOptions(
 )
 
 /**
+ * Synthesis options (`synthesizeToFile`, roadmap D20, appendix B.2): [speaker] stays text (a number or a name, resolved
+ * against the model), [speed] 0.5 to 2.0.
+ * zh-CN: 合成选项 (`synthesizeToFile`, 路线图 D20, 附录 B.2): [speaker] 保持为文本 (编号或名字, 按模型解析), [speed] 0.5 到 2.0.
+ */
+data class SynthesizeOptions(
+    val text: String,
+    val model: String? = null,
+    val speaker: String? = null,
+    val speed: Float = 1f,
+    val format: String = SpeechContract.FORMAT_WAV,
+)
+
+/**
  * Parses and checks the request Bundles of contract version 1 (`docs/dev/speech-plugin-protocol-v1.md`) with the same
  * ranges as the host's script layer, so a request that slipped past the host still fails with the documented code:
  * a wrong shape or range is `INVALID_OPTIONS`, a contract ceiling `LIMIT_EXCEEDED`, a request of another contract
@@ -180,6 +193,31 @@ object SpeechOptions {
             else -> invalid("options.thenListen must be a Bundle")
         }
         return WakeOptions(keywords, model(given, "options"), interval, thenListen)
+    }
+
+    /**
+     * `synthesizeToFile`: `text` (1 to `MAX_SYNTH_TEXT_CHARS` UTF-16 units, not blank), `model`, `speaker` (String or
+     * integer, at most `MAX_TOKEN_CHARS`), `speed` (0.5 to 2.0) and `format` (`wav`).
+     * zh-CN: `synthesizeToFile`: `text` (1 到 `MAX_SYNTH_TEXT_CHARS` 个 UTF-16 单元, 非空白), `model`, `speaker` (字符串或整数, 至多
+     * `MAX_TOKEN_CHARS`), `speed` (0.5 到 2.0) 与 `format` (`wav`).
+     */
+    fun synthesize(source: OptionSource?): SynthesizeOptions {
+        checkContract(source)
+        val given = source ?: MapOptionSource(emptyMap())
+        val text = string(given, SpeechOptionKeys.TEXT, "request") ?: invalid("request.text is required")
+        if (text.isBlank()) invalid("request.text must not be blank")
+        if (text.length > SpeechLimits.MAX_SYNTH_TEXT_CHARS) limit("request.text has ${text.length} characters; one synthesis takes at most ${SpeechLimits.MAX_SYNTH_TEXT_CHARS}")
+        val speaker = when (val value = given.value(SpeechOptionKeys.SPEAKER)) {
+            null -> null
+            is String -> value.trim().also { if (it.isEmpty() || it.length > SpeechLimits.MAX_TOKEN_CHARS) invalid("request.speaker is not a speaker id or name") }
+            is Int, is Long, is Short, is Byte -> (value as Number).toLong().also { if (it < 0) invalid("request.speaker must not be negative, got $it") }.toString()
+            else -> invalid("request.speaker must be a speaker id or name")
+        }
+        val speed = float(given, SpeechOptionKeys.SPEED, "request") ?: 1f
+        if (speed < SpeechLimits.MIN_SPEED || speed > SpeechLimits.MAX_SPEED) invalid("request.speed must be between ${SpeechLimits.MIN_SPEED} and ${SpeechLimits.MAX_SPEED}, got $speed")
+        val format = string(given, SpeechOptionKeys.FORMAT, "request")?.trim()?.lowercase() ?: SpeechContract.FORMAT_WAV
+        if (format !in SpeechContract.FORMATS) invalid("request.format must be one of ${SpeechContract.FORMATS}, got $format")
+        return SynthesizeOptions(text, model(given, "request"), speaker, speed, format)
     }
 
     private fun model(given: OptionSource, label: String): String? {

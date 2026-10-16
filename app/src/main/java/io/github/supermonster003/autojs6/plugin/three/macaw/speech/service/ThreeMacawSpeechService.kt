@@ -59,18 +59,20 @@ class ThreeMacawSpeechService : Service() {
  * `ISpeechPlugin` of contract version 1. Model management (roadmap P2.3 / P2.4: `listModels`, `installModel`,
  * `cancelOperation`, `removeModel`, `importModel`, `setDefaultModel`, `refreshCatalog`; long operations run on the
  * model thread and report through `ISpeechProgressCallback`), file recognition and voice activity detection (P3.3, on
- * the calling Binder thread), dictation sessions (P3.2) and wake sessions (P3.4) on [SpeechRuntime]. Synthesis answers
- * `ENGINE_FAILED` until roadmap P4; the plugin does not advertise `tts`, so the host does not call it.
+ * the calling Binder thread), dictation sessions (P3.2) and wake sessions (P3.4) on [SpeechRuntime], and synthesis to a
+ * file (P4.3, [SpeechSynthesis]: an operation on the synthesis thread with progress and cancellation).
  * zh-CN: 契约版本 1 的 `ISpeechPlugin`. 模型管理 (路线图 P2.3 / P2.4: `listModels`, `installModel`, `cancelOperation`, `removeModel`,
  * `importModel`, `setDefaultModel`, `refreshCatalog`; 长操作在模型线程上运行, 经 `ISpeechProgressCallback` 报告), 文件识别与语音活动检测
- * (P3.3, 在调用方 Binder 线程上), 听写会话 (P3.2) 与唤醒会话 (P3.4) 基于 [SpeechRuntime]. 合成在路线图 P4 之前应答 `ENGINE_FAILED`; 插件不声明
- * `tts`, 宿主因此不会调用它.
+ * (P3.3, 在调用方 Binder 线程上), 听写会话 (P3.2) 与唤醒会话 (P3.4) 基于 [SpeechRuntime], 以及合成到文件 (P4.3, [SpeechSynthesis]: 在合成线程上
+ * 运行的操作, 带进度与取消).
  */
 internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.Stub() {
 
     private val manager: ModelManager get() = SpeechModels.get(context)
 
     private val runtime: SpeechRuntime get() = SpeechRuntime.get(context)
+
+    private val synthesis by lazy { SpeechSynthesis(runtime) }
 
     override fun getInfo(): PluginInfo = context.pluginRuntimeFields().toPluginInfo()
 
@@ -82,6 +84,7 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
         putString(SpeechCapabilityKeys.ENGINE_NAME, "sherpa-onnx")
         putString(SpeechCapabilityKeys.ENGINE_VERSION, BuildConfig.SHERPA_ONNX_VERSION)
         putBoolean(SpeechCapabilityKeys.MICROPHONE_GRANTED, context.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED)
+        putString(SpeechCapabilityKeys.TTS_ENGINE_PACKAGE, context.packageName)
     }
 
     override fun listModels(query: Bundle?): Bundle = answering {
@@ -107,7 +110,10 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
         )
     }
 
-    override fun cancelOperation(opId: Int) = manager.cancel(opId)
+    override fun cancelOperation(opId: Int) {
+        manager.cancel(opId)
+        synthesis.cancel(opId)
+    }
 
     override fun removeModel(request: Bundle?): Bundle = answering {
         checkContract(request)
@@ -176,8 +182,14 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
         }
     }
 
-    override fun synthesizeToFile(request: Bundle?, output: ParcelFileDescriptor?, callback: ISpeechProgressCallback?): Int =
-        throw SpeechBundles.thrown(SpeechErrorCodes.ENGINE_FAILED, "Synthesis arrives with roadmap P4")
+    /**
+     * Starts a synthesis into the host's staged [output] and answers its operation id at once (roadmap D20, P4.3); the
+     * request is checked here and thrown as `CODE: detail`.
+     * zh-CN: 开始合成到宿主暂存的 [output] 并立即返回操作 ID (路线图 D20, P4.3); 请求在此检查, 失败以 `CODE: detail` 抛出.
+     */
+    override fun synthesizeToFile(request: Bundle?, output: ParcelFileDescriptor?, callback: ISpeechProgressCallback?): Int = throwing {
+        synthesis.start(request, output, callback)
+    }
 
     /**
      * The host owns [archive] and closes it after the call; the operation reads a duplicate into a private copy first.

@@ -24,7 +24,7 @@
   "p_roadmap": "Los planes, las decisiones de diseño y el progreso se registran como lista de verificación en ROADMAP.md. Los elementos sin marcar son planes, no funciones de la versión actual.",
   "p_introduction_what": "3-Macaw Speech usa [sherpa-onnx]({{ sherpa_onnx_url }}) para ejecutar sin conexión, en el propio dispositivo, el reconocimiento de voz, la detección de actividad de voz, la detección de palabras de activación y la síntesis de voz neuronal. Todo se calcula localmente y no se envía ningún audio.",
   "p_introduction_how": "El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.",
-  "p_status_note": "Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz y detecta actividad de voz y palabras de activación, pero la síntesis y las pantallas del complemento aún no se entregan, y la versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe los objetivos de diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.",
+  "p_status_note": "Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz, detecta actividad de voz y palabras de activación y sintetiza voz, también como motor TTS del sistema, pero las pantallas del complemento aún no se entregan, y la versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe los objetivos de diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.",
   "features": [
     "Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos WAV, con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.",
     "Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.",
@@ -59,6 +59,10 @@
     {
       "q": "Qué paquete debo instalar?",
       "a": "La mayoría de los teléfonos necesitan `arm64-v8a`. Si no conoce la ABI del dispositivo, instale `universal`: funciona en todos los dispositivos, pero ocupa más."
+    },
+    {
+      "q": "Cómo uso 3-Macaw Speech como motor de texto a voz del sistema?",
+      "a": "Instale primero al menos un modelo de síntesis y luego elija 3-Macaw Speech como motor preferido en los ajustes de texto a voz del sistema (suelen estar en Accesibilidad o en Idiomas). Cada hablante de un modelo es una voz llamada `<id del modelo>/<número de hablante>`; los modelos bilingües ofrecen además `<id del modelo>/<número de hablante>/en-US` para el inglés. Los scripts de AutoJs6 también pueden elegir el motor sin cambiar el ajuste del sistema: `tts(text, {engine: \"io.github.supermonster003.autojs6.plugin.three.macaw.speech\"})` o `speech.speak(text)`."
     }
   ],
   "p_security_intro": "El complemento reduce al máximo sus permisos:",
@@ -66,7 +70,7 @@
     "Micrófono: el audio solo se graba para el dictado, las palabras de activación y la pantalla de prueba, y el micrófono se libera en cuanto termina la sesión o el script.",
     "Red: solo se usa para descargar modelos y actualizar el catálogo firmado; el reconocimiento y la síntesis funcionan sin conexión.",
     "Almacenamiento: los modelos se guardan en el directorio privado del complemento y los modelos locales se importan mediante el selector de archivos del sistema, por lo que no se solicita permiso de almacenamiento.",
-    "Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente."
+    "Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente; el motor TTS del sistema y sus entradas de comprobación de voces, texto de ejemplo y ajustes están abiertos a todas las aplicaciones, como exige Android, y solo sintetizan voz."
   ],
   "p_license": "El código del proyecto se publica bajo la [Mozilla Public License 2.0]({{ license_url }}). El motor de voz sherpa-onnx usa la licencia Apache-2.0, y onnxruntime y silero VAD usan la licencia MIT; la licencia de cada modelo figura en el catálogo de modelos.",
   "text_link_third_party": "Avisos de terceros (THIRD_PARTY_NOTICES.md)",

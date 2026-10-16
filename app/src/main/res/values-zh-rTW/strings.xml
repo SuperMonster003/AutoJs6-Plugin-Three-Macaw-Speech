@@ -21,4 +21,6 @@
     <string name="speech_model_license_commercial">此模型的授權允許商業用途. 使用前請閱讀模型卡與授權條款.</string>
     <string name="speech_model_license_non_commercial">此模型僅限非商業用途: 其授權或訓練資料禁止商業使用. 下載即表示你接受此限制.</string>
     <string name="speech_model_license_unknown">此模型的發布者未聲明授權, 是否允許商業用途未知. 請在使用前自行確認授權.</string>
+    <string name="tts_settings_installed_models">已安裝的語音合成模型: %1$d</string>
+    <string name="tts_settings_message">3-Macaw Speech 的設定頁將在後續版本提供. 本文字轉語音引擎的語音來自外掛程式中已安裝的語音合成模型, 可在 AutoJs6 腳本中用 speech.models.install() 安裝.</string>
 </resources>
