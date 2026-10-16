@@ -145,6 +145,23 @@
             android:name=".ui.about.LegalDocumentActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="false" />
+        <!--
+            The system voice input (roadmap P5.6, D41 - D47): a bottom sheet that answers ACTION_RECOGNIZE_SPEECH of any app
+            (3-Stove Agent's microphone button, for one) with the recognized text only, so it is exported without a
+            permission like the screen entries above. The settings screen disables the component (D43). It stays in the
+            caller's task, which receives the result.
+        -->
+        <activity
+            android:name=".ui.voice.VoiceInputActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:theme="@style/Theme.ThreeMacawSpeech.VoiceInput">
+            <intent-filter>
+                <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
         <receiver
             android:name=".ui.appearance.LauncherIconUpdateReceiver"

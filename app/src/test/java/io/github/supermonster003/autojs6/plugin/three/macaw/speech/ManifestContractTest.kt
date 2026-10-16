@@ -82,7 +82,7 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                VOICE_INPUT, ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
             application.children("activity").map { it.android("name") },
@@ -171,6 +171,24 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the voice input sheet answers RECOGNIZE_SPEECH of any app in a translucent window`() {
+        // Roadmap P5.6 (D41 - D43): exported without a permission, enabled by default, in the caller's task.
+        val activity = application.children("activity").single { it.android("name") == VOICE_INPUT }
+        assertEquals("true", activity.android("exported"))
+        assertNull("any app may ask for voice input", activity.androidOrNull("permission"))
+        assertNull("enabled by default; the settings switch changes the component state", activity.androidOrNull("enabled"))
+        assertNull("the result goes back to the caller's task", activity.androidOrNull("launchMode"))
+        assertNull(activity.androidOrNull("taskAffinity"))
+        assertEquals("true", activity.android("excludeFromRecents"))
+        assertEquals("@style/Theme.ThreeMacawSpeech.VoiceInput", activity.android("theme"))
+        assertFilter(activity, action = "android.speech.action.RECOGNIZE_SPEECH", category = DEFAULT_CATEGORY)
+        val theme = RepositoryFiles.xml("app/src/main/res/values/themes.xml").children("style").single { it.getAttribute("name") == "Theme.ThreeMacawSpeech.VoiceInput" }
+        val items = theme.children("item").associate { it.getAttribute("name") to it.textContent.trim() }
+        assertEquals("true", items["android:windowIsTranslucent"])
+        assertEquals("@android:color/transparent", items["android:windowBackground"])
+    }
+
+    @Test
     fun `the model operation service is internal and of type data sync`() {
         val service = service(".service.ModelOperationService")
         assertEquals("false", service.android("exported"))
@@ -247,8 +265,8 @@ class ManifestContractTest {
         val components = listOf("activity", "activity-alias", "service", "receiver", "provider").flatMap { application.children(it) }
         val unprotected = components.filter { it.androidOrNull("exported") == "true" && it.androidOrNull("permission") != PLUGIN_PERMISSION }
         assertEquals(
-            "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2) and the screen entries (P5)",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES,
+            "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5) and the voice input (P5.6)",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT,
             unprotected.map { it.android("name") }.toSet(),
         )
         assertTrue("no provider is declared", application.children("provider").isEmpty())
@@ -280,6 +298,9 @@ class ManifestContractTest {
 
         const val HOME = ".ui.home.HomeActivity"
         const val SETTINGS = ".ui.settings.SettingsActivity"
+
+        /** Roadmap P5.6: the system voice input, reached by any app. zh-CN: 系统语音输入, 任何应用均可启动. */
+        const val VOICE_INPUT = ".ui.voice.VoiceInputActivity"
 
         /**
          * The screens the launcher and the system TTS settings open (roadmap P5): they show the plugin's own screens only.

@@ -9,6 +9,10 @@
                                                         playback on the real microphone, the test recordings played
                                                         through the speaker at MACAW_VOLUME_PERCENT (70 by default) of
                                                         the music volume, restored afterwards; screenshots as below
+    py .python/device_ui_run.py voice <serial> [out]    VoiceInputDeviceTest (P5.6): ACTION_RECOGNIZE_SPEECH sent with
+                                                        startActivityForResult, the English recording played through the
+                                                        speaker (volume as for tryout); EXTRA_RESULTS and its CER, Stop,
+                                                        Cancel, silence and the busy guidance; screenshots as below
     py .python/device_ui_run.py screens <serial> [out]   ScreenCaptureDeviceTest in four appearances (P5.2 / P5.3):
                                                         English light, Simplified Chinese dark, Arabic light (RTL) and
                                                         English dark at font scale 1.3; screenshots are pulled to
@@ -74,7 +78,7 @@ def pull_screens(serial, out, ok):
     return ok and len(pulled) > 0
 
 
-def tryout(serial, out):
+def tryout(serial, out, test="TryoutDeviceTest", arguments=("macawTryout=true", "macawPrefix=tryout")):
     adb(serial, "shell", "rm", "-rf", f"/sdcard/Android/data/{PACKAGE}/files/screens", check=False)
     state = adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--get", check=False)
     match = re.search(r"volume is (\d+) in range \[(\d+)\.\.(\d+)\]", state)
@@ -86,7 +90,7 @@ def tryout(serial, out):
         print(f"{label(serial)}: music volume {original}/{maximum} -> {max(original, wanted)}")
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     try:
-        ok = run_test(serial, "TryoutDeviceTest", ["macawTryout=true", "macawPrefix=tryout"])
+        ok = run_test(serial, test, list(arguments))
     finally:
         if original is not None:
             adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(original), check=False)
@@ -109,6 +113,8 @@ def main(argv):
         return 0 if run_test(serial, "HomeDownloadDeviceTest", [f"macawDownload={argv[2]}"]) else 1
     if action == "tryout":
         return 0 if tryout(serial, argv[2] if len(argv) > 2 else None) else 1
+    if action == "voice":
+        return 0 if tryout(serial, argv[2] if len(argv) > 2 else None, "VoiceInputDeviceTest", ("macawVoice=true", "macawPrefix=voice")) else 1
     if action == "screens":
         return 0 if screens(serial, argv[2] if len(argv) > 2 else None) else 1
     print(__doc__)

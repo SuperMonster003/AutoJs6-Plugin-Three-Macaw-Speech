@@ -18,9 +18,11 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * Installs the three models the recognition device tests need (roadmap P3.5) from the `speech-models-v1` mirror with
  * `ModelManager`, opt-in because it downloads about 430 MB: `-e macawModels true`. Models already installed are kept;
- * every download logs its bytes, its source (`mirror` / `upstream`) and its time under `MacawDeviceRun`.
+ * every download logs its bytes, its source (`mirror` / `upstream`) and its time under `MacawDeviceRun`. `-e macawModelIds
+ * a,b` installs those catalog models instead (a fresh AVD for the voice input of roadmap P5.6, for one).
  * zh-CN: 以 `ModelManager` 从 `speech-models-v1` 镜像安装识别设备测试所需的三个模型 (路线图 P3.5), 因下载约 430 MB 需显式开启:
- * `-e macawModels true`. 已安装的模型保留; 每次下载在 `MacawDeviceRun` 下记录字节数, 来源 (`mirror` / `upstream`) 与耗时.
+ * `-e macawModels true`. 已安装的模型保留; 每次下载在 `MacawDeviceRun` 下记录字节数, 来源 (`mirror` / `upstream`) 与耗时. `-e macawModelIds a,b`
+ * 改为安装这些目录模型 (例如为路线图 P5.6 的语音输入准备新的 AVD).
  */
 @RunWith(AndroidJUnit4::class)
 class SpeechModelSetupDeviceTest {
@@ -29,7 +31,8 @@ class SpeechModelSetupDeviceTest {
     fun installsTheRecognitionModels() {
         assumeTrue("opt-in: -e macawModels true", SpeechDevice.argument("macawModels") == "true")
         val manager = SpeechModels.get(SpeechDevice.context)
-        SpeechDevice.MODELS.forEach { id ->
+        val ids = SpeechDevice.argument("macawModelIds")?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() } ?: SpeechDevice.MODELS
+        ids.forEach { id ->
             if (SpeechDevice.installed(id)) {
                 SpeechDevice.log("setup $id already installed")
                 return@forEach

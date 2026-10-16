@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">Темная</string>
     <string name="settings_dark_mode_light">Светлая</string>
     <string name="settings_endpoint">Чувствительность конца фразы</string>
-    <string name="settings_endpoint_message">Какая пауза завершает фразу на экране пробы</string>
+    <string name="settings_endpoint_message">Какая пауза завершает фразу на экране пробы и в системном голосовом вводе</string>
     <string name="settings_endpoint_note">Пауза %1$d мс</string>
     <string name="settings_endpoint_relaxed">Мягкая</string>
     <string name="settings_endpoint_sensitive">Чувствительная</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">Ресурсы</string>
     <string name="settings_save_failed">Не удалось сохранить настройку</string>
     <string name="settings_saved">Сохранено</string>
-    <string name="settings_scope_note">Эти настройки действуют на экране пробы и в системном движке синтеза речи. Скрипты используют значения по умолчанию из документации.</string>
+    <string name="settings_scope_note">Эти настройки действуют на экране пробы, в системном голосовом вводе и в системном движке синтеза речи. Скрипты используют значения по умолчанию из документации.</string>
     <string name="settings_speaker">Диктор</string>
     <string name="settings_speaker_model_default">По умолчанию для модели</string>
     <string name="settings_speaker_named">Диктор %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">Автоматически</string>
     <string name="settings_voice_automatic_note">Определяется моделью синтеза по умолчанию</string>
+    <string name="settings_voice_input">Использовать как системный голосовой ввод</string>
+    <string name="settings_voice_input_summary">Кнопки микрофона в других приложениях, например в 3-Stove Agent, смогут использовать офлайн-распознавание</string>
     <string name="settings_voice_label">%1$s, диктор %2$d</string>
     <string name="settings_voices">Голос по умолчанию для каждого языка</string>
     <string name="settings_voices_message">Голос, который использует системный движок, когда приложение запрашивает язык без указания голоса</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">Не игнорировать</string>
     <string name="update_up_to_date">Установлена последняя версия</string>
     <string name="update_view_release">Открыть выпуск</string>
+    <string name="voice_input_busy_body">Микрофон 3-Macaw Speech занят скриптом. Повторите попытку, когда его диктовка или ожидание слова активации закончится.</string>
+    <string name="voice_input_busy_title">Микрофон занят</string>
+    <string name="voice_input_close">Закрыть</string>
+    <string name="voice_input_failed_body">Речевому движку не удалось завершить распознавание (%1$s). Повторите попытку позже или проверьте модели распознавания на главном экране.</string>
+    <string name="voice_input_failed_title">Не удалось распознать речь</string>
+    <string name="voice_input_hearing">Слышу речь</string>
+    <string name="voice_input_install_models">Установить модели</string>
+    <string name="voice_input_listening">Идёт прослушивание</string>
+    <string name="voice_input_loading">Подготовка модели распознавания</string>
+    <string name="voice_input_microphone">Микрофон</string>
+    <string name="voice_input_microphone_body">Голосовой ввод записывает звук через микрофон 3-Macaw Speech и распознаёт его офлайн. Разрешите доступ к микрофону в настройках приложения.</string>
+    <string name="voice_input_microphone_title">Нужно разрешение на микрофон</string>
+    <string name="voice_input_no_model_body">Загрузите модель распознавания на главном экране 3-Macaw Speech и повторите попытку.</string>
+    <string name="voice_input_no_model_title">Модель распознавания не установлена</string>
+    <string name="voice_input_open_settings">Открыть настройки приложения</string>
+    <string name="voice_input_recognizing">Распознавание</string>
+    <string name="voice_input_speak_now">Говорите</string>
+    <string name="voice_input_stop">Остановить</string>
 </resources>

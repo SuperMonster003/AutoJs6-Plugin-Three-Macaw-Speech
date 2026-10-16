@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.IBinder
 import android.os.Parcel
 import android.os.Parcelable
+import android.speech.RecognizerIntent
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.MicrophonePermissionActivity
@@ -21,6 +22,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.Three
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.CheckVoiceDataActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.GetSampleTextActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.ThreeMacawSpeechTtsEngineService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.voice.VoiceInputActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.voice.VoiceInputComponent
 import org.autojs.plugin.common.api.IPluginInfoProvider
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
@@ -104,6 +107,28 @@ class ThreeMacawSpeechContractTest {
         }
         assertEquals(4, icons.toSet().size)
         assertEquals(context.resources.getIdentifier("ic_launcher_system_auto", "mipmap", packageName), icons[2])
+    }
+
+    @Test
+    fun theVoiceInputAnswersRecognizeSpeechUntilTheSettingTurnsItOff() {
+        // Roadmap P5.6 (D41, D43): one activity of the plugin answers ACTION_RECOGNIZE_SPEECH, without a permission.
+        val recognize = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).setPackage(packageName)
+        val component = VoiceInputComponent.component(context)
+        val info = context.packageManager.getActivityInfo(component, PackageManager.MATCH_DISABLED_COMPONENTS)
+        assertTrue(info.exported)
+        assertEquals(null, info.permission)
+        assertTrue(info.flags and ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS != 0)
+        val before = VoiceInputComponent.isEnabled(context)
+        try {
+            VoiceInputComponent.setEnabled(context, true)
+            assertEquals(listOf(VoiceInputActivity::class.java.name), queryActivities(recognize))
+            VoiceInputComponent.setEnabled(context, false)
+            assertFalse(VoiceInputComponent.isEnabled(context))
+            assertEquals("the settings switch hides the entry from other apps", emptyList<String>(), queryActivities(recognize))
+        } finally {
+            VoiceInputComponent.setEnabled(context, before)
+        }
+        assertEquals(before, VoiceInputComponent.isEnabled(context))
     }
 
     @Test
@@ -196,7 +221,10 @@ class ThreeMacawSpeechContractTest {
             packageInfo.providers.orEmpty().filter { it.exported }.map { it.name to it.readPermission }
         val (library, rest) = exported.partition { it.first in LIBRARY_COMPONENTS }
         val (screens, rest2) = rest.partition { it.first in screenEntries() || it.first.startsWith("$packageName.launcher.") }
-        val (systemTts, own) = rest2.partition { it.first in systemTtsComponents() }
+        val (systemTts, rest3) = rest2.partition { it.first in systemTtsComponents() }
+        // Roadmap P5.6: the voice input answers any app with the recognized text only (absent while switched off).
+        val (voiceInput, own) = rest3.partition { it.first == VoiceInputActivity::class.java.name }
+        voiceInput.forEach { (name, permission) -> assertEquals("$name is reached by any app", null, permission) }
         screens.forEach { (name, permission) -> assertEquals("$name only shows the plugin's own screens", null, permission) }
         assertTrue("the home and settings screens are exported", screens.map { it.first }.containsAll(screenEntries()))
         assertEquals(

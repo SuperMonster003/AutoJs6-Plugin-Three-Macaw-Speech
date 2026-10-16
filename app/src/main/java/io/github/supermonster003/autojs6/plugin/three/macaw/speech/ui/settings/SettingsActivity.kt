@@ -72,6 +72,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.Re
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateController
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateStore
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.UpdateDialogs
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.voice.VoiceInputComponent
 import org.autojs.plugin.speech.api.SpeechContract
 import java.util.Locale
 import java.util.concurrent.Executors
@@ -216,6 +217,11 @@ class SettingsActivity : StandaloneActivity() {
                 SectionHeader(stringResource(R.string.settings_recognition))
                 SettingsRow(stringResource(R.string.settings_asr_model), summary = defaultName(speech.asr), icon = R.drawable.ic_mic_24,
                     enabled = speech.asr.isNotEmpty(), onClick = { dialog = Dialog.ASR_MODEL }, modifier = Modifier.testTag("macaw.settings.asrModel"))
+                Hairline()
+                // Roadmap D43: the component state of the voice input sheet is the setting itself.
+                var voiceInput by remember { mutableStateOf(VoiceInputComponent.isEnabled(this@SettingsActivity)) }
+                SwitchRow(stringResource(R.string.settings_voice_input), voiceInput, { voiceInput = it; VoiceInputComponent.setEnabled(this@SettingsActivity, it) },
+                    summary = stringResource(R.string.settings_voice_input_summary), icon = R.drawable.ic_mic_24, modifier = Modifier.testTag("macaw.settings.voiceInput"))
                 Hairline()
                 SettingsRow(stringResource(R.string.settings_endpoint), summary = stringResource(endpointLabel(preferences.endpointMillis)), icon = R.drawable.ic_timer_24,
                     onClick = { dialog = Dialog.ENDPOINT }, modifier = Modifier.testTag("macaw.settings.endpoint"))

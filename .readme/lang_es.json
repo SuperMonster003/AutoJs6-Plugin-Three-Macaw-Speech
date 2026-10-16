@@ -30,6 +30,7 @@
     "Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.",
     "Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.",
     "Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.",
+    "Entrada de voz del sistema: los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión; dices una frase en un panel inferior y el texto reconocido vuelve a esa app.",
     "Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga."
   ],
   "usage_steps": [
@@ -63,6 +64,10 @@
     {
       "q": "Cómo uso 3-Macaw Speech como motor de texto a voz del sistema?",
       "a": "Instale primero al menos un modelo de síntesis y luego elija 3-Macaw Speech como motor preferido en los ajustes de texto a voz del sistema (suelen estar en Accesibilidad o en Idiomas). Cada hablante de un modelo es una voz llamada `<id del modelo>/<número de hablante>`; los modelos bilingües ofrecen además `<id del modelo>/<número de hablante>/en-US` para el inglés. Los scripts de AutoJs6 también pueden elegir el motor sin cambiar el ajuste del sistema: `tts(text, {engine: \"io.github.supermonster003.autojs6.plugin.three.macaw.speech\"})` o `speech.speak(text)`."
+    },
+    {
+      "q": "Pueden otras apps usar 3-Macaw Speech para la entrada de voz?",
+      "a": "Sí. Con un modelo de reconocimiento instalado y el permiso de micrófono concedido, las apps que abren la entrada de voz del sistema (por ejemplo, el botón de micrófono de 3-Stove Agent) muestran el panel de 3-Macaw Speech. Si también hay otra app de entrada de voz, como Google, Android pregunta cuál usar y puede recordar la elección. Para ocultar esta entrada a otras apps, desactiva 'Usar como entrada de voz del sistema' en el grupo Reconocimiento de los ajustes."
     }
   ],
   "p_security_intro": "El complemento reduce al máximo sus permisos:",
@@ -70,7 +75,8 @@
     "Micrófono: el audio solo se graba para el dictado, las palabras de activación y la pantalla de prueba, y el micrófono se libera en cuanto termina la sesión o el script.",
     "Red: solo se usa para descargar modelos y actualizar el catálogo firmado; el reconocimiento y la síntesis funcionan sin conexión.",
     "Almacenamiento: los modelos se guardan en el directorio privado del complemento y los modelos locales se importan mediante el selector de archivos del sistema, por lo que no se solicita permiso de almacenamiento.",
-    "Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente; el motor TTS del sistema y sus entradas de comprobación de voces, texto de ejemplo y ajustes están abiertos a todas las aplicaciones, como exige Android, y solo sintetizan voz."
+    "Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente; el motor TTS del sistema y sus entradas de comprobación de voces, texto de ejemplo y ajustes están abiertos a todas las aplicaciones, como exige Android, y solo sintetizan voz.",
+    "Entrada de voz del sistema: como el motor de texto a voz del sistema, está abierta a todas las apps; solo graba mientras su panel está en pantalla, solo devuelve el texto reconocido y se puede desactivar en los ajustes."
   ],
   "p_license": "El código del proyecto se publica bajo la [Mozilla Public License 2.0]({{ license_url }}). El motor de voz sherpa-onnx usa la licencia Apache-2.0, y onnxruntime y silero VAD usan la licencia MIT; la licencia de cada modelo figura en el catálogo de modelos.",
   "text_link_third_party": "Avisos de terceros (THIRD_PARTY_NOTICES.md)",

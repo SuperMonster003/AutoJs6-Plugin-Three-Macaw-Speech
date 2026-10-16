@@ -58,6 +58,7 @@ The plugin is a separately installed APK. AutoJs6 scripts use it through the glo
 - Voice activity detection: the built-in silero VAD v5 splits audio into speech segments on its own and also ends dictation sentences automatically.
 - Wake words: type the keyword as plain text (for example `小六小六` or `hey macaw`) without training a model; after waking up, dictation can start automatically.
 - Text-to-speech: several neural Chinese and English voices, synthesized to WAV files or used as the system TTS engine by the AutoJs6 `tts` module and other apps.
+- System voice input: microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition; you say one sentence in a bottom sheet and the recognized text goes back to that app.
 - Model management: downloads from a signed model catalog, enabled only after every file passes its SHA-256 check, plus import of local models; models restricted to non-commercial use show their license before the download.
 
 ******
@@ -130,6 +131,10 @@ Most phones need `arm64-v8a`. If you are unsure about the device ABI, install `u
 
 Install at least one synthesis model first, then choose 3-Macaw Speech as the preferred engine in the text-to-speech settings of the system (usually under Accessibility or Languages). Every speaker of a model is a voice named `<model id>/<speaker number>`; bilingual models also offer `<model id>/<speaker number>/en-US` for English. AutoJs6 scripts can pick the engine without changing the system setting: `tts(text, {engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech"})` or `speech.speak(text)`.
 
+#### Can other apps use 3-Macaw Speech for voice input?
+
+Yes. With a recognition model installed and the microphone permission granted, apps that start the system voice input (for example the microphone button of 3-Stove Agent) open the 3-Macaw Speech sheet. If another voice input app such as Google is installed, Android asks which one to use and can remember the choice. To hide the entry from other apps, turn off 'Use as the system voice input' in the recognition group of the settings.
+
 ******
 
 ### Permissions and security
@@ -142,6 +147,7 @@ The plugin keeps its permission surface as small as possible:
 - Network: used only to download models and refresh the signed model catalog; recognition and synthesis stay offline.
 - Storage: models live in the private directory of the plugin and local models are imported through the system file picker, so no storage permission is requested.
 - Protected entries: the capability service and the activation entry require the AutoJs6 plugin permission (`org.autojs.permission.PLUGIN`), so other apps cannot call them directly; the system TTS engine and its voice check, sample text and settings entries are open to every app, as Android requires, and only synthesize speech.
+- System voice input: like the system TTS engine it is open to every app; it records only while its sheet is on the screen, returns nothing but the recognized text and can be turned off in the settings.
 
 ******
 
@@ -199,6 +205,7 @@ _2026/10/16_
 - `Feature` Models on the home screen, grouped into recognition, wake words, synthesis and voice activity detection, with size, languages and license: download, pause, resume, cancel, delete and set as default; download progress also shows in a notification; models limited to non-commercial use or without a declared license ask you to accept their license first, and a download on mobile data or another metered network asks before it starts
 - `Feature` Import a local model from a tar, tar.bz2 or zip archive or from a folder: files that match a catalog model are registered as that model, other files become your own model after you fill in its kind, model type, name, languages and ID
 - `Feature` Try it out: live dictation (partial results in gray) with a choice of model and language, a wake word trial that lists the hits with their keyword and score, and speech synthesis of your text with a choice of model, speaker and speed, played back or saved as a WAV file; leaving the screen releases the microphone
+- `Feature` System voice input: microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition of 3-Macaw Speech: say one sentence in a bottom sheet and the recognized text goes straight back to that app; it ends after a pause, or stop or cancel it earlier; it follows the endpoint sensitivity and voice activity detection of the settings and can be turned off in their recognition group
 - `Feature` Settings: language, night mode, theme color and launcher icon (following AutoJs6 by default); the default recognition and synthesis models, endpoint sensitivity, voice activity detection, speaker, speed and a default voice per language for the tryout screen and the system TTS engine (scripts keep the documented defaults); when idle models are released, catalog refresh and cleanup of leftover files; the settings button of 3-Macaw Speech in the system text-to-speech settings opens this screen
 - `Feature` About: version, the release history included with the plugin, update checks (automatically at most every 12 hours, a release can be ignored) and the licenses and notices: the app as a whole is conveyed under the GNU GPL 3.0 or later without any warranty, with the third-party notices, the full GPL text, the Unicode Terms of Use and where the corresponding source is
 - `Feature` Launcher icon: adaptive icon (light), adaptive icon (dark), adaptive icon (automatic, the default) or transparent background icon

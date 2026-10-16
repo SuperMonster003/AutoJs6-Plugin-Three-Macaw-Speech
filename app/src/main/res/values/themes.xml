@@ -9,5 +9,17 @@
         <item name="android:colorBackground">@color/macaw_window_background</item>
     </style>
 
+    <!--
+        The system voice input (roadmap P5.6): a transparent window over the caller's screen; the sheet draws its own scrim
+        and slides in, so the window has no dim and no animation of its own.
+    -->
+    <style name="Theme.ThreeMacawSpeech.VoiceInput">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+
     <color name="macaw_window_background">#F3F4F5</color>
 </resources>

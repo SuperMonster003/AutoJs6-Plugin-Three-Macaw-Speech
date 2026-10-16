@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">深色</string>
     <string name="settings_dark_mode_light">淺色</string>
     <string name="settings_endpoint">端點靈敏度</string>
-    <string name="settings_endpoint_message">試聽試說頁面中停頓多久算一句結束</string>
+    <string name="settings_endpoint_message">試聽試說頁面與系統語音輸入中停頓多久算一句結束</string>
     <string name="settings_endpoint_note">停頓 %1$d 毫秒</string>
     <string name="settings_endpoint_relaxed">寬鬆</string>
     <string name="settings_endpoint_sensitive">靈敏</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">資源</string>
     <string name="settings_save_failed">無法儲存設定</string>
     <string name="settings_saved">已儲存</string>
-    <string name="settings_scope_note">這些設定作用於試聽試說頁面與系統文字轉語音引擎, 腳本仍使用文件中的預設值.</string>
+    <string name="settings_scope_note">這些設定作用於試聽試說頁面, 系統語音輸入與系統文字轉語音引擎, 腳本仍使用文件中的預設值.</string>
     <string name="settings_speaker">說話者</string>
     <string name="settings_speaker_model_default">模型預設</string>
     <string name="settings_speaker_named">說話者 %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">自動</string>
     <string name="settings_voice_automatic_note">由預設合成模型決定</string>
+    <string name="settings_voice_input">作為系統語音輸入</string>
+    <string name="settings_voice_input_summary">其他應用程式的麥克風按鈕 (例如 3-Stove Agent) 可使用本外掛的離線辨識</string>
     <string name="settings_voice_label">%1$s, 說話者 %2$d</string>
     <string name="settings_voices">各語言的預設語音</string>
     <string name="settings_voices_message">應用程式只指定語言而未指定語音時, 系統引擎使用的語音</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">取消忽略</string>
     <string name="update_up_to_date">已是最新版本</string>
     <string name="update_view_release">檢視發行版</string>
+    <string name="voice_input_busy_body">有腳本正在使用 3-Macaw Speech 的麥克風. 請等它的聽寫或喚醒結束後再試.</string>
+    <string name="voice_input_busy_title">麥克風正被占用</string>
+    <string name="voice_input_close">關閉</string>
+    <string name="voice_input_failed_body">語音引擎未能完成辨識 (%1$s). 請稍後再試, 或在首頁檢查辨識模型.</string>
+    <string name="voice_input_failed_title">辨識失敗</string>
+    <string name="voice_input_hearing">正在收音</string>
+    <string name="voice_input_install_models">安裝模型</string>
+    <string name="voice_input_listening">正在聆聽</string>
+    <string name="voice_input_loading">正在準備辨識模型</string>
+    <string name="voice_input_microphone">麥克風</string>
+    <string name="voice_input_microphone_body">語音輸入使用 3-Macaw Speech 的麥克風錄音並離線辨識. 請在應用程式設定中允許麥克風權限.</string>
+    <string name="voice_input_microphone_title">需要麥克風權限</string>
+    <string name="voice_input_no_model_body">請先在 3-Macaw Speech 首頁下載一個辨識模型, 然後再試.</string>
+    <string name="voice_input_no_model_title">未安裝辨識模型</string>
+    <string name="voice_input_open_settings">開啟應用程式設定</string>
+    <string name="voice_input_recognizing">正在辨識</string>
+    <string name="voice_input_speak_now">請說話</string>
+    <string name="voice_input_stop">停止</string>
 </resources>

@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">다크</string>
     <string name="settings_dark_mode_light">라이트</string>
     <string name="settings_endpoint">엔드포인트 민감도</string>
-    <string name="settings_endpoint_message">체험하기 화면에서 문장이 끝난 것으로 볼 멈춤 길이</string>
+    <string name="settings_endpoint_message">체험하기 화면과 시스템 음성 입력에서 문장이 끝난 것으로 볼 멈춤 길이</string>
     <string name="settings_endpoint_note">%1$d밀리초 멈춤</string>
     <string name="settings_endpoint_relaxed">낮음</string>
     <string name="settings_endpoint_sensitive">높음</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">리소스</string>
     <string name="settings_save_failed">설정을 저장할 수 없습니다</string>
     <string name="settings_saved">저장됨</string>
-    <string name="settings_scope_note">이 설정은 체험하기 화면과 시스템 텍스트 음성 변환 엔진에 적용됩니다. 스크립트는 문서에 나온 기본값을 그대로 사용합니다.</string>
+    <string name="settings_scope_note">이 설정은 체험하기 화면, 시스템 음성 입력, 시스템 텍스트 음성 변환 엔진에 적용됩니다. 스크립트는 문서에 나온 기본값을 그대로 사용합니다.</string>
     <string name="settings_speaker">화자</string>
     <string name="settings_speaker_model_default">모델 기본값</string>
     <string name="settings_speaker_named">화자 %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">자동</string>
     <string name="settings_voice_automatic_note">기본 합성 모델이 결정</string>
+    <string name="settings_voice_input">시스템 음성 입력으로 사용</string>
+    <string name="settings_voice_input_summary">3-Stove Agent 등 다른 앱의 마이크 버튼에서 이 플러그인의 오프라인 인식을 사용할 수 있습니다</string>
     <string name="settings_voice_label">%1$s, 화자 %2$d</string>
     <string name="settings_voices">언어별 기본 음성</string>
     <string name="settings_voices_message">앱이 음성을 지정하지 않고 언어만 요청할 때 시스템 엔진이 사용하는 음성</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">무시 중지</string>
     <string name="update_up_to_date">최신 버전</string>
     <string name="update_view_release">릴리스 보기</string>
+    <string name="voice_input_busy_body">스크립트가 3-Macaw Speech의 마이크를 사용 중입니다. 받아쓰기나 호출어 감지가 끝난 뒤 다시 시도하세요.</string>
+    <string name="voice_input_busy_title">마이크를 사용 중입니다</string>
+    <string name="voice_input_close">닫기</string>
+    <string name="voice_input_failed_body">음성 엔진이 인식을 끝내지 못했습니다 (%1$s). 나중에 다시 시도하거나 홈 화면에서 인식 모델을 확인하세요.</string>
+    <string name="voice_input_failed_title">인식 실패</string>
+    <string name="voice_input_hearing">음성을 듣고 있습니다</string>
+    <string name="voice_input_install_models">모델 설치</string>
+    <string name="voice_input_listening">듣는 중</string>
+    <string name="voice_input_loading">인식 모델을 준비하는 중</string>
+    <string name="voice_input_microphone">마이크</string>
+    <string name="voice_input_microphone_body">음성 입력은 3-Macaw Speech의 마이크로 녹음하고 오프라인으로 인식합니다. 앱 설정에서 마이크 권한을 허용하세요.</string>
+    <string name="voice_input_microphone_title">마이크 권한이 필요합니다</string>
+    <string name="voice_input_no_model_body">3-Macaw Speech 홈 화면에서 인식 모델을 다운로드한 뒤 다시 시도하세요.</string>
+    <string name="voice_input_no_model_title">설치된 인식 모델이 없습니다</string>
+    <string name="voice_input_open_settings">앱 설정 열기</string>
+    <string name="voice_input_recognizing">인식하는 중</string>
+    <string name="voice_input_speak_now">말씀하세요</string>
+    <string name="voice_input_stop">중지</string>
 </resources>

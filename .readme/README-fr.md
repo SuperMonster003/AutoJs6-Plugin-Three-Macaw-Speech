@@ -58,6 +58,7 @@ Le plugin est un APK installé séparément. Les scripts AutoJs6 l'utilisent via
 - Détection d'activité vocale: le silero VAD v5 intégré découpe l'audio en segments de parole et termine aussi automatiquement les phrases dictées.
 - Mots de réveil: saisissez le mot-clé en texte brut (par exemple `小六小六` ou `hey macaw`) sans entraîner de modèle; après le réveil, la dictée peut démarrer automatiquement.
 - Synthèse vocale: plusieurs voix neuronales chinoises et anglaises, synthétisées dans des fichiers WAV ou utilisées comme moteur TTS du système par le module `tts` d'AutoJs6 et d'autres applications.
+- Saisie vocale du système: les boutons de microphone d'autres applications, comme 3-Stove Agent, peuvent utiliser la reconnaissance hors ligne; vous dites une phrase dans un panneau en bas de l'écran et le texte reconnu revient dans cette application.
 - Gestion des modèles: téléchargement depuis un catalogue signé, activation seulement après vérification SHA-256 de chaque fichier, et import de modèles locaux; les modèles réservés à un usage non commercial affichent leur licence avant le téléchargement.
 
 ******
@@ -130,6 +131,10 @@ La plupart des téléphones utilisent `arm64-v8a`. Si vous ne connaissez pas l'A
 
 Installez d'abord au moins un modèle de synthèse, puis choisissez 3-Macaw Speech comme moteur préféré dans les réglages de synthèse vocale du système (souvent sous Accessibilité ou Langues). Chaque locuteur d'un modèle est une voix nommée `<id du modèle>/<numéro du locuteur>`; les modèles bilingues proposent aussi `<id du modèle>/<numéro du locuteur>/en-US` pour l'anglais. Les scripts AutoJs6 peuvent aussi choisir le moteur sans changer le réglage du système: `tts(text, {engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech"})` ou `speech.speak(text)`.
 
+#### D'autres applications peuvent-elles utiliser 3-Macaw Speech pour la saisie vocale?
+
+Oui. Une fois un modèle de reconnaissance installé et le microphone autorisé, les applications qui lancent la saisie vocale du système (par exemple le bouton de microphone de 3-Stove Agent) ouvrent le panneau de 3-Macaw Speech. Si une autre application de saisie vocale comme Google est installée, Android demande laquelle utiliser et peut mémoriser ce choix. Pour masquer cette entrée aux autres applications, désactivez 'Utiliser comme saisie vocale du système' dans le groupe Reconnaissance des paramètres.
+
 ******
 
 ### Permissions Et Sécurité
@@ -142,6 +147,7 @@ Le plugin réduit autant que possible ses autorisations:
 - Réseau: utilisé uniquement pour télécharger les modèles et actualiser le catalogue signé; la reconnaissance et la synthèse restent hors ligne.
 - Stockage: les modèles résident dans le répertoire privé du plugin et les modèles locaux sont importés via le sélecteur de fichiers du système, aucune autorisation de stockage n'est donc demandée.
 - Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement; le moteur TTS du système et ses entrées de vérification des voix, de texte d'exemple et de réglages sont ouverts à toutes les applications, comme l'exige Android, et ne font que synthétiser la parole.
+- Saisie vocale du système: comme le moteur de synthèse vocale du système, elle est ouverte à toutes les applications; elle n'enregistre que pendant l'affichage de son panneau, ne renvoie que le texte reconnu et peut être désactivée dans les paramètres.
 
 ******
 
@@ -199,6 +205,7 @@ _2026/10/16_
 - `Fonctionnalité` Modèles sur l'écran d'accueil, classés en reconnaissance, mots de réveil, synthèse et détection d'activité vocale, avec leur taille, leurs langues et leur licence: télécharger, suspendre, reprendre, annuler, supprimer et définir par défaut; la progression du téléchargement s'affiche aussi dans une notification; les modèles réservés à un usage non commercial ou sans licence déclarée demandent d'abord d'accepter leur licence, et un téléchargement sur données mobiles ou sur un autre réseau facturé à l'usage demande confirmation avant de commencer
 - `Fonctionnalité` Import d'un modèle local depuis une archive tar, tar.bz2 ou zip ou depuis un dossier: les fichiers qui correspondent à un modèle du catalogue sont enregistrés comme ce modèle, les autres deviennent un modèle personnalisé une fois sa catégorie, son type de modèle, son nom, ses langues et son ID renseignés
 - `Fonctionnalité` Essayer: dictée en direct (résultats partiels en gris) avec choix du modèle et de la langue, essai des mots de réveil qui liste les détections avec leur mot clé et leur score, et synthèse vocale de votre texte avec choix du modèle, du locuteur et de la vitesse, à écouter ou à enregistrer en fichier WAV; quitter l'écran libère le microphone
+- `Fonctionnalité` Saisie vocale du système: les boutons de microphone d'autres applications, comme 3-Stove Agent, peuvent utiliser la reconnaissance hors ligne de 3-Macaw Speech: dites une phrase dans un panneau en bas de l'écran et le texte reconnu revient directement dans cette application; la saisie se termine après une pause, ou vous pouvez l'arrêter ou l'annuler plus tôt; elle suit la sensibilité de fin de phrase et la détection d'activité vocale des paramètres et peut être désactivée dans leur groupe Reconnaissance
 - `Fonctionnalité` Paramètres: langue, mode nuit, couleur du thème et icône du lanceur (qui suivent AutoJs6 par défaut); modèles de reconnaissance et de synthèse par défaut, sensibilité de fin de phrase, détection d'activité vocale, locuteur, vitesse et voix par défaut par langue pour l'écran d'essai et le moteur TTS du système (les scripts gardent les valeurs par défaut documentées); délai avant la libération des modèles inactifs, actualisation du catalogue et nettoyage des fichiers restants; le bouton de réglages de 3-Macaw Speech dans les réglages de synthèse vocale du système ouvre cet écran
 - `Fonctionnalité` À propos: version, historique des versions inclus dans le plugin, recherche de mises à jour (automatique au plus une fois toutes les 12 heures, une version peut être ignorée) ainsi que licences et mentions: l'application dans son ensemble est distribuée sous la GNU GPL 3.0 ou ultérieure, sans aucune garantie, avec les mentions de tiers, le texte complet de la GPL, les conditions d'utilisation d'Unicode et l'emplacement de la source correspondante
 - `Fonctionnalité` Icône du lanceur: icône adaptative (claire), icône adaptative (sombre), icône adaptative (automatique, par défaut) ou icône à fond transparent

@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">ダーク</string>
     <string name="settings_dark_mode_light">ライト</string>
     <string name="settings_endpoint">エンドポイントの感度</string>
-    <string name="settings_endpoint_message">お試し画面で, どのくらいの無音で文の終わりとみなすか</string>
+    <string name="settings_endpoint_message">お試し画面とシステムの音声入力で, どのくらいの無音で文の終わりとみなすか</string>
     <string name="settings_endpoint_note">%1$d ミリ秒の無音</string>
     <string name="settings_endpoint_relaxed">低感度</string>
     <string name="settings_endpoint_sensitive">高感度</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">リソース</string>
     <string name="settings_save_failed">設定を保存できませんでした</string>
     <string name="settings_saved">保存しました</string>
-    <string name="settings_scope_note">これらの設定はお試し画面とシステムのテキスト読み上げエンジンに適用されます. スクリプトはドキュメントに記載されたデフォルト値を使います.</string>
+    <string name="settings_scope_note">これらの設定はお試し画面, システムの音声入力, システムのテキスト読み上げエンジンに適用されます. スクリプトはドキュメントに記載されたデフォルト値を使います.</string>
     <string name="settings_speaker">話者</string>
     <string name="settings_speaker_model_default">モデルのデフォルト</string>
     <string name="settings_speaker_named">話者 %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">自動</string>
     <string name="settings_voice_automatic_note">デフォルトの合成モデルが決定します</string>
+    <string name="settings_voice_input">システムの音声入力として使う</string>
+    <string name="settings_voice_input_summary">他のアプリのマイクボタン (3-Stove Agent など) で, このプラグインのオフライン認識を使えます</string>
     <string name="settings_voice_label">%1$s, 話者 %2$d</string>
     <string name="settings_voices">言語ごとのデフォルトの音声</string>
     <string name="settings_voices_message">アプリが音声を指定せずに言語だけを指定したときに, システムエンジンが使う音声</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">無視を解除</string>
     <string name="update_up_to_date">最新です</string>
     <string name="update_view_release">リリースを表示</string>
+    <string name="voice_input_busy_body">スクリプトが 3-Macaw Speech のマイクを使用しています. その音声入力またはウェイクワード検出が終わってから, もう一度試してください.</string>
+    <string name="voice_input_busy_title">マイクは使用中です</string>
+    <string name="voice_input_close">閉じる</string>
+    <string name="voice_input_failed_body">音声エンジンが認識を完了できませんでした (%1$s). 後でもう一度試すか, ホーム画面で認識モデルを確認してください.</string>
+    <string name="voice_input_failed_title">認識に失敗しました</string>
+    <string name="voice_input_hearing">音声を検出しています</string>
+    <string name="voice_input_install_models">モデルをインストール</string>
+    <string name="voice_input_listening">聞き取っています</string>
+    <string name="voice_input_loading">認識モデルを準備しています</string>
+    <string name="voice_input_microphone">マイク</string>
+    <string name="voice_input_microphone_body">音声入力は 3-Macaw Speech のマイクで録音し, オフラインで認識します. アプリの設定でマイクの権限を許可してください.</string>
+    <string name="voice_input_microphone_title">マイクの権限が必要です</string>
+    <string name="voice_input_no_model_body">3-Macaw Speech のホーム画面で認識モデルをダウンロードしてから, もう一度試してください.</string>
+    <string name="voice_input_no_model_title">認識モデルがインストールされていません</string>
+    <string name="voice_input_open_settings">アプリの設定を開く</string>
+    <string name="voice_input_recognizing">認識しています</string>
+    <string name="voice_input_speak_now">話してください</string>
+    <string name="voice_input_stop">停止</string>
 </resources>

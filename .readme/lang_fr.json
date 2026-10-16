@@ -30,6 +30,7 @@
     "Détection d'activité vocale: le silero VAD v5 intégré découpe l'audio en segments de parole et termine aussi automatiquement les phrases dictées.",
     "Mots de réveil: saisissez le mot-clé en texte brut (par exemple `小六小六` ou `hey macaw`) sans entraîner de modèle; après le réveil, la dictée peut démarrer automatiquement.",
     "Synthèse vocale: plusieurs voix neuronales chinoises et anglaises, synthétisées dans des fichiers WAV ou utilisées comme moteur TTS du système par le module `tts` d'AutoJs6 et d'autres applications.",
+    "Saisie vocale du système: les boutons de microphone d'autres applications, comme 3-Stove Agent, peuvent utiliser la reconnaissance hors ligne; vous dites une phrase dans un panneau en bas de l'écran et le texte reconnu revient dans cette application.",
     "Gestion des modèles: téléchargement depuis un catalogue signé, activation seulement après vérification SHA-256 de chaque fichier, et import de modèles locaux; les modèles réservés à un usage non commercial affichent leur licence avant le téléchargement."
   ],
   "usage_steps": [
@@ -63,6 +64,10 @@
     {
       "q": "Comment utiliser 3-Macaw Speech comme moteur de synthèse vocale du système?",
       "a": "Installez d'abord au moins un modèle de synthèse, puis choisissez 3-Macaw Speech comme moteur préféré dans les réglages de synthèse vocale du système (souvent sous Accessibilité ou Langues). Chaque locuteur d'un modèle est une voix nommée `<id du modèle>/<numéro du locuteur>`; les modèles bilingues proposent aussi `<id du modèle>/<numéro du locuteur>/en-US` pour l'anglais. Les scripts AutoJs6 peuvent aussi choisir le moteur sans changer le réglage du système: `tts(text, {engine: \"io.github.supermonster003.autojs6.plugin.three.macaw.speech\"})` ou `speech.speak(text)`."
+    },
+    {
+      "q": "D'autres applications peuvent-elles utiliser 3-Macaw Speech pour la saisie vocale?",
+      "a": "Oui. Une fois un modèle de reconnaissance installé et le microphone autorisé, les applications qui lancent la saisie vocale du système (par exemple le bouton de microphone de 3-Stove Agent) ouvrent le panneau de 3-Macaw Speech. Si une autre application de saisie vocale comme Google est installée, Android demande laquelle utiliser et peut mémoriser ce choix. Pour masquer cette entrée aux autres applications, désactivez 'Utiliser comme saisie vocale du système' dans le groupe Reconnaissance des paramètres."
     }
   ],
   "p_security_intro": "Le plugin réduit autant que possible ses autorisations:",
@@ -70,7 +75,8 @@
     "Microphone: l'audio n'est enregistré que pour la dictée, les mots de réveil et l'écran d'essai, et le microphone est libéré dès la fin de la session ou du script.",
     "Réseau: utilisé uniquement pour télécharger les modèles et actualiser le catalogue signé; la reconnaissance et la synthèse restent hors ligne.",
     "Stockage: les modèles résident dans le répertoire privé du plugin et les modèles locaux sont importés via le sélecteur de fichiers du système, aucune autorisation de stockage n'est donc demandée.",
-    "Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement; le moteur TTS du système et ses entrées de vérification des voix, de texte d'exemple et de réglages sont ouverts à toutes les applications, comme l'exige Android, et ne font que synthétiser la parole."
+    "Entrées protégées: le service de capacité et l'entrée d'activation exigent l'autorisation de plugin d'AutoJs6 (`org.autojs.permission.PLUGIN`), les autres applications ne peuvent donc pas les appeler directement; le moteur TTS du système et ses entrées de vérification des voix, de texte d'exemple et de réglages sont ouverts à toutes les applications, comme l'exige Android, et ne font que synthétiser la parole.",
+    "Saisie vocale du système: comme le moteur de synthèse vocale du système, elle est ouverte à toutes les applications; elle n'enregistre que pendant l'affichage de son panneau, ne renvoie que le texte reconnu et peut être désactivée dans les paramètres."
   ],
   "p_license": "Le code du projet est publié sous la [Mozilla Public License 2.0]({{ license_url }}). Le moteur vocal sherpa-onnx utilise la licence Apache-2.0, onnxruntime et silero VAD la licence MIT; la licence de chaque modèle figure dans le catalogue des modèles.",
   "text_link_third_party": "Mentions tierces (THIRD_PARTY_NOTICES.md)",

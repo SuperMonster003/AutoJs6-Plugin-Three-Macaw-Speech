@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">Oscuro</string>
     <string name="settings_dark_mode_light">Claro</string>
     <string name="settings_endpoint">Sensibilidad de fin de frase</string>
-    <string name="settings_endpoint_message">Cuánto debe durar una pausa para terminar una frase en la pantalla de prueba</string>
+    <string name="settings_endpoint_message">Cuánto debe durar una pausa para terminar una frase en la pantalla de prueba y en la entrada de voz del sistema</string>
     <string name="settings_endpoint_note">Una pausa de %1$d ms</string>
     <string name="settings_endpoint_relaxed">Tolerante</string>
     <string name="settings_endpoint_sensitive">Sensible</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">Recursos</string>
     <string name="settings_save_failed">No se pudo guardar el ajuste</string>
     <string name="settings_saved">Guardado</string>
-    <string name="settings_scope_note">Estos ajustes se aplican a la pantalla de prueba y al motor de texto a voz del sistema. Los scripts mantienen los valores predeterminados documentados.</string>
+    <string name="settings_scope_note">Estos ajustes se aplican a la pantalla de prueba, a la entrada de voz del sistema y al motor de texto a voz del sistema. Los scripts mantienen los valores predeterminados documentados.</string>
     <string name="settings_speaker">Hablante</string>
     <string name="settings_speaker_model_default">Predeterminado del modelo</string>
     <string name="settings_speaker_named">Hablante %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">Automática</string>
     <string name="settings_voice_automatic_note">Lo decide el modelo de síntesis predeterminado</string>
+    <string name="settings_voice_input">Usar como entrada de voz del sistema</string>
+    <string name="settings_voice_input_summary">Los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión</string>
     <string name="settings_voice_label">%1$s, hablante %2$d</string>
     <string name="settings_voices">Voz predeterminada por idioma</string>
     <string name="settings_voices_message">La voz que usa el motor del sistema cuando una aplicación pide un idioma sin indicar una voz</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">Dejar de ignorar</string>
     <string name="update_up_to_date">Está actualizado</string>
     <string name="update_view_release">Ver versión</string>
+    <string name="voice_input_busy_body">Un script está usando el micrófono de 3-Macaw Speech. Vuelve a intentarlo cuando termine su dictado o su detección de palabras de activación.</string>
+    <string name="voice_input_busy_title">El micrófono está en uso</string>
+    <string name="voice_input_close">Cerrar</string>
+    <string name="voice_input_failed_body">El motor de voz no pudo completar el reconocimiento (%1$s). Vuelve a intentarlo más tarde o revisa los modelos de reconocimiento en la pantalla de inicio.</string>
+    <string name="voice_input_failed_title">El reconocimiento falló</string>
+    <string name="voice_input_hearing">Te escucho</string>
+    <string name="voice_input_install_models">Instalar modelos</string>
+    <string name="voice_input_listening">Escuchando</string>
+    <string name="voice_input_loading">Preparando el modelo de reconocimiento</string>
+    <string name="voice_input_microphone">Micrófono</string>
+    <string name="voice_input_microphone_body">La entrada de voz graba con el micrófono de 3-Macaw Speech y reconoce sin conexión. Permite el acceso al micrófono en los ajustes de la app.</string>
+    <string name="voice_input_microphone_title">Se necesita el permiso de micrófono</string>
+    <string name="voice_input_no_model_body">Descarga un modelo de reconocimiento en la pantalla de inicio de 3-Macaw Speech y vuelve a intentarlo.</string>
+    <string name="voice_input_no_model_title">No hay ningún modelo de reconocimiento instalado</string>
+    <string name="voice_input_open_settings">Abrir los ajustes de la app</string>
+    <string name="voice_input_recognizing">Reconociendo</string>
+    <string name="voice_input_speak_now">Habla ahora</string>
+    <string name="voice_input_stop">Detener</string>
 </resources>

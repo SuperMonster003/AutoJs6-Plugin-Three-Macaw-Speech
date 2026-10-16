@@ -58,6 +58,7 @@ El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo 
 - Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.
 - Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.
 - Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.
+- Entrada de voz del sistema: los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión; dices una frase en un panel inferior y el texto reconocido vuelve a esa app.
 - Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga.
 
 ******
@@ -130,6 +131,10 @@ La mayoría de los teléfonos necesitan `arm64-v8a`. Si no conoce la ABI del dis
 
 Instale primero al menos un modelo de síntesis y luego elija 3-Macaw Speech como motor preferido en los ajustes de texto a voz del sistema (suelen estar en Accesibilidad o en Idiomas). Cada hablante de un modelo es una voz llamada `<id del modelo>/<número de hablante>`; los modelos bilingües ofrecen además `<id del modelo>/<número de hablante>/en-US` para el inglés. Los scripts de AutoJs6 también pueden elegir el motor sin cambiar el ajuste del sistema: `tts(text, {engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech"})` o `speech.speak(text)`.
 
+#### Pueden otras apps usar 3-Macaw Speech para la entrada de voz?
+
+Sí. Con un modelo de reconocimiento instalado y el permiso de micrófono concedido, las apps que abren la entrada de voz del sistema (por ejemplo, el botón de micrófono de 3-Stove Agent) muestran el panel de 3-Macaw Speech. Si también hay otra app de entrada de voz, como Google, Android pregunta cuál usar y puede recordar la elección. Para ocultar esta entrada a otras apps, desactiva 'Usar como entrada de voz del sistema' en el grupo Reconocimiento de los ajustes.
+
 ******
 
 ### Permisos Y Seguridad
@@ -142,6 +147,7 @@ El complemento reduce al máximo sus permisos:
 - Red: solo se usa para descargar modelos y actualizar el catálogo firmado; el reconocimiento y la síntesis funcionan sin conexión.
 - Almacenamiento: los modelos se guardan en el directorio privado del complemento y los modelos locales se importan mediante el selector de archivos del sistema, por lo que no se solicita permiso de almacenamiento.
 - Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente; el motor TTS del sistema y sus entradas de comprobación de voces, texto de ejemplo y ajustes están abiertos a todas las aplicaciones, como exige Android, y solo sintetizan voz.
+- Entrada de voz del sistema: como el motor de texto a voz del sistema, está abierta a todas las apps; solo graba mientras su panel está en pantalla, solo devuelve el texto reconocido y se puede desactivar en los ajustes.
 
 ******
 
@@ -199,6 +205,7 @@ _2026/10/16_
 - `Función` Modelos en la pantalla de inicio, agrupados en reconocimiento, palabras de activación, síntesis y detección de actividad de voz, con su tamaño, idiomas y licencia: descargar, pausar, reanudar, cancelar, eliminar y establecer como predeterminado; el progreso de la descarga también aparece en una notificación; los modelos limitados a uso no comercial o sin licencia declarada piden aceptar antes su licencia, y una descarga con datos móviles u otra red de uso medido pide confirmación antes de empezar
 - `Función` Importación de un modelo local desde un archivo tar, tar.bz2 o zip o desde una carpeta: los archivos que coinciden con un modelo del catálogo se registran como ese modelo, y los demás se convierten en un modelo propio después de indicar su clase, tipo de modelo, nombre, idiomas e ID
 - `Función` Probar: dictado en directo (resultados parciales en gris) con elección de modelo e idioma, prueba de palabras de activación que lista las detecciones con su palabra clave y su puntuación, y síntesis de voz de su texto con elección de modelo, hablante y velocidad, para reproducirla o guardarla como archivo WAV; al salir de la pantalla se libera el micrófono
+- `Función` Entrada de voz del sistema: los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión de 3-Macaw Speech: di una frase en un panel inferior y el texto reconocido vuelve directamente a esa app; termina tras una pausa, o puedes detenerla o cancelarla antes; sigue la sensibilidad de fin de frase y la detección de actividad de voz de los ajustes y se puede desactivar en su grupo Reconocimiento
 - `Función` Ajustes: idioma, modo nocturno, color del tema e icono del lanzador (siguen a AutoJs6 de forma predeterminada); modelos de reconocimiento y síntesis predeterminados, sensibilidad de fin de frase, detección de actividad de voz, hablante, velocidad y voz predeterminada por idioma para la pantalla de prueba y el motor TTS del sistema (los scripts mantienen los valores predeterminados documentados); cuándo se liberan los modelos inactivos, actualización del catálogo y limpieza de archivos sobrantes; el botón de ajustes de 3-Macaw Speech en los ajustes de texto a voz del sistema abre esta pantalla
 - `Función` Acerca de: versión, historial de versiones incluido en el complemento, búsqueda de actualizaciones (automática como máximo una vez cada 12 horas, se puede ignorar una versión) y licencias y avisos: la aplicación en su conjunto se distribuye bajo la GNU GPL 3.0 o posterior sin ninguna garantía, con los avisos de terceros, el texto completo de la GPL, las condiciones de uso de Unicode y dónde está el código fuente correspondiente
 - `Función` Icono del lanzador: icono adaptable (claro), icono adaptable (oscuro), icono adaptable (automático, predeterminado) o icono con fondo transparente

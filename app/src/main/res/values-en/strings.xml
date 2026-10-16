@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">Dark</string>
     <string name="settings_dark_mode_light">Light</string>
     <string name="settings_endpoint">Endpoint sensitivity</string>
-    <string name="settings_endpoint_message">How long a pause ends a sentence on the tryout screen</string>
+    <string name="settings_endpoint_message">How long a pause ends a sentence on the tryout screen and in the system voice input</string>
     <string name="settings_endpoint_note">A pause of %1$d ms</string>
     <string name="settings_endpoint_relaxed">Relaxed</string>
     <string name="settings_endpoint_sensitive">Sensitive</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">Resources</string>
     <string name="settings_save_failed">Could not save the setting</string>
     <string name="settings_saved">Saved</string>
-    <string name="settings_scope_note">These settings apply to the tryout screen and the system text-to-speech engine. Scripts keep the documented defaults.</string>
+    <string name="settings_scope_note">These settings apply to the tryout screen, the system voice input and the system text-to-speech engine. Scripts keep the documented defaults.</string>
     <string name="settings_speaker">Speaker</string>
     <string name="settings_speaker_model_default">Model default</string>
     <string name="settings_speaker_named">Speaker %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">Automatic</string>
     <string name="settings_voice_automatic_note">The default synthesis model decides</string>
+    <string name="settings_voice_input">Use as the system voice input</string>
+    <string name="settings_voice_input_summary">Microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition</string>
     <string name="settings_voice_label">%1$s, speaker %2$d</string>
     <string name="settings_voices">Default voice per language</string>
     <string name="settings_voices_message">The voice the system engine uses when an app asks for a language without naming a voice</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">Stop ignoring</string>
     <string name="update_up_to_date">Up to date</string>
     <string name="update_view_release">View release</string>
+    <string name="voice_input_busy_body">A script is using the microphone of 3-Macaw Speech. Try again after its dictation or wake word detection ends.</string>
+    <string name="voice_input_busy_title">The microphone is in use</string>
+    <string name="voice_input_close">Close</string>
+    <string name="voice_input_failed_body">The speech engine could not finish the recognition (%1$s). Try again later, or check the recognition models on the home screen.</string>
+    <string name="voice_input_failed_title">Recognition failed</string>
+    <string name="voice_input_hearing">Hearing you</string>
+    <string name="voice_input_install_models">Install models</string>
+    <string name="voice_input_listening">Listening</string>
+    <string name="voice_input_loading">Preparing the recognition model</string>
+    <string name="voice_input_microphone">Microphone</string>
+    <string name="voice_input_microphone_body">Voice input records with the microphone of 3-Macaw Speech and recognizes offline. Allow the microphone permission in the app settings.</string>
+    <string name="voice_input_microphone_title">Microphone permission needed</string>
+    <string name="voice_input_no_model_body">Download a recognition model on the home screen of 3-Macaw Speech, then try again.</string>
+    <string name="voice_input_no_model_title">No recognition model installed</string>
+    <string name="voice_input_open_settings">Open app settings</string>
+    <string name="voice_input_recognizing">Recognizing</string>
+    <string name="voice_input_speak_now">Speak now</string>
+    <string name="voice_input_stop">Stop</string>
 </resources>

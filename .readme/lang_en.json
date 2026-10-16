@@ -30,6 +30,7 @@
     "Voice activity detection: the built-in silero VAD v5 splits audio into speech segments on its own and also ends dictation sentences automatically.",
     "Wake words: type the keyword as plain text (for example `小六小六` or `hey macaw`) without training a model; after waking up, dictation can start automatically.",
     "Text-to-speech: several neural Chinese and English voices, synthesized to WAV files or used as the system TTS engine by the AutoJs6 `tts` module and other apps.",
+    "System voice input: microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition; you say one sentence in a bottom sheet and the recognized text goes back to that app.",
     "Model management: downloads from a signed model catalog, enabled only after every file passes its SHA-256 check, plus import of local models; models restricted to non-commercial use show their license before the download."
   ],
   "usage_steps": [
@@ -63,6 +64,10 @@
     {
       "q": "How do I use 3-Macaw Speech as the text-to-speech engine of the system?",
       "a": "Install at least one synthesis model first, then choose 3-Macaw Speech as the preferred engine in the text-to-speech settings of the system (usually under Accessibility or Languages). Every speaker of a model is a voice named `<model id>/<speaker number>`; bilingual models also offer `<model id>/<speaker number>/en-US` for English. AutoJs6 scripts can pick the engine without changing the system setting: `tts(text, {engine: \"io.github.supermonster003.autojs6.plugin.three.macaw.speech\"})` or `speech.speak(text)`."
+    },
+    {
+      "q": "Can other apps use 3-Macaw Speech for voice input?",
+      "a": "Yes. With a recognition model installed and the microphone permission granted, apps that start the system voice input (for example the microphone button of 3-Stove Agent) open the 3-Macaw Speech sheet. If another voice input app such as Google is installed, Android asks which one to use and can remember the choice. To hide the entry from other apps, turn off 'Use as the system voice input' in the recognition group of the settings."
     }
   ],
   "p_security_intro": "The plugin keeps its permission surface as small as possible:",
@@ -70,7 +75,8 @@
     "Microphone: audio is recorded only for dictation, wake words and the tryout screen, and the microphone is released as soon as the session ends or the script exits.",
     "Network: used only to download models and refresh the signed model catalog; recognition and synthesis stay offline.",
     "Storage: models live in the private directory of the plugin and local models are imported through the system file picker, so no storage permission is requested.",
-    "Protected entries: the capability service and the activation entry require the AutoJs6 plugin permission (`org.autojs.permission.PLUGIN`), so other apps cannot call them directly; the system TTS engine and its voice check, sample text and settings entries are open to every app, as Android requires, and only synthesize speech."
+    "Protected entries: the capability service and the activation entry require the AutoJs6 plugin permission (`org.autojs.permission.PLUGIN`), so other apps cannot call them directly; the system TTS engine and its voice check, sample text and settings entries are open to every app, as Android requires, and only synthesize speech.",
+    "System voice input: like the system TTS engine it is open to every app; it records only while its sheet is on the screen, returns nothing but the recognized text and can be turned off in the settings."
   ],
   "p_license": "The project code is licensed under the [Mozilla Public License 2.0]({{ license_url }}). The sherpa-onnx speech runtime uses the Apache-2.0 license, onnxruntime and silero VAD use the MIT license; the license of every model is listed in the model catalog.",
   "text_link_third_party": "Third-party notices (THIRD_PARTY_NOTICES.md)",

@@ -95,6 +95,13 @@ abstract class StandaloneActivity : ComponentActivity() {
     /** True while the screen must not be recreated for an appearance change. zh-CN: 为真时不因外观变化重建界面. */
     protected open fun holdsAppearance(): Boolean = false
 
+    /**
+     * A sheet over the caller's screen (the system voice input, roadmap P5.6) keeps the window transparent and draws its
+     * own scrim; its theme is translucent as well.
+     * zh-CN: 覆盖在调用方界面上的弹层 (系统语音输入, 路线图 P5.6) 保持窗口透明并自行绘制遮罩; 其主题同样为半透明.
+     */
+    protected open val translucentWindow: Boolean get() = false
+
     override fun onResume() {
         super.onResume()
         refreshIfChanged(AppearancePreferences.resolve(this, HostAppearanceReader.cached()))
@@ -144,7 +151,7 @@ abstract class StandaloneActivity : ComponentActivity() {
                 navigationBarStyle = SystemBarStyle.light(transparent, DARK_NAVIGATION_SCRIM),
             )
         }
-        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(palette.background))
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(if (translucentWindow) transparent else palette.background))
     }
 
     private companion object {

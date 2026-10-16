@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">Sombre</string>
     <string name="settings_dark_mode_light">Clair</string>
     <string name="settings_endpoint">Sensibilité de fin de phrase</string>
-    <string name="settings_endpoint_message">Durée de la pause qui termine une phrase sur l\'écran d\'essai</string>
+    <string name="settings_endpoint_message">Durée de la pause qui termine une phrase sur l\'écran d\'essai et dans la saisie vocale du système</string>
     <string name="settings_endpoint_note">Une pause de %1$d ms</string>
     <string name="settings_endpoint_relaxed">Souple</string>
     <string name="settings_endpoint_sensitive">Sensible</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">Ressources</string>
     <string name="settings_save_failed">Impossible d\'enregistrer le paramètre</string>
     <string name="settings_saved">Enregistré</string>
-    <string name="settings_scope_note">Ces paramètres s\'appliquent à l\'écran d\'essai et au moteur de synthèse vocale du système. Les scripts conservent les valeurs par défaut documentées.</string>
+    <string name="settings_scope_note">Ces paramètres s\'appliquent à l\'écran d\'essai, à la saisie vocale du système et au moteur de synthèse vocale du système. Les scripts conservent les valeurs par défaut documentées.</string>
     <string name="settings_speaker">Locuteur</string>
     <string name="settings_speaker_model_default">Valeur par défaut du modèle</string>
     <string name="settings_speaker_named">Locuteur %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">Automatique</string>
     <string name="settings_voice_automatic_note">Le modèle de synthèse par défaut décide</string>
+    <string name="settings_voice_input">Utiliser comme saisie vocale du système</string>
+    <string name="settings_voice_input_summary">Les boutons de microphone d\'autres applications, comme 3-Stove Agent, peuvent utiliser la reconnaissance hors ligne</string>
     <string name="settings_voice_label">%1$s, locuteur %2$d</string>
     <string name="settings_voices">Voix par défaut par langue</string>
     <string name="settings_voices_message">La voix utilisée par le moteur du système quand une application demande une langue sans préciser de voix</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">Ne plus ignorer</string>
     <string name="update_up_to_date">À jour</string>
     <string name="update_view_release">Voir la version</string>
+    <string name="voice_input_busy_body">Un script utilise le microphone de 3-Macaw Speech. Réessayez lorsque sa dictée ou sa détection de mot de réveil sera terminée.</string>
+    <string name="voice_input_busy_title">Le microphone est occupé</string>
+    <string name="voice_input_close">Fermer</string>
+    <string name="voice_input_failed_body">Le moteur vocal n\'a pas pu terminer la reconnaissance (%1$s). Réessayez plus tard ou vérifiez les modèles de reconnaissance sur l\'écran d\'accueil.</string>
+    <string name="voice_input_failed_title">La reconnaissance a échoué</string>
+    <string name="voice_input_hearing">Voix détectée</string>
+    <string name="voice_input_install_models">Installer des modèles</string>
+    <string name="voice_input_listening">Écoute en cours</string>
+    <string name="voice_input_loading">Préparation du modèle de reconnaissance</string>
+    <string name="voice_input_microphone">Microphone</string>
+    <string name="voice_input_microphone_body">La saisie vocale enregistre avec le microphone de 3-Macaw Speech et reconnaît la parole hors ligne. Autorisez le microphone dans les paramètres de l\'application.</string>
+    <string name="voice_input_microphone_title">L\'autorisation du microphone est nécessaire</string>
+    <string name="voice_input_no_model_body">Téléchargez un modèle de reconnaissance sur l\'écran d\'accueil de 3-Macaw Speech, puis réessayez.</string>
+    <string name="voice_input_no_model_title">Aucun modèle de reconnaissance installé</string>
+    <string name="voice_input_open_settings">Ouvrir les paramètres de l\'application</string>
+    <string name="voice_input_recognizing">Reconnaissance en cours</string>
+    <string name="voice_input_speak_now">Parlez maintenant</string>
+    <string name="voice_input_stop">Arrêter</string>
 </resources>

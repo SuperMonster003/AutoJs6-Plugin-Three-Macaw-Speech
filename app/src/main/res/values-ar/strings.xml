@@ -143,7 +143,7 @@
     <string name="settings_dark_mode_dark">داكن</string>
     <string name="settings_dark_mode_light">فاتح</string>
     <string name="settings_endpoint">حساسية نهاية الجملة</string>
-    <string name="settings_endpoint_message">مدة التوقف التي تنهي الجملة في شاشة التجربة</string>
+    <string name="settings_endpoint_message">مدة التوقف التي تنهي الجملة في شاشة التجربة وفي الإدخال الصوتي للنظام</string>
     <string name="settings_endpoint_note">توقف لمدة %1$d مللي ثانية</string>
     <string name="settings_endpoint_relaxed">متساهلة</string>
     <string name="settings_endpoint_sensitive">حساسة</string>
@@ -185,7 +185,7 @@
     <string name="settings_resources">الموارد</string>
     <string name="settings_save_failed">تعذر حفظ الإعداد</string>
     <string name="settings_saved">تم الحفظ</string>
-    <string name="settings_scope_note">تنطبق هذه الإعدادات على شاشة التجربة وعلى محرك تحويل النص إلى كلام في النظام. تحتفظ البرامج النصية بالقيم الافتراضية الموثقة.</string>
+    <string name="settings_scope_note">تنطبق هذه الإعدادات على شاشة التجربة وعلى الإدخال الصوتي للنظام وعلى محرك تحويل النص إلى كلام في النظام. تحتفظ البرامج النصية بالقيم الافتراضية الموثقة.</string>
     <string name="settings_speaker">المتحدث</string>
     <string name="settings_speaker_model_default">الافتراضي في النموذج</string>
     <string name="settings_speaker_named">المتحدث %1$d (%2$s)</string>
@@ -204,6 +204,8 @@
     <string name="settings_version_value">%1$s (%2$d) · %3$s</string>
     <string name="settings_voice_automatic">تلقائي</string>
     <string name="settings_voice_automatic_note">يحدده نموذج التركيب الافتراضي</string>
+    <string name="settings_voice_input">الاستخدام كإدخال صوتي للنظام</string>
+    <string name="settings_voice_input_summary">يمكن لأزرار الميكروفون في التطبيقات الأخرى, مثل ⁨3-Stove Agent⁩, استخدام التعرف دون اتصال</string>
     <string name="settings_voice_label">%1$s, المتحدث %2$d</string>
     <string name="settings_voices">الصوت الافتراضي لكل لغة</string>
     <string name="settings_voices_message">الصوت الذي يستخدمه محرك النظام عندما يطلب تطبيق لغة دون تحديد صوت</string>
@@ -277,4 +279,22 @@
     <string name="update_stop_ignoring">إيقاف التجاهل</string>
     <string name="update_up_to_date">أحدث إصدار مثبت</string>
     <string name="update_view_release">عرض الإصدار</string>
+    <string name="voice_input_busy_body">يستخدم برنامج نصي ميكروفون ⁨3-Macaw Speech⁩. أعد المحاولة بعد انتهاء الإملاء أو اكتشاف كلمة التنبيه.</string>
+    <string name="voice_input_busy_title">الميكروفون قيد الاستخدام</string>
+    <string name="voice_input_close">إغلاق</string>
+    <string name="voice_input_failed_body">تعذر على محرك الكلام إكمال التعرف (⁨%1$s⁩). أعد المحاولة لاحقا أو تحقق من نماذج التعرف في الشاشة الرئيسية.</string>
+    <string name="voice_input_failed_title">فشل التعرف</string>
+    <string name="voice_input_hearing">أسمعك الآن</string>
+    <string name="voice_input_install_models">تثبيت النماذج</string>
+    <string name="voice_input_listening">جارٍ الاستماع</string>
+    <string name="voice_input_loading">جارٍ تجهيز نموذج التعرف</string>
+    <string name="voice_input_microphone">الميكروفون</string>
+    <string name="voice_input_microphone_body">يسجل الإدخال الصوتي عبر ميكروفون ⁨3-Macaw Speech⁩ ويتعرف على الكلام دون اتصال. اسمح بإذن الميكروفون في إعدادات التطبيق.</string>
+    <string name="voice_input_microphone_title">يلزم إذن الميكروفون</string>
+    <string name="voice_input_no_model_body">نزّل نموذج تعرف من الشاشة الرئيسية لـ ⁨3-Macaw Speech⁩ ثم أعد المحاولة.</string>
+    <string name="voice_input_no_model_title">لا يوجد نموذج تعرف مثبت</string>
+    <string name="voice_input_open_settings">فتح إعدادات التطبيق</string>
+    <string name="voice_input_recognizing">جارٍ التعرف</string>
+    <string name="voice_input_speak_now">تحدث الآن</string>
+    <string name="voice_input_stop">إيقاف</string>
 </resources>
