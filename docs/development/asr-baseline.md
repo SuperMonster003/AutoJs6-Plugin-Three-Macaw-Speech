@@ -37,6 +37,7 @@ audible sample; 10 min real time factors and the peak PSS of the 10 min runs.
 | Sony G8441 (BH900ASK9E) | 28 | 1731 (228) | 2841 (303) | 1091 | 0.046 / 0.000 | 0.302 - 0.582 | 0.354 - 0.758 | 587 / 2509 | 0.324 / 0.330 | 714 MiB |
 | Sony XQ-AT72 (QV710AF65F) | 31 | 965 (218) | 1848 (270) | 637 | 0.034 / 0.000 | 0.115 - 0.281 | 0.066 - 0.360 | 390 / 2010 | 0.105 / 0.054 | 746 MiB |
 | Sony XQ-DQ72 (QV770340J7) | 33 | 536 (218) | 1188 (270) | 371 | 0.034 / 0.000 | 0.074 - 0.176 | 0.041 - 0.231 | 352 / 1942 | 0.089 / 0.056 | 905 MiB |
+| Redmi 22120RN86C (bek749scrwv4wo8h) | 33 | 2193 (224) | 3839 (302) | 1355 | 0.034 / 0.000 | 0.392 - 0.725 | 0.233 - 0.873 | 586 / 2325 | 0.412 / 0.250 | 759 MiB |
 | Xiaomi 23046RP50C (968e9f18) | 35 | 616 (210) | 1415 (261) | 445 | 0.034 / 0.000 | 0.090 - 0.207 | 0.044 - 0.267 | 361 / 1979 | 0.080 / 0.034 | 830 MiB |
 | OnePlus OPD2413 (63751f63) | 35 | 380 (222) | 727 (303) | 280 | 0.034 / 0.000 | 0.053 - 0.122 | 0.035 - 0.155 | 379 / 1943 | 0.062 / 0.043 | 719 MiB |
 
@@ -44,8 +45,9 @@ audible sample; 10 min real time factors and the peak PSS of the 10 min runs.
   Chinese and mixed recordings. The texts of the streaming model are identical on all devices (the gated, ungated and
   raw pipelines all give CER 0.034 on `en`), so the BH900 value of 0.046 comes from the slower run of the same file.
 - The 10 min peak PSS is that of the instrumentation process with both recognizers loaded (the test runs inside the
-  plugin process); it stays below 1 GiB on every device. The streaming model runs at less than a third of real time
-  even on the API 28 device, so a microphone session keeps up with the recorder.
+  plugin process); it stays below 1 GiB on every device, the Redmi with 3.7 GiB of RAM included. The slowest device,
+  the Redmi, runs the streaming model at 0.41 of real time over 10 minutes, so a microphone session keeps up with the
+  recorder everywhere.
 - Battery drain was not measured (the devices were on USB power); the real time factor is the CPU proxy.
 - A device with 16 KB pages was not available (the AVDs were offline and no such phone was connected), so the 16 KB row
   of P3.5 stays open; the native libraries passed the 16 KB alignment check of P0.2.

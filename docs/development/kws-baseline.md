@@ -27,11 +27,12 @@ KeywordSpottingDeviceTest`; the results are the `MacawDeviceRun` log lines of th
 | Sony G8441 (BH900ASK9E) | 28 | as below | 37/40 | 33/40 | 0 | 0.094 | pass |
 | Sony XQ-AT72 (QV710AF65F) | 31 | as below | 37/40 | 33/40 | 0 | 0.035 | pass |
 | Sony XQ-DQ72 (QV770340J7) | 33 | as below | 37/40 | 33/40 | 0 | 0.027 | pass |
+| Redmi 22120RN86C (bek749scrwv4wo8h) | 33 | as below | 37/40 | 33/40 | 0 | 0.104 | pass |
 | Xiaomi 23046RP50C (968e9f18) | 35 | as below | 37/40 | 33/40 | 0 | 0.022 | pass |
 | OnePlus OPD2413 (63751f63) | 35 | as below | 37/40 | 33/40 | 0 | 0.018 | pass |
 
 The real time factor is that of the ten minute false wake run on the final build. Keywords each single recording
-triggers (identical on all five devices): `kws-zh-3`: 文森特卡索, 法国; `kws-zh-4`: 蒋友伯,
+triggers (identical on all six devices): `kws-zh-3`: 文森特卡索, 法国; `kws-zh-4`: 蒋友伯,
 女儿; `kws-zh-5`: 周望军, 落实; `kws-zh-6`: 朱丽楠; `en`: LIGHT UP. `见面会` and `LOVELY CHILD` are not in these
 recordings. Misses at the original level: one of five for 文森特卡索, 女儿 and LIGHT UP; at the quarter level two of
 five for 文森特卡索, one for 女儿 and 落实, three for LIGHT UP. The five repetitions of `kws-zh-6` also fired another
