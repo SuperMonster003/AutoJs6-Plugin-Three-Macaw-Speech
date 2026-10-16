@@ -348,16 +348,16 @@ P0 (骨架 + AAR)
 
 ### P2.1 Shared-Assets `speech-models` 类别 (D24, D25)
 
-- [ ] (资产) `speech-models/README.md` (布局, 版本与完整性规则, 与 `codegen-models` 的差异: 二进制不入库), `schemas/catalog-v1.schema.json` (附录 C.3), `schemas/signature-v1.schema.json` (复用 codegen 的信封结构), `schemas/model-source-v1.schema.json`.
-- [ ] (资产) `tools/speech-model-distribution/`: `prepare_sources.py` (按 `source.json` 下载上游归档到忽略的 `build/`, 校验上游 SHA-256, 按成员列表重打包为 `autojs6-speech-<modelId>-v<versionCode>-<sha8>.tar`, 计算归档与文件级 SHA-256, 可重复运行且字节确定), `build_catalog.py` (生成 `catalogs/pending/vN/catalog-v1.json`), `verify_catalog.py` (schema, 单调版本, 不可变条目, 签名), 单元测试; `README.md` 写明离线签名步骤 (新密钥, 拒绝复用 Ace / codegen 密钥).
-- [ ] (资产) `.github/workflows/publish-speech-models.yml`: 输入标签与密钥 ID, 仅上传目录新引入的资源, 发布前核对签名; `markdown.yml` 覆盖新 README.
-- [ ] (资产) 维护者离线生成 `speech-models` 签名密钥, 公钥入 `speech-models/keys/catalog-signing-public.pem`, 记录 Key ID 与 SPKI 指纹 (维护者操作, 会话只记录结果).
+- [x] (资产) `speech-models/README.md` (布局, 版本与完整性规则, 与 `codegen-models` 的差异: 二进制不入库), `schemas/catalog-v1.schema.json` (附录 C.3), `schemas/signature-v1.schema.json` (复用 codegen 的信封结构), `schemas/model-source-v1.schema.json`. 证据: Shared-Assets 提交 `c7d1adf` (本地, 待主会话推送); README 扩写为用途, 与 codegen 的差异, 布局, 镜像归档格式 (附录 D Q3 定为未压缩 tar), 目录条目字段, 版本与完整性规则, v1 现状表, 保留的密钥小节, 以及维护者签名, 提升, 本地复现与触发工作流的逐条命令 (P2.5). 三个 schema 由校验器常量生成, `test_repository` 断言必填字段, 每个 modelType 的 `runtime.config` 角色与校验器一致, 签名 schema 与 codegen 仅 `$id` / `title` 不同. 相对附录 C.3 草案的偏差: `upstream` 改为数组 (matcha 需要第二个上游资源 `vocoder-models/hifigan_v2.onnx`); 模型级字段与 `versions[]` 分离 (同 codegen); 新增 `runtime.config` (sherpa-onnx 1.13.8 文件角色) 与 `sourceUrl`; `commercialUse` 取 true / false / `"unknown"`. 详见附录 C.3 末尾.
+- [x] (资产) `tools/speech-model-distribution/`: `prepare_sources.py` (按 `source.json` 下载上游归档到忽略的 `build/`, 校验上游 SHA-256, 按成员列表重打包为 `autojs6-speech-<modelId>-v<versionCode>-<sha8>.tar`, 计算归档与文件级 SHA-256, 可重复运行且字节确定), `build_catalog.py` (生成 `catalogs/pending/vN/catalog-v1.json`), `verify_catalog.py` (schema, 单调版本, 不可变条目, 签名), 单元测试; `README.md` 写明离线签名步骤 (新密钥, 拒绝复用 Ace / codegen 密钥). 证据: Shared-Assets 提交 `c7d1adf` (本地, 待主会话推送); 另加 `verify_release.py` (发布资源校验与远端标签 / Release 不存在预检), `sign_catalog.py` (维护者签名, 拒绝 Git 工作树内的私钥与 Ace / codegen 密钥) 和 `check_docs.py`, 共用 `distribution.py` / `preparation.py` / `crypto.py`; `verify_catalog.py` 不带签名参数时校验未签名候选, `--source-root` 要求与来源重建的字节一致. 下载只接受 `k2-fsa/sherpa-onnx` 的 GitHub Release URL, 重定向限于 GitHub 资源主机, 支持断点续传, 缓存先校验大小与 SHA-256; 选中成员以流式写入编号临时文件, 成员名不落盘. 单元测试 52 项 (`python -m unittest discover -s tools/speech-model-distribution/tests`, Python 3.12 与 3.13 均通过, 无网络, 临时 OpenSSL 密钥); `py D:/idea-projects/prepush_check.py` 7/7 通过 (含 codegen 63 项与 Ace 测试). 字节确定: 2026-10-16 两次独立离线重建 10 个归档, SHA-256 全部相同 (每次约 8.5 分钟).
+- [x] (资产) `.github/workflows/publish-speech-models.yml`: 输入标签与密钥 ID, 仅上传目录新引入的资源, 发布前核对签名; `markdown.yml` 覆盖新 README. 证据: Shared-Assets 提交 `c7d1adf` (本地, 待主会话推送); 工作流依次为默认分支检查, 工具测试, 签名输入齐全且标签一致, 当前与历史目录验签, 由来源重建目录并 `cmp`, 从固定上游重建 `release-assets.txt` 所列归档并 `verify_release.py`, 认证后确认标签与 Release 均不存在, 建标签 + 草稿 Release + 发布, 最后全部下载回读校验 (environment `speech-models-release`, action 固定到与 codegen 相同的提交); `test_release` 断言步骤顺序, 权限与内嵌 bash 语法. `markdown.yml` 新增 `check_docs.py` 步骤 (Linux / Windows), 检查 speech 文档的 ASCII 标点, 相对链接, 以及 README 记录的 Key ID / SPKI 指纹与公钥一致. 未执行: 远端工作流运行 (随 P2.5 由维护者触发).
+- [x] (资产) 维护者离线生成 `speech-models` 签名密钥, 公钥入 `speech-models/keys/catalog-signing-public.pem`, 记录 Key ID 与 SPKI 指纹 (维护者操作, 会话只记录结果). 证据: 维护者提交 `003d427` (已推送); Key ID `p256-bf5f0f579c7fbef1`, SPKI DER SHA-256 `bf5f0f579c7fbef188e81a02257fc3336189020273b2c69c69092cc402214f68`, 私钥在仓库外的 `D:/offline-keys/`; `test_crypto` 核对该公钥为 P-256 且 Key ID 与指纹一致, 并确认 Ace / codegen 公钥被拒绝.
 
 ### P2.2 精选目录审核 (D10, D11)
 
-- [ ] (资产) 附录 A 每条模型的 `source.json`: 上游 Release tag, 资源名, 上游 SHA-256 (下载实测), 重打包成员 (只含 int8 或所需精度, tokens, lexicon, 词典, vocoder, 不含 fp32 重复与测试 wav), 语言, 采样率, 说话人数, `license` 与 `commercialUse`, 模型卡摘要 (10 语言 summary 至少 en / zh-CN).
-- [ ] (资产) 许可审核记录 `speech-models/audits/license-audit-v1.json`: 每条模型的权重许可与训练数据许可来源链接, 结论 (`commercialUse` true / false / unknown); `unknown` 的模型按 D11 同样提示.
-- [ ] (资产) 生成 `catalogs/pending/v1/catalog-v1.json`, `verify_catalog.py` 通过, 差异审阅后交维护者签名 (P2.5).
+- [x] (资产) 附录 A 每条模型的 `source.json`: 上游 Release tag, 资源名, 上游 SHA-256 (下载实测), 重打包成员 (只含 int8 或所需精度, tokens, lexicon, 词典, vocoder, 不含 fp32 重复与测试 wav), 语言, 采样率, 说话人数, `license` 与 `commercialUse`, 模型卡摘要 (10 语言 summary 至少 en / zh-CN). 证据: Shared-Assets 提交 `c7d1adf` (本地, 待主会话推送), `speech-models/sources/<modelId>/1/` 共 10 条 (各含 `source.json`, `MODEL_CARD.md`, `LICENSE*`). 上游 11 个资源 (含 `vocoder-models/hifigan_v2.onnx`) 共 1857832275 字节, 2026-10-16 下载一次并缓存在被忽略的 `build/speech-models/upstream/`, 其中 6 个资源的 GitHub API digest 与实测 SHA-256 一致 (其余 5 个上游未公布 digest). 采样率与说话人数取自各 ONNX 的元数据. 成员选择以 sherpa-onnx 1.13.8 自身配置 (`OnlineRecognizer.kt`, `OfflineRecognizer.kt`, `generate-tts-apk-script.py`) 为准: int8 encoder / joiner + float32 decoder, 不含测试 wav 与 fp32 重复; 1.12.15 起不再使用的 jieba `dict/` 一律省略; aishell3 省略 172.3 MB (180717014 字节) 的可选 `rule.far`; melo 的 `model.int8.onnx` 是 133 字节的 Git LFS 指针, 不收录; matcha 声码器选 `hifigan_v2` (3.6 MiB, MIT) 而非 sherpa APK 默认的 `vocos-22khz-univ` (51.4 MiB); KWS 取 chunk-16-left-64. 偏差: piper 的目录 ID 改为 `tts.vits.piper.en-us-lessac-medium` (目录 ID 只允许小写); summary 只写 en / zh-CN.
+- [x] (资产) 许可审核记录 `speech-models/audits/license-audit-v1.json`: 每条模型的权重许可与训练数据许可来源链接, 结论 (`commercialUse` true / false / unknown); `unknown` 的模型按 D11 同样提示. 证据: Shared-Assets 提交 `c7d1adf` (本地, 待主会话推送); 规则: 发布者或其点名的训练数据限制商用为 false (优先), 权重未声明许可为 unknown, 其余为 true; 每条附权重与数据的证据链接与待决问题. 结论: true 5 条 (中英流式, 英文流式, melo, kokoro, KWS); false 4 条 (中文流式 2025: 训练集含 MagicData CC BY-NC-ND 4.0, KeSpeech, WenetSpeech 等非商用语料且权重未声明许可; SenseVoice 2025-09-09: 由 WenetSpeech-Yue (CC BY-NC 4.0) 微调; piper lessac: Lessac Blizzard 2013 数据仅限研究; matcha baker: 标贝语料仅限非商用); unknown 1 条 (aishell3: 数据为 Apache-2.0, 但权重未声明许可). kokoro 与 piper 附带的 `espeak-ng-data` 为 GPL-3.0-or-later, 来源目录附 GPL 全文. silero VAD 作为随 APK 资产登记 (MIT). 待维护者确认: 中文流式 2025 的上游仓库受限访问且无许可声明, 签名前需确认可以镜像; SenseVoice 是否改用官方 2024-07-17 导出 (FunASR 许可可商用, 支持标点) 需改动 D10.
+- [x] (资产) 生成 `catalogs/pending/v1/catalog-v1.json`, `verify_catalog.py` 通过, 差异审阅后交维护者签名 (P2.5). 证据: Shared-Assets 提交 `c7d1adf` (本地, 待主会话推送); `build_catalog.py --catalog-version 1 --generated-at 2026-10-16T03:30:00Z` 生成 10 个模型与 10 个新归档 (`release-assets.txt`, 合计 1461609984 字节), 目录 258990 字节; `verify_catalog.py ... --expected-repository SuperMonster003/AutoJs6-Shared-Assets --source-root speech-models/sources` 通过, `verify_release.py` 对重建的 10 个归档通过, GNU tar 可正常列出 (0644, 属主 0/0, mtime 0). 签名与提升由维护者按 Shared-Assets `speech-models/README.md` 的命令执行 (P2.5); 重建产物保留在被忽略的 `build/speech-models/release-v1/`.
 
 ### P2.3 插件模型存储 (D23)
 
@@ -507,21 +507,21 @@ P0 (骨架 + AAR)
 
 ## 附录 A. 1.0.0 精选模型目录 (D10, D11)
 
-上游归档体积为 2026-10-16 从 sherpa-onnx GitHub Release 资源实测 (`tar.bz2`, 多数含 fp32 与 int8 两套及测试 wav); 镜像重打包只含所需精度与文件, 安装后体积在 P2.2 实测后回填. 目录 ID 为草案, P2.2 定稿.
+上游归档体积为 2026-10-16 从 sherpa-onnx GitHub Release 资源实测 (`tar.bz2`, 多数含 fp32 与 int8 两套及测试 wav); 镜像重打包只含所需精度与文件, "安装后" 与 "镜像" 为 P2.2 实测 (2026-10-16, Shared-Assets `c7d1adf`). 表中体积单位 MB 均按 1048576 字节计. 目录 ID 已于 P2.2 定稿, 许可结论与证据见 Shared-Assets `speech-models/audits/license-audit-v1.json`.
 
-| 目录 ID (草案) | 上游资源 | kind / 类型 | 语言 | 上游归档 | 安装后 (估) | 许可 (待 P2.2 审核) | 备注 |
+| 目录 ID | 上游资源 | kind / 类型 | 语言 | 上游归档 | 安装后 (实测) | 许可 (P2.2 审核) | 备注 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `asr.zipformer-streaming.zh-en.2023-02-20.int8` | `sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20` | asr, 流式 transducer | zh, en | 487.6 MB | 约 190 MB (encoder.int8 174 MB + decoder 13 MB + joiner.int8 3.1 MB) | Apache-2.0 (icefall); 数据集待审 | 默认流式模型, 支持热词 |
-| `asr.zipformer-streaming.zh.2025-06-30.int8` | `sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30` | asr, 流式 transducer | zh | 126.5 MB | 约 160 MB | 待审 | 中文更新模型 |
-| `asr.sense-voice.zh-en-ja-ko-yue.2025-09-09.int8` | `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09` | asr, 离线 (VAD 切段) | zh, en, ja, ko, yue | 158.1 MB | P2.2 实测 | SenseVoice 模型许可待审 | 高精度离线, 带情感 / 事件标签 |
-| `asr.zipformer-streaming.en.2023-06-26.int8` | `sherpa-onnx-streaming-zipformer-en-2023-06-26-mobile` | asr, 流式 transducer | en | 291.3 MB | 约 70 MB (encoder.int8 68 MB) | Apache-2.0 (icefall); 数据集待审 | 英文轻量 |
-| `tts.vits.melo.zh-en` | `vits-melo-tts-zh_en` | tts, vits | zh, en | 159.3 MB | P2.2 实测 | MIT (MeloTTS) 待审 | 1 说话人, 中英混读 |
-| `tts.kokoro.multi-lang.v1_1` | `kokoro-multi-lang-v1_1` | tts, kokoro | zh, en 及其他 | 347.9 MB | P2.2 实测 | Apache-2.0 | 103 说话人 |
-| `tts.vits.icefall.zh-aishell3` | `vits-icefall-zh-aishell3` | tts, vits | zh | 30.1 MB | P2.2 实测 | Apache-2.0 (AISHELL-3) 待审 | 174 说话人, 轻量, 设备测试首选 |
-| `tts.vits.piper.en_US-lessac-medium` | `vits-piper-en_US-lessac-medium` (或 `-int8` 20.0 MB) | tts, vits | en | 64.1 MB | P2.2 实测 | MIT (piper); 数据集待审 | 1 说话人 |
-| `tts.matcha.icefall.zh-baker` | `matcha-icefall-zh-baker` + vocoder (`vocos-22khz-univ` 或 `hifigan_v2`) | tts, matcha | zh | 72.0 MB + vocoder | P2.2 实测 | `commercialUse=false` (DataBaker 语料仅限非商用) | D11 提示 |
-| `kws.zipformer.zh-en.2025-12-20` | `sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20` | kws | zh, en | 31.4 MB | P2.2 实测 | Apache-2.0 待审 | 开放词表 |
-| `vad.silero.v5` | `silero_vad_v5.onnx` | vad | 任意 | 2.2 MB | 随 APK | MIT | 不在下载目录, 仅登记 |
+| `asr.zipformer-streaming.zh-en.2023-02-20.int8` | `sherpa-onnx-streaming-zipformer-bilingual-zh-en-2023-02-20` | asr, 流式 transducer | zh, en | 487.6 MB | 189.8 MB (encoder.int8 173.5 + decoder 13.2 + joiner.int8 3.1); 镜像 189.9 MB | Apache-2.0, commercialUse=true (训练数据未公开) | 默认流式模型, 支持热词 (`bpe.vocab`) |
+| `asr.zipformer-streaming.zh.2025-06-30.int8` | `sherpa-onnx-streaming-zipformer-zh-int8-2025-06-30` | asr, 流式 transducer | zh | 126.5 MB | 159.6 MB (encoder.int8 153.7); 镜像 159.6 MB | 权重未声明许可, commercialUse=false (MagicData / KeSpeech / WenetSpeech 仅限非商用) | 中文更新模型; 上游仓库受限访问, 签名前需维护者确认 |
+| `asr.sense-voice.zh-en-ja-ko-yue.2025-09-09.int8` | `sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09` | asr, 离线 (VAD 切段) | zh, en, ja, ko, yue | 158.1 MB | 226.4 MB; 镜像 226.4 MB | FunASR 模型许可 1.1 + Apache-2.0, commercialUse=false (WenetSpeech-Yue CC BY-NC 4.0 微调) | 粤语微调版, 上游文档称不支持标点; 官方 2024-07-17 导出可作替代 (需改 D10) |
+| `asr.zipformer-streaming.en.2023-06-26.int8` | `sherpa-onnx-streaming-zipformer-en-2023-06-26-mobile` | asr, 流式 transducer | en | 291.3 MB | 67.1 MB (encoder.int8 64.8); 镜像 67.1 MB | Apache-2.0, commercialUse=true (LibriSpeech, CC BY 4.0) | 英文轻量; 归档无 `bpe.vocab`, 不支持热词 |
+| `tts.vits.melo.zh-en` | `vits-melo-tts-zh_en` | tts, vits | zh, en | 159.3 MB | 169.2 MB; 镜像 169.2 MB | MIT, commercialUse=true | 1 说话人, 中英混读, 44.1 kHz |
+| `tts.kokoro.multi-lang.v1_1` | `kokoro-multi-lang-v1_1` | tts, kokoro | zh, en | 347.9 MB | 386.9 MB (model 310.5 + voices 51.3 + espeak-ng-data); 镜像 387.2 MB | Apache-2.0 + GPL-3.0-or-later (espeak-ng-data), commercialUse=true | 103 说话人 (100 中文, 3 英文), 24 kHz; int8 版 (140.2 MB) 可作后续候选 |
+| `tts.vits.icefall.zh-aishell3` | `vits-icefall-zh-aishell3` | tts, vits | zh | 30.1 MB | 31.2 MB (不含 172.3 MB 的可选 `rule.far`); 镜像 31.3 MB | 权重未声明许可, commercialUse=unknown (AISHELL-3 为 Apache-2.0) | 174 说话人, 8 kHz, 轻量, 设备测试首选 |
+| `tts.vits.piper.en-us-lessac-medium` | `vits-piper-en_US-lessac-medium` | tts, vits | en | 64.1 MB | 77.4 MB (model 60.2 + espeak-ng-data); 镜像 77.7 MB | MIT + GPL-3.0-or-later (espeak-ng-data), commercialUse=false (Lessac Blizzard 2013 仅限研究) | 1 说话人, 22.05 kHz; `-int8` 版 (20.0 MB) 可作后续候选 |
+| `tts.matcha.icefall.zh-baker` | `matcha-icefall-zh-baker` + `vocoder-models/hifigan_v2.onnx` | tts, matcha | zh | 72.0 MB + 3.6 MB | 77.2 MB (acoustic 72.1 + hifigan_v2 3.6); 镜像 77.2 MB | 权重未声明许可 + MIT (声码器), commercialUse=false (标贝语料仅限非商用) | D11 提示, 22.05 kHz |
+| `kws.zipformer.zh-en.2025-12-20` | `sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20` | kws | zh, en | 31.4 MB | 8.4 MB (chunk-16 int8 encoder / joiner + en.phone 3.2); 镜像 8.4 MB | Apache-2.0, commercialUse=true (训练数据未公开) | 开放词表 |
+| `vad.silero.v5` | `silero_vad_v5.onnx` | vad | 任意 | 2.2 MB | 随 APK | MIT | 不在下载目录, 只在许可审核中登记 |
 
 ---
 
@@ -728,7 +728,7 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 }
 ```
 
-`sampleRate`, `size` 与 `sha256` 均为 P2.2 实测后填入, 上面的数值仅示意. 签名信封与 `codegen-models/schemas/signature-v1.schema.json` 同构, 密钥独立.
+`sampleRate`, `size` 与 `sha256` 均为 P2.2 实测后填入, 上面的数值仅示意. 签名信封与 `codegen-models/schemas/signature-v1.schema.json` 同构, 密钥独立. P2.1 定稿 (2026-10-16) 的正式结构见 Shared-Assets `speech-models/schemas/catalog-v1.schema.json`, 相对上面草案的差异: 模型级 `modelId` / `kind` / `displayName` (草案的 `name`) / `summary` / `recommended` 与不可变的 `versions[]` 分离 (同 codegen); `upstream` 为数组, 元素为带 `members` 的 `tar.bz2` 或带 `path` 的单文件 `file`; 新增 `runtime.config` (sherpa-onnx 文件角色, 如 `encoder`, `tokens`, `lexicon[]`, `ruleFsts[]`, `dataDir`, transducer 的 `modelType`) 与 `sourceUrl`; `license.commercialUse` 取 true / false / `"unknown"`; 草案的 `status` 由 `deprecated` / `revoked` 取代.
 
 ---
 
@@ -738,7 +738,7 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | --- | --- | --- | --- |
 | Q1 | 安装向导分类 | (a) `TOOLS` (与 3-Stone AI / 3-Stove Agent 同列, 宿主零枚举改动); (b) 新分类 `SPEECH` 或 `AUDIO` (需宿主枚举, 10 语言标题, 插件中心分组) | P1.3 前 |
 | Q2 | sherpa-onnx AAR 来源 | (a) Maven Central 坐标 (若 1.13.8 存在且字节一致); (b) `libs/` + 锁文件 | P0.2 已定 (b): Maven Central 无坐标, JitPack 只是同字节转存且按需重建 (D13) |
-| Q3 | 镜像归档格式 | (a) 未压缩 `tar` (模型本身已是二进制, 解包快); (b) `zip` (Android 原生, 可随机访问); (c) 与上游一致 `tar.bz2` | P2.1 |
+| Q3 | 镜像归档格式 | (a) 未压缩 `tar` (模型本身已是二进制, 解包快); (b) `zip` (Android 原生, 可随机访问); (c) 与上游一致 `tar.bz2` | P2.1 已定 (a): 规范 USTAR (只含普通文件, 按路径排序, 0644, uid / gid 0, mtime 0, 末尾两个零块), 由标准库写出, 字节与 Python / zlib / bzip2 版本无关, 体积可由 `files[]` 算出; zip 需要确定的 deflate 或存储模式, tar.bz2 解压慢 (Shared-Assets `c7d1adf`) |
 | Q4 | 唤醒词原文转 token | (a) 上游 Kotlin API 已内置 (spike 结论); (b) 插件内置拼音表 + BPE 编码; (c) 关键词只接受拼音 / 英文 token (不推荐) | P3.4 spike 后 |
 | Q5 | 后台麦克风不成立的机型 | (a) 插件自身 microphone 前台服务; (b) 文档声明限制 | P1.2 实测后 |
 | Q6 | 系统 TTS 引擎的双语 Voice 报告方式 | (a) 每个说话人报告 zh-CN 与 en-US 两个 Voice; (b) 只报告 zh-CN 并在 `onIsLanguageAvailable` 对 en 返回 `LANG_AVAILABLE` | P4.2 |
