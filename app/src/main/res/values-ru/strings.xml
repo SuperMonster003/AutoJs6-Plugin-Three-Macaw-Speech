@@ -3,6 +3,10 @@
     <string name="home_section_models">Модели</string>
     <string name="home_section_status">Состояние</string>
     <string name="home_section_tryout">Попробовать</string>
+    <string name="notification_catalog_refresh_title">Обновление каталога моделей</string>
+    <string name="notification_channel_model_operations">Загрузка моделей</string>
+    <string name="notification_model_download_title">Загрузка: %1$s</string>
+    <string name="notification_model_import_title">Импорт модели</string>
     <string name="plugin_description">Офлайн-распознавание речи, обнаружение слов активации, определение речевой активности и нейросетевой синтез речи с регистрацией в качестве системного движка TTS</string>
     <string name="release_history">История выпусков</string>
     <string name="settings">Настройки</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">Значок запуска</string>
     <string name="settings_night_mode">Ночной режим</string>
     <string name="settings_theme_color">Цвет темы</string>
+    <string name="speech_model_license_commercial">Лицензия этой модели разрешает коммерческое использование. Перед использованием прочитайте карточку модели и лицензию.</string>
+    <string name="speech_model_license_non_commercial">Эту модель можно использовать только в некоммерческих целях: её лицензия или обучающие данные запрещают коммерческое использование. Загружая её, вы принимаете это ограничение.</string>
+    <string name="speech_model_license_unknown">Издатель этой модели не указал лицензию, поэтому неизвестно, разрешено ли коммерческое использование. Перед использованием проверьте лицензию самостоятельно.</string>
 </resources>

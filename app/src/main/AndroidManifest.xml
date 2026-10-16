@@ -5,12 +5,14 @@
     <!--
         Roadmap D29: the plugin records audio itself (D6); the microphone foreground service only serves the standalone
         tryout screen and the 1.1.0 assistant, scripts rely on the host binding with BIND_INCLUDE_CAPABILITIES (D22).
+        FOREGROUND_SERVICE_DATA_SYNC keeps model downloads alive (roadmap P2.3, ModelOperationService).
         INTERNET only downloads models and refreshes the signed catalog; POST_NOTIFICATIONS shows download progress.
         No storage permission: models live in private storage and imports go through the system file picker (D23).
     -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -65,7 +67,7 @@
             </intent-filter>
         </service>
 
-        <!-- Speech capability (roadmap D21 / 5.5); placeholder Binder until the host contract of roadmap P1.1. -->
+        <!-- Speech capability (roadmap D21 / 5.5): ISpeechPlugin of contract version 1; model management since roadmap P2.3. -->
         <service
             android:name=".service.ThreeMacawSpeechService"
             android:exported="true"
@@ -78,6 +80,12 @@
                 <category android:name="speech" />
             </intent-filter>
         </service>
+
+        <!-- Model downloads, imports and catalog refreshes (roadmap P2.3); internal, started by the plugin itself. -->
+        <service
+            android:name=".service.ModelOperationService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
 
     </application>
 

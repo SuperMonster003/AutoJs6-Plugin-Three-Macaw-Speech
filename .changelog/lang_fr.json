@@ -8,12 +8,13 @@
     "v1.0.0": {
       "released_date": "2026/10/16",
       "hint": [
-        "Préversion de développement: AutoJs6 détecte le plugin et celui-ci charge le moteur vocal; la reconnaissance vocale, les mots de réveil, la synthèse vocale, le téléchargement des modèles, les écrans du plugin et le module de script speech ne sont pas encore livrés",
+        "Préversion de développement: AutoJs6 détecte le plugin, qui charge le moteur vocal et télécharge et gère les modèles; la reconnaissance vocale, les mots de réveil, la synthèse vocale, les écrans du plugin et le module de script speech ne sont pas encore livrés",
         "Nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)"
       ],
       "feature": [
         "Squelette du plugin: protocole d'activation Wake, service d'identité du centre des plugins et service de capacité vocale",
         "Moteur vocal sherpa-onnx {{ sherpa_onnx_version }} et modèle de détection d'activité vocale silero VAD v5 intégrés, avec un paquet par ABI pour 4 ABI",
+        "Gestion des modèles: télécharge les modèles vocaux hors ligne du catalogue signé depuis les publications des ressources partagées d'AutoJs6, avec repli sur les publications officielles de sherpa-onnx; chaque fichier est vérifié par SHA-256 avant usage, avec reprise des téléchargements, import local (tar, tar.bz2, zip), suppression et modèles par défaut; les modèles réservés à un usage non commercial ou sans licence déclarée exigent d'accepter leur licence au préalable",
         "README, instructions du centre des plugins et journaux des modifications en 10 langues, générés à partir de sources JSON"
       ],
       "dependency": [

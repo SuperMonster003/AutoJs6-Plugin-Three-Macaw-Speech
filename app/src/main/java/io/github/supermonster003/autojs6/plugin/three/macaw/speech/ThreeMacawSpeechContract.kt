@@ -48,16 +48,21 @@ internal object ThreeMacawSpeechContract {
     const val CAPABILITY_CATALOG_VERSION = "speechCatalogVersion"
 
     /**
-     * Optional features this build implements. The skeleton implements none; roadmap P3 / P4 add `asr`, `asrStreaming`,
-     * `vad`, `kws`, `tts` and `ttsSystemEngine` as each one lands, and the host never relies on a feature that is not
-     * advertised.
-     * zh-CN: 本构建实现的可选功能. 骨架尚未实现任何功能; 路线图 P3 / P4 在各项落地时依次加入 `asr`, `asrStreaming`, `vad`, `kws`,
-     * `tts` 与 `ttsSystemEngine`, 宿主不会依赖未声明的功能.
+     * Optional features this build implements: model management (`models`: install, import, remove, default model and
+     * catalog refresh, roadmap P2.3 / P2.4). Roadmap P3 / P4 add `asr`, `asrStreaming`, `vad`, `kws`, `tts` and
+     * `ttsSystemEngine` as each one lands, and the host never relies on a feature that is not advertised.
+     * zh-CN: 本构建实现的可选功能: 模型管理 (`models`: 安装, 导入, 删除, 默认模型与目录刷新, 路线图 P2.3 / P2.4). 路线图 P3 / P4 在各项
+     * 落地时依次加入 `asr`, `asrStreaming`, `vad`, `kws`, `tts` 与 `ttsSystemEngine`, 宿主不会依赖未声明的功能.
      */
-    val FEATURES: List<String> = emptyList()
+    val FEATURES: List<String> = listOf("models")
 
-    /** Version of the bundled model catalog; 0 until roadmap P2.4 bundles one. zh-CN: 内置模型目录版本; 路线图 P2.4 之前为 0. */
-    const val CATALOG_VERSION = 0
+    /**
+     * Version of the model catalog bundled in `assets/catalog/catalog-v1.json` (roadmap D28, P2.4); `BundledCatalogTest`
+     * keeps it equal to the asset. `getCapabilities` reports the catalog in use, which a refresh may advance.
+     * zh-CN: `assets/catalog/catalog-v1.json` 中内置模型目录的版本 (路线图 D28, P2.4); `BundledCatalogTest` 保证其与资产一致.
+     * `getCapabilities` 报告当前使用的目录, 刷新后可能更新.
+     */
+    const val CATALOG_VERSION = 1
 
     /** Resource reference of the localized Plugin Center instruction. zh-CN: 插件中心本地化说明的资源引用. */
     const val INSTRUCTION_REFERENCE = "@raw/plugin_instruction"

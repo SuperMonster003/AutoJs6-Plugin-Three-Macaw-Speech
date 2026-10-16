@@ -33,6 +33,8 @@ class ManifestContractTest {
                 "android.permission.RECORD_AUDIO",
                 "android.permission.FOREGROUND_SERVICE",
                 "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+                // Roadmap P2.3: the model download service.
+                "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
                 "android.permission.INTERNET",
                 "android.permission.POST_NOTIFICATIONS",
             ),
@@ -96,9 +98,18 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the model operation service is internal and of type data sync`() {
+        val service = service(".service.ModelOperationService")
+        assertEquals("false", service.android("exported"))
+        assertEquals("dataSync", service.android("foregroundServiceType"))
+        assertNull(service.androidOrNull("permission"))
+        assertTrue("started by the plugin only", service.children("intent-filter").isEmpty())
+    }
+
+    @Test
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
-            listOf(".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService"),
+            listOf(".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService"),
             application.children("service").map { it.android("name") },
         )
         val info = service(".service.ThreeMacawSpeechInfoService")

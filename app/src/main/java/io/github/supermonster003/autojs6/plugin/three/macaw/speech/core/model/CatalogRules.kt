@@ -1,0 +1,137 @@
+package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model
+
+/**
+ * The value rules of the Shared-Assets `speech-models` family (`tools/speech-model-distribution/distribution.py`):
+ * identifiers, installed paths, the canonical USTAR layout of mirror archives and the limits, mirrored one to one so
+ * the plugin accepts exactly the catalogs and archives the maintainer's tools produce.
+ * zh-CN: Shared-Assets `speech-models` 类别的取值规则 (`tools/speech-model-distribution/distribution.py`): 标识符, 安装路径, 镜像归档的
+ * 规范 USTAR 布局与各项上限, 逐条对应, 使插件恰好接受维护者工具产出的目录与归档.
+ */
+object CatalogRules {
+
+    const val CATALOG_FILE = "catalog-v1.json"
+    const val SIGNATURE_FILE = "catalog-v1.sig.json"
+    const val OFFICIAL_REPOSITORY = "SuperMonster003/AutoJs6-Shared-Assets"
+    const val FAMILY_DIRECTORY = "speech-models"
+    const val UPSTREAM_REPOSITORY = "k2-fsa/sherpa-onnx"
+
+    const val MAX_CATALOG_BYTES = 8L * 1024 * 1024
+    const val MAX_SIGNATURE_BYTES = 64L * 1024
+    const val MAX_ARCHIVE_BYTES = Int.MAX_VALUE.toLong()
+    const val MAX_FILE_BYTES = Int.MAX_VALUE.toLong()
+    const val MAX_UPSTREAM_BYTES = Int.MAX_VALUE.toLong()
+    const val MAX_INSTALL_BYTES = 4L * 1024 * 1024 * 1024
+    const val MAX_FILES = 4096
+    const val MAX_MODELS = 1024
+    const val MAX_VERSIONS = 1024
+    const val MAX_UPSTREAM_PARTS = 8
+    const val MAX_PATH_LENGTH = 240
+    const val MAX_PATH_DEPTH = 12
+    const val BLOCK = 512
+
+    val REPOSITORY = Regex("[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*")
+    val RELEASE_TAG = Regex("speech-models-v([1-9][0-9]{0,9})")
+    val MODEL_ID = Regex("(asr|kws|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
+    val SHA256 = Regex("[0-9a-f]{64}")
+    val LANGUAGE = Regex("[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*")
+    val MAP_LANGUAGE = Regex("[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*")
+    val NOTICE_KEY = Regex("speech_model_license_[a-z0-9_]{1,40}")
+    val SPDX = Regex("[A-Za-z0-9.+-]+(?: (?:AND|OR|WITH) [A-Za-z0-9.+-]+)*")
+    val SEMVER = Regex("(?:0|[1-9][0-9]{0,3})\\.(?:0|[1-9][0-9]{0,3})\\.(?:0|[1-9][0-9]{0,3})")
+    val PATH_SEGMENT = Regex("[A-Za-z0-9_+!](?:[A-Za-z0-9 _.+!-]{0,126}[A-Za-z0-9_+!-])?")
+    val UPSTREAM_TAG = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
+    val UPSTREAM_ASSET = Regex("[A-Za-z0-9][A-Za-z0-9._+-]{0,254}")
+
+    val KINDS = listOf("asr", "kws", "tts")
+
+    /**
+     * sherpa-onnx 1.13.8 configuration family of every model type, with its required and optional file roles.
+     * zh-CN: 每种模型类型对应的 sherpa-onnx 1.13.8 配置族, 以及必需与可选的文件角色.
+     */
+    class ModelTypeSpec(val kind: String, val required: List<String>, val optional: List<String>)
+
+    private val TTS_OPTIONAL = listOf("lexicon", "ruleFsts", "ruleFars", "dataDir")
+    val MODEL_TYPES: Map<String, ModelTypeSpec> = linkedMapOf(
+        "online-transducer" to ModelTypeSpec("asr", listOf("encoder", "decoder", "joiner", "tokens", "modelType"), listOf("bpeVocab")),
+        "sense-voice" to ModelTypeSpec("asr", listOf("model", "tokens"), emptyList()),
+        "kws-transducer" to ModelTypeSpec("kws", listOf("encoder", "decoder", "joiner", "tokens", "modelType"), listOf("lexicon")),
+        "vits" to ModelTypeSpec("tts", listOf("model", "tokens"), TTS_OPTIONAL),
+        "matcha" to ModelTypeSpec("tts", listOf("acousticModel", "vocoder", "tokens"), TTS_OPTIONAL),
+        "kokoro" to ModelTypeSpec("tts", listOf("model", "voices", "tokens"), TTS_OPTIONAL),
+    )
+    val LIST_ROLES = setOf("lexicon", "ruleFsts", "ruleFars")
+    val DIRECTORY_ROLES = setOf("dataDir")
+    val VALUE_ROLES = mapOf("modelType" to setOf("zipformer", "zipformer2"))
+
+    /** `install_path`: bounded ASCII, at most 12 segments of the segment pattern, storable in a USTAR header. zh-CN: 安装路径规则. */
+    fun isInstallPath(value: String): Boolean {
+        if (value.isEmpty() || value.length > MAX_PATH_LENGTH || value.any { it.code > 0x7F }) return false
+        val segments = value.split('/')
+        if (segments.size > MAX_PATH_DEPTH) return false
+        if (segments.any { it == "." || it == ".." || !PATH_SEGMENT.matches(it) }) return false
+        return ustarSplit(value) != null
+    }
+
+    /** USTAR (name, prefix) of a path, or null when it cannot be stored. zh-CN: 路径在 USTAR 头中的 (name, prefix); 无法存放时为 null. */
+    fun ustarSplit(path: String): Pair<String, String>? {
+        if (path.length <= 100) return path to ""
+        for (index in path.indices) {
+            if (path[index] == '/' && path.length - index - 1 <= 100) {
+                return if (index in 1..155) path.substring(index + 1) to path.substring(0, index) else null
+            }
+        }
+        return null
+    }
+
+    fun padded(size: Long): Long = (size + BLOCK - 1) / BLOCK * BLOCK
+
+    /** Size of the canonical mirror archive of [sizes]. zh-CN: 由文件大小算出的规范镜像归档大小. */
+    fun archiveSize(sizes: Iterable<Long>): Long = sizes.sumOf { BLOCK + padded(it) } + 2L * BLOCK
+
+    fun archiveFileName(modelId: String, versionCode: Int, sha256: String): String =
+        "autojs6-speech-$modelId-v$versionCode-${sha256.take(8)}.tar"
+
+    fun releaseUrl(repository: String, releaseTag: String, fileName: String): String =
+        "https://github.com/$repository/releases/download/$releaseTag/$fileName"
+
+    fun sourceUrl(repository: String, releaseTag: String, modelId: String, versionCode: Int): String =
+        "https://github.com/$repository/tree/$releaseTag/$FAMILY_DIRECTORY/sources/$modelId/$versionCode"
+
+    /**
+     * The one canonical USTAR header of a mirror member: mode 0644, uid / gid 0, mtime 0, empty owner names
+     * (`distribution.tar_header`).
+     * zh-CN: 镜像成员唯一的规范 USTAR 头: 权限 0644, uid / gid 0, mtime 0, 属主名为空 (`distribution.tar_header`).
+     */
+    fun canonicalTarHeader(path: String, size: Long): ByteArray {
+        require(size in 0..MAX_FILE_BYTES) { "archive member size out of range" }
+        require(isInstallPath(path)) { "invalid archive member path" }
+        val (name, prefix) = ustarSplit(path)!!
+        val header = ByteArray(BLOCK)
+        fun put(offset: Int, text: String) = text.toByteArray(Charsets.US_ASCII).copyInto(header, offset)
+        fun octal(offset: Int, width: Int, value: Long) {
+            val text = java.lang.Long.toOctalString(value).padStart(width - 1, '0')
+            require(text.length == width - 1) { "value does not fit in a USTAR field" }
+            put(offset, text)
+            header[offset + width - 1] = 0
+        }
+        put(0, name)
+        octal(100, 8, 420)
+        octal(108, 8, 0)
+        octal(116, 8, 0)
+        octal(124, 12, size)
+        octal(136, 12, 0)
+        put(148, "        ")
+        put(156, "0")
+        put(257, "ustar")
+        header[262] = 0
+        put(263, "00")
+        octal(329, 8, 0)
+        octal(337, 8, 0)
+        put(345, prefix)
+        val checksum = header.sumOf { it.toInt() and 0xFF }
+        put(148, java.lang.Integer.toOctalString(checksum).padStart(6, '0'))
+        header[154] = 0
+        header[155] = ' '.code.toByte()
+        return header
+    }
+}

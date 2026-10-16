@@ -3,6 +3,10 @@
     <string name="home_section_models">모델</string>
     <string name="home_section_status">상태</string>
     <string name="home_section_tryout">체험하기</string>
+    <string name="notification_catalog_refresh_title">모델 카탈로그를 새로 고치는 중</string>
+    <string name="notification_channel_model_operations">모델 다운로드</string>
+    <string name="notification_model_download_title">%1$s 다운로드 중</string>
+    <string name="notification_model_import_title">모델을 가져오는 중</string>
     <string name="plugin_description">오프라인 음성 인식, 호출어 감지, 음성 구간 감지와 신경망 음성 합성을 제공하며 시스템 TTS 엔진으로 등록 가능</string>
     <string name="release_history">릴리스 기록</string>
     <string name="settings">설정</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">런처 아이콘</string>
     <string name="settings_night_mode">야간 모드</string>
     <string name="settings_theme_color">테마 색상</string>
+    <string name="speech_model_license_commercial">이 모델의 라이선스는 상업적 이용을 허용합니다. 사용하기 전에 모델 카드와 라이선스를 읽어 주세요.</string>
+    <string name="speech_model_license_non_commercial">이 모델은 비상업적 용도로만 사용할 수 있습니다: 라이선스 또는 학습 데이터가 상업적 이용을 금지합니다. 다운로드하면 이 제한에 동의한 것으로 간주됩니다.</string>
+    <string name="speech_model_license_unknown">이 모델의 게시자가 라이선스를 밝히지 않아 상업적 이용이 허용되는지 알 수 없습니다. 사용하기 전에 라이선스를 직접 확인하세요.</string>
 </resources>

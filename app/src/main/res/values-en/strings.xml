@@ -3,6 +3,10 @@
     <string name="home_section_models">Models</string>
     <string name="home_section_status">Status</string>
     <string name="home_section_tryout">Try it out</string>
+    <string name="notification_catalog_refresh_title">Refreshing the model catalog</string>
+    <string name="notification_channel_model_operations">Model downloads</string>
+    <string name="notification_model_download_title">Downloading %1$s</string>
+    <string name="notification_model_import_title">Importing a model</string>
     <string name="plugin_description">Offline speech recognition, wake word detection, voice activity detection and neural text-to-speech, usable as the system TTS engine</string>
     <string name="release_history">Release history</string>
     <string name="settings">Settings</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">Launcher icon</string>
     <string name="settings_night_mode">Night mode</string>
     <string name="settings_theme_color">Theme color</string>
+    <string name="speech_model_license_commercial">The license of this model allows commercial use. Read the model card and the license before using it.</string>
+    <string name="speech_model_license_non_commercial">This model may only be used for non-commercial purposes: its license or its training data forbid commercial use. Downloading it means you accept this restriction.</string>
+    <string name="speech_model_license_unknown">The publisher of this model declares no license, so it is unknown whether commercial use is allowed. Check the license yourself before using it.</string>
 </resources>

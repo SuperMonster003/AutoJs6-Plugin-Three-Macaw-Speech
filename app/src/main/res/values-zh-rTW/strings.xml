@@ -3,6 +3,10 @@
     <string name="home_section_models">模型</string>
     <string name="home_section_status">狀態</string>
     <string name="home_section_tryout">試聽試說</string>
+    <string name="notification_catalog_refresh_title">正在重新整理模型目錄</string>
+    <string name="notification_channel_model_operations">模型下載</string>
+    <string name="notification_model_download_title">正在下載 %1$s</string>
+    <string name="notification_model_import_title">正在匯入模型</string>
     <string name="plugin_description">離線語音辨識, 喚醒詞偵測, 語音活動偵測與神經網路語音合成, 可註冊為系統 TTS 引擎</string>
     <string name="release_history">發行歷史</string>
     <string name="settings">設定</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">啟動器圖示</string>
     <string name="settings_night_mode">夜間模式</string>
     <string name="settings_theme_color">主題色</string>
+    <string name="speech_model_license_commercial">此模型的授權允許商業用途. 使用前請閱讀模型卡與授權條款.</string>
+    <string name="speech_model_license_non_commercial">此模型僅限非商業用途: 其授權或訓練資料禁止商業使用. 下載即表示你接受此限制.</string>
+    <string name="speech_model_license_unknown">此模型的發布者未聲明授權, 是否允許商業用途未知. 請在使用前自行確認授權.</string>
 </resources>

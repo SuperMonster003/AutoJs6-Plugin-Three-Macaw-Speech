@@ -3,6 +3,10 @@
     <string name="home_section_models">النماذج</string>
     <string name="home_section_status">الحالة</string>
     <string name="home_section_tryout">تجربة</string>
+    <string name="notification_catalog_refresh_title">جارٍ تحديث كتالوج النماذج</string>
+    <string name="notification_channel_model_operations">تنزيلات النماذج</string>
+    <string name="notification_model_download_title">جارٍ تنزيل %1$s</string>
+    <string name="notification_model_import_title">جارٍ استيراد نموذج</string>
     <string name="plugin_description">التعرف على الكلام دون اتصال, واكتشاف كلمة التنبيه, واكتشاف النشاط الصوتي, وتحويل النص إلى كلام بالشبكات العصبية, مع إمكانية استخدامه كمحرك TTS للنظام</string>
     <string name="release_history">سجل الإصدارات</string>
     <string name="settings">الإعدادات</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">رمز المشغل</string>
     <string name="settings_night_mode">الوضع الليلي</string>
     <string name="settings_theme_color">لون السمة</string>
+    <string name="speech_model_license_commercial">يسمح ترخيص هذا النموذج بالاستخدام التجاري. اقرأ بطاقة النموذج والترخيص قبل استخدامه.</string>
+    <string name="speech_model_license_non_commercial">لا يجوز استخدام هذا النموذج إلا لأغراض غير تجارية: ترخيصه أو بيانات تدريبه تحظر الاستخدام التجاري. تنزيله يعني أنك تقبل هذا القيد.</string>
+    <string name="speech_model_license_unknown">لم يعلن ناشر هذا النموذج عن أي ترخيص, لذا لا يُعرف ما إذا كان الاستخدام التجاري مسموحا. تحقق من الترخيص بنفسك قبل استخدامه.</string>
 </resources>

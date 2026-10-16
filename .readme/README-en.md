@@ -46,7 +46,7 @@ The README.md file is currently available in the following languages:
 
 The plugin is a separately installed APK. AutoJs6 scripts use it through the global `speech` module; the speech synthesis also registers as an Android system TTS engine, so the AutoJs6 `tts` module and other apps can choose it. Recognition and synthesis models are not bundled with the APK but downloaded on demand from the plugin screen or a script; only the voice activity detection model is built in.
 
-> This is a development preview: AutoJs6 can discover the plugin and it loads the speech runtime, but recognition, wake words, synthesis, model downloads, the plugin screens and the `speech` script module are not delivered yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.
+> This is a development preview: AutoJs6 can discover the plugin, which loads the speech runtime and downloads and manages models, but recognition, wake words, synthesis, the plugin screens and the `speech` script module are not delivered yet. The text below describes the design goals of 1.0.0; see the roadmap for progress.
 
 ******
 
@@ -179,10 +179,11 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 _2026/10/16_
 
-- `Hint` Development preview: AutoJs6 can discover the plugin and it loads the speech runtime; speech recognition, wake words, text-to-speech, model downloads, the plugin screens and the speech script module are not delivered yet
+- `Hint` Development preview: AutoJs6 can discover the plugin, which loads the speech runtime and downloads and manages models; speech recognition, wake words, text-to-speech, the plugin screens and the speech script module are not delivered yet
 - `Hint` Requires AutoJs6 6.8.0 (5451) or later (the exact minimum build will be filled in once the host changes land)
 - `Feature` Plugin skeleton: Wake activation protocol, Plugin Center identity service and speech capability service
 - `Feature` Built-in sherpa-onnx 1.13.8 speech runtime and silero VAD v5 voice activity detection model, with one package per ABI for 4 ABIs
+- `Feature` Model management: downloads the offline speech models of the signed model catalog from the AutoJs6 shared assets releases, falling back to the official sherpa-onnx releases; every file is checked by SHA-256 before use, with resumable downloads, local import (tar, tar.bz2, zip), removal and default models; models limited to non-commercial use or without a declared license need their license accepted first
 - `Feature` README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources
 - `Dependency` Attach sherpa-onnx 1.13.8
 - `Dependency` Attach Jetpack Compose BOM 2026.09.00

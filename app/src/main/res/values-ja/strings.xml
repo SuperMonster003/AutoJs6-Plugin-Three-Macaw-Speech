@@ -3,6 +3,10 @@
     <string name="home_section_models">モデル</string>
     <string name="home_section_status">状態</string>
     <string name="home_section_tryout">お試し</string>
+    <string name="notification_catalog_refresh_title">モデルカタログを更新しています</string>
+    <string name="notification_channel_model_operations">モデルのダウンロード</string>
+    <string name="notification_model_download_title">%1$s をダウンロードしています</string>
+    <string name="notification_model_import_title">モデルをインポートしています</string>
     <string name="plugin_description">オフライン音声認識, ウェイクワード検出, 音声区間検出, ニューラル音声合成を提供し, システムの TTS エンジンとして登録可能</string>
     <string name="release_history">リリース履歴</string>
     <string name="settings">設定</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">ランチャーアイコン</string>
     <string name="settings_night_mode">ナイトモード</string>
     <string name="settings_theme_color">テーマ色</string>
+    <string name="speech_model_license_commercial">このモデルのライセンスは商用利用を認めています. 使用前にモデルカードとライセンスをお読みください.</string>
+    <string name="speech_model_license_non_commercial">このモデルは非商用目的でのみ使用できます: ライセンスまたは学習データが商用利用を禁止しています. ダウンロードすると, この制限に同意したものとみなされます.</string>
+    <string name="speech_model_license_unknown">このモデルの公開者はライセンスを示していないため, 商用利用が認められるかは不明です. 使用前にご自身でライセンスを確認してください.</string>
 </resources>

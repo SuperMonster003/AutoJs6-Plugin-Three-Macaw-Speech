@@ -1,0 +1,26 @@
+{
+  "concatenated.bz2": {
+    "sha256": "40edf2eb8432b20b958c85cceca8fd18555acf40dfc7be3549ad27f415afe9af",
+    "size": 27000
+  },
+  "empty.bz2": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size": 0
+  },
+  "long-runs.bz2": {
+    "sha256": "77e735a5b8fae4f492a2c840de0573c20e28a53ff1cf505e819ab0f5a314ef24",
+    "size": 71536
+  },
+  "random-all-bytes.bz2": {
+    "sha256": "c64c5ac7d832091e510e591f5023452ee7171bf1e5555c1524f231a7467985c9",
+    "size": 150000
+  },
+  "single-byte-megabyte.bz2": {
+    "sha256": "3ac3338d67611f3edb444a8f730d5e3a6559d4640e7b1a2d5fa58bafbda3254a",
+    "size": 1048576
+  },
+  "text-level1-multiblock.bz2": {
+    "sha256": "b6ec19a007c8d5bc1606af8e086c0c8118d7146747d8bcda2c116ca5cc3a370e",
+    "size": 624346
+  }
+}

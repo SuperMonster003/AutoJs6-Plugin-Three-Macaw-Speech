@@ -3,6 +3,10 @@
     <string name="home_section_models">Modelos</string>
     <string name="home_section_status">Estado</string>
     <string name="home_section_tryout">Probar</string>
+    <string name="notification_catalog_refresh_title">Actualizando el catálogo de modelos</string>
+    <string name="notification_channel_model_operations">Descargas de modelos</string>
+    <string name="notification_model_download_title">Descargando %1$s</string>
+    <string name="notification_model_import_title">Importando un modelo</string>
     <string name="plugin_description">Reconocimiento de voz sin conexión, detección de palabras de activación, detección de actividad de voz y síntesis de voz neuronal, utilizable como motor TTS del sistema</string>
     <string name="release_history">Historial de versiones</string>
     <string name="settings">Ajustes</string>
@@ -11,4 +15,7 @@
     <string name="settings_launcher_icon">Icono del lanzador</string>
     <string name="settings_night_mode">Modo nocturno</string>
     <string name="settings_theme_color">Color del tema</string>
+    <string name="speech_model_license_commercial">La licencia de este modelo permite el uso comercial. Lea la ficha del modelo y su licencia antes de usarlo.</string>
+    <string name="speech_model_license_non_commercial">Este modelo solo puede usarse con fines no comerciales: su licencia o sus datos de entrenamiento prohíben el uso comercial. Al descargarlo, acepta esta restricción.</string>
+    <string name="speech_model_license_unknown">El editor de este modelo no declara ninguna licencia, por lo que se desconoce si se permite el uso comercial. Compruebe la licencia usted mismo antes de usarlo.</string>
 </resources>

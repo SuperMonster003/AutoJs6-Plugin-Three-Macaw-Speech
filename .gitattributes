@@ -30,3 +30,9 @@ app/src/main/res/raw/keep_icon_studio_background.xml text eol=lf
 app/src/main/res/raw/keep_icon_studio_application.xml text eol=lf
 app/src/main/res/values*/icon_studio_backgrounds.xml text eol=lf
 app/src/main/res/mipmap*/ic_icon_studio_application*.xml text eol=lf
+
+# Exact Shared-Assets bytes (locks/speech-catalog.lock) and the model store test fixtures (.python/generate_model_fixtures.py)
+app/src/main/assets/catalog/** -text
+app/src/test/resources/model-fixtures/** -text
+*.tar binary
+*.bz2 binary

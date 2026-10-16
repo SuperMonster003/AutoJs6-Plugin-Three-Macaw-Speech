@@ -9,6 +9,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Bundle
 import android.os.IBinder
 import android.os.Parcel
 import android.os.Parcelable
@@ -21,8 +22,14 @@ import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
 import org.autojs.plugin.speech.api.ISpeechPlugin
+import org.autojs.plugin.speech.api.SpeechCapabilityKeys
+import org.autojs.plugin.speech.api.SpeechContract
+import org.autojs.plugin.speech.api.SpeechErrorCodes
+import org.autojs.plugin.speech.api.SpeechModelKeys
+import org.autojs.plugin.speech.api.SpeechOptionKeys
 import org.autojs.plugin.speech.api.SpeechPluginActions
 import org.autojs.plugin.speech.api.SpeechPluginIds
+import org.autojs.plugin.speech.api.SpeechResultKeys
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -36,15 +43,16 @@ import java.util.concurrent.atomic.AtomicReference
 /**
  * The host-facing activation and discovery contract against the installed APK (roadmap P0.3, AGENTS 14.2): the Wake
  * activity, discovery of exactly one component per action and category, explicit binding with the expected Binder
- * descriptors, `getInfo()` marshalled through a real Parcel with the transaction code the host uses, the refusing
- * placeholder capability Binder, repeated bindings, the absent launcher entry and the exported / permission audit.
+ * descriptors, `getInfo()` marshalled through a real Parcel with the transaction code the host uses, the capability
+ * Binder's model management answers (roadmap P2.3), repeated bindings, the absent launcher entry and the exported /
+ * permission audit.
  *
  * The services run in the plugin's own process, so the calls below use `transact` with explicit Parcels instead of
  * `asInterface`, which would return the local object and skip marshalling.
  *
  * zh-CN: 针对已安装 APK 验证面向宿主的激活与发现契约 (路线图 P0.3, AGENTS 14.2): Wake Activity, 每组 action 与 category 恰好
- * 发现一个组件, 显式绑定与 Binder 描述符, 以宿主使用的事务号经真实 Parcel 编组的 `getInfo()`, 拒绝调用的占位能力 Binder,
- * 重复绑定, 不存在的启动器入口, 以及 exported / permission 审查. 服务与测试同进程, 因此下文用显式 Parcel 调用 `transact`, 不用
+ * 发现一个组件, 显式绑定与 Binder 描述符, 以宿主使用的事务号经真实 Parcel 编组的 `getInfo()`, 能力 Binder 的模型管理应答 (路线图
+ * P2.3), 重复绑定, 不存在的启动器入口, 以及 exported / permission 审查. 服务与测试同进程, 因此下文用显式 Parcel 调用 `transact`, 不用
  * 会直接返回本地对象而跳过编组的 `asInterface`.
  */
 @RunWith(AndroidJUnit4::class)
@@ -102,13 +110,14 @@ class ThreeMacawSpeechContractTest {
             )
             assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, capabilities.getLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION))
             assertEquals(1, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION))
-            assertArrayEquals(emptyArray<String>(), capabilities.getStringArray(ThreeMacawSpeechContract.CAPABILITY_FEATURES))
-            assertEquals(0, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION, -1))
+            // Roadmap P2.3 / P2.4: model management is advertised, the bundled catalog is version 1.
+            assertArrayEquals(arrayOf(SpeechContract.FEATURE_MODELS), capabilities.getStringArray(ThreeMacawSpeechContract.CAPABILITY_FEATURES))
+            assertEquals(1, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION, -1))
         }
     }
 
     @Test
-    fun capabilityServiceIsDiscoverableAndRejectsCallsUntilTheContractLands() {
+    fun capabilityServiceAnswersTheSpeechContract() {
         // Discovered with the literals of the staged host contract speech-api.aar (roadmap P1.1).
         val serviceInfo = discoverSingleService(
             SpeechPluginActions.SPEECH, SpeechPluginActions.SERVICE_CATEGORY, ThreeMacawSpeechService::class.java.name,
@@ -117,16 +126,34 @@ class ThreeMacawSpeechContractTest {
         assertEquals(SpeechPluginIds.REQUIRED_HOST_VERSION_CODE.toString(), serviceInfo.metaData?.get(PluginCapabilityKeys.REQUIRES_HOST_VERSION)?.toString())
         withBoundService(serviceInfo) { binder ->
             assertEquals(ISpeechPlugin.DESCRIPTOR, binder.interfaceDescriptor)
-            // Placeholder until roadmap P1.1: every transaction is refused instead of answered with guesses.
-            val data = Parcel.obtain()
-            val reply = Parcel.obtain()
-            try {
-                data.writeInterfaceToken(ThreeMacawSpeechContract.CAPABILITY_DESCRIPTOR)
-                assertFalse(binder.transact(IBinder.FIRST_CALL_TRANSACTION, data, reply, 0))
-            } finally {
-                data.recycle()
-                reply.recycle()
+            // Real Parcels with the transaction codes of the AIDL order (getInfo = 1, getCapabilities = 2, ...).
+            val capabilities = requireNotNull(transactBundle(binder, TRANSACTION_GET_CAPABILITIES))
+            assertEquals(SpeechContract.CONTRACT_VERSION, capabilities.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+            assertArrayEquals(arrayOf(SpeechContract.FEATURE_MODELS), capabilities.getStringArray(SpeechCapabilityKeys.FEATURES))
+            assertTrue(capabilities.getInt(SpeechCapabilityKeys.CATALOG_VERSION) >= 1)
+            assertEquals("sherpa-onnx", capabilities.getString(SpeechCapabilityKeys.ENGINE_NAME))
+            assertEquals(BuildConfig.SHERPA_ONNX_VERSION, capabilities.getString(SpeechCapabilityKeys.ENGINE_VERSION))
+
+            val query = Bundle().apply {
+                putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CONTRACT_VERSION)
+                putString(SpeechOptionKeys.KIND, SpeechContract.KIND_TTS)
             }
+            val answer = requireNotNull(transactBundle(binder, TRANSACTION_LIST_MODELS, query))
+            assertFalse(answer.containsKey(SpeechContract.KEY_ERROR_CODE))
+            @Suppress("DEPRECATION")
+            val models = requireNotNull(answer.getParcelableArrayList<Bundle>(SpeechResultKeys.MODELS))
+            assertTrue(models.isNotEmpty())
+            models.forEach { model ->
+                assertEquals(SpeechContract.KIND_TTS, model.getString(SpeechModelKeys.KIND))
+                assertTrue(requireNotNull(model.getString(SpeechModelKeys.ID)).startsWith("tts."))
+                assertTrue(model.getLong(SpeechModelKeys.SIZE_BYTES) > 0)
+                assertTrue(requireNotNull(model.getBundle(SpeechModelKeys.LICENSE)).containsKey(SpeechModelKeys.LICENSE_SPDX))
+            }
+
+            val unknown = Bundle().apply { putString(SpeechOptionKeys.MODEL, "tts.no.such.model") }
+            assertEquals(SpeechErrorCodes.MODEL_MISSING, transactBundle(binder, TRANSACTION_REMOVE_MODEL, unknown)?.getString(SpeechContract.KEY_ERROR_CODE))
+            // Recognition arrives with roadmap P3: answered, not refused at the Binder level.
+            assertEquals(SpeechErrorCodes.ENGINE_FAILED, transactBundle(binder, TRANSACTION_RECOGNIZE_FILE, null, nullDescriptorFirst = true)?.getString(SpeechContract.KEY_ERROR_CODE))
         }
     }
 
@@ -163,7 +190,8 @@ class ThreeMacawSpeechContractTest {
         assertEquals(
             setOf(
                 PLUGIN_PERMISSION, "android.permission.RECORD_AUDIO", "android.permission.FOREGROUND_SERVICE",
-                "android.permission.FOREGROUND_SERVICE_MICROPHONE", "android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS",
+                "android.permission.FOREGROUND_SERVICE_MICROPHONE", "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
+                "android.permission.INTERNET", "android.permission.POST_NOTIFICATIONS",
             ),
             packageInfo.requestedPermissions.orEmpty().toSet() - MERGED_PLATFORM_PERMISSIONS,
         )
@@ -194,6 +222,32 @@ class ThreeMacawSpeechContractTest {
     } else {
         @Suppress("DEPRECATION")
         versionCode.toLong()
+    }
+
+    /**
+     * One `ISpeechPlugin` call answered with a Bundle, marshalled like the generated proxy: an optional typed Bundle
+     * argument (after a null descriptor for `recognizeFile`), then the typed Bundle answer.
+     * zh-CN: 以 Bundle 应答的单个 `ISpeechPlugin` 调用, 编组方式与生成的代理相同.
+     */
+    private fun transactBundle(binder: IBinder, code: Int, argument: Bundle? = null, nullDescriptorFirst: Boolean = false): Bundle? {
+        val data = Parcel.obtain()
+        val reply = Parcel.obtain()
+        try {
+            data.writeInterfaceToken(ISpeechPlugin.DESCRIPTOR)
+            if (nullDescriptorFirst) data.writeInt(0)
+            if (code != TRANSACTION_GET_CAPABILITIES) {
+                if (argument == null) data.writeInt(0) else {
+                    data.writeInt(1)
+                    argument.writeToParcel(data, 0)
+                }
+            }
+            assertTrue("transaction $code must be handled", binder.transact(code, data, reply, 0))
+            reply.readException()
+            return if (reply.readInt() != 0) Bundle.CREATOR.createFromParcel(reply) else null
+        } finally {
+            data.recycle()
+            reply.recycle()
+        }
     }
 
     /** `getInfo()` is the first transaction of IPluginInfoProvider. */
@@ -259,6 +313,12 @@ class ThreeMacawSpeechContractTest {
 
     private companion object {
         const val PLUGIN_PERMISSION = "org.autojs.permission.PLUGIN"
+
+        // Transaction codes of ISpeechPlugin in declaration order (the host freezes them in SpeechAidlOrderTest).
+        const val TRANSACTION_GET_CAPABILITIES = IBinder.FIRST_CALL_TRANSACTION + 1
+        const val TRANSACTION_LIST_MODELS = IBinder.FIRST_CALL_TRANSACTION + 2
+        const val TRANSACTION_REMOVE_MODEL = IBinder.FIRST_CALL_TRANSACTION + 5
+        const val TRANSACTION_RECOGNIZE_FILE = IBinder.FIRST_CALL_TRANSACTION + 6
 
         /**
          * Added by AndroidX to the merged Manifest on its own (core 1.9+ declares the dynamic receiver permission).

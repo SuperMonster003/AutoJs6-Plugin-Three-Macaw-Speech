@@ -46,7 +46,7 @@ El README.md actual admite los siguientes idiomas:
 
 El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.
 
-> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz, pero el reconocimiento, las palabras de activación, la síntesis, la descarga de modelos, las pantallas del complemento y el módulo de script `speech` aún no están disponibles. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.
+> Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que carga el motor de voz y descarga y gestiona modelos, pero el reconocimiento, las palabras de activación, la síntesis, las pantallas del complemento y el módulo de script `speech` aún no están disponibles. El texto siguiente describe los objetivos de diseño de la 1.0.0; consulte la hoja de ruta para ver el progreso.
 
 ******
 
@@ -179,10 +179,11 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 _2026/10/16_
 
-- `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento y este carga el motor de voz; el reconocimiento de voz, las palabras de activación, la síntesis de voz, la descarga de modelos, las pantallas del complemento y el módulo de script speech aún no están disponibles
+- `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que carga el motor de voz y descarga y gestiona modelos; el reconocimiento de voz, las palabras de activación, la síntesis de voz, las pantallas del complemento y el módulo de script speech aún no están disponibles
 - `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
 - `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
 - `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI
+- `Función` Gestión de modelos: descarga los modelos de voz sin conexión del catálogo firmado desde las publicaciones de los recursos compartidos de AutoJs6, con las publicaciones oficiales de sherpa-onnx como alternativa; cada archivo se verifica con SHA-256 antes de usarse, con descargas reanudables, importación local (tar, tar.bz2, zip), eliminación y modelos predeterminados; los modelos limitados a uso no comercial o sin licencia declarada requieren aceptar antes su licencia
 - `Función` README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON
 - `Dependencia` Se agrega sherpa-onnx 1.13.8
 - `Dependencia` Se agrega Jetpack Compose BOM 2026.09.00

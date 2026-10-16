@@ -8,12 +8,13 @@
     "v1.0.0": {
       "released_date": "2026/10/16",
       "hint": [
-        "開發預覽: 插件可以被 AutoJs6 識別並載入語音運行時, 語音識別, 喚醒詞, 語音合成, 模型下載, 插件介面與 speech 腳本模組尚未交付",
+        "開發預覽: 插件可以被 AutoJs6 識別, 可以載入語音運行時並下載與管理模型, 語音識別, 喚醒詞, 語音合成, 插件介面與 speech 腳本模組尚未交付",
         "需要 AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) 或更高版本 (準確的最低版本號待宿主側改動落地後回填)"
       ],
       "feature": [
         "插件骨架: Wake 啟動協議, 插件中心身份服務與語音能力服務",
         "內置 sherpa-onnx {{ sherpa_onnx_version }} 語音運行時與 silero VAD v5 語音活動偵測模型, 按 4 種 ABI 分別提供安裝套件",
+        "模型管理: 按簽名的模型目錄下載離線語音模型, 優先使用 AutoJs6 共享資源的發佈, 不可用時回退到 sherpa-onnx 官方發佈; 逐個檔案校驗 SHA-256 後啟用, 支援斷點續傳, 本地匯入 (tar, tar.bz2, zip), 刪除與預設模型, 僅限非商業用途或授權未知的模型需先接受授權",
         "10 種語言的 README, 插件中心說明與更新日誌, 由 JSON 來源檔案統一生成"
       ],
       "dependency": [
