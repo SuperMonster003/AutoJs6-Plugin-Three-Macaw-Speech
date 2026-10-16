@@ -1,14 +1,17 @@
 # Bundled speech-models catalog snapshot and trust anchor (roadmap P2.4, D24), checked by BundledCatalogTest.
-# catalog: the exact bytes of AutoJs6-Shared-Assets speech-models/catalogs/pending/v1/catalog-v1.json at commit 62d4a30
-#   (2026-10-16, 10 models, 9 mirrored and 1 upstream-only). Unsigned until the maintainer signs and promotes
-#   speech-models-v1 (roadmap P2.5); the plugin then bundles catalogs/catalog-v1.json and catalogs/catalog-v1.sig.json
-#   byte for byte and the signature must verify (roadmap appendix D Q12).
+# catalog: the exact bytes of AutoJs6-Shared-Assets speech-models/catalogs/catalog-v1.json at commit 827ac88, the signed
+#   v1 catalog promoted on 2026-10-16 (10 models, 9 mirrored and 1 upstream-only; identical to pending/v1 at 62d4a30).
+# signature: the detached offline signature catalogs/catalog-v1.sig.json of the same commit; BundledCatalogTest requires it to
+#   verify with the bundled key and to name its key id (roadmap P2.5, appendix D Q12).
 # public-key: speech-models/keys/catalog-signing-public.pem (maintainer commit 003d427), the speech-models family key.
 format=1
 catalog.path=app/src/main/assets/catalog/catalog-v1.json
 catalog.sha256=312332e29aa6dd0a1dac1ec1641b571330ec2ba9edca460bbf7420b08d97fa46
 catalog.version=1
-catalog.source=AutoJs6-Shared-Assets@62d4a30:speech-models/catalogs/pending/v1/catalog-v1.json
+catalog.source=AutoJs6-Shared-Assets@827ac88:speech-models/catalogs/catalog-v1.json
+signature.path=app/src/main/assets/catalog/catalog-v1.sig.json
+signature.sha256=f657da7695a1253c3d97d2b0626722cbdbcc87cd6b5a84fbe7ed6a21ec7804fb
+signature.source=AutoJs6-Shared-Assets@827ac88:speech-models/catalogs/catalog-v1.sig.json
 public-key.path=app/src/main/assets/catalog/catalog-signing-public.pem
 public-key.sha256=5eb66eaed87a07c1c0b5f72e3fb147d24fe5c82063722f898c8f3d9cd98b7c76
 public-key.keyId=p256-bf5f0f579c7fbef1
