@@ -1,0 +1,161 @@
+name: Build integrity
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-build:
+    name: Repository checks, unit tests and APKs
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          # check_repository.py compares VERSION_BUILD with the full commit count.
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Verify the repository contract, generated documents and the native ABI report
+        run: |
+          python .python/check_repository.py
+          python .python/generate_markdown.py --check
+          python .python/verify_native_alignment.py --check
+          python -m unittest discover -s .python/tests -p "test_*.py"
+
+      - name: Run unit tests, assemble APKs and lint
+        run: |
+          chmod +x gradlew
+          # The release APKs are built explicitly: R8 and resource shrinking failures only surface there.
+          # They stay unsigned on CI; the signed release gate (verifySignedReleaseArtifacts) and the release probe run locally.
+          ./gradlew :app:testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:assembleRelease :app:lintDebug -Pautojs.gradle.build.number.auto.increment.enabled=false -Pautojs.gradle.build.time.update.enabled=false --console=plain --stacktrace
+
+      - name: Check native packaging of every release split
+        run: python .python/verify_native_alignment.py --check --expect-compressed --apk app/build/outputs/apk/release/*.apk
+
+      - name: Upload debug, release and test APKs
+        uses: actions/upload-artifact@v7
+        with:
+          name: three-macaw-speech-apks
+          path: app/build/outputs/apk
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Upload test and lint reports after failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  verify-contract:
+    name: Contract and runtime (API ${{ matrix.api-level }}, ${{ matrix.arch }}, ${{ matrix.page-size }} B pages)
+    needs: verify-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    continue-on-error: ${{ matrix.experimental == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - api-level: 24
+            arch: x86
+            target: google_apis
+            profile: Nexus 5
+            page-size: 4096
+          - api-level: 35
+            arch: x86_64
+            target: google_apis
+            profile: pixel_7
+            page-size: 4096
+          # 16 KB pages (roadmap D14 / P0.3): the sherpa-onnx and onnxruntime libraries must load and run the VAD.
+          - api-level: 35
+            arch: x86_64
+            target: google_apis_ps16k
+            profile: pixel_7
+            page-size: 16384
+            ram-size: 4096M
+          # Android 17 only ships the 16 KB image; 3-Stove Agent saw its first install fail inside the image, so the job
+          # stays non-blocking until it is known to be stable.
+          - api-level: 37.1
+            arch: x86_64
+            target: google_apis_ps16k
+            profile: pixel_7
+            page-size: 16384
+            ram-size: 4096M
+            disk-size: 4096M
+            experimental: true
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run the activation, discovery, Binder and native runtime tests
+        uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: ${{ matrix.api-level }}
+          target: ${{ matrix.target }}
+          arch: ${{ matrix.arch }}
+          profile: ${{ matrix.profile }}
+          ram-size: ${{ matrix.ram-size }}
+          disk-size: ${{ matrix.disk-size }}
+          avd-name: Three_Macaw_Speech_CI_${{ matrix.api-level }}_${{ matrix.page-size }}
+          script: |
+            chmod +x gradlew
+            # The emulator runner executes every script line as a separate shell command, so a backslash continuation
+            # would become a literal Gradle task name; keep each command on one line (3-Block Compose lesson).
+            # System error dialogs are hidden so they cannot hold focus during the suite.
+            adb shell settings put global hide_error_dialogs 1
+            test "${{ matrix.page-size }}" = "4096" || test "$(adb shell getconf PAGE_SIZE | tr -d '\r')" = "${{ matrix.page-size }}"
+            ./gradlew :app:connectedDebugAndroidTest -Pautojs.gradle.build.number.auto.increment.enabled=false -Pautojs.gradle.build.time.update.enabled=false --console=plain --stacktrace; status=$?; mkdir -p app/build/reports/androidTests; adb logcat -d -b main -b system -b crash > app/build/reports/androidTests/logcat.txt || true; exit $status
+
+      - name: Upload instrumentation reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: instrumentation-reports-api${{ matrix.api-level }}-${{ matrix.page-size }}
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/connected/
+          if-no-files-found: ignore
+          retention-days: 7
