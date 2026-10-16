@@ -252,7 +252,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | 阶段 | 版本 | 主题 | 状态 |
 | --- | --- | --- | --- |
 | P0 | 1.0.0 | 仓库骨架: 构建链, sherpa-onnx AAR 接入, ABI 拆分与 16 KB 校验, 资源, 文档生成器, CI | 已完成 (2026-10-16; 工作流待首次推送后的远端运行) |
-| P1 | 宿主 6.8.0 | 宿主契约 `speech-api`, 绑定能力, 注册, 脚本 API `speech` | 未开始 |
+| P1 | 宿主 6.8.0 | 宿主契约 `speech-api`, 绑定能力, 注册, 脚本 API `speech` | 进行中 (2026-10-16 宿主本地提交 `b91aef068` .. `51b6bd3b7`; 余 P1.2 后台麦克风实测) |
 | P2 | 资产 + 1.0.0 | Shared-Assets `speech-models` 类别, 精选目录审核, 插件模型存储与目录刷新, `speech-models-v1` 发布 | 未开始 |
 | P3 | 1.0.0 | 识别, VAD 与唤醒词: 采集, 流式会话, 文件识别, 唤醒会话, 设备矩阵与性能基线 | 未开始 |
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 未开始 |
@@ -317,28 +317,28 @@ P0 (骨架 + AAR)
 
 ### P1.1 契约模块 `plugin-api/speech-api` (D21)
 
-- [ ] (宿主) 常量与 key 对象 (附录 C.1), `SpeechLimits` (会话数, feed 块大小, 文本长度, 文件大小, 关键词数, 热词数), `SpeechErrorCodes`; `consumer-rules.pro`; JVM 测试 (常量稳定性, key 不冲突, 限制值).
-- [ ] (宿主) AIDL: `ISpeechPlugin` (`getInfo` 居首, 其后 `getCapabilities`, `listModels`, `installModel`, `cancelOperation`, `removeModel`, `recognizeFile`, `detectVoice`, `openSession`, `openWakeSession`, `synthesizeToFile`), `ISpeechSession`, oneway `ISpeechSessionCallback` / `ISpeechWakeCallback` / `ISpeechProgressCallback`; 每个方法的 nullability, 输入上限, 输出上限, 错误语义, 线程行为与资源所有权写入 `docs/dev/speech-plugin-protocol-v1.md`.
-- [ ] (宿主) 生成 `speech-api.aar` 与 `common-plugin-api.aar`, 复制到插件 `libs/` 并锁定 SHA-256 (`locks/host-api-aars.lock`); 插件契约测试断言 action / category / 包名 / 契约版本.
+- [x] (宿主) 常量与 key 对象 (附录 C.1), `SpeechLimits` (会话数, feed 块大小, 文本长度, 文件大小, 关键词数, 热词数), `SpeechErrorCodes`; `consumer-rules.pro`; JVM 测试 (常量稳定性, key 不冲突, 限制值). 证据: 宿主提交 `1d6280bf8` (本地, 未推送); `plugin-api/speech-api` (包 `org.autojs.plugin.speech.api`) 含 `SpeechPluginActions` (`SPEECH = "org.autojs.plugin.SPEECH"`, `SERVICE_CATEGORY = "speech"`), `SpeechPluginIds` (官方 ID / 包名, `ENGINE`, `CATEGORY`, `REQUIRED_HOST_VERSION_CODE = 5451`), `SpeechContract` (`CONTRACT_VERSION = 1`, 事件, 结束原因, 会话状态, 音频来源, 模型种类与来源, 功能, 格式, 宿主侧超时), `SpeechCapabilityKeys`, `SpeechLimits`, `SpeechOptionKeys` / `SpeechResultKeys` / `SpeechModelKeys`, `SpeechErrorCodes` 与 `consumer-rules.pro`; `:plugin-api:speech-api:testDebugUnitTest` 中 `SpeechContractTest` (7 项: 字面值快照, 键唯一, 闭合集合, 限制值与分层关系, 错误码与 encode / decode) 通过. 偏差: D27 的错误码集合补充宿主侧的 `SESSION_CLOSED`, `TIMEOUT` 与 `INTERNAL`; 能力键另有 `speechEngineName`, `speechEngineVersion` 与 `speechMicrophoneGranted` (仅 `getCapabilities`).
+- [x] (宿主) AIDL: `ISpeechPlugin` (`getInfo` 居首, 其后 `getCapabilities`, `listModels`, `installModel`, `cancelOperation`, `removeModel`, `recognizeFile`, `detectVoice`, `openSession`, `openWakeSession`, `synthesizeToFile`), `ISpeechSession`, oneway `ISpeechSessionCallback` / `ISpeechWakeCallback` / `ISpeechProgressCallback`; 每个方法的 nullability, 输入上限, 输出上限, 错误语义, 线程行为与资源所有权写入 `docs/dev/speech-plugin-protocol-v1.md`. 证据: 宿主提交 `1d6280bf8` (AIDL), `51b6bd3b7` (协议文档); `SpeechAidlOrderTest` 冻结 5 个接口的事务顺序与 oneway 标记. 偏差 (D21 推翻点 P1.1 内的追加): `ISpeechPlugin` 在附录 C.1 的 11 个方法之后追加 `importModel`, `setDefaultModel`, `refreshCatalog` (对应附录 B 的 `models.importFile` / `setDefault` / `refreshCatalog`); `openWakeSession` 增加听写回调参数 `listenCallback`, `ISpeechSession` 增加 `finishRound(discard)`, 用于 D16 的 "唤醒后自动转听写" 轮次 (唤醒命中带 `round`, 宿主按轮次配对两个 oneway 通道); 每个应答与完成回调都带 `contractVersion`.
+- [x] (宿主) 生成 `speech-api.aar` 与 `common-plugin-api.aar`, 复制到插件 `libs/` 并锁定 SHA-256 (`locks/host-api-aars.lock`); 插件契约测试断言 action / category / 包名 / 契约版本. 证据: 2026-10-16 `:plugin-api:speech-api:assembleRelease` (宿主 `1d6280bf8` 的源码, 至 `51b6bd3b7` 未变) 产出 `speech-api.aar` (SHA-256 `74f29a089c7da86c07920a956455b18e8039def5f006c7fddf78af1db33cd1f2`), 同轮重建的 `common-plugin-api.aar` 与已暂存的 `ed7a7194...` 字节一致; 锁文件, `libs/README.md` 与 `THIRD_PARTY_NOTICES.md` 已同步, `HostApiAarLockTest` (5) 固定产物集合为 `common-plugin-api` 与 `speech-api`. 新增 JVM `SpeechContractAlignmentTest` (4 项: action, category, INFO, 插件 ID / 引擎 / 变体, 包名, `ISpeechPlugin.DESCRIPTOR`, 契约版本, 能力键, 最低宿主构建号, Manifest), 设备 `ThreeMacawSpeechContractTest` 改用 `SpeechPluginActions` 发现能力服务并断言 `ISpeechPlugin.DESCRIPTOR`; `:app:testDebugUnitTest` 8 个类 38 项通过, Sony XQ-AT72 (QV710AF65F, API 31) 设备测试 10/10 通过. 能力服务仍是只带描述符的占位 Binder, `ISpeechPlugin.Stub` 随 P3 / P4 实现.
 
 ### P1.2 绑定与后台麦克风 (D22)
 
-- [ ] (宿主) `AidlPluginHost` 增加可选绑定参数 `includeCapabilities` (API 29+ 追加 `BIND_INCLUDE_CAPABILITIES`, 可选 `BIND_IMPORTANT`), 默认关闭, 仅 `SpeechPluginHost` 开启; JVM 测试 flags 组合.
-- [ ] (宿主) `core/plugin/speech/SpeechPluginHost.kt`: `discover` / `select` / 会话代理 (`SpeechSessionProxy` 持有会话 Binder 与回调 Stub, 宿主侧 `linkToDeath` 插件进程), 操作 ID 与取消, 文件 pfd 的只读 grant.
+- [x] (宿主) `AidlPluginHost` 增加可选绑定参数 `includeCapabilities` (API 29+ 追加 `BIND_INCLUDE_CAPABILITIES`, 可选 `BIND_IMPORTANT`), 默认关闭, 仅 `SpeechPluginHost` 开启; JVM 测试 flags 组合. 证据: 宿主提交 `b91aef068`; 新参数 `includeCapabilities` 与 `important` 默认 false, flags 由纯函数 `AidlPluginHost.bindFlags` 计算 (专用租约与连接池两条绑定路径共用); `AidlPluginHostBindFlagsTest` (6 项: 框架常量值, 未开启时仅 `BIND_AUTO_CREATE`, API 28 / 29 边界, speech 组合, API 34 的 `BIND_ALLOW_ACTIVITY_STARTS` 与外部服务 flag) 通过.
+- [x] (宿主) `core/plugin/speech/SpeechPluginHost.kt`: `discover` / `select` / 会话代理 (`SpeechSessionProxy` 持有会话 Binder 与回调 Stub, 宿主侧 `linkToDeath` 插件进程), 操作 ID 与取消, 文件 pfd 的只读 grant. 证据: 宿主提交 `1d6280bf8`; `SpeechPluginHost` (选择按引擎 `speech` / 变体 `default`, 校验契约版本与 `requiresHostVersion >= 5451`, 按功能拒绝未声明的调用, 缺失 / 停用 / 不兼容分别映射 `PLUGIN_UNAVAILABLE` / `PLUGIN_DISABLED` / `PLUGIN_INCOMPATIBLE`), `SpeechSessionProxy` 与 `SpeechWakeSessionProxy` (每个会话一个专用绑定租约, `linkToDeath` 插件进程, 死亡时合成 `error(SESSION_CLOSED)` + `end(error)`), `SpeechEventGate` (唯一 `end`), `SpeechProgressBinder` (操作 id, 调用方取消或超时时 `cancelOperation`), `SpeechAudioInput` (只读 pfd, 宿主先查 WAV 头与 200 MiB) 与 `SpeechOutputFile` (合成输出暂存在目标旁, 校验后原子改名); JVM `SpeechErrorMapperTest` (4), `SpeechEventGateTest` (3), `SpeechAudioTest` (4) 通过; 设备往返见 P1.4 测试条目 (假插件 `test-apps/speech-provider-conformance`, 独立 uid, 含进程死亡用例).
 - [ ] (测试) 真机验证 (API 31 Sony, 33 Sony / Redmi, 35 Xiaomi Pad / OnePlus, 36 Samsung): 宿主脚本在后台 (其他应用在前台, 以及熄屏) 时插件 `AudioRecord` 读到的不是静音帧; 记录每台结果; 不成立的机型按 D22 备选并写入附录 D Q5.
 
 ### P1.3 注册, 协议文档, changelog 与版本回填
 
-- [ ] (宿主) `InstalledPluginRepository` 两张表加入 `SpeechPluginHost.ACTION_SPEECH`; `PluginInstallWizardCatalog` 加 `entry(official("three.macaw.speech"), "Three Macaw Speech", TOOLS)` (附录 D Q1); `AndroidManifest.xml` `<queries>` 加包名; R8 规则; 相关 JVM 测试.
-- [ ] (插件) `REQUIRES_HOST_VERSION` 临时值 = 当时宿主 `VERSION_BUILD + 1 + 1652` (D28), 同步 README / 测试夹具.
-- [ ] (宿主) `docs/dev/speech-plugin-protocol-v1.md` 定稿; 6.8.0 `.changelog/lang_zh-Hans.json` 增加 `speech` 模块与插件条目 (其他语言由维护者同步); 宿主提交只落本地.
+- [x] (宿主) `InstalledPluginRepository` 两张表加入 `SpeechPluginHost.ACTION_SPEECH`; `PluginInstallWizardCatalog` 加 `entry(official("three.macaw.speech"), "Three Macaw Speech", TOOLS)` (附录 D Q1); `AndroidManifest.xml` `<queries>` 加包名; R8 规则; 相关 JVM 测试. 证据: 宿主提交 `1d6280bf8`; 两张表, 引擎到 action 的映射 (`PluginCenterViewModel`), 向导 `TOOLS` 条目 (不进内置配置), `<queries>` 中的 SPEECH intent 与包名; R8 由 `speech-api` 的 `consumer-rules.pro` 保留契约类; `PluginCenterSpeechRegistrationTest` (5) 与更新条目数为 49 的 `PluginInstallWizardCatalogTest` 通过.
+- [x] (插件) `REQUIRES_HOST_VERSION` 临时值 = 当时宿主 `VERSION_BUILD + 1 + 1652` (D28), 同步 README / 测试夹具. 证据: 开工时宿主 `VERSION_BUILD = 3798` (维护者 `bc65c8256`), 临时值 3798 + 1 + 1652 = 5451; 宿主提交 `7ceef07da` 把 `VERSION_BUILD` 提为 3799 (versionCode 5451), 契约常量 `SpeechPluginIds.REQUIRED_HOST_VERSION_CODE` 同为 5451. 插件 `app/build.gradle.kts`, `ThreeMacawSpeechContract.REQUIRED_HOST_VERSION`, `.readme/common.json` 与生成的 README / changelog (10 种语言) 同步, `PluginRuntimeInfoTest` 与 `SpeechContractAlignmentTest` 断言 5451.
+- [x] (宿主) `docs/dev/speech-plugin-protocol-v1.md` 定稿; 6.8.0 `.changelog/lang_zh-Hans.json` 增加 `speech` 模块与插件条目 (其他语言由维护者同步); 宿主提交只落本地. 证据: 宿主提交 `51b6bd3b7` (本地, 未推送): 协议文档 (发现与绑定, 逐方法的线程 / 超时 / 上限 / 结果 / 错误, 描述符, 会话与操作的资源所有权, 唤醒轮次, 限制, 错误码, 后台麦克风, 脚本路径); changelog 增加 "3-Macaw Speech 插件" 与 "speech 模块" 两条 feature 并重新生成 zh-Hans 的 Markdown. 维护者同一文件中未提交的条目移动未被带入该提交.
 
 ### P1.4 脚本 API `speech` (D4, D27)
 
-- [ ] (宿主) `runtime/api/augment/speech/Speech.kt` (`Augmentable`, 方法见附录 B.1), `SpeechSession.kt` / `SpeechWakeSession.kt` (EventEmitter, `stop` / `cancel` / `feed` / `isActive`, 脚本退出时自动关闭), `SpeechModels.kt` (`list` / `install` / `installAsync` / `remove` / `importFile` / `setDefault` / `getDefault`), `SpeechErrorMapper`; `ScriptRuntime` 挂载 `speech` 与 `$speech`.
-- [ ] (宿主) 参数规范化与边界: 路径解析 (相对脚本目录), PCM 输入类型 (`ArrayBuffer` / `Int16Array` / `byte[]`), options 校验, `RegExp` 不涉及; `LIMIT_EXCEEDED` 在宿主侧先判.
-- [ ] (宿主) 退化: `speech.isAvailable()`; 缺插件抛 `PLUGIN_UNAVAILABLE` 并带安装向导提示; 未启用 / 不兼容走插件中心既有提示; 宿主不保留任何识别或合成实现.
-- [ ] (测试) JVM: options 解析, 错误映射, 会话状态机 (ready -> listening -> ended, 重复 stop 幂等); 设备: 用 P0 空壳 + 假模型路径验证 Binder 往返与错误传播 (真实识别在 P3).
+- [x] (宿主) `runtime/api/augment/speech/Speech.kt` (`Augmentable`, 方法见附录 B.1), `SpeechSession.kt` / `SpeechWakeSession.kt` (EventEmitter, `stop` / `cancel` / `feed` / `isActive`, 脚本退出时自动关闭), `SpeechModels.kt` (`list` / `install` / `installAsync` / `remove` / `importFile` / `setDefault` / `getDefault`), `SpeechErrorMapper`; `ScriptRuntime` 挂载 `speech` 与 `$speech`. 证据: 宿主提交 `7ceef07da` (`SpeechErrorMapper` 在 `1d6280bf8`); 附录 B.1 全部方法 (另有 `models.refreshCatalog`), 会话属性 `id`, `modelId`, `source`, `round`, `startedAt`, `state`, `reason`, `isEnded` 与 `result()`, 唤醒会话的 `thenListen` 轮次以 `wake` 事件的 `listen` 交给脚本 (轮次事件在命中派发后才投递), `speech.SpeechError` 构造器; `SpeechService` 在脚本退出时静默取消全部会话. 附录 D Q8 按 (a): 识别文本不写宿主日志.
+- [x] (宿主) 参数规范化与边界: 路径解析 (相对脚本目录), PCM 输入类型 (`ArrayBuffer` / `Int16Array` / `byte[]`), options 校验, `RegExp` 不涉及; `LIMIT_EXCEEDED` 在宿主侧先判. 证据: 宿主提交 `7ceef07da`; `SpeechScriptArguments` (纯 Kotlin: 未知键按名拒绝, 形态与范围为 `INVALID_OPTIONS`, 会话时长, 热词, 关键词, 文本与 token 长度为 `LIMIT_EXCEEDED`, 拒绝 URI 路径), `SpeechCalls.pcmBytes` (`ArrayBuffer`, 类型数组视图, `byte[]`; 大端缓冲区转小端), 脚本 PCM 由宿主包成临时 WAV 交给 `recognizeFile`; JVM `SpeechScriptArgumentsTest` (10) 与 `SpeechScriptValuesTest` (4) 通过.
+- [x] (宿主) 退化: `speech.isAvailable()`; 缺插件抛 `PLUGIN_UNAVAILABLE` 并带安装向导提示; 未启用 / 不兼容走插件中心既有提示; 宿主不保留任何识别或合成实现. 证据: 宿主提交 `1d6280bf8` / `7ceef07da`; 缺插件时信息为宿主本地化的 `error_missing_required_plugin_for_module_label` ("3-Macaw Speech", 按 D27 复用, 不另加向导链接), 未启用 / 未授权为 `PLUGIN_DISABLED`, 版本不足或不应答契约 (如 P0 骨架) 为 `PLUGIN_INCOMPATIBLE`; 宿主中没有识别或合成代码. 设备证据见下一条.
+- [x] (测试) JVM: options 解析, 错误映射, 会话状态机 (ready -> listening -> ended, 重复 stop 幂等); 设备: 用 P0 空壳 + 假模型路径验证 Binder 往返与错误传播 (真实识别在 P3). 证据: JVM (宿主 `7ceef07da`) `SpeechSessionTest` (8 项: `pending` -> `active` -> `ended`, 事件顺序与载荷, 唯一终结 `end`, 经端口的 `stop` / `cancel` 及结束后幂等, `feed` 规则, 溢出, 脚本退出静默, 唤醒轮次先到后到两种顺序), `SpeechScriptArgumentsTest` (10), `SpeechErrorMapperTest` (4) 等; 2026-10-16 `:app:testAppDebugUnitTest` 选定的 speech 与插件中心测试 101 项全部通过. 设备 (宿主 `1d6280bf8` 的 `test-apps/speech-provider-conformance` 假插件, 独立 uid, 与宿主同签名): `SpeechScriptApiTest` 4 项在 Sony XQ-AT72 (QV710AF65F, API 31) 与 Xiaomi Pad 23046RP50C (968e9f18, API 35) 上均通过, 覆盖能力, 模型 (列表, 默认, 带进度安装, 非商用许可, 删除, 设默认, 刷新目录), WAV 与 PCM 识别, 假模型 `asr.missing` 的 `MODEL_MISSING`, 非 WAV 的 `UNSUPPORTED_FORMAT`, 缺文件的 `IO_FAILED`, 语音活动, 合成到暂存文件 (无残留), `Async` 形态, 外部 PCM 会话, 带 `thenListen` 的唤醒轮次, 以及插件进程被杀后的 `error(SESSION_CLOSED)` + `end(error)`. 未装假插件时: 两台都看到 `PLUGIN_UNAVAILABLE` (含 "3-Macaw Speech" 的本地化文案); 在 QV710AF65F 上只装本仓库 P0 骨架 (占位 Binder, 要求宿主 5451) 时看到 `PLUGIN_INCOMPATIBLE`. 参数错误 (`INVALID_OPTIONS`) 与超长文本 (`LIMIT_EXCEEDED`) 在到达插件前由宿主报告. 未执行: Sony XQ-DQ72 (QV770340J7, API 33) 本轮离线, Redmi 22120RN86C 保留旧宿主未改动, Samsung API 36 / 37 未连接.
 
 ---
 
@@ -736,14 +736,14 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 
 | 编号 | 事项 | 选项 | 拍板时点 |
 | --- | --- | --- | --- |
-| Q1 | 安装向导分类 | (a) `TOOLS` (与 3-Stone AI / 3-Stove Agent 同列, 宿主零枚举改动); (b) 新分类 `SPEECH` 或 `AUDIO` (需宿主枚举, 10 语言标题, 插件中心分组) | P1.3 前 |
+| Q1 | 安装向导分类 | (a) `TOOLS` (与 3-Stone AI / 3-Stove Agent 同列, 宿主零枚举改动); (b) 新分类 `SPEECH` 或 `AUDIO` (需宿主枚举, 10 语言标题, 插件中心分组) | 已定 (a) `TOOLS` (2026-10-16 按推荐项, P1.3) |
 | Q2 | sherpa-onnx AAR 来源 | (a) Maven Central 坐标 (若 1.13.8 存在且字节一致); (b) `libs/` + 锁文件 | P0.2 已定 (b): Maven Central 无坐标, JitPack 只是同字节转存且按需重建 (D13) |
 | Q3 | 镜像归档格式 | (a) 未压缩 `tar` (模型本身已是二进制, 解包快); (b) `zip` (Android 原生, 可随机访问); (c) 与上游一致 `tar.bz2` | P2.1 已定 (a): 规范 USTAR (只含普通文件, 按路径排序, 0644, uid / gid 0, mtime 0, 末尾两个零块), 由标准库写出, 字节与 Python / zlib / bzip2 版本无关, 体积可由 `files[]` 算出; zip 需要确定的 deflate 或存储模式, tar.bz2 解压慢 (Shared-Assets `c7d1adf`) |
 | Q4 | 唤醒词原文转 token | (a) 上游 Kotlin API 已内置 (spike 结论); (b) 插件内置拼音表 + BPE 编码; (c) 关键词只接受拼音 / 英文 token (不推荐) | P3.4 spike 后 |
 | Q5 | 后台麦克风不成立的机型 | (a) 插件自身 microphone 前台服务; (b) 文档声明限制 | P1.2 实测后 |
 | Q6 | 系统 TTS 引擎的双语 Voice 报告方式 | (a) 每个说话人报告 zh-CN 与 en-US 两个 Voice; (b) 只报告 zh-CN 并在 `onIsLanguageAvailable` 对 en 返回 `LANG_AVAILABLE` | P4.2 |
 | Q7 | 模型下载是否默认允许计量网络 | (a) 默认询问 (与 3-Stone AI 一致); (b) 默认允许 | P2.3 |
-| Q8 | 识别结果是否默认写入宿主控制台日志 | (a) 不记录 (隐私); (b) 仅 `final` 级别 debug 日志 | P1.4 |
+| Q8 | 识别结果是否默认写入宿主控制台日志 | (a) 不记录 (隐私); (b) 仅 `final` 级别 debug 日志 | 已定 (a) 不记录 (2026-10-16 按推荐项, P1.4) |
 
 ---
 
