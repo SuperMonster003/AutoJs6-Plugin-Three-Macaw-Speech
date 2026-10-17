@@ -10,7 +10,7 @@
 
 1. 每次会话开始时, 从 "阶段总览" (第 6 节) 选取一个或多个未完成条目, 优先级按阶段顺序; 单次会话可完成多个小节, 除非单个小节已足够繁杂.
 2. 条目完成后勾选 `[x]`, 并在条目后追加证据 (提交 hash / 测试类名 / 设备型号与 API / 模型 ID / 度量值), 证据等级见附录 E. 未勾选条目属于规划意向, 不代表当前版本能力.
-3. 条目前缀标明主要落点: `(插件)` 本仓库, `(宿主)` `D:/idea-projects/AutoJs6`, `(资产)` `D:/idea-projects/AutoJs6-Shared-Assets`, `(索引)` `D:/idea-projects/AutoJs6-Official-Plugins-Index`, `(文档)` AutoJs6-Documentation / AutoJs6-TypeScript-Declarations / AutoJs6-Plugin-Ace-Editor / AutoJs6-Plugin-Offline-Docs 四个关联仓库 (均位于 `D:/idea-projects/`), `(设计)` 设计文档, `(测试)`, `(发布)`.
+3. 条目前缀标明主要落点: `(插件)` 本仓库, `(宿主)` `D:/idea-projects/AutoJs6`, `(资产)` `D:/idea-projects/AutoJs6-Shared-Assets`, `(索引)` `D:/idea-projects/AutoJs6-Official-Plugins-Index`, `(文档)` AutoJs6-Documentation / AutoJs6-TypeScript-Declarations / AutoJs6-Plugin-Ace-Editor / AutoJs6-Plugin-Offline-Docs 四个关联仓库 (均位于 `D:/idea-projects/`), `(设计)` 设计文档, `(其他插件)` 3-Stove Agent / 3-Stone AI 等其他插件仓库 (由各自的会话实现), `(测试)`, `(发布)`.
 4. 涉及宿主公开契约 (speech 契约, 脚本 API) 的条目, 完成后必须同步宿主 `docs/dev/`, 宿主 `.changelog` (10 种语言, 本轮先只写 zh-Hans, 与 Batch Rename 做法一致) 与本仓库 `.changelog`. 宿主侧提交只落本地, 由维护者合并与推送. `AutoJs6-Shared-Assets` 的推送与签名由维护者执行.
 5. 第 1 节 "固定决策" 由维护者 2026-10-16 经三轮选择题确认, 后续阶段不再重新讨论; 第 2 节 "派生技术决策" 可在进入对应阶段前推翻 (推翻点已逐条标注), 之后视同固定; 附录 D "待决事项" 在进入对应阶段前由维护者拍板, 拍板结果回填到第 1 节或第 2 节.
 6. 本仓库骨架 (Gradle / Manifest / 资源 / CI) 在 P0.1 按 `D:/idea-projects/AUTOJS6_PLUGIN_NEW_REPO_AGENTS.md` 生成, 其裁剪版即本仓库 `AGENTS.md`; 命名与身份派生按 `AUTOJS6_PLUGIN_THREE_SERIES_RENAME_AGENTS.md` 第 3 节 (Macaw 为 5 字母单词, `ThreeMacaw` 恰好 10 字母); 有独立启动入口 (D7), 因此 `AUTOJS6_PLUGIN_STANDALONE_SETTINGS_AGENTS.md` 与 `AUTOJS6_PLUGIN_BLACK_N_WHITE_ADAPTIVE_ICON_AGENTS.md` 均适用; 工程约定 (构建, 资源, 文档生成, 提交计数, 推送前检查 `py D:/idea-projects/prepush_check.py`) 以 `AGENTS.md` 与 `D:/idea-projects/COMMON_AGENTS.md` 为准, 本文件只记录 "改什么" 与证据. 所有文案 (10 种语言) 只用 ASCII 标点.
@@ -31,7 +31,7 @@
 | D5 | 模型分发: APK 只含运行时与 VAD, 其余按需下载 | 仿 3-Stone AI: 内置固定版本的模型目录快照, 固定字节数 + SHA-256 校验, 下载到插件私有存储并原子激活; 支持从本地文件导入. 不按语言拆变体 APK, 不在 APK 内置识别或合成模型. |
 | D6 | 录音归属: 插件采集, 宿主以 `BIND_INCLUDE_CAPABILITIES` 绑定 | 插件自己申请 `RECORD_AUDIO` 并在进程内采集, 音频不过 Binder; 宿主绑定时传递前台能力, 脚本在后台也能听. 契约同时接受文件 / PCM 输入 (宿主或脚本自备音频). 宿主虽已持有 `RECORD_AUDIO`, 不替插件录音. |
 | D7 | 独立界面: 模型管理 + 设置 + 试听试说 + 发行历史 | 有启动器入口 (Icon Studio 亮暗图标), 按 `AUTOJS6_PLUGIN_STANDALONE_SETTINGS_AGENTS.md`; 下载进度, 模型选择, 麦克风测试与 TTS 试听都在界面内完成. 不做聊天或助手界面. |
-| D8 | 3-Stove Agent 联动: 1.0.0 脚本级样例, 1.1.0 内置语音助手 | 1.0.0 随宿主附样例 (`speech.wake -> speech.listen -> ai.agent.run`); 插件内置的常驻唤醒, 悬浮麦克风与直调 Stove Agent AIDL 排到 1.1.0 (P7). |
+| D8 | 3-Stove Agent 联动: 1.0.0 脚本级样例, 1.1.0 内置语音助手 | 1.0.0 随宿主附样例 (`speech.wake -> speech.listen -> ai.agent.run`); 插件内置的常驻唤醒, 悬浮麦克风与直调 Stove Agent AIDL 排到 1.1.0 (P7). 2026-10-17 补充: 由系统助理手势触发的数字助理提前到 1.0.0 (P5.7, D48-D56), 交给 Stove 改走 D50 的 `VOICE_COMMAND` 入口而不是直调 AIDL; 3-Stove Agent 与 3-Stone AI 不各自实现常驻监听. |
 | D9 | 模型来源: `AutoJs6-Shared-Assets` 为主, sherpa-onnx 上游 URL 为备用 | Shared-Assets 新增 `speech-models` 类别 (独立目录 / 清单 / 标签前缀 `speech-models-vN` / 签名密钥), 按模型重打包为内容寻址的不可变 Release 资源; 目录每条可同时记录上游 sherpa-onnx Release URL, 镜像不可用时回退上游, 两条路径最终都按文件级 SHA-256 校验 (D24). |
 | D10 | 1.0.0 目录范围: 精选 | 识别: 流式 zh-en zipformer int8, 流式 zh int8 (2025; 2026-10-16 维护者决定保留目录条目但仅走上游 URL, 不镜像), SenseVoice int8 官方 2024-07-17 导出 (zh / en / ja / ko / yue 离线, 带标点, FunASR 模型许可 1.1 可商用; 2026-10-16 维护者决定以此替换 2025-09-09 粤语微调版), 流式 en int8; 合成: vits-melo-tts-zh_en, kokoro-multi-lang-v1_1, vits-icefall-zh-aishell3, piper en_US-lessac-medium, matcha-icefall-zh-baker; 唤醒词 zh-en 3M; VAD silero v5. 清单见附录 A, 其他语言按需追加. 两项决定的证据: Shared-Assets `89f04a6` (附录 D Q10 / Q11). |
 | D11 | 仅限非商业用途的模型: 收录但标注许可并在下载前提示 | 目录每条带 `license` 与 `commercialUse` 字段; `commercialUse=false` 的模型 (如 matcha-icefall-zh-baker 的 DataBaker 语料) 在界面与脚本下载前给出许可提示, 脚本侧需显式 `acceptLicense: true`. |
@@ -41,7 +41,7 @@
 
 ## 2. 派生技术决策
 
-D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定.
+D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定. D48-D56 是 P5.7 (系统数字助理) 开工前维护者经两轮选择题选定的决策 (2026-10-17; 除 D49 选 "说完后点按钮选" 外均为推荐项), 视同固定.
 
 | 编号 | 决策 | 含义 | 推翻点 |
 | --- | --- | --- | --- |
@@ -73,13 +73,22 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D38 | 界面导入本地模型 | 来源为文件 (tar / tar.bz2 / zip, `OpenDocument` 复制到 `cacheDir/imports`) 或 SAF 文件夹 (`OpenDocumentTree`, `DocumentTree` 适配 `ImportTree`). 先按目录 `files[]` 的大小与 SHA-256 自动匹配, 命中即以目录身份登记, 需要时先弹 D11 许可提示; 不匹配时 (`NoCatalogMatchException`, 错误码 `INVALID_OPTIONS`) 弹表单填 种类 / 模型类型 / 名称 / 语言 / ID, 用同一个文件重试. | P5.1 (已定) |
 | D39 | 设置预设 | 端点灵敏度 3 档: 灵敏 600 ms / 标准 1200 ms (协议默认) / 宽松 2000 ms; 模型空闲释放 4 档: 1 / 5 (默认, D30) / 15 / 30 分钟, 写入 `EngineCache.idleMillis` 后立即生效; 语速 0.5 - 2.0, 步长 0.1. 存储值超出预设时按 `SpeechPreferencePolicy` 夹取. 未采用 4 档端点与 "不释放". | P5.2 (已定) |
 | D40 | 关于页的许可全文 | GPL-3.0 全文 (`https://www.gnu.org/licenses/gpl-3.0.txt`) 与 Unicode 使用条款 (`csukuangfj/espeak-ng` 提交 `ed530aa` 的 `src/ucd-tools/COPYING.UCD`) 2026-10-16 经维护者同意下载入库 `third_party/licenses/`, SHA-256 与来源记入 `locks/legal-texts.lock`; 构建任务 `generateLegalAssets` 校验锁文件后与 `LICENSE`, `THIRD_PARTY_NOTICES.md` 一起复制进生成的 `assets/legal/`, `src/main/assets` 不留副本 (D32). | P5.2 (已定) |
-| D41 | 系统语音输入入口: 1.0.0 的 `ACTION_RECOGNIZE_SPEECH` Activity | 随 1.0.0 发布 (P5.6). 插件导出 `ui.voice.VoiceInputActivity`, 应答 `android.speech.action.RECOGNIZE_SPEECH` + DEFAULT, 不受插件权限保护 (任何应用都可调用, 例如 3-Stove Agent 的麦克风按钮), 只经 `RecognizerIntent.EXTRA_RESULTS` 返回识别文字: 不返回音频, 不改模型或设置, 不启动下载; 识别经进程内 `SpeechPluginBinder.openSession` 运行 (与试听试说页同一路径, 共用唯一的麦克风, D16), 识别文字不写日志 (附录 D Q8 (a)). 不实现 `RecognitionService` (SpeechRecognizer API: 用户需在系统设置里选默认识别服务, API 31+ 还要按调用方 AttributionSource 校验麦克风权限), 列入 P7. 不新增权限 (D29), 不改宿主契约, `speechFeatures` 不变. | P5.6 (已定) |
+| D41 | 系统语音输入入口: 1.0.0 的 `ACTION_RECOGNIZE_SPEECH` Activity | 随 1.0.0 发布 (P5.6). 插件导出 `ui.voice.VoiceInputActivity`, 应答 `android.speech.action.RECOGNIZE_SPEECH` + DEFAULT, 不受插件权限保护 (任何应用都可调用, 例如 3-Stove Agent 的麦克风按钮), 只经 `RecognizerIntent.EXTRA_RESULTS` 返回识别文字: 不返回音频, 不改模型或设置, 不启动下载; 识别经进程内 `SpeechPluginBinder.openSession` 运行 (与试听试说页同一路径, 共用唯一的麦克风, D16), 识别文字不写日志 (附录 D Q8 (a)). 不实现 `RecognitionService` (SpeechRecognizer API: 用户需在系统设置里选默认识别服务, API 31+ 还要按调用方 AttributionSource 校验麦克风权限), 列入 P7; 2026-10-17 因数字助理必须声明识别服务, 提前到 P5.7 (D56). 不新增权限 (D29), 不改宿主契约, `speechFeatures` 不变. | P5.6 (已定) |
 | D42 | 语音输入界面: 底部弹层 | 透明窗口 + 半透明遮罩 + 底部卡片, 调用方界面仍可见: 标题 (调用方的 `EXTRA_PROMPT`, 否则默认提示), 麦克风图标随语音活动脉动 (契约没有电平事件, 按 VAD 事件), partial 灰字实时显示, "停止" (提前结束并返回已识别的文字) 与 "取消" 两个按钮; 点遮罩或返回键等同取消. 外观跟随插件 / 宿主 (D26), 收音期间不因外观变化重建. | P5.6 (已定) |
 | D43 | 默认启用 + 设置开关 | 组件默认启用; 设置页 "识别" 组新增 "作为系统语音输入" 开关, 关闭即以 `DONT_KILL_APP` 禁用该组件 (PackageManager 组件状态即设置本身, 不另存偏好, 与启动器 alias 同法). 设备已有 Google 等识别 Activity 时调用方会先弹系统选择器 (2026-10-16 实测 Sony XQ-AT72 / XQ-DQ72 已有 Google 的两个处理者, G8441 没有), 不想看到选择器的用户可关闭开关. | P5.6 (已定) |
 | D44 | 一次输入的结束与时长 | 首句 `final` 即以 `RESULT_OK` 返回 (静音端点, 或点 "停止" 后会话 `finish` 给出的末句); 静音时长取设置页端点灵敏度 (600 / 1200 / 2000 ms, D39), 调用方给 `EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS` 时优先 (夹到 300 - 5000 ms); VAD 开关取设置页 (D35 的作用范围随之扩展); 开始收音后 8 s 内没有语音返回 `RESULT_NO_MATCH`; 单句上限 60 s, 到点按 "停止" 处理. 结果为空同样返回 `RESULT_NO_MATCH`. | P5.6 (已定) |
 | D45 | `EXTRA_LANGUAGE` 只用于选模型 | 默认识别模型的语言覆盖该语言 (按主语言子标签比较, `zh-CN` / `zh-Hans-CN` 匹配 `zh`) 就用它, 否则取覆盖它的已装识别模型 (目录推荐优先, 再按模型 ID), 都不覆盖仍用默认模型; SenseVoice 保持自动识别语种 (不传 `language`), 中文界面说英文也能识别. 没有 `EXTRA_LANGUAGE` 时用默认模型. | P5.6 (已定) |
 | D46 | 其他 `RecognizerIntent` extra: 最小集合 + 偏置词 | `EXTRA_PROMPT` 显示为弹层标题 (截断到 200 字符); `EXTRA_MAX_RESULTS` 接受, 只返回 1 条 (模型只有一个假设), 不返回 `EXTRA_CONFIDENCE_SCORES`; `EXTRA_PARTIAL_RESULTS` 忽略 (只对 SpeechRecognizer 有意义, partial 在弹层内显示); `EXTRA_BIASING_STRINGS` (API 33+) 映射为热词 (去空白与重复, 截到 `SpeechLimits.MAX_HOTWORDS` 200 条, 每条至多 `MAX_TOKEN_CHARS` 128 字符), 只对带 `bpe.vocab` 的 transducer 模型生效 (D17), 其他模型不传, 不产生 warning; `EXTRA_RESULTS_PENDINGINTENT`, `EXTRA_GET_AUDIO`, `EXTRA_LANGUAGE_MODEL`, `EXTRA_PREFER_OFFLINE` 等忽略. 维护者在 "最小集合" 之外加选了偏置词. | P5.6 (已定) |
 | D47 | 异常时弹层内引导 | 未授权麦克风: 弹层内直接弹系统权限对话框, 授权后立即开始; 拒绝后显示说明 + "打开应用设置" (回到弹层时重新检查). 没有识别模型: 显示说明 + "安装模型" (打开首页识别组). 麦克风被脚本占用 (`SESSION_BUSY`): 显示说明. 返回码: 用户取消 (取消按钮, 遮罩, 返回键) 为 `RESULT_CANCELED`; 无语音或空结果为 `RESULT_NO_MATCH`; 显示引导后关闭弹层时按原因返回: 权限被拒, 麦克风被占用或录音失败为 `RESULT_AUDIO_ERROR`, 没有模型, 模型加载或引擎失败为 `RESULT_SERVER_ERROR` ("安装模型" 同样以 `RESULT_SERVER_ERROR` 结束弹层). 未采用 "立即返回错误码" 与 "无模型时禁用入口". | P5.6 (已定) |
+| D48 | 系统数字助理: 1.0.0 的 `VoiceInteractionService` | 随 1.0.0 发布 (P5.7). 插件声明 `VoiceInteractionService` (受 `BIND_VOICE_INTERACTION` 保护) 及其 `sessionService` 与 `recognitionService` (系统要求两者都有, 见 `VoiceInteractionServiceInfo`); 用户在系统设置的 "默认数字助理应用" 里选 3-Macaw Speech 后, 长按电源键 / Home 键或助理手势打开听写弹层. 不常驻录音, 没有前台通知与常亮的麦克风指示灯; 3-Stove Agent 与 3-Stone AI 不各自实现常驻监听 (维护者 2026-10-17). 插件不能代用户选择助理: 设置页显示当前是否为默认助理, 并给出打开系统设置的入口. 弹层复用 D42 的底部卡片 (倾向由会话 `startAssistantActivity` 打开独立的助理 Activity, 实现时可改为在会话窗口内渲染), 识别复用 P5.6 的进程内听写路径 (D44-D47 的结束, 选模型与引导规则相同), 与脚本共用唯一的麦克风 (D16). P7 的常驻唤醒保留为本插件内部的候选. 不新增危险权限, 不改宿主契约. | P5.7 (已定) |
+| D49 | 目标选择: 说完后点按钮 | 听写结束后弹层显示识别文字 (可点击编辑), 底部是目标按钮, "复制文本" 与 "重说"; 点目标按钮才发送. 不按开头的名字分派, 不用模型判断意图, 没有默认目标, 不记住上次的选择. 未采用 "叫名字 + 默认目标" 与 "本地模型判断意图". | P5.7 (已定) |
+| D50 | 目标入口契约 `org.autojs.plugin.action.VOICE_COMMAND` | 目标应用导出一个 Activity 应答该 action + DEFAULT; 本插件以 `<queries>` 声明该 action, 经 `queryIntentActivities` 发现目标, 按钮文字与图标取该 Activity 的 label 与 icon, 发送时用显式组件 + `FLAG_ACTIVITY_NEW_TASK`. extras: `Intent.EXTRA_TEXT` (识别文字, 必有), `org.autojs.plugin.extra.VOICE_LANGUAGE` (所用识别模型的语言, BCP 47, 可缺). 入口不受插件权限保护, 与系统分享同级: 接收方必须把文本当作不可信输入, 安全语义由接收方决定 (D51, D52). 契约在 P6.1 写入文档; 本插件不导出该入口. | P5.7 (已定) |
+| D51 | 3-Stove Agent: 打开草稿, 点开始才执行 | 沿用 Stove 既有原则 (外部入口只打开可审阅的草稿, 从不直接开任务, 见其 `ShareTargetActivity`), Stove 只需让草稿入口也应答 D50 的 action; 识别错一个字也不会变成手机上的操作. 未采用 "倒数 3 秒自动开始" 与 "直接执行" (两者都要 Stove 新增只信任本插件签名的入口). 由 3-Stove Agent 仓库实现. | P5.7 (已定) |
+| D52 | 3-Stone AI: 新对话里直接发送 | Stone 收到后打开聊天页, 在新对话里立即发送并显示回答 (提问不操作手机, 无需确认); 是否朗读回答由 3-Stone AI 的路线图决定. 未采用 "只预填输入框" 与 "接着当前对话发送". 由 3-Stone AI 仓库实现. | P5.7 (已定) |
+| D53 | 目标未安装时 | 只列出已安装且应答 D50 的目标 (按入口探测, 不按包名写死), "复制文本" 始终在; 一个目标都没有时助理仍可用作听写 + 复制. 未采用 "始终显示两个按钮, 未安装的置灰". | P5.7 (已定) |
+| D54 | 不读取屏幕内容 | `supportsAssist=false`: 助理不接收当前应用的 `AssistStructure` 与截图, 识别文字之外不向目标附带任何内容; 隐私说明保持 "只处理你说的话". 读取屏幕文字或截图以后再议. | P5.7 (已定) |
+| D55 | 锁屏可听写, 发送前解锁 | `supportsLaunchVoiceAssistFromKeyguard=true`: 锁屏上可以开始听写; 点目标按钮或 "复制文本" 时先 `requestDismissKeyguard`, 解锁成功后才发送或复制, 取消解锁则留在弹层. 锁屏上不显示历史 (本插件不保存识别历史). 未采用 "锁屏时不响应". | P5.7 (已定) |
+| D56 | 系统识别服务 `RecognitionService`: 完整实现 | 选为数字助理后它也成为其他应用 `SpeechRecognizer` 的默认识别服务, 调用方也可显式指定本插件的组件. 支持 `startListening` / `stopListening` / `cancel`, `onReadyForSpeech` / `onBeginningOfSpeech` / `onEndOfSpeech`, 部分结果, 最终结果 (1 条), 音量回调 (契约没有电平事件, 按 VAD 状态近似, 与 D42 相同) 与常见错误码 (无匹配, 超时, 音频, 权限不足, 识别服务忙, 服务端); 语言与模型选择沿用 D45 / D46, 识别经进程内 `SpeechPluginBinder` (与弹层同一路径, 共用唯一的麦克风); API 31+ 按调用方 `AttributionSource` 校验麦克风权限并归属数据. 设置页 "作为系统语音输入" 开关 (D43) 只管 `RECOGNIZE_SPEECH` 弹层, 不关识别服务 (否则助理不可用). 未采用 "最小实现" (选 Macaw 为助理后依赖系统识别服务的应用会失去语音识别). | P5.7 (已定) |
 
 ---
 
@@ -96,8 +105,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 
 非目标 (不做或排到 1.1.0 之后, 评估记录见附录 G):
 
-- 内置语音助手 (常驻唤醒, 悬浮麦克风, 直调 3-Stove Agent) (1.1.0, P7).
-- 系统识别服务 `RecognitionService` (SpeechRecognizer API) (P7 候选, D41).
+- 常驻唤醒与悬浮麦克风 (1.1.0, P7); 由助理手势触发的数字助理与系统识别服务在 1.0.0 的 P5.7 (D48-D56).
 - 在线识别 / 合成服务对接 (云 ASR / TTS API).
 - 标点恢复模型, 说话人识别 / 分离, 语种识别, 音频事件标签 (1.1.0 候选).
 - 非 WAV 音频解码 (MP3 / AAC / OGG), 系统音频 / 通话录音抓取.
@@ -274,9 +282,9 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P2 | 资产 + 1.0.0 | Shared-Assets `speech-models` 类别, 精选目录审核, 插件模型存储与目录刷新, `speech-models-v1` 发布 | 已完成 (2026-10-16; P2.5 Release `speech-models-v1` 已发布) |
 | P3 | 1.0.0 | 识别, VAD 与唤醒词: 采集, 流式会话, 文件识别, 唤醒会话, 设备矩阵与性能基线 | 已完成 (2026-10-16 提交 `f630d71`; 宿主 `allowActivityStarts` 与协议文档同日完成, 宿主本地提交 `7bf397c71` / `8943a55ea`, API 35 后台与熄屏有声); 剩余: 16 KB 页设备未执行 |
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 已完成 (2026-10-16 提交 `17771c1`, 设备 API 28 / 33 / 35); 宿主缺口已修 (2026-10-16 宿主本地提交 `ba4c92d5f` / `11f75efbe`, 三台真机复核); 剩余: TalkBack / 随选朗读未试 |
-| P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标, 系统语音输入入口 | 已完成 (2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33; P5.6 系统语音输入 (D41-D47) 提交 `fed02d7`, Sony G8441 / XQ-AT72 / XQ-DQ72 与 API 24 / 36.1 AVD, 3-Stove Agent 实测通过); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
+| P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标, 系统语音输入入口, 系统数字助理 | P5.1-P5.6 已完成, P5.7 系统数字助理 (D48-D56, 2026-10-17 定) 未开始 (2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33; P5.6 系统语音输入 (D41-D47) 提交 `fed02d7`, Sony G8441 / XQ-AT72 / XQ-DQ72 与 API 24 / 36.1 AVD, 3-Stove Agent 实测通过); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
 | P6 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
-| P7 | 1.1.0 | 候选: 内置语音助手, 标点恢复, 说话人识别, 非 WAV 解码, MCP 工具, 更多语言 | 未开始 |
+| P7 | 1.1.0 | 候选: 常驻唤醒与悬浮麦克风, 标点恢复, 说话人识别, 非 WAV 解码, MCP 工具, 更多语言 | 未开始 |
 
 依赖顺序:
 
@@ -501,6 +509,16 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 - (3-Stove Agent) 设备上有多个识别应用时 Android 每次弹选择器 (可勾 "始终"); Stove 若想默认用离线识别, 可在 3-Macaw Speech 的弹层可解析时对 `RecognizerIntent` 设 `setPackage`, 需 Stove 自己的设置项与评审.
 - (文档, P6.1) `speech.md` 或插件页加 "系统语音输入" 小节 (其他应用经 `ACTION_RECOGNIZE_SPEECH` 使用离线识别, 设置开关, 返回码); 宿主代码无需改动.
 
+### P5.7 系统数字助理 (D48-D56)
+
+背景: 维护者 2026-10-17 希望由本插件统一负责 "听", 按用户的选择把识别文字交给 3-Stove Agent (执行) 或 3-Stone AI (提问); 常驻唤醒要常驻前台通知, 常亮麦克风指示灯, 受 API 34+ 后台启动与 Android 15 开机广播限制, 还要和其他录音应用抢麦克风, 所以先做由系统助理手势触发, 不常驻录音的数字助理, 两个目标插件都不再需要各自的常驻监听.
+
+- [ ] (插件) `VoiceInteractionService` + `VoiceInteractionSessionService` + 会话 (D48): `res/xml` 的 voice-interaction-service 描述 (`sessionService`, `recognitionService`, `settingsActivity`, `supportsAssist=false`, `supportsLaunchVoiceAssistFromKeyguard=true`); 助理弹层复用 D42 的底部卡片与 P5.6 的听写路径, 结束后显示可编辑的识别文字, 目标按钮, "复制文本" 与 "重说" (D49); 目标发现与发送按 D50 / D53 (`<queries>` 声明 `VOICE_COMMAND`); 锁屏按 D55 (`showWhenLocked`, `requestDismissKeyguard`); 设置页新增 "数字助理" 行 (当前是否为默认助理, 打开系统默认应用设置); 10 种语言文案, `ManifestContractTest` 的导出审查, `AGENTS.md` 的界面说明.
+- [ ] (插件) `RecognitionService` (D56): 回调, 错误码映射与 `AttributionSource` 处理写成纯 JVM 规则加薄适配层; 与弹层, 试听试说页和脚本会话共用唯一的麦克风.
+- [ ] (测试) E2: 目标列表 (未安装, 无入口, label 排序), 锁屏门控, 识别服务的错误码与回调顺序. E3: AVD 上以 `cmd role add-role-holder android.app.role.ASSISTANT <包名>` 设为助理 (只在 AVD 上执行), `KEYCODE_ASSIST` 触发弹层, 测试录音经扬声器播放, 用两个测试用的 `VOICE_COMMAND` 接收 Activity 核对发送的 extras; 另以 `SpeechRecognizer.createSpeechRecognizer(context, 本插件组件)` 核对部分结果, 最终结果, 取消与无语音. E4: Sony 真机上由维护者在系统设置里选择助理, 长按电源键听写后分别交给 3-Stove Agent (出现草稿) 与 3-Stone AI (新对话出现回答); 锁屏听写后解锁发送; 记录 ColorOS / Xiaomi 上长按电源键能否交给第三方助理 (厂商可能固定为自家助理).
+- [ ] (其他插件) 3-Stove Agent: 草稿入口应答 D50 的 action (D51), 由 Stove 仓库的会话实现与验证; 3-Stone AI: 聊天页应答 D50 的 action, 新对话立即发送 (D52), 由 3-Stone AI 的语音接入会话一并规划.
+- [ ] (插件) changelog 1.0.0 与 README (10 种语言, 功能, 安全条目, 常见问题: 怎样设为默认数字助理, 为什么没有常驻唤醒), 重新生成并 `--check`; P6.1 的文档加 "数字助理" 与 `VOICE_COMMAND` 入口契约.
+
 ---
 
 ## P6: 文档, 声明, 四仓库同步, 样例与发布
@@ -532,12 +550,11 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 
 | 候选 | 说明 | 依赖 |
 | --- | --- | --- |
-| 内置语音助手 (D8) | 常驻唤醒 (microphone 前台服务, 电量策略), 悬浮麦克风按钮, 识别后经 3-Stove Agent AIDL (`three-stove-agent-api`) 直接下任务, 结果 TTS 播报 | 1.0.0 稳定; Stove Agent 契约评审 |
+| 常驻唤醒与悬浮麦克风 (D8) | 常驻唤醒 (microphone 前台服务, 电量策略), 悬浮麦克风按钮; 命中后打开 P5.7 的助理弹层, 目标仍经 D50 的 `VOICE_COMMAND` 入口; 结果 TTS 播报 | P5.7 稳定; 真机耗电实测 |
 | 标点恢复 | sherpa-onnx `ct-transformer` 标点模型 (体积较大, 单独目录条目) | P2 目录 v2 |
 | 说话人识别 / 验证 | 3D-Speaker 模型, `speech.speaker.*` (注册, 比对), 用于 "只听主人" | 隐私文案 |
 | 说话人分离, 语种识别, 音频事件标签 | 上游已有模型与 API | 需求验证 |
 | 非 WAV 解码 | `MediaCodec` 解码 MP3 / AAC / OGG 为 PCM | D15 推翻 |
-| 系统识别服务 (D41) | 导出 `android.speech.RecognitionService`, 让使用 `SpeechRecognizer` API 的应用 (partial 回调, 连续识别) 也能用离线识别; 用户需在系统设置里选默认识别服务, API 31+ 按调用方 `AttributionSource` 校验麦克风权限并归属数据 | P5.6 稳定; 系统设置入口在各 ROM 上的可达性 |
 | MCP 工具 | 经 `plugin-tool-api` 暴露 "听一句话" / "朗读" 工具给 MCP Server 与 Agent | 宿主 plugin-tool 发现落地 |
 | 更多语言模型 | 日 / 韩 / 粤 (SenseVoice 已含), 俄 / 法 / 西 / 阿 流式模型, 多语 TTS (piper 各语种) | 目录 v2 审核 |
 | NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型 | 上游稳定性 |
