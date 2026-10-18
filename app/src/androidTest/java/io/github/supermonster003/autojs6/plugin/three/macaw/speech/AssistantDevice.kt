@@ -181,14 +181,17 @@ internal object AssistantDevice {
     }
 
     /**
-     * The "listening" and "hearing" texts as the sheet on the screen shows them: the sheet follows the language of
+     * A text as the sheet on the screen (the assistant or the voice input) shows it: the sheet follows the language of
      * AutoJs6 or of the plugin's settings, which may differ from the device language of the test context.
-     * zh-CN: 屏幕上弹层所显示的 "正在收音" 与 "正在听" 文字: 弹层跟随 AutoJs6 或插件设置的语言, 可能与测试 Context 的设备语言不同.
+     * zh-CN: 屏幕上的弹层 (数字助理或语音输入) 所显示的文字: 弹层跟随 AutoJs6 或插件设置的语言, 可能与测试 Context 的设备语言不同.
      */
-    fun listeningTexts(): Set<String> {
+    fun sheetText(id: Int): String {
         val sheet = resumed().firstOrNull { it.javaClass.name.endsWith(".AssistantActivity") || it.javaClass.name.endsWith(".VoiceInputActivity") } ?: context
-        return setOf(sheet.getString(R.string.voice_input_listening), sheet.getString(R.string.voice_input_hearing))
+        return sheet.getString(id)
     }
+
+    /** The "listening" and "hearing" states of the sheet. zh-CN: 弹层的 "正在收音" 与 "正在听" 状态文字. */
+    fun listeningTexts(): Set<String> = setOf(sheetText(R.string.voice_input_listening), sheetText(R.string.voice_input_hearing))
 
     fun resumed(): List<Activity> {
         var activities: List<Activity> = emptyList()

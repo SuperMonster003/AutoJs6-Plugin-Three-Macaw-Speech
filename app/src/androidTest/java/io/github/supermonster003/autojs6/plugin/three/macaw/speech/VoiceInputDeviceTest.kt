@@ -86,7 +86,8 @@ class VoiceInputDeviceTest {
             capture("listening")
             val playback = play("test-audio/en.wav")
             // D42: the microphone pulses and the state reads "hearing" while the VAD hears the recording.
-            val hearing = context.getString(R.string.voice_input_hearing)
+            // The sheet follows the language of AutoJs6, which may differ from the device language of the test context.
+            val hearing = AssistantDevice.sheetText(R.string.voice_input_hearing)
             val heard = runCatching { compose.waitUntil(4_000) { text("macaw.voice.state") == hearing } }.isSuccess
             capture("speaking")
             SpeechDevice.log("voice hearing shown=$heard")
@@ -163,9 +164,8 @@ class VoiceInputDeviceTest {
     }
 
     private fun awaitListening() {
-        val listening = setOf(context.getString(R.string.voice_input_listening), context.getString(R.string.voice_input_hearing))
         try {
-            compose.waitUntil(30_000) { text("macaw.voice.state") in listening }
+            compose.waitUntil(30_000) { text("macaw.voice.state") in AssistantDevice.listeningTexts() }
         } catch (e: Throwable) {
             capture("not-listening")
             SpeechDevice.log("voice state=${text("macaw.voice.state")} problem=${problemShown()}")
