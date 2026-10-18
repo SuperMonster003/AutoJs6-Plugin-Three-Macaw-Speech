@@ -61,12 +61,16 @@ class TryoutDeviceTest {
 
     @Test
     fun dictationWakeWordAndSynthesisOnTheMicrophone() {
-        ActivityScenario.launch<TryoutActivity>(Intent(context, TryoutActivity::class.java)).use {
+        ActivityScenario.launch<TryoutActivity>(Intent(context, TryoutActivity::class.java)).use { scenario ->
             settle()
+            // The screen follows the language of AutoJs6 or of the plugin's settings, which may differ from the device
+            // language of the test context: the state text comes from the screen itself.
+            var listening = ""
+            scenario.onActivity { listening = it.getString(R.string.tryout_listening) }
             // Dictation: the English recording through the speaker.
             compose.waitUntil(10_000) { exists("macaw.tryout.listen.start") }
             compose.onNodeWithTag("macaw.tryout.listen.start").performClick()
-            compose.waitUntil(20_000) { text("macaw.tryout.listen.state") == context.getString(R.string.tryout_listening) }
+            compose.waitUntil(20_000) { text("macaw.tryout.listen.state") == listening }
             play("test-audio/en.wav")
             // An offline model answers after the endpoint silence and one decoding pass of the segment.
             runCatching { compose.waitUntil(15_000) { exists("macaw.tryout.final.0") } }
@@ -89,7 +93,7 @@ class TryoutDeviceTest {
             // The keyboard of the keyword field moves the layout: click through the semantics action, not a position.
             compose.onNodeWithTag("macaw.tryout.wake.start").performSemanticsAction(SemanticsActions.OnClick)
             try {
-                compose.waitUntil(20_000) { text("macaw.tryout.wake.state") == context.getString(R.string.tryout_listening) }
+                compose.waitUntil(20_000) { text("macaw.tryout.wake.state") == listening }
             } catch (e: Throwable) {
                 capture("wake-failure")
                 SpeechDevice.log("tryout wake state=${text("macaw.tryout.wake.state")} snackbar=${snackbar()}")
