@@ -100,6 +100,50 @@ class AssistantDeviceTest {
         assertTrue(AssistantDevice.microphoneIsFree())
     }
 
+    /**
+     * E4 hand-over to 3-Stove Agent (opt-in `-e macawStove true`, `.python/device_assistant_run.py stove`): with 3-Macaw
+     * Speech as the assistant, the assist key opens the sheet, the recording is dictated and the "3-Stove Agent" button
+     * opens Stove's reviewable draft (its workbench, or its floating card when the ball is on screen; D51); the sheet
+     * closes. The screens before and after the hand-over are captured for review; the text itself is never logged.
+     * zh-CN: E4 交给 3-Stove Agent (需显式开启 `-e macawStove true`, 由 `.python/device_assistant_run.py stove` 运行): 3-Macaw Speech 为助理时,
+     * 助理键打开弹层, 听写测试录音后点 "3-Stove Agent" 按钮打开 Stove 可审阅的草稿 (任务台, 或悬浮球在屏幕上时的悬浮卡片; D51), 弹层关闭.
+     * 交接前后的界面截图供审阅; 不记录识别文字.
+     */
+    @Test
+    fun theAssistKeyHandsTheTextToStoveAsADraft() {
+        assumeTrue("opt-in: -e macawStove true", SpeechDevice.argument("macawStove") == "true")
+        assumeTrue("3-Macaw Speech is the default digital assistant", MacawVoiceInteractionService.isActive(context))
+        val query = Intent(AssistantPolicy.ACTION_VOICE_COMMAND).addCategory(Intent.CATEGORY_DEFAULT).setPackage(STOVE)
+        val stove = context.packageManager.queryIntentActivities(query, PackageManager.MATCH_DEFAULT_ONLY).firstOrNull()?.activityInfo
+        assumeTrue("3-Stove Agent answers VOICE_COMMAND", stove != null)
+        val started = System.currentTimeMillis()
+        AssistantDevice.shell("input keyevent KEYCODE_ASSIST")
+        awaitListening()
+        SpeechDevice.log("assistant stove listening after ${System.currentTimeMillis() - started} ms")
+        val text = speakAndRead()
+        val tag = "macaw.assistant.target.${stove!!.name}"
+        SpeechDevice.log("assistant stove target label=${compose.text("$tag.label")}")
+        capture(prefix, "stove-result")
+        val sent = System.currentTimeMillis()
+        compose.onNodeWithTag(tag).performSemanticsAction(SemanticsActions.OnClick)
+        assertTrue("the sheet closed after sending", AssistantDevice.awaitGone(AssistantActivity::class.java.name))
+        var draft: String? = null
+        while (draft == null && System.currentTimeMillis() < sent + 15_000) {
+            draft = when {
+                AssistantDevice.shell("dumpsys activity activities").lineSequence()
+                    .any { "ResumedActivity" in it && "$STOVE/" in it && "VoiceCommandActivity" !in it } -> "workbench"
+                AssistantDevice.shell("dumpsys window windows").contains("3-Stove Agent floating") -> "card"
+                else -> null
+            }
+            if (draft == null) Thread.sleep(200)
+        }
+        val shownMillis = System.currentTimeMillis() - sent
+        Thread.sleep(1500)
+        capture(prefix, "stove-draft")
+        SpeechDevice.log("assistant stove draft=$draft after $shownMillis ms chars=${text.length}")
+        assertNotNull("3-Stove Agent showed the draft", draft)
+    }
+
     @Test
     fun editingChangesWhatIsSentAndSpeakAgainListensAgain() {
         AssistantDevice.Targets().use { targets ->
@@ -194,6 +238,7 @@ class AssistantDeviceTest {
 
     private companion object {
         const val PACKAGE = AssistantDevice.PLUGIN
+        const val STOVE = "io.github.supermonster003.autojs6.plugin.three.stove.agent"
         const val MAX_CER = 0.15
     }
 }

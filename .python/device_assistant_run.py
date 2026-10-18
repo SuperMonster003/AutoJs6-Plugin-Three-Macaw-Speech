@@ -11,10 +11,16 @@ fail line per run and the key numbers, never a transcript.
                                                         through the speaker at MACAW_VOLUME_PERCENT (70 by default) of
                                                         the music volume, restored afterwards. The assist key case runs
                                                         only if the maintainer chose 3-Macaw Speech as the assistant
+    py .python/device_assistant_run.py stove <serial>    phones where the maintainer chose 3-Macaw Speech as the
+                                                        assistant and 3-Stove Agent is installed (E4): the assist key,
+                                                        the English recording through the speaker (volume as above),
+                                                        then the "3-Stove Agent" button must open Stove's draft
+                                                        (workbench or floating card); the home screen afterwards
 
 Tests: AssistantDeviceTest (the assist key, the two VOICE_COMMAND test targets of the test APK, editing, "Speak again",
-silence, "Copy text", the lock screen), RecognitionServiceDeviceTest (SpeechRecognizer with the plugin's component:
-callback order, partial results, stopListening, cancel, silence, the API 33 support check) and TakeoverDeviceTest (a
+silence, "Copy text", the lock screen; with `stove` only the hand-over to 3-Stove Agent), RecognitionServiceDeviceTest
+(SpeechRecognizer with the plugin's component: callback order, partial results, stopListening, cancel, silence, the API
+33 support check) and TakeoverDeviceTest (a
 wake session silenced by the assistant, the recognition service and the voice input, resumed afterwards; a script
 dictation never taken over). Screenshots go to .bak/visual/1.0.0/<serial>/ (not in the repository). Build first:
 `.\\gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest`. Nothing on the device is tapped.
@@ -105,35 +111,68 @@ def avd(serial):
     return pull_screens(serial, None, ok)
 
 
-def phone(serial):
-    adb(serial, "shell", "rm", "-rf", f"/sdcard/Android/data/{PACKAGE}/files/screens", check=False)
+def raise_volume(serial):
+    """Raises the music volume to MACAW_VOLUME_PERCENT (70 by default) when lower; answers the original level or None."""
     volume = adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--get", check=False)
     match = re.search(r"volume is (\d+) in range \[(\d+)\.\.(\d+)\]", volume)
-    original = None
-    if match:
-        original, maximum = int(match.group(1)), int(match.group(3))
-        wanted = max(1, maximum * int(os.environ.get("MACAW_VOLUME_PERCENT", "70")) // 100)
-        adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(max(original, wanted)), check=False)
-        print(f"{label(serial)}: music volume {original}/{maximum} -> {max(original, wanted)}")
+    if not match:
+        return None
+    original, maximum = int(match.group(1)), int(match.group(3))
+    wanted = max(1, maximum * int(os.environ.get("MACAW_VOLUME_PERCENT", "70")) // 100)
+    adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(max(original, wanted)), check=False)
+    print(f"{label(serial)}: music volume {original}/{maximum} -> {max(original, wanted)}")
+    return original
+
+
+def restore_volume(serial, original):
+    if original is not None:
+        adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(original), check=False)
+
+
+def is_assistant(serial):
     _, values = assistant_state(serial)
-    print(f"{label(serial)}: 3-Macaw Speech is {'' if values.get('voice_interaction_service', '').startswith(PACKAGE) else 'not '}the assistant")
+    active = values.get("voice_interaction_service", "").startswith(PACKAGE)
+    print(f"{label(serial)}: 3-Macaw Speech is {'' if active else 'not '}the assistant")
+    return active
+
+
+def phone(serial):
+    adb(serial, "shell", "rm", "-rf", f"/sdcard/Android/data/{PACKAGE}/files/screens", check=False)
+    original = raise_volume(serial)
+    is_assistant(serial)
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     try:
         ok = run_all(serial, None)
     finally:
-        if original is not None:
-            adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(original), check=False)
+        restore_volume(serial, original)
+    return pull_screens(serial, None, ok)
+
+
+def stove(serial):
+    """E4: the assistant hands the text to 3-Stove Agent. The maintainer chose the assistant; nothing else is changed."""
+    if not is_assistant(serial):
+        print(f"{label(serial)}: stove FAIL: the maintainer picks 3-Macaw Speech as the default digital assistant first")
+        return False
+    adb(serial, "shell", "rm", "-rf", f"/sdcard/Android/data/{PACKAGE}/files/screens", check=False)
+    original = raise_volume(serial)
+    adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
+    try:
+        ok = run_test(serial, "AssistantDeviceTest#theAssistKeyHandsTheTextToStoveAsADraft",
+                      ["macawAssistant=true", "macawStove=true", "macawPrefix=assistant"])
+    finally:
+        restore_volume(serial, original)
+        adb(serial, "shell", "input", "keyevent", "KEYCODE_HOME", check=False)
     return pull_screens(serial, None, ok)
 
 
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("avd", "phone"):
+    if len(argv) < 2 or argv[0] not in ("avd", "phone", "stove"):
         print(__doc__)
         return 2
     action, serial = argv
     if not install(serial):
         return 1
-    return 0 if (avd(serial) if action == "avd" else phone(serial)) else 1
+    return 0 if {"avd": avd, "phone": phone, "stove": stove}[action](serial) else 1
 
 
 if __name__ == "__main__":
