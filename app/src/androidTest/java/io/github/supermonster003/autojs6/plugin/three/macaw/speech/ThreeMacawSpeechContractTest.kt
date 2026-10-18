@@ -223,10 +223,15 @@ class ThreeMacawSpeechContractTest {
         val (screens, rest2) = rest.partition { it.first in screenEntries() || it.first.startsWith("$packageName.launcher.") }
         val (systemTts, rest3) = rest2.partition { it.first in systemTtsComponents() }
         // Roadmap P5.6: the voice input answers any app with the recognized text only (absent while switched off).
-        val (voiceInput, own) = rest3.partition { it.first == VoiceInputActivity::class.java.name }
+        val (voiceInput, rest4) = rest3.partition { it.first == VoiceInputActivity::class.java.name }
         voiceInput.forEach { (name, permission) -> assertEquals("$name is reached by any app", null, permission) }
+        // Roadmap P5.7: the digital assistant is bound by the system only (BIND_VOICE_INTERACTION); the recognition
+        // service is reached by any app and checks the caller's microphone permission itself.
+        val (assistant, own) = rest4.partition { it.first in assistantComponents() }
+        assertEquals(assistantComponents().keys, assistant.map { it.first }.toSet())
+        assistant.forEach { (name, permission) -> assertEquals("$name keeps its protection", assistantComponents().getValue(name), permission) }
         screens.forEach { (name, permission) -> assertEquals("$name only shows the plugin's own screens", null, permission) }
-        assertTrue("the home and settings screens are exported", screens.map { it.first }.containsAll(screenEntries()))
+        assertTrue("the home and settings screens and the recognition settings entry are exported", screens.map { it.first }.containsAll(screenEntries()))
         assertEquals(
             setOf(
                 "$packageName.WakeActivity", MicrophonePermissionActivity::class.java.name, ThreeMacawSpeechInfoService::class.java.name,
@@ -397,7 +402,15 @@ class ThreeMacawSpeechContractTest {
         )
 
         /** Roadmap P5: the screens the launcher and the system TTS settings open. zh-CN: 启动器与系统 TTS 设置打开的界面. */
-        fun screenEntries(): Set<String> = setOf("$PACKAGE.ui.home.HomeActivity", "$PACKAGE.ui.settings.SettingsActivity")
+        fun screenEntries(): Set<String> =
+            setOf("$PACKAGE.ui.home.HomeActivity", "$PACKAGE.ui.settings.SettingsActivity", "$PACKAGE.ui.settings.RecognitionSettingsAlias")
+
+        /** Roadmap P5.7: the assistant services and the recognition service with their permission. zh-CN: 助理服务与识别服务及其权限. */
+        fun assistantComponents(): Map<String, String?> = mapOf(
+            "$PACKAGE.assistant.MacawVoiceInteractionService" to "android.permission.BIND_VOICE_INTERACTION",
+            "$PACKAGE.assistant.MacawVoiceInteractionSessionService" to "android.permission.BIND_VOICE_INTERACTION",
+            "$PACKAGE.recognition.MacawRecognitionService" to null,
+        )
 
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")
 
