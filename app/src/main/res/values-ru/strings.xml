@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">Текст скопирован</string>
+    <string name="assistant_copy">Копировать текст</string>
+    <string name="assistant_no_match_body">Слова не распознаны. Скажите еще раз или закройте панель.</string>
+    <string name="assistant_no_match_title">Ничего не распознано</string>
+    <string name="assistant_no_targets">Пока нет установленных приложений, которые принимают текст. Установите 3-Stove Agent или 3-Stone AI, чтобы передать его, или скопируйте текст.</string>
+    <string name="assistant_redo">Сказать еще раз</string>
+    <string name="assistant_send_failed">Не удалось открыть %1$s. Выберите другое приложение или скопируйте текст.</string>
+    <string name="assistant_targets">Отправить в</string>
+    <string name="assistant_text_label">Распознанный текст (нажмите, чтобы изменить)</string>
+    <string name="assistant_unlock_needed">Разблокируйте устройство, чтобы продолжить</string>
     <string name="delete_dialog_default_message">Это модель по умолчанию для своего вида. Моделью по умолчанию станет другая установленная модель того же вида.</string>
     <string name="delete_dialog_message">Её файлы будут удалены с устройства. Позже её можно загрузить снова.</string>
     <string name="delete_dialog_title">Удалить %1$s?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">О приложении</string>
     <string name="settings_appearance">Оформление</string>
     <string name="settings_asr_model">Модель распознавания по умолчанию</string>
+    <string name="settings_assistant">Цифровой помощник</string>
+    <string name="settings_assistant_off">Не выбран цифровым помощником по умолчанию. Нажмите, чтобы открыть системные настройки и выбрать 3-Macaw Speech приложением цифрового помощника</string>
+    <string name="settings_assistant_on">3-Macaw Speech - цифровой помощник по умолчанию. Нажмите и удерживайте кнопку питания или кнопку Домой, чтобы диктовать, затем выберите приложение для текста</string>
     <string name="settings_catalog_current">Каталог моделей v%1$d актуален</string>
     <string name="settings_catalog_failed">Не удалось обновить каталог моделей. Проверьте сеть и повторите попытку.</string>
     <string name="settings_catalog_refresh">Обновить каталог моделей</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">Не игнорировать</string>
     <string name="update_up_to_date">Установлена последняя версия</string>
     <string name="update_view_release">Открыть выпуск</string>
-    <string name="voice_input_busy_body">Микрофон 3-Macaw Speech занят скриптом. Повторите попытку, когда его диктовка или ожидание слова активации закончится.</string>
+    <string name="voice_input_busy_body">Микрофон 3-Macaw Speech занят другой диктовкой, например скриптом или голосовым вводом другого приложения. Повторите попытку, когда она закончится.</string>
     <string name="voice_input_busy_title">Микрофон занят</string>
     <string name="voice_input_close">Закрыть</string>
     <string name="voice_input_failed_body">Речевому движку не удалось завершить распознавание (%1$s). Повторите попытку позже или проверьте модели распознавания на главном экране.</string>

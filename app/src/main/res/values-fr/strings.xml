@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">Texte copié</string>
+    <string name="assistant_copy">Copier le texte</string>
+    <string name="assistant_no_match_body">Aucun mot n\'a été reconnu. Parlez à nouveau ou fermez le panneau.</string>
+    <string name="assistant_no_match_title">Rien n\'a été reconnu</string>
+    <string name="assistant_no_targets">Aucune application installée ne reçoit encore le texte. Installez 3-Stove Agent ou 3-Stone AI pour le lui transmettre, ou copiez le texte.</string>
+    <string name="assistant_redo">Parler à nouveau</string>
+    <string name="assistant_send_failed">Impossible d\'ouvrir %1$s. Choisissez une autre application ou copiez le texte.</string>
+    <string name="assistant_targets">Envoyer à</string>
+    <string name="assistant_text_label">Texte reconnu (touchez pour modifier)</string>
+    <string name="assistant_unlock_needed">Déverrouillez l\'appareil pour continuer</string>
     <string name="delete_dialog_default_message">C\'est le modèle par défaut de sa catégorie. Un autre modèle installé de la même catégorie devient le modèle par défaut.</string>
     <string name="delete_dialog_message">Ses fichiers sont supprimés de l\'appareil. Vous pourrez le télécharger de nouveau plus tard.</string>
     <string name="delete_dialog_title">Supprimer %1$s?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">À propos</string>
     <string name="settings_appearance">Apparence</string>
     <string name="settings_asr_model">Modèle de reconnaissance par défaut</string>
+    <string name="settings_assistant">Assistant numérique</string>
+    <string name="settings_assistant_off">Ce n\'est pas l\'assistant numérique par défaut. Touchez pour ouvrir les paramètres du système et choisir 3-Macaw Speech comme application d\'assistant numérique</string>
+    <string name="settings_assistant_on">3-Macaw Speech est l\'assistant numérique par défaut. Appuyez longuement sur le bouton Marche/Arrêt ou Accueil pour dicter, puis choisissez l\'application qui reçoit le texte</string>
     <string name="settings_catalog_current">Le catalogue de modèles v%1$d est à jour</string>
     <string name="settings_catalog_failed">Impossible d\'actualiser le catalogue de modèles. Vérifiez le réseau et réessayez.</string>
     <string name="settings_catalog_refresh">Actualiser le catalogue de modèles</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">Ne plus ignorer</string>
     <string name="update_up_to_date">À jour</string>
     <string name="update_view_release">Voir la version</string>
-    <string name="voice_input_busy_body">Un script utilise le microphone de 3-Macaw Speech. Réessayez lorsque sa dictée ou sa détection de mot de réveil sera terminée.</string>
+    <string name="voice_input_busy_body">Une autre dictée utilise le microphone de 3-Macaw Speech, par exemple un script ou la saisie vocale d\'une autre application. Réessayez lorsqu\'elle sera terminée.</string>
     <string name="voice_input_busy_title">Le microphone est occupé</string>
     <string name="voice_input_close">Fermer</string>
     <string name="voice_input_failed_body">Le moteur vocal n\'a pas pu terminer la reconnaissance (%1$s). Réessayez plus tard ou vérifiez les modèles de reconnaissance sur l\'écran d\'accueil.</string>

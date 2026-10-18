@@ -1,10 +1,13 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.service
 
+import android.content.Context
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCapture
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCaptures
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MicrophoneSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
@@ -12,6 +15,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.KeywordEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationEvents
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationSession
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionState
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechWarning
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
@@ -71,6 +75,18 @@ internal class CallbackWakeEvents(private val callback: ISpeechWakeCallback, pri
 }
 
 /**
+ * How a session of the plugin's own entries runs (roadmap D56, D57): [takeover] silences a wake session that holds the
+ * microphone instead of failing with `SESSION_BUSY`; [foreground] holds the microphone foreground service (an entry
+ * that records only while a screen of the plugin or of its caller is visible does without it); [attribution] is the
+ * context the recording is attributed to (the caller of the recognition service, API 31+). Never reachable over the
+ * contract: only in-process callers pass it.
+ * zh-CN: 插件自己入口的会话如何运行 (路线图 D56, D57): [takeover] 让占用麦克风的唤醒会话静默, 而不是以 `SESSION_BUSY` 失败; [foreground] 持有麦克风
+ * 前台服务 (只在插件或其调用方界面可见时录音的入口不需要); [attribution] 是录音所归属的 Context (识别服务的调用方, API 31+). 契约无法传入: 只有进程内
+ * 调用方会传.
+ */
+internal data class LocalSession(val takeover: Boolean = true, val foreground: Boolean = true, val attribution: Context? = null)
+
+/**
  * What every session Binder shares (roadmap D16): the admission slot, the death links of the host callbacks, the
  * engine leases, the microphone and its foreground service, and a cleanup that runs exactly once when the session
  * ended. Everything but the Binder entry points runs on the ASR thread.
@@ -79,8 +95,9 @@ internal class CallbackWakeEvents(private val callback: ISpeechWakeCallback, pri
  */
 internal abstract class SessionBinder(
     protected val runtime: SpeechRuntime,
-    private val slot: SessionTable.Slot,
+    protected val slot: SessionTable.Slot,
     private val callbacks: List<IBinder>,
+    private val attribution: Context? = null,
 ) : ISpeechSession.Stub(), IBinder.DeathRecipient, MicrophoneService.Listener {
 
     protected val leases = ArrayList<EngineCache.Lease<out Closeable>>()
@@ -88,7 +105,7 @@ internal abstract class SessionBinder(
     private val pending = AtomicLong(0)
     private val pendingLock = ReentrantLock()
     private val drained = pendingLock.newCondition()
-    private var microphone: MicrophoneSource? = null
+    private var microphone: AudioCapture? = null
     private var foreground = false
     private var behindWarned = false
 
@@ -157,9 +174,12 @@ internal abstract class SessionBinder(
         }
     }
 
+    /** True while the microphone records for this session. zh-CN: 麦克风正在为本会话录音. */
+    protected val recording: Boolean get() = microphone != null
+
     /** Starts recording into [accept] (ASR thread). zh-CN: 开始录音并交给 [accept] (ASR 线程). */
     protected fun startMicrophone() {
-        val source = MicrophoneSource(object : MicrophoneSource.Listener {
+        val source = AudioCaptures.open(object : MicrophoneSource.Listener {
             override fun onAudio(samples: FloatArray) = enqueue(samples, microphone = true)
 
             override fun onSilenced(silenced: Boolean) {
@@ -170,9 +190,15 @@ internal abstract class SessionBinder(
             }
 
             override fun onFailure(error: SpeechException) = onAsr { fail(error.code, error.message ?: error.code) }
-        })
+        }, attribution)
         source.start()
         microphone = source
+    }
+
+    /** Stops recording; frames already queued still reach [accept] (ASR thread). zh-CN: 停止录音; 已排队的帧仍会交给 [accept] (ASR 线程). */
+    protected fun stopMicrophone() {
+        microphone?.stop()
+        microphone = null
     }
 
     /**
@@ -274,8 +300,10 @@ internal class DictationBinder(
     slot: SessionTable.Slot,
     callback: ISpeechSessionCallback,
     private val external: Boolean,
+    private val foreground: Boolean,
+    attribution: Context?,
     makeSession: (DictationEvents) -> DictationSession,
-) : SessionBinder(runtime, slot, listOf(callback.asBinder())) {
+) : SessionBinder(runtime, slot, listOf(callback.asBinder()), attribution) {
 
     private val session: DictationSession = makeSession(CallbackDictationEvents(callback) { binderDied() })
 
@@ -283,7 +311,7 @@ internal class DictationBinder(
 
     fun open(model: InstalledModel, warnings: List<SpeechWarning>) {
         link()
-        if (!external) holdForeground()
+        if (!external && foreground) holdForeground()
         val options = session.options
         loadThen({ listOf(runtime.acquireAsr(model, options.language, options.hotwords.isNotEmpty())) }) {
             val engine = leases.first().engine
@@ -318,8 +346,11 @@ internal class DictationBinder(
 
 /**
  * A wake session (`openWakeSession`, roadmap P3.4): keyword spotting on the microphone and, with `thenListen`, one
- * dictation round per hit on the same audio, on a second recognizer lease.
+ * dictation round per hit on the same audio, on a second recognizer lease. Roadmap D57: while no round runs, a
+ * dictation of the plugin's own entries may take the microphone over; the session then stops recording, reports
+ * nothing and records again when the takeover is released (the microphone foreground service stays held throughout).
  * zh-CN: 唤醒会话 (`openWakeSession`, 路线图 P3.4): 在麦克风上检测关键词; 有 `thenListen` 时每次命中在同一音频上进行一轮听写, 使用第二个识别器租约.
+ * 路线图 D57: 没有轮次进行时, 插件自己入口的听写可以接管麦克风; 此时会话停止录音, 不报告任何事件, 接管释放后重新录音 (期间一直持有麦克风前台服务).
  */
 internal class WakeBinder(
     runtime: SpeechRuntime,
@@ -327,7 +358,7 @@ internal class WakeBinder(
     callback: ISpeechWakeCallback,
     listenCallback: ISpeechSessionCallback?,
     makeSession: (WakeEvents, DictationEvents?) -> WakeSession,
-) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())) {
+) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())), SessionTable.Yielding {
 
     private val session: WakeSession = makeSession(
         CallbackWakeEvents(callback) { binderDied() },
@@ -339,6 +370,7 @@ internal class WakeBinder(
     fun open(keywordModel: InstalledModel, buffer: String, listenModel: InstalledModel?) {
         link()
         holdForeground()
+        runtime.sessions.yieldable(slot, this)
         val listen = session.options.thenListen
         loadThen({
             val acquired = ArrayList<EngineCache.Lease<out Closeable>>()
@@ -360,7 +392,28 @@ internal class WakeBinder(
                 listenModel?.modelId,
                 if (listen != null && asr != null) { sink -> runtime.dictation(asr, listen, sink) } else null,
             )
-            if (!session.isEnded) startMicrophone()
+            // A takeover that came while the models loaded keeps the microphone until it is released (D57).
+            if (!session.isEnded && !session.suspended) startMicrophone()
+        }
+    }
+
+    /** Roadmap D57, with the session table locked. zh-CN: 路线图 D57, 调用时会话表已加锁. */
+    override fun yieldMicrophone(): Boolean {
+        if (!session.yieldToTakeover()) return false
+        Log.i(TAG, "Wake session ${session.id} yields the microphone to a takeover")
+        onAsr { stopMicrophone() }
+        return true
+    }
+
+    override fun resumeMicrophone() = onAsr {
+        if (session.isEnded) return@onAsr
+        session.resumeAfterTakeover()
+        Log.i(TAG, "Wake session ${session.id} resumes after the takeover")
+        if (session.state != SessionState.ACTIVE || recording) return@onAsr
+        try {
+            startMicrophone()
+        } catch (e: SpeechException) {
+            fail(e.code, e.message ?: e.code)
         }
     }
 

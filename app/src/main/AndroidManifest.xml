@@ -20,6 +20,16 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!--
+        Roadmap D50 (P5.7): the digital assistant finds the apps that take the recognized text (3-Stove Agent, 3-Stone AI)
+        by their VOICE_COMMAND entry; on API 30+ they are visible only through this query.
+    -->
+    <queries>
+        <intent>
+            <action android:name="org.autojs.plugin.action.VOICE_COMMAND" />
+        </intent>
+    </queries>
+
     <!-- The screens and the launcher entry are roadmap P5; the system TTS engine (roadmap P4.2) is below. -->
     <application
         android:allowBackup="false"
@@ -128,6 +138,15 @@
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="true"
             android:label="@string/settings_title" />
+        <!--
+            The settings entry of the digital assistant and the recognition service (res/xml/voice_interaction_service.xml,
+            res/xml/recognition_service.xml): the settings screen at its recognition group (roadmap P5.7).
+        -->
+        <activity-alias
+            android:name=".ui.settings.RecognitionSettingsAlias"
+            android:exported="true"
+            android:label="@string/settings_title"
+            android:targetActivity=".ui.settings.SettingsActivity" />
         <activity
             android:name=".ui.tryout.TryoutActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
@@ -162,6 +181,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!--
+            The sheet of the digital assistant (roadmap P5.7, D48 - D55): started by the assistant session only, so it is
+            internal; it shows over the lock screen (set in code, D55) and in a task of its own, as assistant activities are.
+        -->
+        <activity
+            android:name=".ui.assistant.AssistantActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/Theme.ThreeMacawSpeech.VoiceInput"
+            android:windowSoftInputMode="adjustResize" />
         <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
         <receiver
             android:name=".ui.appearance.LauncherIconUpdateReceiver"
@@ -269,6 +299,48 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <!--
+            The digital assistant (roadmap P5.7, D48): the voice interaction service and its session service, bound by the
+            system only (BIND_VOICE_INTERACTION). The user picks it as the default digital assistant app; it records nothing
+            until the assist gesture shows a session.
+        -->
+        <service
+            android:name=".assistant.MacawVoiceInteractionService"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_VOICE_INTERACTION">
+            <meta-data
+                android:name="android.voice_interaction"
+                android:resource="@xml/voice_interaction_service" />
+            <intent-filter>
+                <action android:name="android.service.voice.VoiceInteractionService" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".assistant.MacawVoiceInteractionSessionService"
+            android:exported="true"
+            android:permission="android.permission.BIND_VOICE_INTERACTION" />
+
+        <!--
+            The system recognition service (roadmap P5.7, D56): the default SpeechRecognizer service while 3-Macaw Speech
+            is the assistant, and any app may name it. Exported without a permission like the TTS engine: below API 31 the
+            client binds it itself (the service checks the caller's RECORD_AUDIO), from API 31 the system binds it and
+            attributes the recording to the caller.
+        -->
+        <service
+            android:name=".recognition.MacawRecognitionService"
+            android:exported="true"
+            android:label="@string/app_name"
+            tools:ignore="ExportedService">
+            <intent-filter>
+                <action android:name="android.speech.RecognitionService" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.speech"
+                android:resource="@xml/recognition_service" />
+        </service>
 
 
     </application>

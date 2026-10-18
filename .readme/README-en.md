@@ -59,6 +59,7 @@ The plugin is a separately installed APK. AutoJs6 scripts use it through the glo
 - Wake words: type the keyword as plain text (for example `小六小六` or `hey macaw`) without training a model; after waking up, dictation can start automatically.
 - Text-to-speech: several neural Chinese and English voices, synthesized to WAV files or used as the system TTS engine by the AutoJs6 `tts` module and other apps.
 - System voice input: microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition; you say one sentence in a bottom sheet and the recognized text goes back to that app.
+- Digital assistant: choose 3-Macaw Speech as the default digital assistant app, then long press the power or Home button, say one sentence, edit the recognized text if needed and hand it to 3-Stove Agent, 3-Stone AI or another app that takes voice commands, or copy it; as the assistant it is also the speech recognition service other apps use.
 - Model management: downloads from a signed model catalog, enabled only after every file passes its SHA-256 check, plus import of local models; models restricted to non-commercial use show their license before the download.
 
 ******
@@ -135,6 +136,14 @@ Install at least one synthesis model first, then choose 3-Macaw Speech as the pr
 
 Yes. With a recognition model installed and the microphone permission granted, apps that start the system voice input (for example the microphone button of 3-Stove Agent) open the 3-Macaw Speech sheet. If another voice input app such as Google is installed, Android asks which one to use and can remember the choice. To hide the entry from other apps, turn off 'Use as the system voice input' in the recognition group of the settings.
 
+#### How do I make 3-Macaw Speech the default digital assistant?
+
+Open the settings of 3-Macaw Speech and tap Digital assistant in the recognition group: the system settings open, where you choose 3-Macaw Speech as the digital assistant app (the page may be named a little differently on some systems). Then long press the power or Home button, or use the assist gesture, to dictate. If the power button is set to another function on your phone, use the Home button or the assist gesture.
+
+#### Why does the assistant not listen for a wake word all the time?
+
+Listening all the time keeps the microphone, an ongoing notification and the microphone indicator on and uses more battery, so the digital assistant listens only when you press the assist button. Apps such as 3-Stone AI and 3-Stove Agent can offer their own always-on listening switch (off by default); while one listens, the digital assistant, voice input and speech recognition still work, and wake word detection pauses and resumes by itself afterwards. A built-in wake word of 3-Macaw Speech itself is planned for a later version.
+
 ******
 
 ### Permissions and security
@@ -148,6 +157,7 @@ The plugin keeps its permission surface as small as possible:
 - Storage: models live in the private directory of the plugin and local models are imported through the system file picker, so no storage permission is requested.
 - Protected entries: the capability service and the activation entry require the AutoJs6 plugin permission (`org.autojs.permission.PLUGIN`), so other apps cannot call them directly; the system TTS engine and its voice check, sample text and settings entries are open to every app, as Android requires, and only synthesize speech.
 - System voice input: like the system TTS engine it is open to every app; it records only while its sheet is on the screen, returns nothing but the recognized text and can be turned off in the settings.
+- Digital assistant: it never reads the screen and does not listen in the background; it records only while its sheet is on the screen, and the recognized text leaves the sheet only when you tap an app button or copy it (on the lock screen, after you unlock). The speech recognition service recognizes only for apps that hold the microphone permission themselves.
 
 ******
 
@@ -206,6 +216,8 @@ _2026/10/16_
 - `Feature` Import a local model from a tar, tar.bz2 or zip archive or from a folder: files that match a catalog model are registered as that model, other files become your own model after you fill in its kind, model type, name, languages and ID
 - `Feature` Try it out: live dictation (partial results in gray) with a choice of model and language, a wake word trial that lists the hits with their keyword and score, and speech synthesis of your text with a choice of model, speaker and speed, played back or saved as a WAV file; leaving the screen releases the microphone
 - `Feature` System voice input: microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition of 3-Macaw Speech: say one sentence in a bottom sheet and the recognized text goes straight back to that app; it ends after a pause, or stop or cancel it earlier; it follows the endpoint sensitivity and voice activity detection of the settings and can be turned off in their recognition group
+- `Feature` Digital assistant: after choosing 3-Macaw Speech as the default digital assistant app in the system settings, long press the power or Home button (or use the assist gesture) and say one sentence in a bottom sheet; the recognized text can be edited, then a button hands it to an app that takes voice commands, such as 3-Stove Agent or 3-Stone AI, or you copy it or speak again; nothing is sent before you tap a button. It also works on the lock screen and unlocks before sending or copying. It never reads the screen and does not listen in the background. The recognition group of the settings shows whether it is the default assistant and opens the system settings to choose it
+- `Feature` System speech recognition service: while 3-Macaw Speech is the digital assistant, apps that use the Android speech recognizer (SpeechRecognizer) get its offline recognition, with partial results; apps can also name it directly. When another app keeps a wake word listening through 3-Macaw Speech (3-Stone AI, for one), the digital assistant, the system voice input, the speech recognition service and the tryout screen still get the microphone: wake word detection pauses meanwhile and resumes by itself afterwards
 - `Feature` Settings: language, night mode, theme color and launcher icon (following AutoJs6 by default); the default recognition and synthesis models, endpoint sensitivity, voice activity detection, speaker, speed and a default voice per language for the tryout screen and the system TTS engine (scripts keep the documented defaults); when idle models are released, catalog refresh and cleanup of leftover files; the settings button of 3-Macaw Speech in the system text-to-speech settings opens this screen
 - `Feature` About: version, the release history included with the plugin, update checks (automatically at most every 12 hours, a release can be ignored) and the licenses and notices: the app as a whole is conveyed under the GNU GPL 3.0 or later without any warranty, with the third-party notices, the full GPL text, the Unicode Terms of Use and where the corresponding source is
 - `Feature` Launcher icon: adaptive icon (light), adaptive icon (dark), adaptive icon (automatic, the default) or transparent background icon

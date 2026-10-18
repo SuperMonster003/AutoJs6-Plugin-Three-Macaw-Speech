@@ -44,7 +44,7 @@ class ManifestContractTest {
         )
         val permissions = manifest.children("uses-permission").map { it.android("name") }
         assertTrue("no storage permission (roadmap D23 / D29)", permissions.none { it.contains("STORAGE") || it.contains("MEDIA") })
-        assertTrue("no package queries yet", manifest.children("queries").isEmpty())
+        assertEquals("only the VOICE_COMMAND query of roadmap D50", 1, manifest.children("queries").size)
         assertTrue("no uses-sdk override: SDK levels come from version.properties", manifest.children("uses-sdk").isEmpty())
         assertTrue("no feature requirements", manifest.children("uses-feature").isEmpty())
     }
@@ -82,7 +82,7 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                VOICE_INPUT, ".ui.assistant.AssistantActivity", ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
             application.children("activity").map { it.android("name") },
@@ -135,7 +135,7 @@ class ManifestContractTest {
             filter.children("category").any { it.android("name") == "android.intent.category.LAUNCHER" }
         })
         // Icon specification section 4: four fixed aliases after the real activity, only the automatic one enabled.
-        val aliases = application.children("activity-alias")
+        val aliases = application.children("activity-alias").filter { it.android("name").startsWith(".launcher.") }
         assertEquals(
             listOf(
                 ".launcher.AdaptiveLightIconAlias" to "@mipmap/ic_launcher_system_light",
@@ -202,7 +202,7 @@ class ManifestContractTest {
         assertEquals(
             listOf(
                 ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService",
-                ".ttsengine.ThreeMacawSpeechTtsEngineService",
+                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION,
             ),
             application.children("service").map { it.android("name") },
         )
@@ -261,13 +261,76 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the digital assistant follows roadmap D48, D54 and D55`() {
+        // Roadmap P5.7: bound by the system only, through BIND_VOICE_INTERACTION.
+        val service = service(ASSISTANT)
+        assertEquals("true", service.android("exported"))
+        assertEquals(BIND_VOICE_INTERACTION, service.android("permission"))
+        assertEquals("@string/app_name", service.android("label"))
+        assertFilter(service, action = "android.service.voice.VoiceInteractionService", category = null)
+        assertEquals(mapOf("android.voice_interaction" to "@xml/voice_interaction_service"), service.children("meta-data").associate { it.android("name") to it.android("resource") })
+        val session = service(ASSISTANT_SESSION)
+        assertEquals("true", session.android("exported"))
+        assertEquals(BIND_VOICE_INTERACTION, session.android("permission"))
+        assertTrue(session.children("intent-filter").isEmpty())
+
+        val description = RepositoryFiles.xml("app/src/main/res/xml/voice_interaction_service.xml")
+        assertEquals("voice-interaction-service", description.tagName)
+        assertEquals("$PACKAGE$ASSISTANT_SESSION", description.android("sessionService"))
+        assertEquals("both services are required (VoiceInteractionServiceInfo)", "$PACKAGE$RECOGNITION", description.android("recognitionService"))
+        assertEquals("$PACKAGE$RECOGNITION_SETTINGS", description.android("settingsActivity"))
+        // The system makes only supportsAssist services the assistant; D54 is kept by disabling the assist data in code.
+        assertEquals("true", description.android("supportsAssist"))
+        assertEquals("D55: the assistant starts on the lock screen", "true", description.android("supportsLaunchVoiceAssistFromKeyguard"))
+        val source = RepositoryFiles.root.resolve("app/src/main/java/io/github/supermonster003/autojs6/plugin/three/macaw/speech/assistant/MacawVoiceInteractionService.kt").toFile().readText()
+        assertTrue("D54: the assist data and the screenshot are disabled", "SHOW_WITH_ASSIST or VoiceInteractionSession.SHOW_WITH_SCREENSHOT" in source)
+        assertEquals("disabledShowContext is set for the service and every session", 2, Regex("disabledShowContext = ").findAll(source).count())
+
+        val sheet = application.children("activity").single { it.android("name") == ".ui.assistant.AssistantActivity" }
+        assertEquals("started by the assistant session only", "false", sheet.android("exported"))
+        assertEquals("true", sheet.android("excludeFromRecents"))
+        assertEquals("@style/Theme.ThreeMacawSpeech.VoiceInput", sheet.android("theme"))
+        assertTrue(sheet.children("intent-filter").isEmpty())
+
+        // D50: the targets are visible on API 30+ through one query of their action.
+        val queries = manifest.child("queries").children("intent")
+        assertEquals(listOf("org.autojs.plugin.action.VOICE_COMMAND"), queries.flatMap { intent -> intent.children("action").map { it.android("name") } })
+        val answered = application.children("activity").flatMap { activity -> activity.children("intent-filter").flatMap { filter -> filter.children("action").map { it.android("name") } } }
+        assertTrue("the plugin never answers VOICE_COMMAND itself", "org.autojs.plugin.action.VOICE_COMMAND" !in answered)
+    }
+
+    @Test
+    fun `the recognition service is the system's and opens the settings at recognition`() {
+        // Roadmap D56: exported without a permission like the TTS engine; the service checks the caller's microphone.
+        val service = service(RECOGNITION)
+        assertEquals("true", service.android("exported"))
+        assertNull(service.androidOrNull("permission"))
+        assertNull("no foreground service type: it records for a visible caller", service.androidOrNull("foregroundServiceType"))
+        assertFilter(service, action = "android.speech.RecognitionService", category = DEFAULT_CATEGORY)
+        assertEquals(mapOf("android.speech" to "@xml/recognition_service"), service.children("meta-data").associate { it.android("name") to it.android("resource") })
+        val description = RepositoryFiles.xml("app/src/main/res/xml/recognition_service.xml")
+        assertEquals("recognition-service", description.tagName)
+        assertEquals("$PACKAGE$RECOGNITION_SETTINGS", description.android("settingsActivity"))
+        val alias = application.children("activity-alias").single { it.android("name") == RECOGNITION_SETTINGS }
+        assertEquals("true", alias.android("exported"))
+        assertEquals(SETTINGS, alias.android("targetActivity"))
+        assertTrue(alias.children("intent-filter").isEmpty())
+    }
+
+    @Test
     fun `every exported component requires the plugin permission`() {
         val components = listOf("activity", "activity-alias", "service", "receiver", "provider").flatMap { application.children(it) }
         val unprotected = components.filter { it.androidOrNull("exported") == "true" && it.androidOrNull("permission") != PLUGIN_PERMISSION }
         assertEquals(
-            "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5) and the voice input (P5.6)",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT,
+            "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
+                "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7)",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION,
             unprotected.map { it.android("name") }.toSet(),
+        )
+        assertEquals(
+            "the assistant services are bound by the system only",
+            setOf(ASSISTANT, ASSISTANT_SESSION),
+            unprotected.filter { it.androidOrNull("permission") == BIND_VOICE_INTERACTION }.map { it.android("name") }.toSet(),
         )
         assertTrue("no provider is declared", application.children("provider").isEmpty())
         assertTrue("the receiver is internal", application.children("receiver").all { it.android("exported") == "false" })
@@ -302,13 +365,21 @@ class ManifestContractTest {
         /** Roadmap P5.6: the system voice input, reached by any app. zh-CN: 系统语音输入, 任何应用均可启动. */
         const val VOICE_INPUT = ".ui.voice.VoiceInputActivity"
 
+        /** Roadmap P5.7: the digital assistant and the recognition service. zh-CN: 数字助理与识别服务. */
+        const val PACKAGE = "io.github.supermonster003.autojs6.plugin.three.macaw.speech"
+        const val ASSISTANT = ".assistant.MacawVoiceInteractionService"
+        const val ASSISTANT_SESSION = ".assistant.MacawVoiceInteractionSessionService"
+        const val RECOGNITION = ".recognition.MacawRecognitionService"
+        const val RECOGNITION_SETTINGS = ".ui.settings.RecognitionSettingsAlias"
+        const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"
+
         /**
          * The screens the launcher and the system TTS settings open (roadmap P5): they show the plugin's own screens only.
          * zh-CN: 启动器与系统 TTS 设置打开的界面 (路线图 P5): 只显示插件自己的界面.
          */
         val SCREEN_ENTRIES = setOf(
             HOME, SETTINGS, ".launcher.AdaptiveLightIconAlias", ".launcher.AdaptiveDarkIconAlias", ".launcher.AdaptiveAutoIconAlias",
-            ".launcher.TransparentIconAlias",
+            ".launcher.TransparentIconAlias", RECOGNITION_SETTINGS,
         )
     }
 

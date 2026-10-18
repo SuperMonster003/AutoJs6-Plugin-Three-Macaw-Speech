@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -17,13 +18,14 @@ import kotlin.concurrent.thread
  * detected two ways: a full second of zero samples, or `AudioRecordingConfiguration.isClientSilenced` (API 29+); the
  * listener hears [Listener.onSilenced] once per change (the system silences a process without the microphone
  * capability, roadmap D22). One instance records once; [stop] ends the capture and releases the recorder and may be
- * called from any thread.
+ * called from any thread. [attribution] (API 31+) is the context the recording is attributed to: the caller of the
+ * system recognition service (roadmap D56), whose `AttributionSource` the context carries.
  * zh-CN: 插件自己的麦克风 (路线图 D6, D16, P3.1): `VOICE_RECOGNITION` 音源上的 `AudioRecord`, 16 kHz 单声道 PCM16, 在独立的采集线程上以 20 ms
  * 帧读取, [Listener.onAudio] 收到浮点采样. 两种方式判断被静音: 连续一秒的零采样, 或 `AudioRecordingConfiguration.isClientSilenced` (API 29+);
  * 每次变化通知一次 [Listener.onSilenced] (系统会静音没有麦克风能力的进程, 路线图 D22). 一个实例只录音一次; [stop] 结束采集并释放录音器, 可从
- * 任意线程调用.
+ * 任意线程调用. [attribution] (API 31+) 是录音所归属的 Context: 系统识别服务的调用方 (路线图 D56), 该 Context 携带其 `AttributionSource`.
  */
-class MicrophoneSource(private val listener: Listener) {
+class MicrophoneSource(private val listener: Listener, private val attribution: Context? = null) : AudioCapture {
 
     interface Listener {
         fun onAudio(samples: FloatArray)
@@ -42,12 +44,23 @@ class MicrophoneSource(private val listener: Listener) {
      * zh-CN: 打开并启动录音器; 打开失败直接抛出 (`ENGINE_FAILED`), 之后的读取错误交给 [Listener.onFailure]. 调用方已检查 `RECORD_AUDIO`.
      */
     @SuppressLint("MissingPermission")
-    fun start() {
+    override fun start() {
         check(record == null) { "MicrophoneSource records once" }
         val minimum = AudioRecord.getMinBufferSize(AudioInput.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT)
         if (minimum <= 0) throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "The device cannot record 16 kHz mono PCM16 (getMinBufferSize = $minimum)")
         val recorder = try {
-            AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, AudioInput.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(minimum, BUFFER_BYTES))
+            if (attribution != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                AudioRecord.Builder()
+                    .setContext(attribution)
+                    .setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
+                    .setAudioFormat(
+                        AudioFormat.Builder().setSampleRate(AudioInput.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_IN_MONO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build(),
+                    )
+                    .setBufferSizeInBytes(maxOf(minimum, BUFFER_BYTES))
+                    .build()
+            } else {
+                AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, AudioInput.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(minimum, BUFFER_BYTES))
+            }
         } catch (e: RuntimeException) {
             throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "AudioRecord could not be created: ${e.message}", e)
         }
@@ -70,7 +83,7 @@ class MicrophoneSource(private val listener: Listener) {
         worker = thread(name = "MacawMicrophone", priority = Thread.MAX_PRIORITY) { capture(recorder) }
     }
 
-    fun stop() {
+    override fun stop() {
         running = false
         val recorder = synchronized(this) { record }
         runCatching { recorder?.stop() }
@@ -133,4 +146,23 @@ class MicrophoneSource(private val listener: Listener) {
         private const val CHECK_MILLIS = 1000L
         private const val JOIN_MILLIS = 2000L
     }
+}
+
+/** A recording of the plugin's microphone sessions. zh-CN: 插件麦克风会话的一次录音. */
+interface AudioCapture {
+    fun start()
+    fun stop()
+}
+
+/**
+ * Opens the capture of a microphone session: the real [MicrophoneSource], or the virtual room a device test installs
+ * in [override] (an emulator has no audio input; roadmap P5.7 E3). Production code never sets it.
+ * zh-CN: 打开麦克风会话的录音: 真实的 [MicrophoneSource], 或设备测试在 [override] 中装入的虚拟房间 (模拟器没有音频输入; 路线图 P5.7 E3).
+ * 正式代码从不设置它.
+ */
+object AudioCaptures {
+    @Volatile
+    var override: ((MicrophoneSource.Listener) -> AudioCapture)? = null
+
+    fun open(listener: MicrophoneSource.Listener, attribution: Context?): AudioCapture = override?.invoke(listener) ?: MicrophoneSource(listener, attribution)
 }

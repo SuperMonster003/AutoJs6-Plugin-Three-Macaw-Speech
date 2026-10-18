@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">تم نسخ النص</string>
+    <string name="assistant_copy">نسخ النص</string>
+    <string name="assistant_no_match_body">لم يتم التعرف على أي كلمات. تحدث مرة أخرى أو أغلق اللوحة.</string>
+    <string name="assistant_no_match_title">لم يتم التعرف على شيء</string>
+    <string name="assistant_no_targets">لا يوجد تطبيق مثبت يستقبل النص بعد. ثبت ⁨3-Stove Agent⁩ أو ⁨3-Stone AI⁩ لتمرير النص إليه, أو انسخ النص.</string>
+    <string name="assistant_redo">التحدث مرة أخرى</string>
+    <string name="assistant_send_failed">تعذر فتح ⁨%1$s⁩. اختر تطبيقا آخر أو انسخ النص.</string>
+    <string name="assistant_targets">إرسال إلى</string>
+    <string name="assistant_text_label">النص المتعرف عليه (انقر للتعديل)</string>
+    <string name="assistant_unlock_needed">افتح قفل الجهاز للمتابعة</string>
     <string name="delete_dialog_default_message">هذا هو النموذج الافتراضي في فئته. سيصبح نموذج آخر مثبت من الفئة نفسها هو الافتراضي.</string>
     <string name="delete_dialog_message">ستُحذف ملفاته من الجهاز. يمكنك تنزيله مجددا لاحقا.</string>
     <string name="delete_dialog_title">حذف %1$s?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">حول</string>
     <string name="settings_appearance">المظهر</string>
     <string name="settings_asr_model">نموذج التعرف الافتراضي</string>
+    <string name="settings_assistant">المساعد الرقمي</string>
+    <string name="settings_assistant_off">ليس المساعد الرقمي الافتراضي. انقر لفتح إعدادات النظام واختيار ⁨3-Macaw Speech⁩ تطبيقا للمساعد الرقمي</string>
+    <string name="settings_assistant_on">⁨3-Macaw Speech⁩ هو المساعد الرقمي الافتراضي. اضغط مطولا على زر التشغيل أو زر الصفحة الرئيسية للإملاء, ثم اختر التطبيق الذي يستقبل النص</string>
     <string name="settings_catalog_current">كتالوج النماذج v%1$d محدّث</string>
     <string name="settings_catalog_failed">تعذر تحديث كتالوج النماذج. تحقق من الشبكة وحاول مجددا.</string>
     <string name="settings_catalog_refresh">تحديث كتالوج النماذج</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">إيقاف التجاهل</string>
     <string name="update_up_to_date">أحدث إصدار مثبت</string>
     <string name="update_view_release">عرض الإصدار</string>
-    <string name="voice_input_busy_body">يستخدم برنامج نصي ميكروفون ⁨3-Macaw Speech⁩. أعد المحاولة بعد انتهاء الإملاء أو اكتشاف كلمة التنبيه.</string>
+    <string name="voice_input_busy_body">يستخدم إملاء آخر ميكروفون ⁨3-Macaw Speech⁩, مثل برنامج نصي أو الإدخال الصوتي لتطبيق آخر. أعد المحاولة بعد انتهائه.</string>
     <string name="voice_input_busy_title">الميكروفون قيد الاستخدام</string>
     <string name="voice_input_close">إغلاق</string>
     <string name="voice_input_failed_body">تعذر على محرك الكلام إكمال التعرف (⁨%1$s⁩). أعد المحاولة لاحقا أو تحقق من نماذج التعرف في الشاشة الرئيسية.</string>

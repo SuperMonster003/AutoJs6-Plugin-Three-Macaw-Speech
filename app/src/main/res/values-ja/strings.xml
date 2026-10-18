@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">テキストをコピーしました</string>
+    <string name="assistant_copy">テキストをコピー</string>
+    <string name="assistant_no_match_body">言葉を認識できませんでした. もう一度話すか, 閉じてください.</string>
+    <string name="assistant_no_match_title">認識できませんでした</string>
+    <string name="assistant_no_targets">テキストを受け取れるアプリがまだありません. 3-Stove Agent または 3-Stone AI をインストールすると渡せます. テキストをコピーすることもできます.</string>
+    <string name="assistant_redo">もう一度話す</string>
+    <string name="assistant_send_failed">%1$s を開けませんでした. 別のアプリを選ぶか, テキストをコピーしてください.</string>
+    <string name="assistant_targets">送信先</string>
+    <string name="assistant_text_label">認識したテキスト (タップして編集)</string>
+    <string name="assistant_unlock_needed">続けるにはデバイスのロックを解除してください</string>
     <string name="delete_dialog_default_message">これはこの種類のデフォルトモデルです. 同じ種類の別のインストール済みモデルがデフォルトになります.</string>
     <string name="delete_dialog_message">ファイルはデバイスから削除されます. 後でもう一度ダウンロードできます.</string>
     <string name="delete_dialog_title">%1$s を削除しますか?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">アプリについて</string>
     <string name="settings_appearance">外観</string>
     <string name="settings_asr_model">デフォルトの認識モデル</string>
+    <string name="settings_assistant">デジタルアシスタント</string>
+    <string name="settings_assistant_off">デフォルトのデジタルアシスタントではありません. タップしてシステム設定を開き, デジタルアシスタントアプリとして 3-Macaw Speech を選んでください</string>
+    <string name="settings_assistant_on">デフォルトのデジタルアシスタントです. 電源ボタンまたはホームボタンを長押しして話し, テキストを渡すアプリを選びます</string>
     <string name="settings_catalog_current">モデルカタログ v%1$d は最新です</string>
     <string name="settings_catalog_failed">モデルカタログを更新できませんでした. ネットワークを確認して, もう一度お試しください.</string>
     <string name="settings_catalog_refresh">モデルカタログを更新</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">無視を解除</string>
     <string name="update_up_to_date">最新です</string>
     <string name="update_view_release">リリースを表示</string>
-    <string name="voice_input_busy_body">スクリプトが 3-Macaw Speech のマイクを使用しています. その音声入力またはウェイクワード検出が終わってから, もう一度試してください.</string>
+    <string name="voice_input_busy_body">別の音声入力 (スクリプトや他のアプリの音声入力など) が 3-Macaw Speech のマイクを使用しています. 終わってから, もう一度試してください.</string>
     <string name="voice_input_busy_title">マイクは使用中です</string>
     <string name="voice_input_close">閉じる</string>
     <string name="voice_input_failed_body">音声エンジンが認識を完了できませんでした (%1$s). 後でもう一度試すか, ホーム画面で認識モデルを確認してください.</string>

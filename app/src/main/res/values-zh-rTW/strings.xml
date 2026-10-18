@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">已複製文字</string>
+    <string name="assistant_copy">複製文字</string>
+    <string name="assistant_no_match_body">沒有辨識出文字. 可以重說, 或關閉面板.</string>
+    <string name="assistant_no_match_title">沒有辨識到內容</string>
+    <string name="assistant_no_targets">還沒有可以接收文字的應用程式. 安裝 3-Stove Agent 或 3-Stone AI 後即可轉交, 也可以先複製文字.</string>
+    <string name="assistant_redo">重說</string>
+    <string name="assistant_send_failed">無法開啟 %1$s. 請選擇其他應用程式或複製文字.</string>
+    <string name="assistant_targets">傳送到</string>
+    <string name="assistant_text_label">辨識文字 (輕觸可編輯)</string>
+    <string name="assistant_unlock_needed">解鎖裝置後才能繼續</string>
     <string name="delete_dialog_default_message">這是該種類的預設模型, 刪除後由同種類的另一個已安裝模型作為預設.</string>
     <string name="delete_dialog_message">其檔案將從裝置上刪除, 之後可以重新下載.</string>
     <string name="delete_dialog_title">刪除 %1$s?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">關於</string>
     <string name="settings_appearance">外觀</string>
     <string name="settings_asr_model">預設辨識模型</string>
+    <string name="settings_assistant">數位助理</string>
+    <string name="settings_assistant_off">尚未設為預設數位助理. 輕觸以開啟系統設定, 在數位助理應用程式中選擇 3-Macaw Speech</string>
+    <string name="settings_assistant_on">已是預設數位助理. 長按電源鍵或 Home 鍵即可聽寫, 再選擇接收文字的應用程式</string>
     <string name="settings_catalog_current">模型目錄 v%1$d 已是最新版本</string>
     <string name="settings_catalog_failed">無法重新整理模型目錄, 請檢查網路後重試.</string>
     <string name="settings_catalog_refresh">重新整理模型目錄</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">取消忽略</string>
     <string name="update_up_to_date">已是最新版本</string>
     <string name="update_view_release">檢視發行版</string>
-    <string name="voice_input_busy_body">有腳本正在使用 3-Macaw Speech 的麥克風. 請等它的聽寫或喚醒結束後再試.</string>
+    <string name="voice_input_busy_body">另一個聽寫正在使用 3-Macaw Speech 的麥克風, 例如腳本或其他應用程式的語音輸入. 請等它結束後再試.</string>
     <string name="voice_input_busy_title">麥克風正被占用</string>
     <string name="voice_input_close">關閉</string>
     <string name="voice_input_failed_body">語音引擎未能完成辨識 (%1$s). 請稍後再試, 或在首頁檢查辨識模型.</string>

@@ -31,6 +31,7 @@
     "Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.",
     "Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.",
     "Entrada de voz del sistema: los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión; dices una frase en un panel inferior y el texto reconocido vuelve a esa app.",
+    "Asistente digital: elige 3-Macaw Speech como app de asistente digital predeterminada, mantén pulsado el botón de encendido o el de inicio, di una frase, edita el texto reconocido si hace falta y entrégalo a 3-Stove Agent, 3-Stone AI u otra app que reciba comandos de voz, o cópialo; como asistente también es el servicio de reconocimiento de voz que usan otras apps.",
     "Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga."
   ],
   "usage_steps": [
@@ -68,6 +69,14 @@
     {
       "q": "Pueden otras apps usar 3-Macaw Speech para la entrada de voz?",
       "a": "Sí. Con un modelo de reconocimiento instalado y el permiso de micrófono concedido, las apps que abren la entrada de voz del sistema (por ejemplo, el botón de micrófono de 3-Stove Agent) muestran el panel de 3-Macaw Speech. Si también hay otra app de entrada de voz, como Google, Android pregunta cuál usar y puede recordar la elección. Para ocultar esta entrada a otras apps, desactiva 'Usar como entrada de voz del sistema' en el grupo Reconocimiento de los ajustes."
+    },
+    {
+      "q": "Cómo hago que 3-Macaw Speech sea el asistente digital predeterminado?",
+      "a": "Abre los ajustes de 3-Macaw Speech y toca Asistente digital en el grupo de reconocimiento: se abren los ajustes del sistema, donde eliges 3-Macaw Speech como app de asistente digital (en algunos sistemas la página tiene un nombre algo distinto). Después mantén pulsado el botón de encendido o el de inicio, o usa el gesto del asistente, para dictar. Si el botón de encendido de tu teléfono tiene otra función asignada, usa el botón de inicio o el gesto del asistente."
+    },
+    {
+      "q": "Por qué el asistente no escucha una palabra de activación todo el tiempo?",
+      "a": "Escuchar todo el tiempo mantiene encendidos el micrófono, una notificación permanente y el indicador del micrófono, y gasta más batería, así que el asistente digital solo escucha cuando pulsas el botón del asistente. Apps como 3-Stone AI y 3-Stove Agent pueden ofrecer su propio interruptor de escucha permanente (desactivado por defecto); mientras escuchan, el asistente digital, la entrada de voz y el reconocimiento de voz siguen funcionando, y la detección de la palabra de activación se pausa y se reanuda sola después. Una palabra de activación propia de 3-Macaw Speech está prevista para una versión posterior."
     }
   ],
   "p_security_intro": "El complemento reduce al máximo sus permisos:",
@@ -76,7 +85,8 @@
     "Red: solo se usa para descargar modelos y actualizar el catálogo firmado; el reconocimiento y la síntesis funcionan sin conexión.",
     "Almacenamiento: los modelos se guardan en el directorio privado del complemento y los modelos locales se importan mediante el selector de archivos del sistema, por lo que no se solicita permiso de almacenamiento.",
     "Entradas protegidas: el servicio de capacidad y la entrada de activación exigen el permiso de complemento de AutoJs6 (`org.autojs.permission.PLUGIN`), así que otras aplicaciones no pueden llamarlos directamente; el motor TTS del sistema y sus entradas de comprobación de voces, texto de ejemplo y ajustes están abiertos a todas las aplicaciones, como exige Android, y solo sintetizan voz.",
-    "Entrada de voz del sistema: como el motor de texto a voz del sistema, está abierta a todas las apps; solo graba mientras su panel está en pantalla, solo devuelve el texto reconocido y se puede desactivar en los ajustes."
+    "Entrada de voz del sistema: como el motor de texto a voz del sistema, está abierta a todas las apps; solo graba mientras su panel está en pantalla, solo devuelve el texto reconocido y se puede desactivar en los ajustes.",
+    "Asistente digital: nunca lee la pantalla y no escucha en segundo plano; solo graba mientras su panel está en pantalla, y el texto reconocido solo sale del panel cuando tocas el botón de una app o lo copias (en la pantalla de bloqueo, después de desbloquear). El servicio de reconocimiento de voz solo reconoce para apps que tienen ellas mismas el permiso del micrófono."
   ],
   "p_license": "El código del proyecto se publica bajo la [Mozilla Public License 2.0]({{ license_url }}). El motor de voz sherpa-onnx usa la licencia Apache-2.0, y onnxruntime y silero VAD usan la licencia MIT; la licencia de cada modelo figura en el catálogo de modelos.",
   "text_link_third_party": "Avisos de terceros (THIRD_PARTY_NOTICES.md)",

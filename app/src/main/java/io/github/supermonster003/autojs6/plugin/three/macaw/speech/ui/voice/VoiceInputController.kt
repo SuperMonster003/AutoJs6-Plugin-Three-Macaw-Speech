@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechPluginBinder
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import org.autojs.plugin.speech.api.ISpeechSession
@@ -29,12 +30,18 @@ internal enum class VoiceInputPhase { PREPARING, LOADING, LISTENING, STOPPING, P
  * `ISpeechPlugin` binder in the process, exactly the path of the tryout screen (options, error codes, the single
  * microphone), with the rules of [VoiceInputPolicy]. The first usable final ends the input (D44). Callbacks arrive on
  * the ASR thread and are posted to the main thread; [deliver] runs once with the outcome. The recognized text is never
- * logged (appendix D Q8 (a)).
+ * logged (appendix D Q8 (a)). The digital assistant (roadmap P5.7, D48) runs the same dictation; both take the
+ * microphone over from a wake session (D57) as [local] says.
  * zh-CN: 系统语音输入的引擎部分 (路线图 P5.6): 经同进程内插件自己的 `ISpeechPlugin` Binder 运行一个听写会话, 与试听试说页的路径完全相同 (选项, 错误码,
  * 唯一的麦克风), 规则见 [VoiceInputPolicy]. 第一个可用的 final 即结束输入 (D44). 回调在 ASR 线程上到达, 投递到主线程; [deliver] 以结局运行一次.
- * 识别文字从不写日志 (附录 D Q8 (a)).
+ * 识别文字从不写日志 (附录 D Q8 (a)). 数字助理 (路线图 P5.7, D48) 运行同一听写; 两者都按 [local] 从唤醒会话手中接管麦克风 (D57).
  */
-internal class VoiceInputController(context: Context, private val request: VoiceInputRequest, private val deliver: (VoiceInputOutcome) -> Unit) {
+internal class VoiceInputController(
+    context: Context,
+    private val request: VoiceInputRequest,
+    private val deliver: (VoiceInputOutcome) -> Unit,
+    private val local: LocalSession = LocalSession(),
+) {
     private val app = context.applicationContext
     private val binder = SpeechPluginBinder(app)
     private val preferences = SpeechPreferences(app)
@@ -43,6 +50,7 @@ internal class VoiceInputController(context: Context, private val request: Voice
     private var ready = false
     private var delivered = false
     private var generation = 0
+    private var modelLanguages: List<String> = emptyList()
 
     var phase by mutableStateOf(VoiceInputPhase.PREPARING)
         private set
@@ -68,15 +76,7 @@ internal class VoiceInputController(context: Context, private val request: Voice
         partial = ""
         phase = VoiceInputPhase.PREPARING
         io.execute {
-            val plan = runCatching {
-                val runtime = SpeechRuntime.get(app)
-                val models = runtime.models.list(kind = SpeechContract.KIND_ASR, installed = true)
-                if (models.isEmpty()) return@runCatching null
-                val modelId = VoiceInputPolicy.chooseModel(models, request.language)
-                val model = modelId?.let { runtime.models.store.installed(it) } ?: runtime.models.defaultModel(SpeechContract.KIND_ASR)
-                // D46: biasing strings only reach a transducer with bpe.vocab; other models get none (and no warning).
-                modelId to (request.biasing.isNotEmpty() && model != null && runtime.supportsHotwords(model))
-            }
+            val plan = runCatching { DictationPlan.of(app, request) }
             main.post {
                 if (expected != generation || delivered) return@post
                 val chosen = plan.getOrElse {
@@ -84,7 +84,12 @@ internal class VoiceInputController(context: Context, private val request: Voice
                     show(VoiceInputPolicy.problem(SpeechErrorCodes.INTERNAL, recording = false))
                     return@post
                 }
-                if (chosen == null) show(VoiceInputPolicy.problem(SpeechErrorCodes.MODEL_MISSING, recording = false)) else open(chosen.first, chosen.second)
+                if (chosen == null) {
+                    show(VoiceInputPolicy.problem(SpeechErrorCodes.MODEL_MISSING, recording = false))
+                } else {
+                    modelLanguages = chosen.languages
+                    open(chosen.options(request, preferences.vad, preferences.endpointMillis))
+                }
             }
         }
     }
@@ -92,21 +97,11 @@ internal class VoiceInputController(context: Context, private val request: Voice
     /** The guidance of a refused microphone permission (D47). zh-CN: 麦克风权限被拒的引导 (D47). */
     fun microphoneDenied() = show(VoiceInputPolicy.problem(SpeechErrorCodes.PERMISSION_DENIED, recording = false))
 
-    private fun open(modelId: String?, hotwords: Boolean) {
-        val options = Bundle().apply {
-            modelId?.let { putString(SpeechOptionKeys.MODEL, it) }
-            // D44: the endpoint and VAD of the settings screen (D35), the caller's silence first.
-            putBoolean(SpeechOptionKeys.VAD, preferences.vad)
-            putLong(SpeechOptionKeys.SILENCE_END_MILLIS, VoiceInputPolicy.silence(request.silenceMillis, preferences.endpointMillis))
-            putLong(SpeechOptionKeys.TIMEOUT_MILLIS, VoiceInputPolicy.NO_SPEECH_MILLIS)
-            putLong(SpeechOptionKeys.MAX_DURATION_MILLIS, VoiceInputPolicy.MAX_UTTERANCE_MILLIS)
-            if (hotwords) putStringArray(SpeechOptionKeys.HOTWORDS, request.biasing.toTypedArray())
-            // D45: no language for SenseVoice, which detects it.
-        }
+    private fun open(options: Bundle) {
         ready = false
         phase = VoiceInputPhase.LOADING
         session = try {
-            binder.openSession(options, callback)
+            binder.openLocalSession(options, callback, local)
         } catch (e: RuntimeException) {
             // The binder throws `CODE: detail` as the contract defines. zh-CN: Binder 按契约以 `CODE: detail` 抛出.
             val code = SpeechErrorCodes.decode(e.message.orEmpty())?.first
@@ -168,7 +163,7 @@ internal class VoiceInputController(context: Context, private val request: Voice
         override fun onFinal(event: Bundle?) = post {
             // D44: the first final with text is the answer; an empty one (noise) keeps listening.
             val text = event?.getString(SpeechResultKeys.TEXT)?.trim().orEmpty()
-            if (text.isNotEmpty()) complete(VoiceInputOutcome.Text(text))
+            if (text.isNotEmpty()) complete(VoiceInputOutcome.Text(text, VoiceInputPolicy.spokenLanguage(event?.getString(SpeechResultKeys.LANGUAGE), modelLanguages)))
         }
 
         override fun onEndpoint() = Unit
@@ -187,7 +182,7 @@ internal class VoiceInputController(context: Context, private val request: Voice
             session = null
             voiceActive = false
             if (delivered || phase == VoiceInputPhase.PROBLEM) return@post
-            complete(VoiceInputPolicy.onEnd(event?.getString(SpeechResultKeys.REASON), event?.getString(SpeechResultKeys.TEXT), partial))
+            complete(VoiceInputPolicy.onEnd(event?.getString(SpeechResultKeys.REASON), event?.getString(SpeechResultKeys.TEXT), partial, modelLanguages))
         }
     }
 
@@ -196,9 +191,50 @@ internal class VoiceInputController(context: Context, private val request: Voice
         main.post { if (expected == generation) block() }
     }
 
-    private companion object {
-        const val TAG = "MacawVoiceInput"
+    internal companion object {
+        private const val TAG = "MacawVoiceInput"
+
+        /** Model choice off the main thread, shared with the recognition service. zh-CN: 在主线程之外选模型, 与识别服务共用. */
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawVoiceInput").apply { isDaemon = true } }
+    }
+}
+
+/**
+ * The model of one dictation of the voice input, the assistant or the recognition service (D45, D46): [modelId] null
+ * leaves the default to the runtime; [hotwords] says whether the biasing strings reach the model; [languages] are the
+ * model's languages (D50).
+ * zh-CN: 语音输入, 数字助理或识别服务一次听写所用的模型 (D45, D46): [modelId] 为 null 时交给运行时的默认模型; [hotwords] 表示偏置词能否传给模型;
+ * [languages] 为模型的语言 (D50).
+ */
+internal data class DictationPlan(val modelId: String?, val hotwords: Boolean, val languages: List<String>) {
+
+    /**
+     * The session options (D44 - D46): the endpoint of the settings screen (D35) unless the caller gives its silence, the
+     * no-speech timeout and the utterance limit of D44, the biasing strings as hotwords when the model takes them, and no
+     * language (SenseVoice detects it, D45).
+     * zh-CN: 会话选项 (D44 - D46): 设置页的端点 (D35), 调用方给出静音时长时以之为先, D44 的无语音超时与单句上限, 模型支持时把偏置词作为热词, 不传
+     * 语言 (SenseVoice 自行检测, D45).
+     */
+    fun options(request: VoiceInputRequest, vad: Boolean, endpointMillis: Long): Bundle = Bundle().apply {
+        modelId?.let { putString(SpeechOptionKeys.MODEL, it) }
+        putBoolean(SpeechOptionKeys.VAD, vad)
+        putLong(SpeechOptionKeys.SILENCE_END_MILLIS, VoiceInputPolicy.silence(request.silenceMillis, endpointMillis))
+        putLong(SpeechOptionKeys.TIMEOUT_MILLIS, VoiceInputPolicy.NO_SPEECH_MILLIS)
+        putLong(SpeechOptionKeys.MAX_DURATION_MILLIS, VoiceInputPolicy.MAX_UTTERANCE_MILLIS)
+        if (hotwords) putStringArray(SpeechOptionKeys.HOTWORDS, request.biasing.toTypedArray())
+    }
+
+    companion object {
+        /** Null when no recognition model is installed; reads the model store (not on the main thread). zh-CN: 未安装识别模型时为 null; 读取模型存储. */
+        fun of(context: Context, request: VoiceInputRequest): DictationPlan? {
+            val runtime = SpeechRuntime.get(context)
+            val models = runtime.models.list(kind = SpeechContract.KIND_ASR, installed = true)
+            if (models.isEmpty()) return null
+            val modelId = VoiceInputPolicy.chooseModel(models, request.language)
+            val model = modelId?.let { runtime.models.store.installed(it) } ?: runtime.models.defaultModel(SpeechContract.KIND_ASR)
+            // D46: biasing strings only reach a transducer with bpe.vocab; other models get none (and no warning).
+            return DictationPlan(modelId, request.biasing.isNotEmpty() && model != null && runtime.supportsHotwords(model), model?.languages.orEmpty())
+        }
     }
 }
 

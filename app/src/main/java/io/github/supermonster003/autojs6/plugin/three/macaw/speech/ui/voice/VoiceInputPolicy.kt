@@ -31,9 +31,13 @@ internal enum class VoiceInputProblemKind { MICROPHONE, NO_MODEL, BUSY, FAILED }
  */
 internal data class VoiceInputProblem(val kind: VoiceInputProblemKind, val code: String, val recording: Boolean = false)
 
-/** How one voice input ends. zh-CN: 一次语音输入的结局. */
+/**
+ * How one voice input ends; [Text.language] is the spoken language when the model reports or implies one (the
+ * assistant passes it on, roadmap D50).
+ * zh-CN: 一次语音输入的结局; [Text.language] 为模型报告或可推定的说话语言 (数字助理会转交它, 路线图 D50).
+ */
 internal sealed class VoiceInputOutcome {
-    data class Text(val text: String) : VoiceInputOutcome()
+    data class Text(val text: String, val language: String? = null) : VoiceInputOutcome()
     data object NoMatch : VoiceInputOutcome()
     data object Cancelled : VoiceInputOutcome()
     data class Failed(val problem: VoiceInputProblem) : VoiceInputOutcome()
@@ -137,11 +141,25 @@ internal object VoiceInputPolicy {
      * one, otherwise no match; a cancelled session is a cancellation.
      * zh-CN: D44: 会话结束而没有可用 final 时的结局: 有文字 (或最后的 partial) 即返回它, 否则为无匹配; 被取消的会话即取消.
      */
-    fun onEnd(reason: String?, text: String?, partial: String?): VoiceInputOutcome {
+    fun onEnd(reason: String?, text: String?, partial: String?, modelLanguages: List<String> = emptyList()): VoiceInputOutcome {
         if (reason == SpeechContract.REASON_CANCELLED) return VoiceInputOutcome.Cancelled
         val heard = text?.trim()?.takeIf { it.isNotEmpty() } ?: partial?.trim()?.takeIf { it.isNotEmpty() }
-        return heard?.let { VoiceInputOutcome.Text(it) } ?: VoiceInputOutcome.NoMatch
+        return heard?.let { VoiceInputOutcome.Text(it, spokenLanguage(null, modelLanguages)) } ?: VoiceInputOutcome.NoMatch
     }
+
+    /**
+     * Roadmap D50: the language of the recognized text as a BCP 47 tag: the language the model detected (SenseVoice
+     * tags such as `en` or `yue`; `nospeech` and other non-languages are dropped), otherwise the model's only language;
+     * null when neither tells (a bilingual model without detection).
+     * zh-CN: 路线图 D50: 识别文字的语言 (BCP 47): 模型检测到的语言 (SenseVoice 的 `en`, `yue` 等标签; 丢弃 `nospeech` 等非语言), 否则为模型唯一的
+     * 语言; 两者都无法判断时为 null (不带检测的双语模型).
+     */
+    fun spokenLanguage(detected: String?, modelLanguages: List<String>): String? {
+        val tag = language(detected)?.lowercase()?.takeIf { it.length in 2..3 && it !in NOT_LANGUAGES }
+        return tag ?: modelLanguages.mapNotNull(::language).distinct().singleOrNull()
+    }
+
+    private val NOT_LANGUAGES = setOf("unk", "und", "auto")
 
     /**
      * D47: the activity result: the text is `RESULT_OK`, a cancellation `RESULT_CANCELED`, no speech `RESULT_NO_MATCH`;

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The digital assistant (roadmap P5.7, D48): Android requires both the session service and the recognition service
+    (VoiceInteractionServiceInfo). supportsAssist must be true, or the system never makes the service the assistant when
+    the role is assigned (VoiceInteractionManagerService skips it); the screen is still never read (D54): the service
+    disables the assist data and the screenshot of every session. The assistant also starts on the lock screen (D55).
+    The settings entry opens the plugin's settings at the recognition group. Android needs full class names here.
+-->
+<voice-interaction-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:recognitionService="io.github.supermonster003.autojs6.plugin.three.macaw.speech.recognition.MacawRecognitionService"
+    android:sessionService="io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionSessionService"
+    android:settingsActivity="io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.RecognitionSettingsAlias"
+    android:supportsAssist="true"
+    android:supportsLaunchVoiceAssistFromKeyguard="true" />

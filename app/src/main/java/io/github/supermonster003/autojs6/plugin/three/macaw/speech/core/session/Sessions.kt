@@ -229,6 +229,17 @@ class WakeSession(
     private var lastHit: Long? = null
     private val texts = ArrayList<String>()
 
+    /** Guards [round] and [suspended] against a takeover from another thread (roadmap D57). zh-CN: 防止其他线程的接管与之竞争. */
+    private val gate = Any()
+
+    /**
+     * Silenced by a takeover (roadmap D57): no audio is spotted, no event is sent, the session stays open.
+     * zh-CN: 被接管而静默 (路线图 D57): 不检测音频, 不发事件, 会话保持打开.
+     */
+    @Volatile
+    var suspended: Boolean = false
+        private set
+
     val isEnded: Boolean get() = state == SessionState.ENDED
 
     /** The round in progress, if any. zh-CN: 进行中的轮次 (如有). */
@@ -255,24 +266,57 @@ class WakeSession(
 
     fun accept(samples: FloatArray) {
         if (state != SessionState.ACTIVE) return
-        position += samples.size
+        // Only this thread starts or closes a round, so a round in progress is read without the gate.
         val current = round
         if (current != null) {
+            position += samples.size
             current.accept(samples)
             if (current.isEnded) closeRound(current)
             return
         }
-        val spotter = stream ?: return
-        try {
-            spotter.accept(samples)
-            val hit = spotter.poll() ?: return
-            val at = AudioInput.millis(position)
-            val previous = lastHit
-            if (previous != null && at - previous < options.minIntervalMillis) return
-            lastHit = at
-            onHit(options.keywords[hit])
-        } catch (e: RuntimeException) {
-            fail(SpeechErrorCodes.ENGINE_FAILED, "Keyword spotting failed: ${e.message ?: e.javaClass.simpleName}")
+        val failure = synchronized(gate) {
+            if (suspended) return
+            position += samples.size
+            val spotter = stream ?: return
+            try {
+                spotter.accept(samples)
+                val hit = spotter.poll() ?: return
+                val at = AudioInput.millis(position)
+                val previous = lastHit
+                if (previous != null && at - previous < options.minIntervalMillis) return
+                lastHit = at
+                onHit(options.keywords[hit])
+                null
+            } catch (e: RuntimeException) {
+                e
+            }
+        }
+        failure?.let { fail(SpeechErrorCodes.ENGINE_FAILED, "Keyword spotting failed: ${it.message ?: it.javaClass.simpleName}") }
+    }
+
+    /**
+     * Roadmap D57: a dictation of the plugin's own entries takes the microphone over. The session stays open but silent
+     * (no `wake`, no other event, no end) until [resumeAfterTakeover]; refused while a `thenListen` round runs, because a
+     * dictation is never taken over, and after the end. Any thread.
+     * zh-CN: 路线图 D57: 插件自己入口的听写接管麦克风. 会话保持打开但静默 (不报 `wake`, 不发其他事件, 不结束), 直到 [resumeAfterTakeover]; 正在进行
+     * `thenListen` 轮次 (听写从不被接管) 或会话已结束时拒绝. 任意线程.
+     */
+    fun yieldToTakeover(): Boolean = synchronized(gate) {
+        if (state == SessionState.ENDED || round != null) return false
+        suspended = true
+        true
+    }
+
+    /**
+     * The takeover ended: spotting starts again on a fresh keyword stream, so nothing heard before the takeover can
+     * complete a keyword afterwards.
+     * zh-CN: 接管已结束: 在重置的关键词流上重新检测, 接管前听到的内容不会在之后拼成关键词.
+     */
+    fun resumeAfterTakeover() {
+        synchronized(gate) {
+            if (!suspended) return
+            suspended = false
+            stream?.restart()
         }
     }
 
@@ -295,7 +339,7 @@ class WakeSession(
     fun fail(code: String, message: String) {
         if (state == SessionState.ENDED) return
         round?.fail(code, message)
-        round = null
+        synchronized(gate) { round = null }
         state = SessionState.ENDED
         events.error(code, message)
         events.end(SpeechContract.REASON_ERROR)
@@ -313,8 +357,10 @@ class WakeSession(
     }
 
     private fun closeRound(current: DictationSession) {
-        if (round !== current) return
-        round = null
+        synchronized(gate) {
+            if (round !== current) return
+            round = null
+        }
         if (current.text.isNotEmpty()) {
             texts += current.text
             text = SpeechText.join(texts)

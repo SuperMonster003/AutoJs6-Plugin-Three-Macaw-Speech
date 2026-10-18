@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The system recognition service (roadmap P5.7, D56): its settings entry opens the plugin's settings at the recognition
+    group. Android needs the full class name here.
+-->
+<recognition-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.RecognitionSettingsAlias" />

@@ -4,4 +4,34 @@
     <queries>
         <package android:name="io.github.supermonster003.autojs6.plugin.three.macaw.speech" />
     </queries>
+
+    <!--
+        Two test targets of the digital assistant (roadmap P5.7, D50): other apps that answer VOICE_COMMAND + DEFAULT. Their
+        labels sort the other way round than their class names, so the sheet's label order shows. They run in the test
+        package's own process and report what they received to the plugin process by broadcast.
+    -->
+    <application>
+        <activity
+            android:name="io.github.supermonster003.autojs6.plugin.three.macaw.speech.VoiceCommandTargetOne"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="Macaw Test Target B"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="io.github.supermonster003.autojs6.plugin.three.macaw.speech.VoiceCommandTargetTwo"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:label="Macaw Test Target A"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+    </application>
 </manifest>

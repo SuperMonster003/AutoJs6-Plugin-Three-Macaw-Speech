@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">已复制文字</string>
+    <string name="assistant_copy">复制文本</string>
+    <string name="assistant_no_match_body">没有识别出文字. 可以重说, 或关闭弹层.</string>
+    <string name="assistant_no_match_title">没有识别到内容</string>
+    <string name="assistant_no_targets">还没有可以接收文字的应用. 安装 3-Stove Agent 或 3-Stone AI 后即可转交, 也可以先复制文本.</string>
+    <string name="assistant_redo">重说</string>
+    <string name="assistant_send_failed">无法打开 %1$s. 请选择其他应用或复制文本.</string>
+    <string name="assistant_targets">发送到</string>
+    <string name="assistant_text_label">识别文字 (点按可编辑)</string>
+    <string name="assistant_unlock_needed">解锁设备后才能继续</string>
     <string name="delete_dialog_default_message">这是该种类的默认模型, 删除后由同种类的另一个已安装模型作为默认.</string>
     <string name="delete_dialog_message">其文件将从设备上删除, 以后可以重新下载.</string>
     <string name="delete_dialog_title">删除 %1$s?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">关于</string>
     <string name="settings_appearance">外观</string>
     <string name="settings_asr_model">默认识别模型</string>
+    <string name="settings_assistant">数字助理</string>
+    <string name="settings_assistant_off">尚未设为默认数字助理. 点按打开系统设置, 在数字助理应用中选择 3-Macaw Speech</string>
+    <string name="settings_assistant_on">已是默认数字助理. 长按电源键或 Home 键即可听写, 再选择接收文字的应用</string>
     <string name="settings_catalog_current">模型目录 v%1$d 已是最新</string>
     <string name="settings_catalog_failed">无法刷新模型目录, 请检查网络后重试.</string>
     <string name="settings_catalog_refresh">刷新模型目录</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">不再忽略</string>
     <string name="update_up_to_date">已是最新版本</string>
     <string name="update_view_release">查看发行版</string>
-    <string name="voice_input_busy_body">有脚本正在使用 3-Macaw Speech 的麦克风. 待其听写或唤醒结束后再试.</string>
+    <string name="voice_input_busy_body">另一个听写正在使用 3-Macaw Speech 的麦克风, 例如脚本或其他应用的语音输入. 待其结束后再试.</string>
     <string name="voice_input_busy_title">麦克风正被占用</string>
     <string name="voice_input_close">关闭</string>
     <string name="voice_input_failed_body">语音引擎未能完成识别 (%1$s). 请稍后再试, 或在首页检查识别模型.</string>

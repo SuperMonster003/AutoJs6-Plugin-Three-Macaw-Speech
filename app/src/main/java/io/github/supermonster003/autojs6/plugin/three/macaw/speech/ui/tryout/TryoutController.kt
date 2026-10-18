@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechPluginBinder
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import org.autojs.plugin.speech.api.ISpeechProgressCallback
@@ -138,7 +139,8 @@ internal class TryoutController(context: Context) {
             putLong(SpeechOptionKeys.TIMEOUT_MILLIS, 0)
         }
         dictationPhase = TryoutPhase.LOADING
-        dictation = call { binder.openSession(options, dictationCallback) }
+        // Roadmap D57: a wake session of a client yields the microphone while the tryout listens.
+        dictation = call { binder.openLocalSession(options, dictationCallback, LocalSession()) }
         if (dictation == null) dictationPhase = TryoutPhase.IDLE
     }
 
@@ -183,7 +185,7 @@ internal class TryoutController(context: Context) {
         }
         wakePhase = TryoutPhase.LOADING
         wakeStarted = System.currentTimeMillis()
-        wake = call { binder.openWakeSession(options, wakeCallback, null) }
+        wake = call { binder.openLocalWakeSession(options, wakeCallback) }
         if (wake == null) wakePhase = TryoutPhase.IDLE
     }
 

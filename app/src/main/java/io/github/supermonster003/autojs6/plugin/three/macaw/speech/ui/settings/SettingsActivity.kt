@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -36,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationResult
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoice
@@ -65,8 +68,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.ThemeColorDialog
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.HomeActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.HomeTexts
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.OperationTracker
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.ManagerBackend
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.OperationTracker
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.TrackedOperation
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.ReleaseHistoryActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateController
@@ -82,10 +85,14 @@ import java.util.concurrent.Executors
  * color, launcher icon; the first three follow AutoJs6 by default), recognition and synthesis defaults (tryout screen and
  * system TTS engine only, maintainer's decision of 2026-10-16), resources and about. Every choice dialog edits a draft
  * and saves once on confirm. It is also the `settingsActivity` of the system TTS engine (`res/xml/tts_engine.xml`): the
- * system settings start it with `ACTION_MAIN`, and it then opens at the synthesis group.
+ * system settings start it with `ACTION_MAIN`, and it then opens at the synthesis group. Through `RecognitionSettingsAlias`
+ * it is also the settings entry of the digital assistant and the recognition service (roadmap P5.7) and opens at the
+ * recognition group, whose "Digital assistant" row tells whether 3-Macaw Speech is the default assistant and opens the
+ * system settings to choose it (the plugin cannot choose it itself, D48).
  * zh-CN: 设置页 (路线图 P5.2, 独立设置规范): 外观 (语言, 夜间模式, 主题色, 启动器图标; 前三项默认跟随 AutoJs6), 识别与合成默认值 (按维护者 2026-10-16
  * 的决定只作用于试听试说页与系统 TTS 引擎), 资源与关于. 每个选择对话框编辑草稿, 确定时保存一次. 它也是系统 TTS 引擎的 `settingsActivity`
- * (`res/xml/tts_engine.xml`): 系统设置以 `ACTION_MAIN` 启动它, 此时定位到合成分组.
+ * (`res/xml/tts_engine.xml`): 系统设置以 `ACTION_MAIN` 启动它, 此时定位到合成分组. 经 `RecognitionSettingsAlias` 它也是数字助理与识别服务的设置入口
+ * (路线图 P5.7), 此时定位到识别分组; 该组的 "数字助理" 行显示 3-Macaw Speech 是否为默认助理, 并打开系统设置供用户选择 (插件无法自行选择, D48).
  */
 class SettingsActivity : StandaloneActivity() {
 
@@ -112,6 +119,7 @@ class SettingsActivity : StandaloneActivity() {
     private var dialog by mutableStateOf<Dialog?>(null)
     private var voiceLanguage by mutableStateOf<String?>(null)
     private var busy by mutableStateOf<TrackedOperation.Kind?>(null)
+    private var assistantActive by mutableStateOf(false)
 
     private val outcomes: (OperationTracker.Outcome) -> Unit = { outcome ->
         val kind = outcome.operation.kind
@@ -140,6 +148,19 @@ class SettingsActivity : StandaloneActivity() {
     override fun onResume() {
         super.onResume()
         loadSpeech()
+        // Back from the system settings: the assistant may have been chosen there (roadmap P5.7).
+        assistantActive = MacawVoiceInteractionService.isActive(this)
+    }
+
+    /**
+     * Roadmap D48: the system settings where the user picks the digital assistant app; the default apps list and the
+     * settings home are fallbacks for systems without that page.
+     * zh-CN: 路线图 D48: 用户选择数字助理应用的系统设置页; 没有该页面的系统依次退到默认应用列表与设置首页.
+     */
+    private fun openAssistantSettings() {
+        val opened = listOf(Settings.ACTION_VOICE_INPUT_SETTINGS, Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS, Settings.ACTION_SETTINGS)
+            .firstOrNull { action -> runCatching { startActivity(Intent(action)) }.isSuccess }
+        Log.i(TAG, "Assistant settings opened with ${opened ?: "nothing"}")
     }
 
     override fun onDestroy() {
@@ -185,13 +206,17 @@ class SettingsActivity : StandaloneActivity() {
                 pendingMessage = null
             }
         }
-        val fromSystem = intent?.action == Intent.ACTION_MAIN
+        // The recognition entry of the assistant and the recognition service first, then the TTS engine's (ACTION_MAIN).
+        val fromRecognition = intent?.component?.className?.endsWith(RECOGNITION_ALIAS) == true
+        val fromSystem = !fromRecognition && intent?.action == Intent.ACTION_MAIN
         val scroll = rememberScrollState()
         var synthesisTop by remember { mutableIntStateOf(-1) }
+        var recognitionTop by remember { mutableIntStateOf(-1) }
         var scrolled by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(synthesisTop) {
-            if (fromSystem && !scrolled && synthesisTop >= 0) {
-                scroll.scrollTo(synthesisTop)
+        LaunchedEffect(synthesisTop, recognitionTop) {
+            val target = if (fromRecognition) recognitionTop else if (fromSystem) synthesisTop else -1
+            if (!scrolled && target >= 0) {
+                scroll.scrollTo(target)
                 scrolled = true
             }
         }
@@ -214,7 +239,7 @@ class SettingsActivity : StandaloneActivity() {
                 SettingsRow(stringResource(R.string.settings_launcher_icon), summary = stringResource(iconLabel(LauncherIcons.current(this@SettingsActivity))), icon = R.drawable.ic_apps_24,
                     onClick = { dialog = Dialog.LAUNCHER_ICON }, modifier = Modifier.testTag("macaw.settings.icon"))
 
-                SectionHeader(stringResource(R.string.settings_recognition))
+                SectionHeader(stringResource(R.string.settings_recognition), Modifier.onGloballyPositioned { recognitionTop = it.positionInParent().y.toInt() })
                 SettingsRow(stringResource(R.string.settings_asr_model), summary = defaultName(speech.asr), icon = R.drawable.ic_mic_24,
                     enabled = speech.asr.isNotEmpty(), onClick = { dialog = Dialog.ASR_MODEL }, modifier = Modifier.testTag("macaw.settings.asrModel"))
                 Hairline()
@@ -222,6 +247,11 @@ class SettingsActivity : StandaloneActivity() {
                 var voiceInput by remember { mutableStateOf(VoiceInputComponent.isEnabled(this@SettingsActivity)) }
                 SwitchRow(stringResource(R.string.settings_voice_input), voiceInput, { voiceInput = it; VoiceInputComponent.setEnabled(this@SettingsActivity, it) },
                     summary = stringResource(R.string.settings_voice_input_summary), icon = R.drawable.ic_mic_24, modifier = Modifier.testTag("macaw.settings.voiceInput"))
+                Hairline()
+                // Roadmap D48: whether 3-Macaw Speech is the default digital assistant; the system settings choose it.
+                SettingsRow(stringResource(R.string.settings_assistant),
+                    summary = stringResource(if (assistantActive) R.string.settings_assistant_on else R.string.settings_assistant_off),
+                    icon = R.drawable.ic_record_voice_over_24, onClick = ::openAssistantSettings, modifier = Modifier.testTag("macaw.settings.assistant"))
                 Hairline()
                 SettingsRow(stringResource(R.string.settings_endpoint), summary = stringResource(endpointLabel(preferences.endpointMillis)), icon = R.drawable.ic_timer_24,
                     onClick = { dialog = Dialog.ENDPOINT }, modifier = Modifier.testTag("macaw.settings.endpoint"))
@@ -654,6 +684,11 @@ class SettingsActivity : StandaloneActivity() {
     }
 
     private companion object {
+        const val TAG = "MacawSettings"
+
+        /** The settings entry of the assistant and the recognition service (Manifest alias). zh-CN: 助理与识别服务的设置入口 (Manifest 别名). */
+        const val RECOGNITION_ALIAS = ".ui.settings.RecognitionSettingsAlias"
+
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawSettings").apply { isDaemon = true } }
         val main = Handler(Looper.getMainLooper())
     }

@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="assistant_copied">Text copied</string>
+    <string name="assistant_copy">Copy text</string>
+    <string name="assistant_no_match_body">No words were recognized. Speak again, or close the sheet.</string>
+    <string name="assistant_no_match_title">Nothing recognized</string>
+    <string name="assistant_no_targets">No installed app takes the text yet. Install 3-Stove Agent or 3-Stone AI to pass it on, or copy it.</string>
+    <string name="assistant_redo">Speak again</string>
+    <string name="assistant_send_failed">%1$s could not be opened. Choose another app or copy the text.</string>
+    <string name="assistant_targets">Send to</string>
+    <string name="assistant_text_label">Recognized text (tap to edit)</string>
+    <string name="assistant_unlock_needed">Unlock the device to continue</string>
     <string name="delete_dialog_default_message">This is the default model of its kind. Another installed model of the same kind becomes the default.</string>
     <string name="delete_dialog_message">Its files are removed from the device. You can download it again later.</string>
     <string name="delete_dialog_title">Delete %1$s?</string>
@@ -135,6 +145,9 @@
     <string name="settings_about">About</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_asr_model">Default recognition model</string>
+    <string name="settings_assistant">Digital assistant</string>
+    <string name="settings_assistant_off">Not the default digital assistant. Tap to choose 3-Macaw Speech as the digital assistant app in the system settings</string>
+    <string name="settings_assistant_on">3-Macaw Speech is the default digital assistant. Long press the power or Home button to dictate, then choose the app that gets the text</string>
     <string name="settings_catalog_current">The model catalog v%1$d is up to date</string>
     <string name="settings_catalog_failed">Could not refresh the model catalog. Check the network and try again.</string>
     <string name="settings_catalog_refresh">Refresh the model catalog</string>
@@ -279,7 +292,7 @@
     <string name="update_stop_ignoring">Stop ignoring</string>
     <string name="update_up_to_date">Up to date</string>
     <string name="update_view_release">View release</string>
-    <string name="voice_input_busy_body">A script is using the microphone of 3-Macaw Speech. Try again after its dictation or wake word detection ends.</string>
+    <string name="voice_input_busy_body">Another dictation is using the microphone of 3-Macaw Speech, for example a script or the voice input of another app. Try again after it ends.</string>
     <string name="voice_input_busy_title">The microphone is in use</string>
     <string name="voice_input_close">Close</string>
     <string name="voice_input_failed_body">The speech engine could not finish the recognition (%1$s). Try again later, or check the recognition models on the home screen.</string>

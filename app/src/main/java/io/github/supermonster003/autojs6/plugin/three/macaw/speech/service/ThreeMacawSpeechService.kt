@@ -141,16 +141,29 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
      * thrown as `CODE: detail`; the model loads on the plugin's loader thread and `ready` follows.
      * zh-CN: 立即打开听写会话 (路线图 D30): 选项, 权限, 模型与准入在此检查并以 `CODE: detail` 抛出; 模型在插件的加载线程上加载, 随后发出 `ready`.
      */
-    override fun openSession(options: Bundle?, callback: ISpeechSessionCallback?): ISpeechSession = throwing {
+    override fun openSession(options: Bundle?, callback: ISpeechSessionCallback?): ISpeechSession = throwing { dictation(options, callback, null) }
+
+    /**
+     * A dictation of the plugin's own entries (the digital assistant, the voice input sheet, the recognition service, the
+     * tryout screen): as [openSession], with the takeover of a wake session (roadmap D57) and the foreground service and
+     * attribution of [local]. Throws `CODE: detail` like the contract call.
+     * zh-CN: 插件自己入口 (数字助理, 语音输入弹层, 识别服务, 试听试说页) 的听写: 与 [openSession] 相同, 另按 [local] 接管唤醒会话 (路线图 D57) 并决定前台
+     * 服务与录音归属. 与契约调用一样以 `CODE: detail` 抛出.
+     */
+    fun openLocalSession(options: Bundle?, callback: ISpeechSessionCallback?, local: LocalSession): ISpeechSession = throwing { dictation(options, callback, local) }
+
+    private fun dictation(options: Bundle?, callback: ISpeechSessionCallback?, local: LocalSession?): ISpeechSession {
         val listen = SpeechOptions.listen(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A session callback is required")
         if (!listen.isExternal) runtime.requireMicrophone()
         val model = runtime.resolve(SpeechContract.KIND_ASR, listen.model)
         val warnings = runtime.warnings(model, listen.language, listen.hotwords)
-        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal)
+        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true)
         try {
             val id = runtime.nextId(if (listen.isExternal) "external" else "listen")
-            DictationBinder(runtime, slot, listener, listen.isExternal) { events -> DictationSession(id, listen, events) }.also { it.open(model, warnings) }
+            return DictationBinder(runtime, slot, listener, listen.isExternal, local?.foreground != false, local?.attribution) { events ->
+                DictationSession(id, listen, events)
+            }.also { it.open(model, warnings) }
         } catch (t: Throwable) {
             runtime.sessions.release(slot)
             throw t
@@ -163,6 +176,18 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
      * zh-CN: 立即打开唤醒会话 (路线图 D18): 关键词在此按模型 token 拼写, 模型无法拼写的关键词使调用以 `INVALID_OPTIONS` 失败.
      */
     override fun openWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?): ISpeechSession = throwing {
+        wake(options, callback, listenCallback, takeover = false)
+    }
+
+    /**
+     * The wake word test of the tryout screen: as [openWakeSession], taking the microphone over from a wake session of a
+     * client (roadmap D57). A wake session opened this way is a takeover itself and is never taken over.
+     * zh-CN: 试听试说页的唤醒词试验: 与 [openWakeSession] 相同, 但从客户端的唤醒会话手中接管麦克风 (路线图 D57). 以此方式打开的唤醒会话本身就是接管方,
+     * 不会被接管.
+     */
+    fun openLocalWakeSession(options: Bundle?, callback: ISpeechWakeCallback?): ISpeechSession = throwing { wake(options, callback, null, takeover = true) }
+
+    private fun wake(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?, takeover: Boolean): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
@@ -170,10 +195,10 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
         val keywordModel = runtime.resolve(SpeechContract.KIND_KWS, wake.model)
         val listenModel = wake.thenListen?.let { runtime.resolve(SpeechContract.KIND_ASR, it.model) }
         val buffer = runtime.keywordBuffer(keywordModel, wake.keywords)
-        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true)
+        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover)
         try {
             val id = runtime.nextId("wake")
-            WakeBinder(runtime, slot, listener, listen) { events, listenEvents ->
+            return WakeBinder(runtime, slot, listener, listen) { events, listenEvents ->
                 WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
             }.also { it.open(keywordModel, buffer, listenModel) }
         } catch (t: Throwable) {

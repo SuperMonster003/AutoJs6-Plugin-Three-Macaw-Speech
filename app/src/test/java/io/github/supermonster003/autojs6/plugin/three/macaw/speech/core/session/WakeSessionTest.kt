@@ -86,6 +86,38 @@ class WakeSessionTest {
     }
 
     @Test
+    fun `a takeover silences the session until it ends and spotting resumes on a fresh stream`() {
+        // Roadmap D57: the keyword scheduled during the takeover is not heard; both are after the resume.
+        val (session, keywords) = wake(hits = mutableListOf(8000L to 0, 40_000L to 1))
+        assertTrue(session.yieldToTakeover())
+        assertTrue(session.suspended)
+        repeat(30) { session.accept(Audio.silence(100)) }
+        assertEquals("no event while taken over", listOf("wake-ready:kws.m"), wakeEvents.log)
+        assertEquals("no audio reached the spotter", 0L, keywords.position)
+        session.resumeAfterTakeover()
+        session.resumeAfterTakeover()
+        assertEquals("the stream restarts once", 1, keywords.restarts)
+        repeat(30) { session.accept(Audio.silence(100)) }
+        assertEquals(listOf("wake-ready:kws.m", "wake:alpha:0.25", "wake:beta:0.6"), wakeEvents.log)
+        session.finish()
+        assertEquals("wake-end:stopped", wakeEvents.log.last())
+        assertTrue(!session.yieldToTakeover())
+    }
+
+    @Test
+    fun `a round in progress is a dictation and is never taken over`() {
+        val (session, _) = wake(ListenOptions(), mutableListOf(1600L to 0))
+        session.accept(Audio.silence(100))
+        assertEquals(listOf("ready:asr.m:r0"), listenEvents.log)
+        assertTrue("the thenListen round refuses", !session.yieldToTakeover())
+        session.accept(Audio.speech(300))
+        session.finishRound(discard = false)
+        assertTrue("spotting again: the takeover may come", session.yieldToTakeover())
+        session.cancel()
+        assertEquals("wake-end:cancelled", wakeEvents.log.last())
+    }
+
+    @Test
     fun `a wake session ended while pending sends only its end`() {
         val options = WakeOptions(listOf(Keyword("alpha")))
         val session = WakeSession("w2", options, wakeEvents, null, 0.25f)
