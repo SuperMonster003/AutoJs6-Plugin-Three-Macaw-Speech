@@ -111,22 +111,32 @@ def avd(serial):
     return pull_screens(serial, None, ok)
 
 
+def music_volume(serial):
+    """The volume command that answers (`cmd media_session`, or `media` on API 28 and older) and the music level, or None."""
+    for command in (("cmd", "media_session"), ("media",)):
+        volume = adb(serial, "shell", *command, "volume", "--stream", "3", "--get", check=False)
+        match = re.search(r"volume is (\d+) in range \[(\d+)\.\.(\d+)\]", volume)
+        if match:
+            return command, int(match.group(1)), int(match.group(3))
+    return None
+
+
 def raise_volume(serial):
-    """Raises the music volume to MACAW_VOLUME_PERCENT (70 by default) when lower; answers the original level or None."""
-    volume = adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--get", check=False)
-    match = re.search(r"volume is (\d+) in range \[(\d+)\.\.(\d+)\]", volume)
-    if not match:
+    """Raises the music volume to MACAW_VOLUME_PERCENT (70 by default) when lower; answers what restore_volume needs."""
+    found = music_volume(serial)
+    if not found:
         return None
-    original, maximum = int(match.group(1)), int(match.group(3))
+    command, original, maximum = found
     wanted = max(1, maximum * int(os.environ.get("MACAW_VOLUME_PERCENT", "70")) // 100)
-    adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(max(original, wanted)), check=False)
+    adb(serial, "shell", *command, "volume", "--stream", "3", "--set", str(max(original, wanted)), check=False)
     print(f"{label(serial)}: music volume {original}/{maximum} -> {max(original, wanted)}")
-    return original
+    return command, original
 
 
-def restore_volume(serial, original):
-    if original is not None:
-        adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(original), check=False)
+def restore_volume(serial, saved):
+    if saved is not None:
+        command, original = saved
+        adb(serial, "shell", *command, "volume", "--stream", "3", "--set", str(original), check=False)
 
 
 def is_assistant(serial):
