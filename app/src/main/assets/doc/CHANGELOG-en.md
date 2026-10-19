@@ -6,11 +6,11 @@
 
 # v1.0.0
 
-###### 2026/10/16
+###### 2026/10/20
 
-* `Hint` Development preview: AutoJs6 can discover the plugin, which downloads and manages models, recognizes speech in WAV files, fed PCM and from the microphone, detects voice activity and wake words, and synthesizes speech, also as the system TTS engine; models can be managed and tried out in the plugin's own screens; the AutoJs6 version with the speech script module is not released yet
-* `Hint` Requires AutoJs6 6.8.0 (5451) or later (the exact minimum build will be filled in once the host changes land)
-* `Feature` Plugin skeleton: Wake activation protocol, Plugin Center identity service and speech capability service
+* `Hint` First release. The speech module in scripts needs AutoJs6 6.8.0 (5456) or later; the plugin screens, system TTS engine, system voice input, speech recognition service and digital assistant do not depend on AutoJs6
+* `Hint` Recognition and synthesis models are not part of the package and are downloaded from the plugin screens or a script; the app as a whole is conveyed under the GNU GPL 3.0 or later (the speech runtime statically links eSpeak NG), and every release comes with the corresponding source
+* `Feature` Speech plugin of AutoJs6: once enabled in the Plugin Center, scripts use speech recognition, wake words, voice activity detection, speech synthesis and model management through the speech module
 * `Feature` Built-in sherpa-onnx 1.13.8 speech runtime and silero VAD v5 voice activity detection model, with one package per ABI for 4 ABIs
 * `Feature` Model management: downloads the offline speech models of the signed model catalog from the AutoJs6 shared assets releases, falling back to the official sherpa-onnx releases; every file is checked by SHA-256 before use, with resumable downloads, local import (tar, tar.bz2, zip), removal and default models; models limited to non-commercial use or without a declared license need their license accepted first
 * `Feature` Speech recognition of WAV files (8, 16, 24 or 32-bit integer or float, any sample rate and channel count, resampled to 16 kHz mono in the plugin) with timed segments, plus language, emotion and event tags for SenseVoice models; streaming models accept hotwords
@@ -30,7 +30,7 @@
 * `Feature` Settings: language, night mode, theme color and launcher icon (following AutoJs6 by default); the default recognition and synthesis models, endpoint sensitivity, voice activity detection, speaker, speed and a default voice per language for the tryout screen and the system TTS engine (scripts keep the documented defaults); when idle models are released, catalog refresh and cleanup of leftover files; the settings button of 3-Macaw Speech in the system text-to-speech settings opens this screen
 * `Feature` About: version, the release history included with the plugin, update checks (automatically at most every 12 hours, a release can be ignored) and the licenses and notices: the app as a whole is conveyed under the GNU GPL 3.0 or later without any warranty, with the third-party notices, the full GPL text, the Unicode Terms of Use and where the corresponding source is
 * `Feature` Launcher icon: adaptive icon (light), adaptive icon (dark), adaptive icon (automatic, the default) or transparent background icon
-* `Feature` README, Plugin Center instructions and changelogs in 10 languages, generated from JSON sources
+* `Feature` Screens, README, Plugin Center instructions and changelog in 10 languages: Simplified Chinese, Traditional Chinese (Hong Kong, Taiwan), English, French, Spanish, Japanese, Korean, Russian and Arabic
 * `Dependency` Attach sherpa-onnx 1.13.8
 * `Dependency` Attach Jetpack Compose BOM 2026.09.00
 * `Dependency` Attach AndroidX Activity Compose 1.12.2

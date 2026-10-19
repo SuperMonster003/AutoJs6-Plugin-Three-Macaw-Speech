@@ -1,6 +1,6 @@
 3-Macaw Speech s'appuie sur [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) pour exécuter hors ligne, sur l'appareil, la reconnaissance vocale, la détection d'activité vocale, la détection de mots de réveil et la synthèse vocale neuronale. Tout est calculé localement et aucun son n'est envoyé.
 
-> Il s'agit d'une préversion de développement: AutoJs6 détecte le plugin, qui télécharge et gère les modèles, reconnaît la parole, détecte l'activité vocale et les mots de réveil et synthétise la parole, y compris comme moteur TTS du système; ses propres écrans permettent de gérer les modèles, de les essayer et de modifier les réglages. La version d'AutoJs6 qui fournit le module de script `speech` n'est pas encore publiée. Le texte ci-dessous décrit la conception de la version 1.0.0; consultez la feuille de route pour l'avancement.
+> Le module `speech` dans les scripts nécessite AutoJs6 6.8.0 (version interne 5456) ou ultérieure. Le moteur de synthèse vocale du système, la saisie vocale du système, le service de reconnaissance vocale, l'assistant numérique et les écrans du plugin ne dépendent pas d'AutoJs6 et fonctionnent dès que le plugin est installé et les modèles téléchargés.
 
 ### Points Forts
 
@@ -11,5 +11,13 @@
 - Saisie vocale du système: les boutons de microphone d'autres applications, comme 3-Stove Agent, peuvent utiliser la reconnaissance hors ligne; vous dites une phrase dans un panneau en bas de l'écran et le texte reconnu revient dans cette application.
 - Assistant numérique: choisissez 3-Macaw Speech comme application d'assistant numérique par défaut, puis appuyez longuement sur le bouton Marche/Arrêt ou Accueil, dites une phrase, modifiez le texte reconnu si besoin et transmettez-le à 3-Stove Agent, 3-Stone AI ou une autre application qui reçoit des commandes vocales, ou copiez-le. Il fournit aussi un service de reconnaissance vocale du système: sous Android 11 et versions antérieures, le choisir comme assistant en fait généralement aussi le service de reconnaissance par défaut; à partir d'Android 12, choisissez-le séparément dans les paramètres de saisie vocale du système (certains téléphones ne les proposent pas), et les applications peuvent aussi le désigner directement.
 - Gestion des modèles: téléchargement depuis un catalogue signé, activation seulement après vérification SHA-256 de chaque fichier, et import de modèles locaux; les modèles réservés à un usage non commercial affichent leur licence avant le téléchargement.
+- Écrans autonomes: l'écran d'accueil affiche l'état et gère les modèles, Essayer teste directement la dictée, les mots de réveil et la synthèse, et les réglages changent la langue, le mode nuit, la couleur du thème, l'icône du lanceur et les valeurs par défaut de reconnaissance et de synthèse; l'apparence suit AutoJs6 par défaut.
 
-L'avancement et la conception sont disponibles sur la [page du projet](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech).
+### Installation et utilisation
+
+1. Téléchargez depuis [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) l'APK correspondant à l'ABI de l'appareil et installez-le: la plupart des téléphones utilisent `arm64-v8a`; en cas de doute, choisissez `universal`, qui fonctionne sur tous les appareils mais est plus volumineux.
+2. Ouvrez 3-Macaw Speech, accordez l'autorisation du microphone sur l'écran d'accueil et téléchargez les modèles nécessaires dans les groupes reconnaissance, mot de réveil et synthèse (les modèles recommandés par le catalogue sont un bon point de départ, voir le tableau des modèles ci-dessous). Sous Android 13 et versions ultérieures, le premier téléchargement demande aussi d'afficher les notifications de progression.
+3. Dans AutoJs6: mettez à jour AutoJs6 vers 6.8.0 (version interne 5456) ou ultérieure, activez 3-Macaw Speech dans le centre des plugins et appelez le module `speech` dans vos scripts (voir API de script ci-dessous). Les exemples d'AutoJs6 contiennent quatre scripts prêts à l'emploi sous Echantillons > 3-Macaw Speech.
+4. Dans d'autres applications: voir Synthèse vocale du système ci-dessous pour le moteur de synthèse vocale, et la FAQ pour la saisie vocale du système, le service de reconnaissance vocale et l'assistant numérique.
+
+Consultez la [page du projet](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech) pour les instructions complètes, la liste des modèles et la FAQ, et la [documentation d'AutoJs6](https://docs.autojs6.com/#/speech) pour l'API de script.

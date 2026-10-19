@@ -79,8 +79,11 @@ will move to such a release and drop this section (roadmap appendix D Q9).
   warranty and where the corresponding source is (GPL-3.0 sections 4 and 5(d), roadmap P5.2).
 - Corresponding source: every GitHub Release of the plugin attaches, next to its APKs, an archive with
   the sherpa-onnx `v1.13.8` source and build scripts plus every dependency archive that its build pins
-  by URL and SHA-256 (the components above), with its SHA-256 recorded in the release (roadmap P6.4).
-  The source of the plugin itself is this repository at the release tag. ONNX Runtime 1.28.2 (MIT) is a
+  by URL and SHA-256 (the components above), with its SHA-256 recorded in the release (roadmap P6.4):
+  `autojs6-plugin-three-macaw-speech-corresponding-source-sherpa-onnx-v1.13.8-ac68c80b.tar` (54332416 bytes,
+  SHA-256 `ac68c80b1c93d65910e5b7f47b153c5dbeb94a28e9d908ee57363fab8694ae5c`), whose members and upstream digests
+  are pinned in `locks/corresponding-source.lock` and which `py -I .python/corresponding_source.py build` rebuilds
+  byte for byte and checks. The source of the plugin itself is this repository at the release tag. ONNX Runtime 1.28.2 (MIT) is a
   separate prebuilt library whose source is https://github.com/microsoft/onnxruntime at tag `v1.28.2`.
 
 ### Unicode data

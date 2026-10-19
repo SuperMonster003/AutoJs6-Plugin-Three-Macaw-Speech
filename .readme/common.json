@@ -7,6 +7,7 @@
   "third_party_url": "https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/THIRD_PARTY_NOTICES.md",
   "autojs6_url": "https://github.com/SuperMonster003/AutoJs6",
   "sherpa_onnx_url": "https://github.com/k2-fsa/sherpa-onnx",
+  "docs_url": "https://docs.autojs6.com/#/speech",
   "app_name": "3-Macaw Speech",
   "plugin_application_id": "io.github.supermonster003.autojs6.plugin.three.macaw.speech",
   "plugin_id": "three-macaw-speech",
@@ -17,11 +18,104 @@
   "discovery_action": "org.autojs.plugin.SPEECH",
   "discovery_category": "speech",
   "wake_action": "org.autojs.plugin.action.WAKE",
-  "required_host_version_code": "5451",
+  "required_host_version_code": "5456",
   "required_host_version_name": "6.8.0",
   "android_min_sdk": "24",
   "android_target_sdk": "37",
   "min_android_version": "7.0",
   "sherpa_onnx_version": "1.13.8",
-  "compose_bom": "2026.09.00"
+  "compose_bom": "2026.09.00",
+  "corresponding_source_file": "autojs6-plugin-three-macaw-speech-corresponding-source-sherpa-onnx-v1.13.8-ac68c80b.tar",
+  "catalog_models": [
+    {
+      "id": "asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8",
+      "kind": "{{ text_model_kind_asr_offline }}",
+      "languages": "zh, en, ja, ko, yue",
+      "size": "228.5 MB",
+      "license": "FunASR Model License 1.1",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "asr.zipformer-streaming.zh-en.2023-02-20.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "zh, en",
+      "size": "189.8 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "asr.zipformer-streaming.en.2023-06-26.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "en",
+      "size": "67.1 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "asr.zipformer-streaming.zh.2025-06-30.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "zh",
+      "size": "159.6 MB",
+      "license": "{{ text_model_license_none }}",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "kws.zipformer.zh-en.2025-12-20",
+      "kind": "{{ text_model_kind_kws }}",
+      "languages": "zh, en",
+      "size": "8.4 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "tts.vits.melo.zh-en",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 44.1 kHz)",
+      "languages": "zh, en",
+      "size": "169.2 MB",
+      "license": "MIT",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "tts.vits.icefall.zh-aishell3",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 174, 8 kHz)",
+      "languages": "zh",
+      "size": "31.2 MB",
+      "license": "{{ text_model_license_none }}",
+      "commercial": "{{ text_model_commercial_unknown }}",
+      "recommended": true
+    },
+    {
+      "id": "tts.kokoro.multi-lang.v1_1",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 103, 24 kHz)",
+      "languages": "zh, en",
+      "size": "386.9 MB",
+      "license": "Apache-2.0, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.matcha.icefall.zh-baker",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "zh",
+      "size": "77.2 MB",
+      "license": "{{ text_model_license_none }}, MIT ({{ text_model_vocoder }})",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.en-us-lessac-medium",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "en",
+      "size": "77.4 MB",
+      "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    }
+  ]
 }

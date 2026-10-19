@@ -44,9 +44,9 @@
 
 3-Macaw Speech 基于 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 在设备上离线完成语音识别, 语音活动检测, 唤醒词检测与神经网络语音合成. 全部计算都在本机进行, 音频不会上传.
 
-插件是独立安装的 APK. AutoJs6 脚本通过全局模块 `speech` 使用这些能力; 合成能力还注册为 Android 系统 TTS 引擎, AutoJs6 的 `tts` 模块与其他应用都可以选用. 识别与合成模型不随 APK 提供, 在插件界面或脚本中按需下载, 只有语音活动检测模型随包内置.
+插件是独立安装的 APK, 有自己的界面, 用来下载与管理模型, 试听试说并调整设置. AutoJs6 脚本通过全局模块 `speech` 使用这些能力; 合成能力还注册为 Android 系统 TTS 引擎, 识别能力还以系统语音输入, 系统语音识别服务与数字助理的形式提供, 因此其他应用也能使用. 识别与合成模型不随 APK 提供, 按需下载, 只有语音活动检测模型随包内置.
 
-> 当前为开发预览版: 插件可以被 AutoJs6 识别, 可以下载与管理模型, 识别语音, 检测语音活动与唤醒词, 合成语音并作为系统 TTS 引擎使用, 插件自己的界面可以管理与试用模型并调整设置; 提供 `speech` 脚本模块的 AutoJs6 版本尚未发布. 下文描述的是 1.0.0 的设计目标, 进度见开发路线图.
+> 在脚本中使用 `speech` 模块需要 AutoJs6 6.8.0 (内部版本号 5456) 或更高版本. 系统 TTS 引擎, 系统语音输入, 语音识别服务, 数字助理与插件自己的界面不依赖 AutoJs6, 安装插件并下载模型后即可使用.
 
 ******
 
@@ -61,18 +61,55 @@
 - 系统语音输入: 其他应用 (例如 3-Stove Agent) 的麦克风按钮可以使用离线识别, 在底部弹层中说一句话, 识别出的文字直接交回该应用.
 - 数字助理: 把 3-Macaw Speech 选为默认数字助理应用后, 长按电源键或 Home 键说一句话, 需要时编辑识别出的文字, 再交给 3-Stove Agent, 3-Stone AI 等接收语音指令的应用, 或复制. 它也提供系统语音识别服务: Android 11 及以下选它为助理时一般会一并设为默认识别服务; Android 12 起需在系统的语音输入设置里另行选择 (部分手机没有这项设置), 应用也可以直接指定它.
 - 模型管理: 从签名的模型目录下载, 逐个文件校验 SHA-256 后才启用, 也可以导入本地模型; 仅限非商业用途的模型在下载前会提示许可.
+- 独立界面: 首页显示运行状态并管理模型, 试听试说页直接试验听写, 唤醒词与合成, 设置页调整语言, 夜间模式, 主题色, 启动器图标与识别合成的默认值, 外观默认跟随 AutoJs6.
 
 ******
 
-### 使用方法
+### 界面截图
 
 ******
 
-1. 将 AutoJs6 升级到内部版本号 5451 (6.8.0) 或更高版本.
-2. 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) 下载与设备 ABI 对应的 APK (不确定时选择 `universal`) 并安装, 然后在 AutoJs6 的插件中心授权并启用.
-3. 打开插件界面授予麦克风权限并下载需要的模型, 然后在脚本中使用 `speech` 模块.
+以下截图来自 Sony XQ-DQ72 (Android 13). 听写内容是 sherpa-onnx 测试录音经手机扬声器播放后识别的结果, 不含个人数据.
 
-> 插件支持 Android 7.0 (API 24) 及以上的设备. 每种 ABI 各有一个安装包, 另有适用于全部设备的 `universal` 安装包.
+<table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/docs/images/screenshots/home.png?raw=true" alt="首页: 运行状态与按用途分组的模型" width="360" />
+      <br />
+      <sub>首页: 运行状态与按用途分组的模型</sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/docs/images/screenshots/tryout-dictation.png?raw=true" alt="试听试说: 实时听写" width="360" />
+      <br />
+      <sub>试听试说: 实时听写</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/docs/images/screenshots/voice-input.png?raw=true" alt="系统语音输入: 其他应用打开的底部弹层" width="360" />
+      <br />
+      <sub>系统语音输入: 其他应用打开的底部弹层</sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/docs/images/screenshots/assistant.png?raw=true" alt="数字助理: 编辑识别结果并选择交给哪个应用" width="360" />
+      <br />
+      <sub>数字助理: 编辑识别结果并选择交给哪个应用</sub>
+    </td>
+  </tr>
+</table>
+
+******
+
+### 安装与使用
+
+******
+
+1. 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) 下载与设备 ABI 对应的 APK 并安装: 大多数手机选择 `arm64-v8a`, 不确定时选择适用于全部设备但体积更大的 `universal`.
+2. 打开 3-Macaw Speech, 在首页授予麦克风权限, 并在识别, 唤醒词与合成各组中下载需要的模型 (目录推荐的模型是较好的起点, 见下文模型表). Android 13 及以上首次下载时还会请求显示下载进度通知.
+3. 在 AutoJs6 中使用: 将 AutoJs6 升级到 6.8.0 (内部版本号 5456) 或更高版本, 在插件中心启用 3-Macaw Speech, 然后在脚本中调用 `speech` 模块 (见下文脚本 API). AutoJs6 的示例代码 > 3-Macaw Speech 中有四个可直接运行的示例.
+4. 在其他应用中使用: 系统 TTS 引擎见下文系统 TTS 设置; 系统语音输入, 语音识别服务与数字助理见常见问题.
+
+> 每种 ABI 各有一个安装包, 另有适用于全部设备的 `universal` 安装包. 安装包不含识别与合成模型, 模型在插件界面或脚本中按需下载, 也可以从本地文件导入.
 
 ******
 
@@ -80,9 +117,37 @@
 
 ******
 
-识别, 唤醒词与合成模型的体积在 30 MB 到 350 MB 之间, 因此不随 APK 提供. 插件从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址, 两条路径都要逐个文件校验 SHA-256 后才启用.
+识别, 唤醒词与合成模型的体积在 8 MB 到 390 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.0.0 的目录包含以下模型 (大小为安装后占用的空间):
 
-每个模型都标注了许可. 仅限非商业用途的模型 (例如使用 DataBaker 语料训练的合成模型) 在下载前会提示, 脚本下载时需要显式传入 `acceptLicense: true`.
+| 模型 ID | 用途 | 语言 | 大小 | 许可 | 商业用途 |
+| --- | --- | --- | --- | --- | --- |
+| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (推荐) | 识别 (离线, 带标点) | zh, en, ja, ko, yue | 228.5 MB | FunASR Model License 1.1 | 可以 |
+| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (推荐) | 识别 (流式) | zh, en | 189.8 MB | Apache-2.0 | 可以 |
+| `asr.zipformer-streaming.en.2023-06-26.int8` (推荐) | 识别 (流式) | en | 67.1 MB | Apache-2.0 | 可以 |
+| `asr.zipformer-streaming.zh.2025-06-30.int8` | 识别 (流式) | zh | 159.6 MB | 未声明 | 仅限非商业用途 |
+| `kws.zipformer.zh-en.2025-12-20` (推荐) | 唤醒词 | zh, en | 8.4 MB | Apache-2.0 | 可以 |
+| `tts.vits.melo.zh-en` (推荐) | 合成 (说话人: 1, 44.1 kHz) | zh, en | 169.2 MB | MIT | 可以 |
+| `tts.vits.icefall.zh-aishell3` (推荐) | 合成 (说话人: 174, 8 kHz) | zh | 31.2 MB | 未声明 | 未知 |
+| `tts.kokoro.multi-lang.v1_1` | 合成 (说话人: 103, 24 kHz) | zh, en | 386.9 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可以 |
+| `tts.matcha.icefall.zh-baker` | 合成 (说话人: 1, 22.05 kHz) | zh | 77.2 MB | 未声明, MIT (声码器) | 仅限非商业用途 |
+| `tts.vits.piper.en-us-lessac-medium` | 合成 (说话人: 1, 22.05 kHz) | en | 77.4 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
+
+仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与 Piper 两个合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later).
+
+首页的导入本地模型可以从 tar, tar.bz2 或 zip 归档或文件夹导入模型: 与目录模型一致的文件按该模型登记, 其他文件在填写种类, 模型类型, 名称与语言后作为自定义模型导入. 导入通过系统文件选择器完成, 不需要存储权限.
+
+******
+
+### 系统 TTS 设置
+
+******
+
+1. 在插件首页的合成组中下载至少一个合成模型. 想先试一试时, 体积最小的 `tts.vits.icefall.zh-aishell3` (中文, 174 个说话人) 与中英混读的 `tts.vits.melo.zh-en` 都是推荐模型.
+2. 打开系统的文字转语音设置, 把首选引擎设为 3-Macaw Speech. 插件首页状态卡中的系统文字转语音引擎一行可以直接打开该页面; 手动查找时, 它通常位于 设置 > 无障碍 > 文字转语音输出, 或 设置 > 系统 > 语言和输入法 > 文字转语音输出 (各厂商的名称略有不同).
+3. 点按引擎旁的设置按钮会打开 3-Macaw Speech 的设置页, 在合成组中为各语言选择默认语音并选择说话人. 语速由系统设置或请求朗读的应用决定, 音调不受支持.
+4. 回到系统设置点按试听, 即可用该语言的默认语音朗读示例文本.
+
+每个模型的每个说话人都是一个语音, 名为 `<模型 ID>/<说话人编号>`, 双语模型的说话人另有 `<模型 ID>/<说话人编号>/en-US` 用于英文. AutoJs6 脚本不修改系统设置也能使用该引擎: `tts(text, { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" })`, 或用 `speech.speak(text, { model, speaker })` 直接指定模型与说话人.
 
 ******
 
@@ -90,25 +155,49 @@
 
 ******
 
-脚本通过全局模块 `speech` (也可写作 `$speech`) 使用这些能力 (1.0.0 设计草案, 以发布版本的文档为准):
+AutoJs6 6.8.0 (内部版本号 5456) 起, 脚本通过全局模块 `speech` (也可写作 `$speech`) 使用这些能力. 下面三段示例可以分别运行: 听写 30 秒并把每句话追加到文件, 用唤醒词唤醒后听一句话, 合成到文件并朗读:
 
 ```javascript
-let session = speech.listen({ language: "zh", silenceEndMillis: 1500 });
+// 1. Dictation: partial text while you speak, one final per sentence, 30 seconds in all
+let session = speech.listen({ silenceEndMillis: 1500, timeoutMillis: 0 });
 session.on("partial", (e) => console.log("...", e.text));
 session.on("final", (e) => files.append("./dictation.txt", e.text + "\n"));
-sleep(30000);
-session.stop();
+setTimeout(() => session.stop(), 30000);
 
-let wake = speech.wake(["hey macaw"], { thenListen: true });
-wake.on("wake", (e) => e.listen.on("final", (r) => console.log(r.text)));
+// 2. A wake word, then one round of dictation on the same recording
+let wake = speech.wake(["hey macaw", "小六小六"], { thenListen: true });
+wake.on("wake", (e) => e.listen.on("final", (r) => {
+    console.log(e.keyword, r.text);
+    wake.stop();
+}));
 
-speech.synthesize("Task completed", "./done.wav");
+// 3. Synthesis to a WAV file, and speech through the system TTS engine
+let result = speech.synthesize("Task completed", "./done.wav", { model: "tts.vits.melo.zh-en" });
+console.log(result.durationMillis, result.sampleRate);
+speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` 打开听写会话, 通过 `partial`, `final` 与 `end` 等事件返回结果; `speech.recognize(path)` 识别 WAV 文件.
-- `speech.wake(keywords, options)` 打开唤醒词会话; `thenListen` 让唤醒后自动转入听写.
-- `speech.synthesize(text, path)` 合成到 WAV 文件; `speech.speak(text)` 与 `tts(text, {engine})` 通过系统 TTS 引擎播报; `speech.models` 管理模型.
+- `speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别 WAV 文件 (也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.
+- `speech.wake(keywords, options)` 打开唤醒词会话, 关键词直接写原文 (至多 50 个); `thenListen` 让每次唤醒后在同一录音上转入一轮听写, 该轮的会话由 `wake` 事件的 `listen` 属性给出.
+- `speech.synthesize(text, path, options)` 合成到 WAV 文件 (至多 8000 个字符, 可选模型, 说话人与语速); `speech.speak(text, options)` 与 `tts(text, { engine })` 经系统 TTS 引擎朗读.
+- `speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.
+- 整个插件同一时间只有一个麦克风会话 (听写或唤醒); 缺少麦克风权限时调用以 `PERMISSION_DENIED` 失败, 打开插件首页授予即可. 识别出的文字不会写入 AutoJs6 的日志.
+- 完整的方法, 选项, 事件与错误码见 [AutoJs6 文档](https://docs.autojs6.com/#/speech); AutoJs6 的示例代码 > 3-Macaw Speech 中有听写到文件, 唤醒词与听写, TTS 播报与语音命令交给 Agent 四个示例.
+
+******
+
+### 兼容性
+
+******
+
+- Android 7.0 (API 24) 及以上, 目标 API 37. arm64-v8a, armeabi-v7a, x86_64 与 x86 各有安装包, 另有 universal 安装包; 原生库按 16 KB 内存页对齐, 已在 16 KB 页模拟器上验证.
+- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6.
+- 后台收音: 在 AutoJs6 处于前台时开始的听写或唤醒会话, AutoJs6 退到后台或熄屏后仍会继续收音 (插件以麦克风前台服务与通知保持录音). AutoJs6 已在后台时才打开的会话可能被系统静音, 此时会话收到错误码为 `PERMISSION_DENIED` 的 `warning` 事件但不会结束, AutoJs6 回到前台后恢复; 需要后台收音的脚本请在 AutoJs6 可见时开启会话.
+- 实测设备: Sony G8441 (Android 9), Sony XQ-AT72 (Android 12), Sony XQ-DQ72 (Android 13), Redmi 22120RN86C (Android 13), Xiaomi Pad 23046RP50C (Android 15), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24, 35 与 37 (16 KB 页) 模拟器.
+- 性能: 在低端的 Sony G8441 上, 流式模型加载约 1.7 秒, SenseVoice 约 2.8 秒, 听写处理速度约为实时的 3 倍; MeloTTS 与 Kokoro 在这类设备上合成慢于实时, AISHELL-3 最快. Sony XQ-DQ72 等较新设备加载约 0.5 到 1.2 秒, 合成快于实时.
+- 内存: 一个识别模型加载后约占 210 到 300 MB 原生内存. 插件按设备内存的四分之一 (384 MB 到 1.5 GB) 管理已加载的模型, 空闲 5 分钟后释放 (可在设置中调整为 1 到 30 分钟).
+- 数字助理: 需要系统允许选择第三方数字助理应用. 部分系统把长按电源键固定为自家助理, 此时可以改用 Home 键或助理手势; ColorOS 与 HyperOS 上的表现尚未验证.
 
 ******
 
@@ -128,9 +217,9 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 
 大多数手机选择 `arm64-v8a`. 不确定设备 ABI 时安装 `universal`, 它适用于全部设备, 但体积更大.
 
-#### 如何把 3-Macaw Speech 用作系统文字转语音引擎?
+#### 为什么系统设置里试听没有声音, 或者引擎显示缺少语音数据?
 
-先安装至少一个合成模型, 然后在系统的文字转语音设置 (通常位于无障碍或语言设置中) 将首选引擎设为 3-Macaw Speech. 模型的每个说话人都是一个语音, 名为 `<模型 ID>/<说话人编号>`; 双语模型另有 `<模型 ID>/<说话人编号>/en-US` 用于英文. AutoJs6 脚本也可以不改系统设置直接选用该引擎: `tts(text, {engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech"})` 或 `speech.speak(text)`.
+引擎只报告已安装的合成模型所覆盖的语言. 没有安装合成模型, 或已安装的模型不覆盖设备语言时, 系统会显示缺少语音数据, 试听与语速设置也可能不可用. 在插件首页下载一个覆盖设备语言的合成模型后重新打开系统设置即可; 试听使用该语言的默认语音, 可以在插件设置的合成组中更改.
 
 #### 其他应用能用 3-Macaw Speech 做语音输入吗?
 
@@ -143,6 +232,26 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 #### 为什么助理不一直监听唤醒词?
 
 一直监听需要始终开着麦克风, 常驻通知与麦克风指示灯, 也更耗电, 所以数字助理只在你按下助理键时才收音. 3-Stone AI, 3-Stove Agent 等应用可以提供自己的常驻监听开关 (默认关闭); 它们监听期间, 数字助理, 语音输入与语音识别照常可用, 唤醒词检测会暂停并在结束后自动恢复. 3-Macaw Speech 自带的唤醒词计划在后续版本提供.
+
+#### 下载模型失败怎么办?
+
+插件优先从 AutoJs6 共享资源仓库的 GitHub 发布下载, 失败时自动改用 sherpa-onnx 的上游地址, 中断的下载可以继续. 无法访问 GitHub 时, 可以在其他设备下载模型归档 (模型目录中的镜像或上游地址), 再通过首页的导入本地模型导入; 与目录一致的文件会按目录模型登记.
+
+#### 模型占用多少空间, 怎样释放?
+
+各模型安装后的大小见上文模型表. 首页可以删除不再需要的模型; 设置中的回收未引用的文件会删除不再需要的下载文件, 导入副本与中断的安装, 已安装的模型与暂停的下载会保留. 卸载插件会删除全部模型.
+
+#### 识别结果为什么没有标点?
+
+流式 Zipformer 模型只输出文字, 不加标点. SenseVoice 模型按语音段识别, 会加标点并报告语种, 适合需要完整句子的场合: 在脚本中以 `model` 选项指定它, 或在设置中把它设为默认识别模型.
+
+#### 唤醒词怎么写, 为什么没有被唤醒?
+
+直接写关键词原文: 中文按常用读音拼写为拼音, 英文单词按模型词典拼写 (不在词典中的单词会被拒绝), 多音字可以直接写模型的拼音 token 来指定读音. 三到四个音节, 不常见的词组更不容易误唤醒. 每个关键词可以设置 `threshold` (越低越容易唤醒) 与 `boost`. 先在试听试说页的唤醒词试验中试一试, 再写进脚本.
+
+#### 为什么 APK 按 GPL-3.0 传播, 源码在哪里?
+
+插件自身的代码使用 MPL-2.0. sherpa-onnx 官方 Android 库静态链接了 eSpeak NG (GPL-3.0-or-later), 所以 APK 整体按 GPL-3.0-or-later 传播. 每个发行版都附有对应源码归档 (sherpa-onnx 的源码与构建脚本及其全部依赖), 文件名含 `corresponding-source`, SHA-256 列在 `SHA256SUMS` 中; 插件源码就是本仓库在发行标签处的内容.
 
 ******
 
@@ -175,9 +284,24 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-minimum host build: 5451
+minimum host build: 5456
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
+
+******
+
+### 致谢
+
+******
+
+3-Macaw Speech 建立在以下开源项目, 模型与数据之上, 感谢它们的作者与维护者:
+
+- [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 与 [k2-fsa (新一代 Kaldi)](https://github.com/k2-fsa) 团队: 识别, 唤醒词, 语音活动检测与合成的运行时, 各模型的 ONNX 导出与 Android 库 (Apache-2.0).
+- [icefall](https://github.com/k2-fsa/icefall) 训练的模型: Zipformer 流式识别模型 (中英双语 pfluo, 英文 Zengwei, 中文 2025 yuekai), 开放词表唤醒词模型 (pkufool), 以及 k2-fsa 的 AISHELL-3 VITS 与标贝 Matcha-TTS 合成模型.
+- [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) (FunAudioLLM / 阿里巴巴, FunASR 模型许可 1.1): 多语种离线识别模型.
+- [MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, 中文录音由 LongMaoData 授权) 与 [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT) 合成模型, [HiFi-GAN](https://github.com/jik876/hifi-gan) 声码器 (MIT).
+- 训练数据: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), [标贝中文标准女声音库](https://www.data-baker.com/open_source.html) (仅限非商业用途), Lessac Technologies 的 Blizzard 2013 数据 (仅限研究) 与 [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (公有领域).
+- [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) 推理引擎, [silero VAD](https://github.com/snakers4/silero-vad) (MIT) 语音活动检测模型, [eSpeak NG](https://github.com/espeak-ng/espeak-ng) (GPL-3.0-or-later) 与 [piper-phonemize](https://github.com/rhasspy/piper-phonemize) (MIT) 音素转换, [pinyin-data](https://github.com/mozillazg/pinyin-data) (mozillazg, MIT) 中文唤醒词读音表.
 
 ******
 
@@ -197,11 +321,11 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 
 #### v1.0.0
 
-_2026/10/16_
+_2026/10/20_
 
-- `提示` 开发预览: 插件可以被 AutoJs6 识别, 可以下载与管理模型, 识别语音文件, 外部 PCM 与麦克风语音, 检测语音活动与唤醒词, 合成语音并作为系统 TTS 引擎使用; 可以在插件自己的界面中管理与试用模型; 提供 speech 脚本模块的 AutoJs6 版本尚未发布
-- `提示` 需要 AutoJs6 6.8.0 (5451) 或更高版本 (准确的最低版本号待宿主侧改动落地后回填)
-- `新增` 插件骨架: Wake 激活协议, 插件中心身份服务与语音能力服务
+- `提示` 首个正式版本. 脚本中的 speech 模块需要 AutoJs6 6.8.0 (5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6
+- `提示` 识别与合成模型不随安装包提供, 需要在插件界面或脚本中下载; 应用整体按 GNU GPL 3.0 或更新版本传播 (语音运行时静态链接了 eSpeak NG), 对应源码随每个发行版提供
+- `新增` 作为 AutoJs6 的语音插件: 在插件中心启用后, 脚本可以通过 speech 模块使用语音识别, 唤醒词, 语音活动检测, 语音合成与模型管理
 - `新增` 内置 sherpa-onnx 1.13.8 语音运行时与 silero VAD v5 语音活动检测模型, 按 4 种 ABI 分别提供安装包
 - `新增` 模型管理: 按签名的模型目录下载离线语音模型, 优先使用 AutoJs6 共享资源的发布, 不可用时回退到 sherpa-onnx 官方发布; 逐个文件校验 SHA-256 后启用, 支持断点续传, 本地导入 (tar, tar.bz2, zip), 删除与默认模型, 仅限非商业用途或许可未知的模型需先接受许可
 - `新增` 语音识别: 识别 WAV 文件 (8 / 16 / 24 / 32 位整数或浮点, 任意采样率与声道数, 在插件内重采样为 16 kHz 单声道), 结果按语音段带起止时间, SenseVoice 模型另带语言, 情绪与事件标签; 流式模型可使用热词
@@ -221,7 +345,7 @@ _2026/10/16_
 - `新增` 设置: 语言, 夜间模式, 主题色与启动器图标 (默认跟随 AutoJs6); 默认识别与合成模型, 端点灵敏度, 语音活动检测, 说话人, 语速与各语言的默认语音, 作用于试听试说页与系统 TTS 引擎 (脚本仍使用文档中的默认值); 空闲模型的释放时间, 刷新模型目录与回收未引用的文件; 系统文字转语音设置中 3-Macaw Speech 的设置按钮会打开此页
 - `新增` 关于: 版本, 插件内置的发行历史, 更新检查 (每 12 小时至多自动检查一次, 可忽略某个版本), 以及许可与声明: 应用整体按 GNU GPL 3.0 或更新版本传播且不提供任何担保, 内含第三方声明, GPL 全文, Unicode 使用条款与对应源码的位置
 - `新增` 启动器图标: 可选自适应图标 (亮色), 自适应图标 (暗色), 自适应图标 (自动, 默认) 或透明背景图标
-- `新增` 10 种语言的 README, 插件中心说明与更新日志, 由 JSON 源文件统一生成
+- `新增` 界面, README, 插件中心说明与更新日志支持 10 种语言: 简体中文, 繁体中文 (香港, 台湾), 英语, 法语, 西班牙语, 日语, 韩语, 俄语与阿拉伯语
 - `依赖` 附加 sherpa-onnx 版本 1.13.8
 - `依赖` 附加 Jetpack Compose BOM 版本 2026.09.00
 - `依赖` 附加 AndroidX Activity Compose 版本 1.12.2
@@ -248,6 +372,7 @@ py .python\generate_markdown.py --check
 py .python\generate_icon_studio.py --check
 py .python\verify_native_alignment.py --check
 py .python\check_repository.py
+py -I .python\corresponding_source.py build --downloads <directory outside the repository>
 ```
 
 ******
@@ -256,7 +381,7 @@ py .python\check_repository.py
 
 ******
 
-项目代码使用 [Mozilla Public License 2.0](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/LICENSE). 语音运行时 sherpa-onnx 使用 Apache-2.0 许可, onnxruntime 与 silero VAD 使用 MIT 许可; 每个模型的许可在模型目录中逐条列出.
+插件源码使用 [Mozilla Public License 2.0](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/LICENSE). sherpa-onnx 官方 Android 库 (Apache-2.0) 静态链接了 eSpeak NG 与 UCD Tools, 二者使用 GNU GPL 3.0 或更新版本, 因此发布的 APK 整体按 GPL-3.0-or-later 传播 (MPL-2.0 第 3.3 节允许这种组合), 不提供任何担保. 每个发行版附有对应源码 `autojs6-plugin-three-macaw-speech-corresponding-source-sherpa-onnx-v1.13.8-ac68c80b.tar`: sherpa-onnx 1.13.8 的源码与构建脚本, 以及构建时按 URL 与 SHA-256 固定的全部依赖归档; 其 SHA-256 列在发行版的 `SHA256SUMS` 中, 可以用 `.python/corresponding_source.py` 重新生成与校验. ONNX Runtime 与 silero VAD 使用 MIT 许可, 各模型的许可见上文模型表. 插件的关于页可以查看许可全文与第三方声明.
 
 - [第三方声明 (THIRD_PARTY_NOTICES.md)](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/blob/master/THIRD_PARTY_NOTICES.md)
 
@@ -267,4 +392,5 @@ py .python\check_repository.py
 ******
 
 - AutoJs6 项目: https://github.com/SuperMonster003/AutoJs6
+- AutoJs6 文档: speech 模块: https://docs.autojs6.com/#/speech
 - sherpa-onnx 项目: https://github.com/k2-fsa/sherpa-onnx

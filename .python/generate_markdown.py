@@ -20,6 +20,8 @@ Generated artifacts (36 in total, never edit them by hand):
 
 Validated but not generated:
   app/src/main/res/values*/strings.xml           key parity, plugin_description sync
+  .readme/common.json catalog_models             the rows of the README model table
+  locks/corresponding-source.lock                archive.file equals common.json corresponding_source_file
 
 Usage:
   py .python/generate_markdown.py            regenerate all artifacts
@@ -87,8 +89,21 @@ CHANGELOG_CATEGORIES = ["hint", "feature", "fix", "improvement", "dependency"]
 CHANGELOG_LABEL_KEYS = [f"changelog_label_{category}" for category in CHANGELOG_CATEGORIES]
 CHANGELOG_DATA_KEY = "$data"
 
-README_LIST_KEYS = ["features", "usage_steps", "api_points", "security_points"]
+README_LIST_KEYS = [
+    "features",
+    "usage_steps",
+    "tts_setup_steps",
+    "api_points",
+    "compatibility_points",
+    "security_points",
+    "acknowledgements",
+]
 README_FAQ_KEY = "faq"
+# Rows of the model table (.readme/common.json `catalog_models`, roadmap appendix A); the cells may use the templates
+# of the localized labels, such as {{ text_model_kind_tts }}.
+README_MODEL_FIELDS = ("id", "kind", "languages", "size", "license", "commercial", "recommended")
+README_MODEL_COLUMNS = ("id", "kind", "languages", "size", "license", "commercial")
+CORRESPONDING_SOURCE_LOCK = Path("locks") / "corresponding-source.lock"
 
 EXPECTED_ARTIFACT_COUNT = 36
 README_LATEST_RELEASES = 3
@@ -386,6 +401,43 @@ def markdown_link(label: str, url: str) -> str:
     return f"[{label}]({url})"
 
 
+def validate_catalog_models(common: dict[str, Any]) -> None:
+    models = common.get("catalog_models")
+    require(isinstance(models, list) and models, "common.json must list the catalog_models of the model table")
+    ids = []
+    for index, model in enumerate(models):
+        require(
+            isinstance(model, dict) and set(model) == set(README_MODEL_FIELDS),
+            f"common.json catalog_models[{index}] must have exactly the fields {list(README_MODEL_FIELDS)}",
+        )
+        require(isinstance(model["recommended"], bool), f"common.json catalog_models[{index}].recommended must be a boolean")
+        for field in README_MODEL_COLUMNS:
+            require(isinstance(model[field], str) and model[field], f"common.json catalog_models[{index}].{field} must be text")
+        ids.append(model["id"])
+    require(len(set(ids)) == len(ids), "common.json catalog_models repeats a model id")
+
+
+def validate_corresponding_source(root: Path, common: dict[str, Any]) -> None:
+    """The archive name of the README license section is the one the lock records (roadmap P6.4)."""
+    lock = load_text(root / CORRESPONDING_SOURCE_LOCK)
+    recorded = re.search(r"^archive\.file=(.+)$", lock, re.M)
+    require(recorded is not None, f"{CORRESPONDING_SOURCE_LOCK.as_posix()} records no archive.file")
+    require(
+        common.get("corresponding_source_file") == recorded.group(1).strip(),
+        f"common.json corresponding_source_file must equal archive.file of {CORRESPONDING_SOURCE_LOCK.as_posix()}",
+    )
+
+
+def models_table(content: dict[str, Any]) -> str:
+    header = [content[f"text_model_column_{column}"] for column in README_MODEL_COLUMNS]
+    lines = ["| " + " | ".join(header) + " |", "| " + " | ".join("---" for _ in header) + " |"]
+    for model in content["catalog_models"]:
+        cells = [f"`{model['id']}`" + (f" {content['text_model_recommended']}" if model["recommended"] else "")]
+        cells += [model[column] for column in README_MODEL_COLUMNS[1:]]
+        lines.append("| " + " | ".join(cells) + " |")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Source assembly
 # ---------------------------------------------------------------------------
@@ -394,6 +446,8 @@ def load_languages(root: Path) -> tuple[dict[str, dict[str, Any]], dict[str, dic
     readme_dir = root / ".readme"
     changelog_dir = root / ".changelog"
     common = load_json(readme_dir / "common.json")
+    validate_catalog_models(common)
+    validate_corresponding_source(root, common)
     version_name = current_version_label(root).removeprefix("v")
 
     raw_languages = {code: load_json(readme_dir / f"lang_{code}.json") for code in LANGUAGE_CODES}
@@ -465,8 +519,12 @@ def build_readme_values(
     content["placeholder_ul_languages_all_supported"] = build_language_list(code, languages)
     content["placeholder_features"] = bullet_list(content["features"])
     content["placeholder_usage_steps"] = numbered_list(content["usage_steps"])
+    content["placeholder_tts_setup_steps"] = numbered_list(content["tts_setup_steps"])
+    content["placeholder_models_table"] = models_table(content)
     content["placeholder_api_points"] = bullet_list(content["api_points"])
+    content["placeholder_compatibility_points"] = bullet_list(content["compatibility_points"])
     content["placeholder_security_points"] = bullet_list(content["security_points"])
+    content["placeholder_acknowledgements"] = bullet_list(content["acknowledgements"])
     content["placeholder_faq"] = faq_list(content[README_FAQ_KEY])
     content["placeholder_latest_release_history"] = format_changelog_items(
         changelogs[code],

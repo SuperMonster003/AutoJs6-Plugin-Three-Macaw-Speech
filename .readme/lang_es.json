@@ -6,12 +6,17 @@
   "p_languages_all_supported_for_readme": "El README.md actual admite los siguientes idiomas",
   "h3_introduction": "Introducción",
   "h3_features": "Funciones Destacadas",
-  "h3_usage": "Uso",
+  "h3_screenshots": "Capturas de pantalla",
+  "h3_usage": "Instalación y uso",
+  "h3_models": "Modelos",
+  "h3_tts_setup": "Texto a voz del sistema",
   "h3_script_api": "API De Script",
+  "h3_compatibility": "Compatibilidad",
   "h3_faq": "Preguntas Frecuentes",
   "h3_security": "Permisos Y Seguridad",
   "h3_plugin_interface": "Interfaz Del Plugin",
   "p_plugin_interface": "La siguiente información está dirigida a los desarrolladores del host AutoJs6 y de plugins; el host usa estos identificadores para descubrir el plugin y negociar capacidades",
+  "h3_acknowledgements": "Agradecimientos",
   "h3_roadmap": "Hoja De Ruta",
   "text_link_roadmap": "Ver ROADMAP.md",
   "h3_release_history": "Historial De Versiones",
@@ -21,10 +26,12 @@
   "h3_license": "Licencia",
   "h3_links": "Enlaces",
   "text_link_autojs6": "Proyecto AutoJs6",
+  "text_link_docs": "Documentación de AutoJs6: el módulo speech",
+  "text_link_sherpa_onnx": "Proyecto sherpa-onnx",
   "p_roadmap": "Los planes, las decisiones de diseño y el progreso se registran como lista de verificación en ROADMAP.md. Los elementos sin marcar son planes, no funciones de la versión actual.",
   "p_introduction_what": "3-Macaw Speech usa [sherpa-onnx]({{ sherpa_onnx_url }}) para ejecutar sin conexión, en el propio dispositivo, el reconocimiento de voz, la detección de actividad de voz, la detección de palabras de activación y la síntesis de voz neuronal. Todo se calcula localmente y no se envía ningún audio.",
-  "p_introduction_how": "El complemento es un APK que se instala por separado. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor TTS del sistema Android, de modo que el módulo `tts` de AutoJs6 y otras aplicaciones pueden elegirla. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan bajo demanda desde la pantalla del complemento o un script; solo el modelo de detección de actividad de voz viene integrado.",
-  "p_status_note": "Esta es una versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz, detecta actividad de voz y palabras de activación y sintetiza voz, también como motor TTS del sistema; sus propias pantallas administran los modelos, permiten probarlos y reúnen los ajustes. La versión de AutoJs6 que ofrece el módulo de script `speech` aún no se ha publicado. El texto siguiente describe el diseño de la versión 1.0.0; consulte la hoja de ruta para ver el progreso.",
+  "p_introduction_how": "El complemento es un APK que se instala por separado, con pantallas propias para descargar y gestionar modelos, probarlos y cambiar los ajustes. Los scripts de AutoJs6 lo usan mediante el módulo global `speech`; la síntesis de voz también se registra como motor de texto a voz del sistema Android, y el reconocimiento también se ofrece como entrada de voz del sistema, servicio de reconocimiento de voz del sistema y asistente digital, de modo que otras aplicaciones también pueden usarlos. Los modelos de reconocimiento y síntesis no se incluyen en el APK, sino que se descargan cuando hacen falta; solo el modelo de detección de actividad de voz viene integrado.",
+  "p_status_note": "El módulo `speech` en los scripts necesita AutoJs6 {{ required_host_version_name }} (versión interna {{ required_host_version_code }}) o posterior. El motor de texto a voz del sistema, la entrada de voz del sistema, el servicio de reconocimiento de voz, el asistente digital y las pantallas del complemento no dependen de AutoJs6 y funcionan en cuanto el complemento está instalado y los modelos descargados.",
   "features": [
     "Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos WAV, con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.",
     "Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.",
@@ -32,22 +39,65 @@
     "Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.",
     "Entrada de voz del sistema: los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión; dices una frase en un panel inferior y el texto reconocido vuelve a esa app.",
     "Asistente digital: elige 3-Macaw Speech como app de asistente digital predeterminada, mantén pulsado el botón de encendido o el de inicio, di una frase, edita el texto reconocido si hace falta y entrégalo a 3-Stove Agent, 3-Stone AI u otra app que reciba comandos de voz, o cópialo. También ofrece un servicio de reconocimiento de voz del sistema: en Android 11 y versiones anteriores, elegirlo como asistente suele convertirlo también en el servicio de reconocimiento predeterminado; desde Android 12, elígelo aparte en los ajustes de entrada de voz del sistema (algunos teléfonos no los tienen), y las apps también pueden indicarlo directamente.",
-    "Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga."
+    "Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga.",
+    "Pantallas propias: la pantalla de inicio muestra el estado y gestiona los modelos, Probar ensaya directamente el dictado, las palabras de activación y la síntesis, y los ajustes cambian el idioma, el modo nocturno, el color del tema, el icono del lanzador y los valores predeterminados de reconocimiento y síntesis; la apariencia sigue a AutoJs6 de forma predeterminada."
   ],
+  "p_screenshots_intro": "Las capturas proceden de un Sony XQ-DQ72 (Android 13). El texto dictado es lo que el complemento reconoció de una grabación de prueba de sherpa-onnx reproducida por el altavoz del teléfono; no se muestran datos personales.",
+  "screenshot_home_caption": "Inicio: estado y modelos agrupados por uso",
+  "screenshot_tryout_caption": "Probar: dictado en directo",
+  "screenshot_voice_caption": "Entrada de voz del sistema: el panel que abrió otra aplicación",
+  "screenshot_assistant_caption": "Asistente digital: editar el resultado y elegir la aplicación que lo recibe",
   "usage_steps": [
-    "Actualice AutoJs6 a la versión interna {{ required_host_version_code }} ({{ required_host_version_name }}) o posterior.",
-    "Descargue desde [Releases]({{ repo_url }}/releases) el APK que corresponda a la ABI del dispositivo (elija `universal` si tiene dudas) e instálelo; después autorícelo y actívelo en el centro de complementos de AutoJs6.",
-    "Abra la pantalla del complemento para conceder el permiso del micrófono y descargar los modelos necesarios; después use el módulo `speech` en los scripts."
+    "Descargue desde [Releases]({{ repo_url }}/releases) el APK que corresponda a la ABI del dispositivo e instálelo: la mayoría de los teléfonos usan `arm64-v8a`; si tiene dudas, elija `universal`, que funciona en todos los dispositivos pero ocupa más.",
+    "Abra 3-Macaw Speech, conceda el permiso del micrófono en la pantalla de inicio y descargue los modelos que necesite en los grupos de reconocimiento, palabra de activación y síntesis (los modelos que recomienda el catálogo son un buen punto de partida; consulte la tabla de modelos más abajo). En Android 13 y posteriores, la primera descarga también pide mostrar notificaciones de progreso.",
+    "En AutoJs6: actualice AutoJs6 a {{ required_host_version_name }} (versión interna {{ required_host_version_code }}) o posterior, active 3-Macaw Speech en el centro de complementos y llame al módulo `speech` en los scripts (consulte API de scripts más abajo). Los ejemplos de AutoJs6 incluyen cuatro scripts listos para ejecutar en Muestras > 3-Macaw Speech.",
+    "En otras aplicaciones: consulte Texto a voz del sistema más abajo para el motor de texto a voz, y las preguntas frecuentes para la entrada de voz del sistema, el servicio de reconocimiento de voz y el asistente digital."
   ],
-  "p_usage_note": "El complemento admite dispositivos con Android {{ min_android_version }} (API {{ android_min_sdk }}) o posterior. Hay un paquete por ABI y un paquete `universal` para todos los dispositivos.",
-  "h3_models": "Modelos",
-  "p_models_intro": "Los modelos de reconocimiento, de palabras de activación y de síntesis ocupan entre 30 MB y 350 MB cada uno, por lo que no se incluyen en el APK. El complemento los descarga de publicaciones inmutables del repositorio de recursos compartidos de AutoJs6 y recurre a la dirección original de sherpa-onnx si el espejo no está disponible; en ambos casos cada archivo debe superar su comprobación SHA-256 antes de activar el modelo.",
-  "p_models_license": "Cada modelo indica su licencia. Los modelos restringidos a uso no comercial (por ejemplo, un modelo de síntesis entrenado con el corpus DataBaker) muestran un aviso antes de la descarga, y los scripts deben pasar `acceptLicense: true` explícitamente.",
-  "p_script_api_intro": "Los scripts usan estas capacidades mediante el módulo global `speech` (también disponible como `$speech`; es el borrador de diseño de la 1.0.0, prevalece la documentación de la versión publicada)",
+  "p_usage_note": "Hay un paquete por ABI y un paquete `universal` para todos los dispositivos. Los paquetes no contienen modelos de reconocimiento ni de síntesis; los modelos se descargan cuando hacen falta desde las pantallas del complemento o un script, o se importan desde archivos locales.",
+  "p_models_intro": "Los modelos de reconocimiento, palabra de activación y síntesis ocupan entre 8 MB y 390 MB cada uno, por lo que no se incluyen en el APK. El complemento lleva un catálogo de modelos firmado y descarga los modelos de las versiones inmutables del repositorio de recursos compartidos de AutoJs6, y recurre a la dirección original de sherpa-onnx cuando el espejo no está disponible; en ambos caminos cada archivo debe superar su comprobación SHA-256 antes de activar el modelo. El catálogo 1.0.0 contiene estos modelos (el tamaño es el espacio que ocupan una vez instalados):",
+  "text_model_column_id": "ID del modelo",
+  "text_model_column_kind": "Uso",
+  "text_model_column_languages": "Idiomas",
+  "text_model_column_size": "Tamaño",
+  "text_model_column_license": "Licencia",
+  "text_model_column_commercial": "Uso comercial",
+  "text_model_kind_asr_streaming": "Reconocimiento (en streaming)",
+  "text_model_kind_asr_offline": "Reconocimiento (sin conexión, con puntuación)",
+  "text_model_kind_kws": "Palabra de activación",
+  "text_model_kind_tts": "Síntesis",
+  "text_model_speakers": "hablantes",
+  "text_model_commercial_yes": "Permitido",
+  "text_model_commercial_no": "Solo no comercial",
+  "text_model_commercial_unknown": "Desconocido",
+  "text_model_license_none": "Ninguna declarada",
+  "text_model_vocoder": "vocoder",
+  "text_model_recommended": "(recomendado)",
+  "p_models_license": "Los modelos restringidos al uso no comercial o con licencia desconocida muestran su licencia antes de la descarga, y los scripts deben pasar `acceptLicense: true` de forma explícita. Los pesos del modelo chino en streaming de 2025 no declaran licencia y sus datos de entrenamiento incluyen corpus solo para uso no comercial, por lo que se descarga solo desde la dirección original de sherpa-onnx y no se replica en el repositorio de recursos compartidos. Los modelos de síntesis Kokoro y Piper incluyen los datos de pronunciación de eSpeak NG (espeak-ng-data, GPL-3.0-or-later).",
+  "p_models_import": "Importar un modelo local, en la pantalla de inicio, acepta un archivo tar, tar.bz2 o zip o una carpeta: los archivos que coinciden con un modelo del catálogo se registran como ese modelo, y los demás se convierten en un modelo personalizado tras indicar su clase, tipo de modelo, nombre e idiomas. La importación usa el selector de archivos del sistema y no necesita permiso de almacenamiento.",
+  "tts_setup_steps": [
+    "Descargue al menos un modelo de síntesis en el grupo de síntesis de la pantalla de inicio del complemento. Para una primera prueba, el más pequeño, `tts.vits.icefall.zh-aishell3` (chino, 174 hablantes), y el modelo de chino e inglés `tts.vits.melo.zh-en` están recomendados.",
+    "Abra los ajustes de texto a voz del sistema y elija 3-Macaw Speech como motor preferido. La fila Motor de texto a voz del sistema de la tarjeta de estado, en la pantalla de inicio del complemento, abre esa página directamente; si no, suele estar en Ajustes > Accesibilidad > Salida de texto a voz o Ajustes > Sistema > Idiomas e introducción de texto > Salida de texto a voz (los nombres varían según el fabricante).",
+    "El botón de ajustes junto al motor abre los ajustes de 3-Macaw Speech, cuyo grupo de síntesis define la voz predeterminada de cada idioma y el hablante. La velocidad la decide el ajuste del sistema o la aplicación que pide la lectura; el tono no es compatible.",
+    "De vuelta en los ajustes del sistema, toque Escuchar un ejemplo para oír la voz predeterminada de ese idioma."
+  ],
+  "p_tts_setup_note": "Cada hablante de cada modelo es una voz llamada `<id del modelo>/<número del hablante>`; los hablantes de los modelos bilingües también tienen `<id del modelo>/<número del hablante>/en-US` para el inglés. Los scripts de AutoJs6 pueden usar el motor sin cambiar el ajuste del sistema: `tts(text, { engine: \"{{ plugin_application_id }}\" })`, o `speech.speak(text, { model, speaker })` para indicar directamente el modelo y el hablante.",
+  "p_script_api_intro": "Desde AutoJs6 {{ required_host_version_name }} (versión interna {{ required_host_version_code }}), los scripts usan estas funciones mediante el módulo global `speech` (también disponible como `$speech`). Los tres ejemplos siguientes se ejecutan por separado: un dictado de 30 segundos que añade cada frase a un archivo, una frase tras una palabra de activación, y una síntesis a un archivo seguida de su lectura",
   "api_points": [
-    "`speech.listen(options)` abre una sesión de dictado que informa de los resultados mediante eventos como `partial`, `final` y `end`; `speech.recognize(path)` reconoce un archivo WAV.",
-    "`speech.wake(keywords, options)` abre una sesión de palabras de activación; `thenListen` inicia el dictado automáticamente tras la activación.",
-    "`speech.synthesize(text, path)` sintetiza en un archivo WAV; `speech.speak(text)` y `tts(text, {engine})` hablan mediante el motor TTS del sistema; `speech.models` gestiona los modelos."
+    "`speech.listen(options)` abre una sesión de dictado que informa mediante los eventos `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` y `end`; `stop()` la termina antes. `speech.recognize(path)` reconoce un archivo WAV (también acepta PCM de 16 kHz) y `speech.detectVoice(path)` lista sus segmentos de voz.",
+    "`speech.wake(keywords, options)` abre una sesión de palabra de activación con las palabras clave escritas como texto (50 como máximo); con `thenListen`, cada activación se convierte en una ronda de dictado sobre la misma grabación, cuya sesión es la propiedad `listen` del evento `wake`.",
+    "`speech.synthesize(text, path, options)` sintetiza a un archivo WAV (8000 caracteres como máximo, con modelo, hablante y velocidad opcionales); `speech.speak(text, options)` y `tts(text, { engine })` hablan mediante el motor de texto a voz del sistema.",
+    "`speech.models` lista, descarga (`install`, con progreso), importa y elimina modelos y define los modelos predeterminados; `speech.capabilities()` devuelve la versión del complemento, sus funciones y si tiene el permiso del micrófono.",
+    "Todo el complemento tiene una sola sesión de micrófono a la vez (dictado o palabra de activación); sin el permiso del micrófono, las llamadas fallan con `PERMISSION_DENIED`, que se concede en la pantalla de inicio del complemento. El texto reconocido nunca se escribe en el registro de AutoJs6.",
+    "La [documentación de AutoJs6]({{ docs_url }}) describe cada método, opción, evento y código de error; Muestras > 3-Macaw Speech de AutoJs6 contiene cuatro ejemplos: dictado a un archivo, palabra de activación y dictado, avisos por voz y comandos de voz entregados al Agent."
+  ],
+  "compatibility_points": [
+    "Android {{ min_android_version }} (API {{ android_min_sdk }}) o posterior, API de destino {{ android_target_sdk }}. Paquetes para arm64-v8a, armeabi-v7a, x86_64 y x86, además de un paquete universal; las bibliotecas nativas están alineadas a páginas de memoria de 16 KB y se verificaron en emuladores con páginas de 16 KB.",
+    "AutoJs6: el módulo `speech` de los scripts necesita {{ required_host_version_name }} (versión interna {{ required_host_version_code }}) o posterior; las pantallas del complemento, el motor de texto a voz del sistema, la entrada de voz del sistema, el servicio de reconocimiento de voz y el asistente digital no dependen de AutoJs6.",
+    "Escucha en segundo plano: una sesión de dictado o de palabra de activación iniciada con AutoJs6 en primer plano sigue escuchando cuando AutoJs6 pasa a segundo plano o se apaga la pantalla (el complemento mantiene la grabación con un servicio en primer plano de micrófono y su notificación). Una sesión abierta cuando AutoJs6 ya está en segundo plano puede ser silenciada por el sistema: recibe entonces un evento `warning` con el código `PERMISSION_DENIED` pero no termina, y el audio vuelve cuando AutoJs6 regresa al primer plano; los scripts que necesitan escuchar en segundo plano deben abrir la sesión mientras AutoJs6 está visible.",
+    "Dispositivos probados: Sony G8441 (Android 9), Sony XQ-AT72 (Android 12), Sony XQ-DQ72 (Android 13), Redmi 22120RN86C (Android 13), Xiaomi Pad 23046RP50C (Android 15), OnePlus OPD2413 (ColorOS, Android 15), y emuladores con API 24, 35 y 37 (páginas de 16 KB).",
+    "Rendimiento: en el Sony G8441, de gama baja, un modelo en streaming se carga en unos 1,7 segundos y SenseVoice en unos 2,8 segundos, y el dictado se procesa unas 3 veces más rápido que el tiempo real; MeloTTS y Kokoro sintetizan más despacio que el tiempo real en estos dispositivos, y AISHELL-3 es el más rápido. Dispositivos más recientes como el Sony XQ-DQ72 cargan en unos 0,5 a 1,2 segundos y sintetizan más rápido que el tiempo real.",
+    "Memoria: un modelo de reconocimiento cargado ocupa unos 210 a 300 MB de memoria nativa. El complemento mantiene los modelos cargados dentro de una cuarta parte de la memoria del dispositivo (de 384 MB a 1,5 GB) y los libera tras 5 minutos de inactividad (de 1 a 30 minutos en los ajustes).",
+    "Asistente digital: el sistema debe permitir elegir una aplicación de asistente digital de terceros. Algunos sistemas reservan la pulsación larga del botón de encendido para su propio asistente; en ese caso use el botón de inicio o el gesto de asistente. ColorOS y HyperOS aún no se han verificado."
   ],
   "faq": [
     {
@@ -63,8 +113,8 @@
       "a": "La mayoría de los teléfonos necesitan `arm64-v8a`. Si no conoce la ABI del dispositivo, instale `universal`: funciona en todos los dispositivos, pero ocupa más."
     },
     {
-      "q": "Cómo uso 3-Macaw Speech como motor de texto a voz del sistema?",
-      "a": "Instale primero al menos un modelo de síntesis y luego elija 3-Macaw Speech como motor preferido en los ajustes de texto a voz del sistema (suelen estar en Accesibilidad o en Idiomas). Cada hablante de un modelo es una voz llamada `<id del modelo>/<número de hablante>`; los modelos bilingües ofrecen además `<id del modelo>/<número de hablante>/en-US` para el inglés. Los scripts de AutoJs6 también pueden elegir el motor sin cambiar el ajuste del sistema: `tts(text, {engine: \"io.github.supermonster003.autojs6.plugin.three.macaw.speech\"})` o `speech.speak(text)`."
+      "q": "Por qué el ejemplo de los ajustes del sistema no suena, o el motor indica que faltan datos de voz?",
+      "a": "El motor solo informa de los idiomas de los modelos de síntesis instalados. Sin un modelo de síntesis, o cuando los modelos instalados no cubren el idioma del dispositivo, el sistema muestra que faltan datos de voz y el ejemplo y la velocidad pueden no estar disponibles. Descargue un modelo de síntesis para el idioma del dispositivo en la pantalla de inicio del complemento y vuelva a abrir los ajustes del sistema; el ejemplo usa la voz predeterminada de ese idioma, que se cambia en el grupo de síntesis de los ajustes del complemento."
     },
     {
       "q": "Pueden otras apps usar 3-Macaw Speech para la entrada de voz?",
@@ -77,6 +127,26 @@
     {
       "q": "Por qué el asistente no escucha una palabra de activación todo el tiempo?",
       "a": "Escuchar todo el tiempo mantiene encendidos el micrófono, una notificación permanente y el indicador del micrófono, y gasta más batería, así que el asistente digital solo escucha cuando pulsas el botón del asistente. Apps como 3-Stone AI y 3-Stove Agent pueden ofrecer su propio interruptor de escucha permanente (desactivado por defecto); mientras escuchan, el asistente digital, la entrada de voz y el reconocimiento de voz siguen funcionando, y la detección de la palabra de activación se pausa y se reanuda sola después. Una palabra de activación propia de 3-Macaw Speech está prevista para una versión posterior."
+    },
+    {
+      "q": "Qué hago si falla la descarga de un modelo?",
+      "a": "El complemento descarga primero de las versiones de GitHub del repositorio de recursos compartidos de AutoJs6 y cambia por sí solo a la dirección original de sherpa-onnx si eso falla; las descargas interrumpidas se reanudan. Sin acceso a GitHub, descargue el archivo del modelo en otro dispositivo (la dirección del espejo o la original del catálogo) y use Importar un modelo local en la pantalla de inicio; los archivos que coinciden con el catálogo se registran como el modelo del catálogo."
+    },
+    {
+      "q": "Cuánto espacio ocupan los modelos y cómo lo libero?",
+      "a": "La tabla de modelos de arriba indica el tamaño instalado de cada modelo. La pantalla de inicio elimina los modelos que ya no necesite, y Limpiar archivos sin referencias, en los ajustes, borra los archivos descargados que ningún modelo necesita, las copias de importación y las instalaciones interrumpidas, y conserva los modelos instalados y las descargas en pausa. Desinstalar el complemento elimina todos los modelos."
+    },
+    {
+      "q": "Por qué el resultado no tiene puntuación?",
+      "a": "Los modelos Zipformer en streaming producen palabras sin puntuación. El modelo SenseVoice reconoce la voz segmento a segmento, añade puntuación e indica el idioma, lo que conviene para frases completas: indíquelo con la opción `model` en los scripts o conviértalo en el modelo de reconocimiento predeterminado en los ajustes."
+    },
+    {
+      "q": "Cómo se escribe una palabra de activación y por qué no se activa?",
+      "a": "Escriba la palabra clave como texto: el chino se deletrea en pinyin según su lectura habitual, las palabras inglesas según el diccionario del modelo (las que no están en él se rechazan), y los tokens pinyin del modelo pueden escribirse directamente para elegir la lectura de un carácter con varias lecturas. Tres o cuatro sílabas y una expresión poco común provocan menos activaciones por error. Cada palabra clave admite un `threshold` (más bajo, se activa con más facilidad) y un `boost`. Pruébela en la prueba de palabra de activación de la pantalla Probar antes de escribirla en un script."
+    },
+    {
+      "q": "Por qué el APK se distribuye bajo la GPL-3.0 y dónde está el código fuente?",
+      "a": "El código propio del complemento está bajo MPL-2.0. La biblioteca oficial de sherpa-onnx para Android enlaza estáticamente eSpeak NG (GPL-3.0-or-later), así que el APK en su conjunto se distribuye bajo la GPL-3.0-or-later. Cada versión adjunta el archivo del código fuente correspondiente (el código fuente y los scripts de compilación de sherpa-onnx con todas sus dependencias), cuyo nombre contiene `corresponding-source` y cuyo SHA-256 figura en `SHA256SUMS`; el código fuente del complemento es este repositorio en la etiqueta de la versión."
     }
   ],
   "p_security_intro": "El complemento reduce al máximo sus permisos:",
@@ -88,8 +158,16 @@
     "Entrada de voz del sistema: como el motor de texto a voz del sistema, está abierta a todas las apps; solo graba mientras su panel está en pantalla, solo devuelve el texto reconocido y se puede desactivar en los ajustes.",
     "Asistente digital: nunca lee la pantalla y no escucha en segundo plano; solo graba mientras su panel está en pantalla, y el texto reconocido solo sale del panel cuando tocas el botón de una app o lo copias (en la pantalla de bloqueo, después de desbloquear). El servicio de reconocimiento de voz solo reconoce para apps que tienen ellas mismas el permiso del micrófono."
   ],
-  "p_license": "El código del proyecto se publica bajo la [Mozilla Public License 2.0]({{ license_url }}). El motor de voz sherpa-onnx usa la licencia Apache-2.0, y onnxruntime y silero VAD usan la licencia MIT; la licencia de cada modelo figura en el catálogo de modelos.",
+  "p_acknowledgements_intro": "3-Macaw Speech se basa en los siguientes proyectos de código abierto, modelos y datos. Gracias a sus autores y mantenedores:",
+  "acknowledgements": [
+    "[sherpa-onnx]({{ sherpa_onnx_url }}) y el equipo de [k2-fsa (Kaldi de nueva generación)](https://github.com/k2-fsa): el entorno de ejecución del reconocimiento, las palabras de activación, la detección de actividad de voz y la síntesis, las exportaciones ONNX de los modelos y la biblioteca para Android (Apache-2.0).",
+    "Modelos entrenados con [icefall](https://github.com/k2-fsa/icefall): los reconocedores Zipformer en streaming (bilingüe de pfluo, inglés de Zengwei, chino 2025 de yuekai), el detector de palabras clave de vocabulario abierto (pkufool), y los modelos de síntesis AISHELL-3 VITS y Baker Matcha-TTS de k2-fsa.",
+    "[SenseVoice](https://github.com/FunAudioLLM/SenseVoice) (FunAudioLLM / Alibaba, licencia de modelo FunASR 1.1): el reconocedor multilingüe sin conexión.",
+    "Los modelos de síntesis [MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, grabaciones en chino cedidas por LongMaoData) y [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT), y el vocoder [HiFi-GAN](https://github.com/jik876/hifi-gan) (MIT).",
+    "Datos de entrenamiento: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), el [corpus de mandarín estándar de Data-Baker](https://www.data-baker.com/open_source.html) (solo uso no comercial), los datos Blizzard 2013 de Lessac Technologies (solo investigación) y [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (dominio público).",
+    "El motor de inferencia [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT), el modelo de actividad de voz [silero VAD](https://github.com/snakers4/silero-vad) (MIT), [eSpeak NG](https://github.com/espeak-ng/espeak-ng) (GPL-3.0-or-later) y [piper-phonemize](https://github.com/rhasspy/piper-phonemize) (MIT) para los fonemas, y [pinyin-data](https://github.com/mozillazg/pinyin-data) (mozillazg, MIT) para las lecturas de las palabras de activación en chino."
+  ],
+  "p_license": "El código fuente del complemento está bajo la [Mozilla Public License 2.0]({{ license_url }}). La biblioteca oficial de sherpa-onnx para Android (Apache-2.0) enlaza estáticamente eSpeak NG y UCD Tools, que están bajo la GNU GPL versión 3 o posterior, así que el APK publicado en su conjunto se distribuye bajo la GPL-3.0-or-later (la sección 3.3 de la MPL-2.0 permite esta combinación), sin ninguna garantía. Cada versión adjunta el código fuente correspondiente `{{ corresponding_source_file }}`: el código fuente y los scripts de compilación de sherpa-onnx {{ sherpa_onnx_version }} y cada archivo de dependencia que su compilación fija por URL y SHA-256; su SHA-256 figura en el `SHA256SUMS` de la versión, y `.python/corresponding_source.py` lo reconstruye y lo comprueba. ONNX Runtime y silero VAD están bajo la licencia MIT; la licencia de cada modelo figura en la tabla de modelos de arriba. La página Acerca de del complemento muestra los textos completos de las licencias y los avisos de terceros.",
   "text_link_third_party": "Avisos de terceros (THIRD_PARTY_NOTICES.md)",
-  "text_link_sherpa_onnx": "Proyecto sherpa-onnx",
-  "p_instruction_docs": "El progreso y el diseño están disponibles en la [página del proyecto]({{ repo_url }})."
+  "p_instruction_docs": "Consulte la [página del proyecto]({{ repo_url }}) para las instrucciones completas, la lista de modelos y las preguntas frecuentes, y la [documentación de AutoJs6]({{ docs_url }}) para la API de scripts."
 }

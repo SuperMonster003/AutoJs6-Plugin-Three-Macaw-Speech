@@ -42,8 +42,8 @@ class PluginRuntimeInfoTest {
         assertEquals("Oct 16, 2026", fields.versionDate)
         // Roadmap D14: sherpa-onnx ships native code for exactly four ABIs, reported in the split order.
         assertEquals(SUPPORTED_ABIS, fields.supportedAbis)
-        // Roadmap D28: the P1.3 temporary floor is the host build that ships the speech module; P6.4 raises it.
-        assertEquals(5451L, fields.requiredHostVersion)
+        // Roadmap D28: the P6.4 floor is the first host build with every speech change of the host (11f75efbe).
+        assertEquals(5456L, fields.requiredHostVersion)
         assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
         assertEquals(1, fields.contractVersion)
         // Roadmap P2.3 / P2.4: model management, then recognition (P3), synthesis and the system TTS engine (P4).

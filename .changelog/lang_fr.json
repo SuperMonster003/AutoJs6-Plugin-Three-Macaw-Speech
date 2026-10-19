@@ -6,13 +6,13 @@
   "changelog_label_dependency": "Dépendance",
   "$data": {
     "v1.0.0": {
-      "released_date": "2026/10/16",
+      "released_date": "2026/10/20",
       "hint": [
-        "Préversion de développement: AutoJs6 détecte le plugin, qui télécharge et gère les modèles, reconnaît la parole dans des fichiers WAV, du PCM fourni et au microphone, détecte l'activité vocale et les mots de réveil et synthétise la parole, y compris comme moteur TTS du système; les écrans du plugin permettent de gérer et d'essayer les modèles; la version d'AutoJs6 avec le module de script speech n'est pas encore publiée",
-        "Nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur (la version minimale exacte sera renseignée une fois les modifications de l'hôte intégrées)"
+        "Première version. Le module speech des scripts nécessite AutoJs6 {{ required_host_version_name }} ({{ required_host_version_code }}) ou ultérieur; les écrans du plugin, le moteur de synthèse vocale du système, la saisie vocale du système, le service de reconnaissance vocale et l'assistant numérique ne dépendent pas d'AutoJs6",
+        "Les modèles de reconnaissance et de synthèse ne font pas partie du paquet et se téléchargent depuis les écrans du plugin ou un script; l'application dans son ensemble est distribuée sous GNU GPL 3.0 ou ultérieure (l'environnement vocal lie statiquement eSpeak NG), et chaque version est accompagnée du code source correspondant"
       ],
       "feature": [
-        "Squelette du plugin: protocole d'activation Wake, service d'identité du centre des plugins et service de capacité vocale",
+        "Plugin vocal d'AutoJs6: une fois activé dans le centre des plugins, les scripts utilisent la reconnaissance vocale, les mots de réveil, la détection d'activité vocale, la synthèse vocale et la gestion des modèles via le module speech",
         "Moteur vocal sherpa-onnx {{ sherpa_onnx_version }} et modèle de détection d'activité vocale silero VAD v5 intégrés, avec un paquet par ABI pour 4 ABI",
         "Gestion des modèles: télécharge les modèles vocaux hors ligne du catalogue signé depuis les publications des ressources partagées d'AutoJs6, avec repli sur les publications officielles de sherpa-onnx; chaque fichier est vérifié par SHA-256 avant usage, avec reprise des téléchargements, import local (tar, tar.bz2, zip), suppression et modèles par défaut; les modèles réservés à un usage non commercial ou sans licence déclarée exigent d'accepter leur licence au préalable",
         "Reconnaissance vocale des fichiers WAV (entiers sur 8, 16, 24 ou 32 bits ou flottants, toute fréquence d'échantillonnage et tout nombre de canaux, rééchantillonnés en 16 kHz mono dans le plugin) avec des segments horodatés, ainsi que des étiquettes de langue, d'émotion et d'événement pour les modèles SenseVoice; les modèles en continu acceptent des mots favoris",
@@ -32,7 +32,7 @@
         "Paramètres: langue, mode nuit, couleur du thème et icône du lanceur (qui suivent AutoJs6 par défaut); modèles de reconnaissance et de synthèse par défaut, sensibilité de fin de phrase, détection d'activité vocale, locuteur, vitesse et voix par défaut par langue pour l'écran d'essai et le moteur TTS du système (les scripts gardent les valeurs par défaut documentées); délai avant la libération des modèles inactifs, actualisation du catalogue et nettoyage des fichiers restants; le bouton de réglages de 3-Macaw Speech dans les réglages de synthèse vocale du système ouvre cet écran",
         "À propos: version, historique des versions inclus dans le plugin, recherche de mises à jour (automatique au plus une fois toutes les 12 heures, une version peut être ignorée) ainsi que licences et mentions: l'application dans son ensemble est distribuée sous la GNU GPL 3.0 ou ultérieure, sans aucune garantie, avec les mentions de tiers, le texte complet de la GPL, les conditions d'utilisation d'Unicode et l'emplacement de la source correspondante",
         "Icône du lanceur: icône adaptative (claire), icône adaptative (sombre), icône adaptative (automatique, par défaut) ou icône à fond transparent",
-        "README, instructions du centre des plugins et journaux des modifications en 10 langues, générés à partir de sources JSON"
+        "Écrans, README, instructions du centre des plugins et journal des modifications en 10 langues: chinois simplifié, chinois traditionnel (Hong Kong, Taïwan), anglais, français, espagnol, japonais, coréen, russe et arabe"
       ],
       "dependency": [
         "Ajout de sherpa-onnx {{ sherpa_onnx_version }}",

@@ -1,6 +1,6 @@
 3-Macaw Speech 基于 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 在设备上离线完成语音识别, 语音活动检测, 唤醒词检测与神经网络语音合成. 全部计算都在本机进行, 音频不会上传.
 
-> 当前为开发预览版: 插件可以被 AutoJs6 识别, 可以下载与管理模型, 识别语音, 检测语音活动与唤醒词, 合成语音并作为系统 TTS 引擎使用, 插件自己的界面可以管理与试用模型并调整设置; 提供 `speech` 脚本模块的 AutoJs6 版本尚未发布. 下文描述的是 1.0.0 的设计目标, 进度见开发路线图.
+> 在脚本中使用 `speech` 模块需要 AutoJs6 6.8.0 (内部版本号 5456) 或更高版本. 系统 TTS 引擎, 系统语音输入, 语音识别服务, 数字助理与插件自己的界面不依赖 AutoJs6, 安装插件并下载模型后即可使用.
 
 ### 功能亮点
 
@@ -11,5 +11,13 @@
 - 系统语音输入: 其他应用 (例如 3-Stove Agent) 的麦克风按钮可以使用离线识别, 在底部弹层中说一句话, 识别出的文字直接交回该应用.
 - 数字助理: 把 3-Macaw Speech 选为默认数字助理应用后, 长按电源键或 Home 键说一句话, 需要时编辑识别出的文字, 再交给 3-Stove Agent, 3-Stone AI 等接收语音指令的应用, 或复制. 它也提供系统语音识别服务: Android 11 及以下选它为助理时一般会一并设为默认识别服务; Android 12 起需在系统的语音输入设置里另行选择 (部分手机没有这项设置), 应用也可以直接指定它.
 - 模型管理: 从签名的模型目录下载, 逐个文件校验 SHA-256 后才启用, 也可以导入本地模型; 仅限非商业用途的模型在下载前会提示许可.
+- 独立界面: 首页显示运行状态并管理模型, 试听试说页直接试验听写, 唤醒词与合成, 设置页调整语言, 夜间模式, 主题色, 启动器图标与识别合成的默认值, 外观默认跟随 AutoJs6.
 
-开发进度与设计见 [项目主页](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech).
+### 安装与使用
+
+1. 从 [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) 下载与设备 ABI 对应的 APK 并安装: 大多数手机选择 `arm64-v8a`, 不确定时选择适用于全部设备但体积更大的 `universal`.
+2. 打开 3-Macaw Speech, 在首页授予麦克风权限, 并在识别, 唤醒词与合成各组中下载需要的模型 (目录推荐的模型是较好的起点, 见下文模型表). Android 13 及以上首次下载时还会请求显示下载进度通知.
+3. 在 AutoJs6 中使用: 将 AutoJs6 升级到 6.8.0 (内部版本号 5456) 或更高版本, 在插件中心启用 3-Macaw Speech, 然后在脚本中调用 `speech` 模块 (见下文脚本 API). AutoJs6 的示例代码 > 3-Macaw Speech 中有四个可直接运行的示例.
+4. 在其他应用中使用: 系统 TTS 引擎见下文系统 TTS 设置; 系统语音输入, 语音识别服务与数字助理见常见问题.
+
+完整的使用说明, 模型列表与常见问题见 [项目主页](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech), 脚本 API 见 [AutoJs6 文档](https://docs.autojs6.com/#/speech).

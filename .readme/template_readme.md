@@ -49,6 +49,41 @@
 
 ******
 
+### {{ h3_screenshots }}
+
+******
+
+{{ p_screenshots_intro }}
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="{{ repo_url }}/blob/master/docs/images/screenshots/home.png?raw=true" alt="{{ screenshot_home_caption }}" width="360" />
+      <br />
+      <sub>{{ screenshot_home_caption }}</sub>
+    </td>
+    <td align="center">
+      <img src="{{ repo_url }}/blob/master/docs/images/screenshots/tryout-dictation.png?raw=true" alt="{{ screenshot_tryout_caption }}" width="360" />
+      <br />
+      <sub>{{ screenshot_tryout_caption }}</sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="{{ repo_url }}/blob/master/docs/images/screenshots/voice-input.png?raw=true" alt="{{ screenshot_voice_caption }}" width="360" />
+      <br />
+      <sub>{{ screenshot_voice_caption }}</sub>
+    </td>
+    <td align="center">
+      <img src="{{ repo_url }}/blob/master/docs/images/screenshots/assistant.png?raw=true" alt="{{ screenshot_assistant_caption }}" width="360" />
+      <br />
+      <sub>{{ screenshot_assistant_caption }}</sub>
+    </td>
+  </tr>
+</table>
+
+******
+
 ### {{ h3_usage }}
 
 ******
@@ -65,7 +100,21 @@
 
 {{ p_models_intro }}
 
+{{ placeholder_models_table }}
+
 {{ p_models_license }}
+
+{{ p_models_import }}
+
+******
+
+### {{ h3_tts_setup }}
+
+******
+
+{{ placeholder_tts_setup_steps }}
+
+{{ p_tts_setup_note }}
 
 ******
 
@@ -76,20 +125,35 @@
 {{ p_script_api_intro }}:
 
 ```javascript
-let session = speech.listen({ language: "zh", silenceEndMillis: 1500 });
+// 1. Dictation: partial text while you speak, one final per sentence, 30 seconds in all
+let session = speech.listen({ silenceEndMillis: 1500, timeoutMillis: 0 });
 session.on("partial", (e) => console.log("...", e.text));
 session.on("final", (e) => files.append("./dictation.txt", e.text + "\n"));
-sleep(30000);
-session.stop();
+setTimeout(() => session.stop(), 30000);
 
-let wake = speech.wake(["hey macaw"], { thenListen: true });
-wake.on("wake", (e) => e.listen.on("final", (r) => console.log(r.text)));
+// 2. A wake word, then one round of dictation on the same recording
+let wake = speech.wake(["hey macaw", "小六小六"], { thenListen: true });
+wake.on("wake", (e) => e.listen.on("final", (r) => {
+    console.log(e.keyword, r.text);
+    wake.stop();
+}));
 
-speech.synthesize("Task completed", "./done.wav");
+// 3. Synthesis to a WAV file, and speech through the system TTS engine
+let result = speech.synthesize("Task completed", "./done.wav", { model: "tts.vits.melo.zh-en" });
+console.log(result.durationMillis, result.sampleRate);
+speech.speak("任务完成");
 tts("Task completed", { engine: "{{ plugin_application_id }}" });
 ```
 
 {{ placeholder_api_points }}
+
+******
+
+### {{ h3_compatibility }}
+
+******
+
+{{ placeholder_compatibility_points }}
 
 ******
 
@@ -131,6 +195,16 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx {{ sherp
 
 ******
 
+### {{ h3_acknowledgements }}
+
+******
+
+{{ p_acknowledgements_intro }}
+
+{{ placeholder_acknowledgements }}
+
+******
+
 ### {{ h3_roadmap }}
 
 ******
@@ -166,6 +240,7 @@ py .python\generate_markdown.py --check
 py .python\generate_icon_studio.py --check
 py .python\verify_native_alignment.py --check
 py .python\check_repository.py
+py -I .python\corresponding_source.py build --downloads <directory outside the repository>
 ```
 
 ******
@@ -185,4 +260,5 @@ py .python\check_repository.py
 ******
 
 - {{ text_link_autojs6 }}: {{ autojs6_url }}
+- {{ text_link_docs }}: {{ docs_url }}
 - {{ text_link_sherpa_onnx }}: {{ sherpa_onnx_url }}

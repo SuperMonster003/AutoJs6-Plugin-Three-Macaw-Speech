@@ -6,11 +6,11 @@
 
 # v1.0.0
 
-###### 2026/10/16
+###### 2026/10/20
 
-* `Aviso` Versión preliminar de desarrollo: AutoJs6 detecta el complemento, que descarga y administra modelos, reconoce voz en archivos WAV, en PCM suministrado y del micrófono, detecta actividad de voz y palabras de activación y sintetiza voz, también como motor TTS del sistema; los modelos se pueden administrar y probar en las pantallas del propio complemento; la versión de AutoJs6 con el módulo de script speech aún no se ha publicado
-* `Aviso` Requiere AutoJs6 6.8.0 (5451) o posterior (la versión mínima exacta se indicará cuando se integren los cambios del anfitrión)
-* `Función` Esqueleto del complemento: protocolo de activación Wake, servicio de identidad del centro de complementos y servicio de capacidad de voz
+* `Aviso` Primera versión. El módulo speech de los scripts necesita AutoJs6 6.8.0 (5456) o posterior; las pantallas del complemento, el motor de texto a voz del sistema, la entrada de voz del sistema, el servicio de reconocimiento de voz y el asistente digital no dependen de AutoJs6
+* `Aviso` Los modelos de reconocimiento y síntesis no forman parte del paquete y se descargan desde las pantallas del complemento o un script; la aplicación en su conjunto se distribuye bajo la GNU GPL 3.0 o posterior (el entorno de voz enlaza estáticamente eSpeak NG), y cada versión incluye el código fuente correspondiente
+* `Función` Complemento de voz de AutoJs6: una vez activado en el centro de complementos, los scripts usan el reconocimiento de voz, las palabras de activación, la detección de actividad de voz, la síntesis de voz y la gestión de modelos mediante el módulo speech
 * `Función` Motor de voz sherpa-onnx 1.13.8 y modelo de detección de actividad de voz silero VAD v5 integrados, con un paquete por ABI para 4 ABI
 * `Función` Gestión de modelos: descarga los modelos de voz sin conexión del catálogo firmado desde las publicaciones de los recursos compartidos de AutoJs6, con las publicaciones oficiales de sherpa-onnx como alternativa; cada archivo se verifica con SHA-256 antes de usarse, con descargas reanudables, importación local (tar, tar.bz2, zip), eliminación y modelos predeterminados; los modelos limitados a uso no comercial o sin licencia declarada requieren aceptar antes su licencia
 * `Función` Reconocimiento de voz de archivos WAV (enteros de 8, 16, 24 o 32 bits o coma flotante, cualquier frecuencia de muestreo y número de canales, remuestreados a 16 kHz mono en el complemento) con segmentos con marcas de tiempo, además de etiquetas de idioma, emoción y evento para los modelos SenseVoice; los modelos en streaming admiten palabras clave favorecidas
@@ -30,7 +30,7 @@
 * `Función` Ajustes: idioma, modo nocturno, color del tema e icono del lanzador (siguen a AutoJs6 de forma predeterminada); modelos de reconocimiento y síntesis predeterminados, sensibilidad de fin de frase, detección de actividad de voz, hablante, velocidad y voz predeterminada por idioma para la pantalla de prueba y el motor TTS del sistema (los scripts mantienen los valores predeterminados documentados); cuándo se liberan los modelos inactivos, actualización del catálogo y limpieza de archivos sobrantes; el botón de ajustes de 3-Macaw Speech en los ajustes de texto a voz del sistema abre esta pantalla
 * `Función` Acerca de: versión, historial de versiones incluido en el complemento, búsqueda de actualizaciones (automática como máximo una vez cada 12 horas, se puede ignorar una versión) y licencias y avisos: la aplicación en su conjunto se distribuye bajo la GNU GPL 3.0 o posterior sin ninguna garantía, con los avisos de terceros, el texto completo de la GPL, las condiciones de uso de Unicode y dónde está el código fuente correspondiente
 * `Función` Icono del lanzador: icono adaptable (claro), icono adaptable (oscuro), icono adaptable (automático, predeterminado) o icono con fondo transparente
-* `Función` README, instrucciones del centro de complementos y registros de cambios en 10 idiomas, generados a partir de fuentes JSON
+* `Función` Pantallas, README, instrucciones del centro de complementos y registro de cambios en 10 idiomas: chino simplificado, chino tradicional (Hong Kong, Taiwán), inglés, francés, español, japonés, coreano, ruso y árabe
 * `Dependencia` Se agrega sherpa-onnx 1.13.8
 * `Dependencia` Se agrega Jetpack Compose BOM 2026.09.00
 * `Dependencia` Se agrega AndroidX Activity Compose 1.12.2

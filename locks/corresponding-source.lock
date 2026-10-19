@@ -1,0 +1,85 @@
+# Corresponding source of libsherpa-onnx-jni.so (roadmap D32, P6.4; GPL-3.0 section 6(d)): every GitHub Release of the
+# plugin attaches the archive below next to its APKs and lists it in SHA256SUMS. Build and check it with
+#   py -I .python/corresponding_source.py build --downloads <dir outside the repository>
+# Redo it when the sherpa-onnx AAR changes (locks/sherpa-onnx.lock).
+# Dependencies: the URL and SHA-256 that the cmake files of sherpa-onnx v1.13.8 pin (kaldifst: the cmake/ of
+#   kaldi-decoder v0.3.0, which sherpa-onnx builds with add_subdirectory and whose include(kaldifst) is the only module
+#   that sherpa-onnx's own cmake/ does not provide); the archive keeps the file names that the cmake files look for in
+#   ~/Downloads. These are the eleven components of THIRD_PARTY_NOTICES.md ("Statically linked", UCD Tools is part of
+#   the eSpeak NG tree). Not included: ONNX Runtime (a separate prebuilt MIT library) and the cmake modules that the
+#   Android build does not use (googletest, pybind11, portaudio, websocketpp, asio, cargs).
+# sherpa-onnx: upstream pins no digest for its own source, so the SHA-256 of the GitHub archive of tag v1.13.8 was
+#   measured on 2026-10-20 and the tool also checks the commit that GitHub records in the archive's pax header.
+format=1
+sherpa-onnx.version=1.13.8
+sherpa-onnx.commit=11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf
+source.sherpa-onnx.path=sherpa-onnx/sherpa-onnx-1.13.8.tar.gz
+source.sherpa-onnx.url=https://github.com/k2-fsa/sherpa-onnx/archive/refs/tags/v1.13.8.tar.gz
+source.sherpa-onnx.sha256=b0374cc56dbc186d442ae73d5de743bb092470b640c4c50ce7b029044c0c4fa8
+source.sherpa-onnx.size=11642707
+source.sherpa-onnx.pin=locks/corresponding-source.lock (measured 2026-10-20; pax header commit 11afbd009a7f8c08f4bcf2fc1b265d0df4670fbf)
+source.sherpa-onnx.license=Apache-2.0
+source.espeak-ng.path=deps/espeak-ng-ed530aa113046142eb5115cf2fc9157854d0ffe1.zip
+source.espeak-ng.url=https://github.com/csukuangfj/espeak-ng/archive/ed530aa113046142eb5115cf2fc9157854d0ffe1.zip
+source.espeak-ng.sha256=e4e262cbe34f7fe21f91f1ba3397f2728e1f30eafbae7853f2b753a9ed13f0dd
+source.espeak-ng.size=18011501
+source.espeak-ng.pin=sherpa-onnx v1.13.8 cmake/espeak-ng-for-piper.cmake
+source.espeak-ng.license=GPL-3.0-or-later (eSpeak NG and UCD Tools; Unicode Terms of Use for the UCD tables)
+source.piper-phonemize.path=deps/piper-phonemize-f3ff95afc03640bc1399e113e83361192a2fafb4.zip
+source.piper-phonemize.url=https://github.com/csukuangfj/piper-phonemize/archive/f3ff95afc03640bc1399e113e83361192a2fafb4.zip
+source.piper-phonemize.sha256=d9cca4e2bdc7d6dd8dffb96a4668283dbd3f77a9c194a3e530c1e8eba9406a5d
+source.piper-phonemize.size=9805962
+source.piper-phonemize.pin=sherpa-onnx v1.13.8 cmake/piper-phonemize.cmake
+source.piper-phonemize.license=MIT (uni-algo: Public Domain)
+source.kaldi-native-fbank.path=deps/kaldi-native-fbank-1.22.3.tar.gz
+source.kaldi-native-fbank.url=https://github.com/csukuangfj/kaldi-native-fbank/archive/refs/tags/v1.22.3.tar.gz
+source.kaldi-native-fbank.sha256=9176cc66fc7ce1edf85cf355b06e320c57db6297df74277f575183468893cf61
+source.kaldi-native-fbank.size=71144
+source.kaldi-native-fbank.pin=sherpa-onnx v1.13.8 cmake/kaldi-native-fbank.cmake
+source.kaldi-native-fbank.license=Apache-2.0
+source.kaldi-decoder.path=deps/kaldi-decoder-0.3.0.tar.gz
+source.kaldi-decoder.url=https://github.com/k2-fsa/kaldi-decoder/archive/refs/tags/v0.3.0.tar.gz
+source.kaldi-decoder.sha256=b9f34cfb4fd3b1344100eead79ef4d37aa15962274b9e3056de345021f76a1b0
+source.kaldi-decoder.size=51199
+source.kaldi-decoder.pin=sherpa-onnx v1.13.8 cmake/kaldi-decoder.cmake
+source.kaldi-decoder.license=Apache-2.0
+source.kaldifst.path=deps/kaldifst-1.8.0.tar.gz
+source.kaldifst.url=https://github.com/k2-fsa/kaldifst/archive/refs/tags/v1.8.0.tar.gz
+source.kaldifst.sha256=3f247b7e5a2409071202f5e2bc6200060f66728c0a3443c03923ad2723e040b3
+source.kaldifst.size=172147
+source.kaldifst.pin=kaldi-decoder v0.3.0 cmake/kaldifst.cmake
+source.kaldifst.license=Apache-2.0
+source.openfst.path=deps/openfst-1.8.5-2026-07-09.tar.gz
+source.openfst.url=https://github.com/csukuangfj/openfst/archive/refs/tags/v1.8.5-2026-07-09.tar.gz
+source.openfst.sha256=2ff712a32952fcb01d351121a6bc8ccf4fdc6b2aa06ce8df2b3095dedd518c0e
+source.openfst.size=1501685
+source.openfst.pin=sherpa-onnx v1.13.8 cmake/openfst.cmake
+source.openfst.license=Apache-2.0
+source.eigen.path=deps/eigen-5.0.1.tar.gz
+source.eigen.url=https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.gz
+source.eigen.sha256=e9c326dc8c05cd1e044c71f30f1b2e34a6161a3b6ecf445d56b53ff1669e3dec
+source.eigen.size=2967272
+source.eigen.pin=sherpa-onnx v1.13.8 cmake/eigen.cmake
+source.eigen.license=MPL-2.0
+source.simple-sentencepiece.path=deps/simple-sentencepiece-0.7.tar.gz
+source.simple-sentencepiece.url=https://github.com/pkufool/simple-sentencepiece/archive/refs/tags/v0.7.tar.gz
+source.simple-sentencepiece.sha256=1748a822060a35baa9f6609f84efc8eb54dc0e74b9ece3d82367b7119fdc75af
+source.simple-sentencepiece.size=355335
+source.simple-sentencepiece.pin=sherpa-onnx v1.13.8 cmake/simple-sentencepiece.cmake
+source.simple-sentencepiece.license=Apache-2.0
+source.json.path=deps/json-3.12.0.tar.gz
+source.json.url=https://github.com/nlohmann/json/archive/refs/tags/v3.12.0.tar.gz
+source.json.sha256=4b92eb0c06d10683f7447ce9406cb97cd4b453be18d7279320f7b2f025c10187
+source.json.size=9678593
+source.json.pin=sherpa-onnx v1.13.8 cmake/json.cmake
+source.json.license=MIT
+source.hclust-cpp.path=deps/hclust-cpp-2026-02-25.tar.gz
+source.hclust-cpp.url=https://github.com/csukuangfj/hclust-cpp/archive/refs/tags/2026-02-25.tar.gz
+source.hclust-cpp.sha256=8f14e024c709d73afb40ae69cb22de4b73dba67cbce40f2e518813da8139ab56
+source.hclust-cpp.size=22523
+source.hclust-cpp.pin=sherpa-onnx v1.13.8 cmake/hclust-cpp.cmake
+source.hclust-cpp.license=BSD-2-Clause
+archive.prefix=autojs6-plugin-three-macaw-speech-corresponding-source-sherpa-onnx-v1.13.8
+archive.file=autojs6-plugin-three-macaw-speech-corresponding-source-sherpa-onnx-v1.13.8-ac68c80b.tar
+archive.size=54332416
+archive.sha256=ac68c80b1c93d65910e5b7f47b153c5dbeb94a28e9d908ee57363fab8694ae5c

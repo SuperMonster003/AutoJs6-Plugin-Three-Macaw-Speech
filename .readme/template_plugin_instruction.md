@@ -6,4 +6,8 @@
 
 {{ placeholder_features }}
 
+### {{ h3_usage }}
+
+{{ placeholder_usage_steps }}
+
 {{ p_instruction_docs }}
