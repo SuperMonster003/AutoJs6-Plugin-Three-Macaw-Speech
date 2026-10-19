@@ -31,7 +31,7 @@
 | D5 | 模型分发: APK 只含运行时与 VAD, 其余按需下载 | 仿 3-Stone AI: 内置固定版本的模型目录快照, 固定字节数 + SHA-256 校验, 下载到插件私有存储并原子激活; 支持从本地文件导入. 不按语言拆变体 APK, 不在 APK 内置识别或合成模型. |
 | D6 | 录音归属: 插件采集, 宿主以 `BIND_INCLUDE_CAPABILITIES` 绑定 | 插件自己申请 `RECORD_AUDIO` 并在进程内采集, 音频不过 Binder; 宿主绑定时传递前台能力, 脚本在后台也能听. 契约同时接受文件 / PCM 输入 (宿主或脚本自备音频). 宿主虽已持有 `RECORD_AUDIO`, 不替插件录音. |
 | D7 | 独立界面: 模型管理 + 设置 + 试听试说 + 发行历史 | 有启动器入口 (Icon Studio 亮暗图标), 按 `AUTOJS6_PLUGIN_STANDALONE_SETTINGS_AGENTS.md`; 下载进度, 模型选择, 麦克风测试与 TTS 试听都在界面内完成. 不做聊天或助手界面. |
-| D8 | 3-Stove Agent 联动: 1.0.0 脚本级样例, 1.1.0 内置语音助手 | 1.0.0 随宿主附样例 (`speech.wake -> speech.listen -> ai.agent.run`); 插件内置的常驻唤醒, 悬浮麦克风与直调 Stove Agent AIDL 排到 1.1.0 (P7). 2026-10-17 补充: 由系统助理手势触发的数字助理提前到 1.0.0 (P5.7, D48-D56), 交给 Stove 改走 D50 的 `VOICE_COMMAND` 入口而不是直调 AIDL; 3-Stone AI, 3-Stove Agent 与本插件各有常驻监听开关 (默认关, 同一时刻只允许一个, 见 3-Stone AI ROADMAP D27 / D28 / D31), 与数字助理并存, 麦克风接管见 D57. |
+| D8 | 3-Stove Agent 联动: 1.0.0 脚本级样例, 1.1.0 内置语音助手 | 1.0.0 随宿主附样例 (`speech.wake -> speech.listen -> ai.agent.run`); 插件内置的常驻唤醒, 悬浮麦克风与直调 Stove Agent AIDL 排到 1.1.0 (P7). 2026-10-17 补充: 由系统助理手势触发的数字助理提前到 1.0.0 (P5.7, D48-D56), 交给 Stove 改走 D50 的 `VOICE_COMMAND` 入口而不是直调 AIDL; 3-Stone AI, 3-Stove Agent 与本插件各有常驻监听开关 (默认关, 同一时刻只允许一个, 见 3-Stone AI ROADMAP D27 / D28 / D31), 与数字助理并存, 麦克风接管见 D57. 2026-10-20 起悬浮麦克风等触发式入口为 1.1.0 的 P7.1 (D58-D65), 常驻唤醒排在其后 (D66 / D67). |
 | D9 | 模型来源: `AutoJs6-Shared-Assets` 为主, sherpa-onnx 上游 URL 为备用 | Shared-Assets 新增 `speech-models` 类别 (独立目录 / 清单 / 标签前缀 `speech-models-vN` / 签名密钥), 按模型重打包为内容寻址的不可变 Release 资源; 目录每条可同时记录上游 sherpa-onnx Release URL, 镜像不可用时回退上游, 两条路径最终都按文件级 SHA-256 校验 (D24). |
 | D10 | 1.0.0 目录范围: 精选 | 识别: 流式 zh-en zipformer int8, 流式 zh int8 (2025; 2026-10-16 维护者决定保留目录条目但仅走上游 URL, 不镜像), SenseVoice int8 官方 2024-07-17 导出 (zh / en / ja / ko / yue 离线, 带标点, FunASR 模型许可 1.1 可商用; 2026-10-16 维护者决定以此替换 2025-09-09 粤语微调版), 流式 en int8; 合成: vits-melo-tts-zh_en, kokoro-multi-lang-v1_1, vits-icefall-zh-aishell3, piper en_US-lessac-medium, matcha-icefall-zh-baker; 唤醒词 zh-en 3M; VAD silero v5. 清单见附录 A, 其他语言按需追加. 两项决定的证据: Shared-Assets `89f04a6` (附录 D Q10 / Q11). |
 | D11 | 仅限非商业用途的模型: 收录但标注许可并在下载前提示 | 目录每条带 `license` 与 `commercialUse` 字段; `commercialUse=false` 的模型 (如 matcha-icefall-zh-baker 的 DataBaker 语料) 在界面与脚本下载前给出许可提示, 脚本侧需显式 `acceptLicense: true`. |
@@ -41,7 +41,7 @@
 
 ## 2. 派生技术决策
 
-D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定. D48-D56 是 P5.7 (系统数字助理) 开工前维护者经两轮选择题选定的决策 (2026-10-17; 除 D49 选 "说完后点按钮选" 外均为推荐项), 视同固定; 同日第三轮按 3-Stone AI ROADMAP D27 改正 D48 中关于常驻监听的说法, 并选定 D57 (推荐项). 2026-10-18 按 Sony XQ-AT72 实测与 AOSP 源码改正 D56 中关于默认识别服务的说法 (维护者选定按 Android 版本写, 推荐项).
+D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定. D48-D56 是 P5.7 (系统数字助理) 开工前维护者经两轮选择题选定的决策 (2026-10-17; 除 D49 选 "说完后点按钮选" 外均为推荐项), 视同固定; 同日第三轮按 3-Stone AI ROADMAP D27 改正 D48 中关于常驻监听的说法, 并选定 D57 (推荐项). 2026-10-18 按 Sony XQ-AT72 实测与 AOSP 源码改正 D56 中关于默认识别服务的说法 (维护者选定按 Android 版本写, 推荐项). D58-D67 是 1.1.0 触发式入口 (P7.1) 开工前维护者经三轮选择题选定的决策 (2026-10-20; 首批入口选了全部四类, 按键触发选 "本插件自带无障碍服务", 其余均为推荐项), 视同固定.
 
 | 编号 | 决策 | 含义 | 推翻点 |
 | --- | --- | --- | --- |
@@ -90,6 +90,16 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D55 | 锁屏可听写, 发送前解锁 | `supportsLaunchVoiceAssistFromKeyguard=true`: 锁屏上可以开始听写; 点目标按钮或 "复制文本" 时先 `requestDismissKeyguard`, 解锁成功后才发送或复制, 取消解锁则留在弹层. 锁屏上不显示历史 (本插件不保存识别历史). 未采用 "锁屏时不响应". | P5.7 (已定) |
 | D56 | 系统识别服务 `RecognitionService`: 完整实现 | 调用方可显式指定本插件的组件; 不指定组件的 `SpeechRecognizer.createSpeechRecognizer(context)` 用系统设置 `voice_recognition_service`, 它是否随数字助理切换取决于系统版本: AOSP 在 Android 7-9 由设置页 `DefaultAssistPicker`, 在 Android 10-11 由 `VoiceInteractionManagerService.onRoleHoldersChanged` 把它一并设为助理声明的 `recognitionService`; Android 12 起 `onRoleHoldersChanged` 只写 `assistant` 与 `voice_interaction_service`, 识别服务改由设置里单独的 "语音输入" 选择器 (`DefaultVoiceInputPicker`, 设备有 `android.software.voice_recognizers` 时显示) 写入. 用户文案按此写为 "Android 11 及以下一般会一并设为默认, Android 12 起需在语音输入设置里另行选择 (部分手机没有这项设置), 应用也可直接指定" (维护者 2026-10-18 选定, 改正本条原先 "选为数字助理后它也成为其他应用 `SpeechRecognizer` 的默认识别服务" 的说法). 依据: Sony XQ-AT72 (API 31) 经系统设置选为助理后 `voice_recognition_service` 仍为 Google 的 `GoogleTTSRecognitionService`; 维护者随后在系统语音输入设置中选择本插件, 该值变为 `.recognition.MacawRecognitionService` (`dumpsys settings` 记录的写入方为 `com.android.settings`, 紧随助理的两项写入之后; 维护者随后改回 Google). 同日其他设备: 维护者在系统设置中选为助理后, G8441 (API 28) 的识别服务随之变为本插件, XQ-DQ72 (API 33) 仍为 Google; API 29 / 30 只读 AVD (`-read-only`, 关机丢弃改动) 以 `cmd role add-role-holder` 分配助理后识别服务随之变为本插件, 与 AOSP 一致. 支持 `startListening` / `stopListening` / `cancel`, `onReadyForSpeech` / `onBeginningOfSpeech` / `onEndOfSpeech`, 部分结果, 最终结果 (1 条), 音量回调 (契约没有电平事件, 按 VAD 状态近似, 与 D42 相同) 与常见错误码 (无匹配, 超时, 音频, 权限不足, 识别服务忙, 服务端); 语言与模型选择沿用 D45 / D46, 识别经进程内 `SpeechPluginBinder` (与弹层同一路径, 共用唯一的麦克风); API 31+ 按调用方 `AttributionSource` 校验麦克风权限并归属数据. 设置页 "作为系统语音输入" 开关 (D43) 只管 `RECOGNIZE_SPEECH` 弹层, 不关识别服务 (否则助理不可用). 未采用 "最小实现" (Android 11 及以下选 Macaw 为助理后识别服务随之切换, 依赖系统识别服务的应用会失去语音识别). P5.7 实现 (提交 `5f63d87`): `recognition/MacawRecognitionService` + 纯 JVM 的 `RecognitionFlow` / `RecognitionPolicy`. 回调: 开始录音后 `onReadyForSpeech`, 首次语音活动 `onBeginningOfSpeech`, `onRmsChanged` 按 VAD (有语音 8 dB, 无语音 -2 dB), 调用方要求时才报部分结果 (去重), 然后 `onEndOfSpeech` 与恰好一个 `onResults` (1 条) 或 `onError`, 取消后不再回调; 识别始终开 VAD (驱动开始与电平回调). 错误码: 无麦克风权限 `ERROR_INSUFFICIENT_PERMISSIONS`, 麦克风被听写占用 `ERROR_RECOGNIZER_BUSY`, 录音中失败 `ERROR_AUDIO`, 调用方 Intent 导致的无效选项 `ERROR_CLIENT`, 缺模型及其他失败 `ERROR_SERVER`, 超时前没有语音 `ERROR_SPEECH_TIMEOUT`, 其他无文字的结束 `ERROR_NO_MATCH`. 权限: 所有 API 级别都检查调用方 uid 的 `RECORD_AUDIO` (API 31 以下框架只查服务自身), API 31+ 用 `ContextParams.setNextAttributionSource` 建的 Context 创建 `AudioRecord`, 录音归属调用方; 调用方自带音频 (`EXTRA_AUDIO_SOURCE`, 框架对它跳过权限预检) 以 `ERROR_CLIENT` 拒绝. 不用麦克风前台服务: 作为默认识别服务时系统以 `BIND_INCLUDE_CAPABILITIES | BIND_FOREGROUND_SERVICE` 绑定 (`SpeechRecognitionManagerServiceImpl.checkPrivilege`), 且调用方可见. 计划外加入 API 33 的 `onCheckRecognitionSupport` (返回已装识别模型的语言, 不按请求下载). | P5.7 (已定) |
 | D57 | 唤醒会话被助理临时接管 | 数字助理 (D48), `RECOGNIZE_SPEECH` 弹层 (D41), `RecognitionService` (D56) 与试听试说页开始收音时, 若唯一的麦克风 (D16) 正被唤醒会话占用 (3-Stone AI / 3-Stove Agent 的常驻监听经 Binder 持有的 kws 会话, 或脚本的 `speech.wake`), 唤醒会话保持打开但静默: 期间不报 `wake` 命中 (免得说话内容误触唤醒词), 不结束, 不发新事件; 接管方结束后自动继续检测. 对客户端透明, 不改 `speech-api` 契约, 也不改 "同时只有一个麦克风会话" 对客户端的语义. 只接管唤醒会话: 正在进行的听写会话 (`speech.listen`, 或唤醒命中后已按 `thenListen` 转入听写的阶段) 不被打断, 仍按 D47 显示占用引导. 采集方式 (同一路采集同时供给接管方并暂停唤醒检测, 或暂停后重开采集) 实现时选定. 未采用 "结束唤醒会话, 由客户端重开" (要给契约加原因码, 两个插件都要处理) 与 "拒绝并提示" (开着常驻监听时助理基本不可用). P5.7 实现 (提交 `5f63d87`): 采集方式选 "暂停后重开采集". `SessionTable` 增加接管位, 唤醒会话以 `Yielding` 登记; 进程内入口经 `SpeechPluginBinder.openLocalSession` / `openLocalWakeSession` (`LocalSession`) 预留时让持有者 `yieldToTakeover` (进行 `thenListen` 轮次时拒绝, 仍为 `SESSION_BUSY`), `WakeBinder` 停止录音但保留麦克风前台服务, 接管释放后在新的关键词流上重新录音与检测; 同一时刻至多一个接管, 接管方本身不被接管, 契约不变. 试听试说页的唤醒词试验同样以接管方式打开. | P5.7 (已定) |
+| D58 | 触发式入口优先于常驻唤醒 | 唤醒词检测要持续录音, Android 12 起只要有应用通过 `AudioRecord` 录音就显示麦克风指示灯 (绿点), 应用无法隐藏, 常驻服务与持续推理也一直占用资源. 系统里低功耗或不亮指示灯的热词通道 (DSP 硬件热词 `createAlwaysOnHotwordDetector`, 沙箱软件热词 `createHotwordDetector` + `HotwordDetectionService`) 在 android-36 SDK 源码 (`android/service/voice/VoiceInteractionService.java`) 中都是 `@SystemApi` / `@hide` 并要求 `MANAGE_HOTWORD_DETECTION`, 只有预装或特权的系统助理能用, 本插件即使是默认数字助理也拿不到. 因此 1.1.0 先做 "触发后才开麦" 的入口 (P7.1): 平时不录音, 触发后只在听写的几秒内亮绿点. 常驻唤醒保留为默认关闭的可选项, 排在 P7.1 之后 (D66). | P7.1 (已定) |
+| D59 | 首批四类入口 | 快速设置磁贴 (D61), 悬浮麦克风 (D62), 桌面小部件与图标快捷方式 (D63), 无障碍按键 (D64); 蓝牙耳机语音键只做实测与说明 (D65). | P7.1 (已定) |
+| D60 | 触发后统一打开助理弹层 | 各入口触发后都与长按电源键相同: 打开 P5.7 的助理弹层, 听写后显示可编辑文字与目标按钮 (D49, 不设默认目标). 本插件是默认数字助理时经助理会话打开 (`VoiceInteractionService.showSession`), 不是时打开插件自己的同款弹层 Activity; 界面, D50 转发与 D53-D55 的目标, 屏幕和锁屏规则两者一致. 未采用: 直接发给上次的目标 (要推翻 D49); 每个入口单独设目标. | P7.1 (已定) |
+| D61 | 快速设置磁贴 | 一个 `TileService` 磁贴 "语音指令", 点按即打开弹层 (D60); 锁屏上可点, 按 D55 锁屏听写, 发送前解锁. 引导方式: 设置页 "触发方式" 组的 "添加到快速设置" 按钮, Android 13+ 调 `StatusBarManager.requestAddTileService` 弹出系统确认, 更早版本显示手动添加步骤; 不主动弹窗. 未采用: 首次进入时的 Snackbar 提示; 只在 README 说明. | P7.1 (已定) |
+| D62 | 悬浮麦克风 | 默认关; 开启时申请悬浮窗权限; 屏幕边缘可拖动的小按钮, 点按打开弹层 (D60). 常驻部分不录音, 只保持悬浮窗, 保活方式与 API 34+ 的前台服务类型实现时选定. 与 3-Stove Agent 的悬浮球各自独立, 可以同时显示 (Stove 悬浮球的输入框已可经本插件听写). 未采用: 检测到 Stove 悬浮球就隐藏; 不做悬浮麦克风, 改在 Stove 悬浮球上加按钮. | P7.1 (已定) |
+| D63 | 桌面小部件与图标快捷方式 | 一个 "按一下说话" 桌面小部件, 以及长按应用图标的 "语音指令" 快捷方式, 都打开弹层 (D60). | P7.1 (已定) |
+| D64 | 按键触发: 本插件自带无障碍服务 | 新增一个只过滤按键的无障碍服务 (`flagRequestFilterKeyEvents`, `canRetrieveWindowContent="false"`, 不读取屏幕内容, 与 D54 一致), 默认关, 由用户在系统无障碍设置中开启. 默认长按音量下键约 0.8 s 触发, 短按照常调音量; 设置里可改为长按音量上键或双击音量下键. 未达阈值的按键怎样放行 (例如短按时由服务调 `AudioManager` 调节音量) 实现时选定. 熄屏时通常收不到按键, README 写明. 未采用: AutoJs6 脚本样例 (依赖宿主无障碍服务, 维护者选择插件自带); 按键加屏幕上下文 (违背 D54). | P7.1 (已定) |
+| D65 | 蓝牙耳机语音键 | 不写代码: 在本插件为默认数字助理时实测耳机语音键 (长按或专用键) 能否唤起助理, 写入 README 的常见问题, 机型差异照实记录. | P7.1 (已定) |
+| D66 | 常驻唤醒保留为默认关的可选项 | 常驻唤醒 (P7 候选) 保留, 排在 P7.1 之后实现; 开关默认关, 开关处与 README 写明麦克风指示灯常亮, 常驻通知与耗电, 并推荐 D67 的限时用法. 3-Stove Agent 已实现的常驻监听保持, 3-Stone AI 的 P6-4 照旧. 未采用: 只保留 Stove 的常驻监听; 三个应用都不做常驻. | P7 (已定) |
+| D67 | 限时监听, 三个应用一致 | 常驻唤醒开关旁增加 "监听时长" (10 / 30 / 60 分钟后自动关闭, 或一直开着) 与 "只在充电时监听"; 车载蓝牙, 指定应用在前台等更多情景以 AutoJs6 脚本样例实现 (`speech.wake` 加 AutoJs6 事件). 3-Stove Agent 的常驻监听在其下一版加入同样两项 (1.3.0 尚未发布, 可并入), 3-Stone AI 写进 P6-4; 选项名与文案三方一致, 由各自仓库的会话实现. 未采用: 只做脚本样例; 只加在本插件. | P7 (已定) |
 
 ---
 
@@ -106,7 +116,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 
 非目标 (不做或排到 1.1.0 之后, 评估记录见附录 G):
 
-- 常驻唤醒与悬浮麦克风 (1.1.0, P7); 由助理手势触发的数字助理与系统识别服务在 1.0.0 的 P5.7 (D48-D56).
+- 触发式入口 (快速设置磁贴, 悬浮麦克风, 桌面小部件与快捷方式, 无障碍按键; 1.1.0 的 P7.1, D58-D65) 先于常驻唤醒 (1.1.0 的 P7, 默认关, D66 / D67); 由助理手势触发的数字助理与系统识别服务在 1.0.0 的 P5.7 (D48-D56).
 - 在线识别 / 合成服务对接 (云 ASR / TTS API).
 - 标点恢复模型, 说话人识别 / 分离, 语种识别, 音频事件标签 (1.1.0 候选).
 - 非 WAV 音频解码 (MP3 / AAC / OGG), 系统音频 / 通话录音抓取.
@@ -285,7 +295,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 已完成 (2026-10-16 提交 `17771c1`, 设备 API 28 / 33 / 35); 宿主缺口已修 (2026-10-16 宿主本地提交 `ba4c92d5f` / `11f75efbe`, 三台真机复核); 剩余: TalkBack / 随选朗读未试 |
 | P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标, 系统语音输入入口, 系统数字助理 | P5.1-P5.7 已完成 (P5.7 数字助理, 系统识别服务与唤醒会话接管: 2026-10-18 提交 `5f63d87`, API 24 / 35 AVD 与 Sony XQ-AT72 实测; 其他插件条目待 3-Stone AI 实现入口; 2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33; P5.6 系统语音输入 (D41-D47) 提交 `fed02d7`, Sony G8441 / XQ-AT72 / XQ-DQ72 与 API 24 / 36.1 AVD, 3-Stove Agent 实测通过); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
 | P6 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | 未开始 |
-| P7 | 1.1.0 | 候选: 常驻唤醒与悬浮麦克风, 标点恢复, 说话人识别, 非 WAV 解码, MCP 工具, 更多语言 | 未开始 |
+| P7 | 1.1.0 | P7.1 触发式入口 (D58-D65) 先行; 候选: 常驻唤醒 (D66 / D67), 标点恢复, 说话人识别, 非 WAV 解码, MCP 工具, 更多语言 | 未开始 |
 
 依赖顺序:
 
@@ -549,9 +559,25 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 
 ## P7: 1.1.0 候选
 
+### P7.1 触发式入口 (D58-D65)
+
+平时不录音, 触发后才开麦 (D58); 各入口都打开 P5.7 的助理弹层 (D60).
+
+- [ ] (插件) 弹层的非助理入口: 本插件不是默认数字助理时可打开的同款弹层 Activity, 以及 "是默认助理则经 `showSession`, 否则打开该 Activity" 的统一入口; 界面, D50 转发与 D53-D55 规则与助理会话一致 (D60).
+- [ ] (插件) 快速设置磁贴 (D61): `TileService`, 锁屏行为 (D55), 设置页 "触发方式" 组与 "添加到快速设置" 按钮 (Android 13+ `requestAddTileService`, 更早版本显示手动步骤).
+- [ ] (插件) 悬浮麦克风 (D62): 设置开关 (默认关), 悬浮窗权限, 可拖动吸边的按钮, 不录音的保活方式与 API 34+ 前台服务类型.
+- [ ] (插件) 桌面小部件与图标快捷方式 (D63).
+- [ ] (插件) 无障碍按键 (D64): 只过滤按键的无障碍服务与说明文案, 默认长按音量下键约 0.8 s, 可改为长按音量上键或双击音量下键, 未触发按键的放行方式, 熄屏说明.
+- [ ] (测试) 各入口打开弹层的 instrumentation (默认助理与非默认助理两种状态); 按键阈值与放行规则的 JVM 单测; 真机: 锁屏下的磁贴, 悬浮麦克风与 Stove 悬浮球同时显示, 无障碍按键在三台 Sony 与一台 ColorOS 或 HyperOS 设备上的表现; 记录绿点只在听写期间出现.
+- [ ] (测试) 蓝牙耳机语音键实测 (D65), 结果写进 README.
+- [ ] (插件) README 与 changelog 1.1.0 (10 种语言): 各入口用法, 无障碍服务只过滤按键的说明, "为什么不用唤醒词常驻监听" 的常见问题 (D58); 生成并 `--check`.
+- [ ] (其他插件) 3-Stove Agent 与 3-Stone AI 的常驻监听增加 D67 的 "监听时长" 与 "只在充电时监听", 由各自仓库的会话实现.
+
+### P7.2 其他候选
+
 | 候选 | 说明 | 依赖 |
 | --- | --- | --- |
-| 常驻唤醒与悬浮麦克风 (D8) | 常驻唤醒 (microphone 前台服务, 电量策略), 悬浮麦克风按钮; 命中后打开 P5.7 的助理弹层, 目标仍经 D50 的 `VOICE_COMMAND` 入口; 结果 TTS 播报; 开关默认关, 与 3-Stone AI / 3-Stove Agent 的常驻监听互斥 (`RESIDENT_LISTENER` 约定, 3-Stone AI D28 / D31) | P5.7 稳定; 真机耗电实测 |
+| 常驻唤醒 (D8, D66, D67) | 常驻唤醒 (microphone 前台服务, 电量策略), "监听时长" 与 "只在充电时监听" (D67), 开关处写明指示灯常亮与耗电 (D66); 命中后打开 P5.7 的助理弹层, 目标仍经 D50 的 `VOICE_COMMAND` 入口; 结果 TTS 播报; 开关默认关, 与 3-Stone AI / 3-Stove Agent 的常驻监听互斥 (`RESIDENT_LISTENER` 约定, 3-Stone AI D28 / D31) | P7.1 完成; 真机耗电实测 |
 | 标点恢复 | sherpa-onnx `ct-transformer` 标点模型 (体积较大, 单独目录条目) | P2 目录 v2 |
 | 说话人识别 / 验证 | 3D-Speaker 模型, `speech.speaker.*` (注册, 比对), 用于 "只听主人" | 隐私文案 |
 | 说话人分离, 语种识别, 音频事件标签 | 上游已有模型与 API | 需求验证 |
