@@ -174,7 +174,7 @@ internal class AppUpdateChecker(private val apiUrl: String = LATEST_RELEASE_API)
             readTimeout = READ_TIMEOUT_MILLIS
             instanceFollowRedirects = false
             setRequestProperty("Accept", "application/vnd.github+json")
-            setRequestProperty("User-Agent", "3-Macaw-Speech-update-checker/${BuildConfig.VERSION_NAME}")
+            setRequestProperty("User-Agent", "Three-Macaw-Speech-update-checker/${BuildConfig.VERSION_NAME}")
         }
         call.connection = connection
         try {

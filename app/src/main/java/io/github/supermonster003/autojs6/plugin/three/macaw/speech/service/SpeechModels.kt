@@ -58,7 +58,7 @@ internal object SpeechModels {
             null
         }
         val publicKey = assets.open(ModelCatalogConfiguration.ASSET_PUBLIC_KEY).use { it.readBytes() }
-        val transport = UrlConnectionTransport(userAgent = "3-Macaw-Speech/${BuildConfig.VERSION_NAME} (AutoJs6 plugin)")
+        val transport = UrlConnectionTransport(userAgent = "Three-Macaw-Speech/${BuildConfig.VERSION_NAME} (AutoJs6 plugin)")
         val store = ModelStore(File(context.filesDir, "models"))
         val catalogs = ModelCatalogRepository(
             cacheDirectory = File(context.filesDir, "catalog"),
