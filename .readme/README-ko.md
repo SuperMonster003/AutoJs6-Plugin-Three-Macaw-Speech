@@ -117,20 +117,20 @@
 
 ******
 
-인식, 호출어, 합성 모델은 각각 8 MB에서 390 MB라서 APK에 포함하지 않습니다. 플러그인은 서명된 모델 카탈로그를 내장하고, AutoJs6 공유 자산 저장소의 변경할 수 없는 릴리스에서 모델을 내려받으며, 미러를 사용할 수 없으면 sherpa-onnx 원본 주소로 전환합니다. 두 경로 모두 모든 파일이 SHA-256 검사를 통과해야 모델을 사용합니다. 1.0.0 카탈로그에는 다음 모델이 있습니다 (크기는 설치 후 차지하는 공간입니다):
+인식, 호출어, 합성 모델은 각각 9 MB에서 410 MB라서 APK에 포함하지 않습니다. 플러그인은 서명된 모델 카탈로그를 내장하고, AutoJs6 공유 자산 저장소의 변경할 수 없는 릴리스에서 모델을 내려받으며, 미러를 사용할 수 없으면 sherpa-onnx 원본 주소로 전환합니다. 두 경로 모두 모든 파일이 SHA-256 검사를 통과해야 모델을 사용합니다. 1.0.0 카탈로그에는 다음 모델이 있습니다 (크기는 설치 후 차지하는 공간입니다):
 
 | 모델 ID | 용도 | 언어 | 크기 | 라이선스 | 상업적 이용 |
 | --- | --- | --- | --- | --- | --- |
-| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (추천) | 인식 (오프라인, 문장 부호 포함) | zh, en, ja, ko, yue | 228.5 MB | FunASR Model License 1.1 | 가능 |
-| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (추천) | 인식 (스트리밍) | zh, en | 189.8 MB | Apache-2.0 | 가능 |
-| `asr.zipformer-streaming.en.2023-06-26.int8` (추천) | 인식 (스트리밍) | en | 67.1 MB | Apache-2.0 | 가능 |
-| `asr.zipformer-streaming.zh.2025-06-30.int8` | 인식 (스트리밍) | zh | 159.6 MB | 선언 없음 | 비상업적 이용만 |
-| `kws.zipformer.zh-en.2025-12-20` (추천) | 호출어 | zh, en | 8.4 MB | Apache-2.0 | 가능 |
-| `tts.vits.melo.zh-en` (추천) | 합성 (화자: 1, 44.1 kHz) | zh, en | 169.2 MB | MIT | 가능 |
-| `tts.vits.icefall.zh-aishell3` (추천) | 합성 (화자: 174, 8 kHz) | zh | 31.2 MB | 선언 없음 | 알 수 없음 |
-| `tts.kokoro.multi-lang.v1_1` | 합성 (화자: 103, 24 kHz) | zh, en | 386.9 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 가능 |
-| `tts.matcha.icefall.zh-baker` | 합성 (화자: 1, 22.05 kHz) | zh | 77.2 MB | 선언 없음, MIT (보코더) | 비상업적 이용만 |
-| `tts.vits.piper.en-us-lessac-medium` | 합성 (화자: 1, 22.05 kHz) | en | 77.4 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 비상업적 이용만 |
+| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (추천) | 인식 (오프라인, 문장 부호 포함) | zh, en, ja, ko, yue | 239.5 MB | FunASR Model License 1.1 | 가능 |
+| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (추천) | 인식 (스트리밍) | zh, en | 199.1 MB | Apache-2.0 | 가능 |
+| `asr.zipformer-streaming.en.2023-06-26.int8` (추천) | 인식 (스트리밍) | en | 70.3 MB | Apache-2.0 | 가능 |
+| `asr.zipformer-streaming.zh.2025-06-30.int8` | 인식 (스트리밍) | zh | 167.4 MB | 선언 없음 | 비상업적 이용만 |
+| `kws.zipformer.zh-en.2025-12-20` (추천) | 호출어 | zh, en | 8.8 MB | Apache-2.0 | 가능 |
+| `tts.vits.melo.zh-en` (추천) | 합성 (화자: 1, 44.1 kHz) | zh, en | 177.4 MB | MIT | 가능 |
+| `tts.vits.icefall.zh-aishell3` (추천) | 합성 (화자: 174, 8 kHz) | zh | 32.8 MB | 선언 없음 | 알 수 없음 |
+| `tts.kokoro.multi-lang.v1_1` | 합성 (화자: 103, 24 kHz) | zh, en | 405.7 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 가능 |
+| `tts.matcha.icefall.zh-baker` | 합성 (화자: 1, 22.05 kHz) | zh | 81.0 MB | 선언 없음, MIT (보코더) | 비상업적 이용만 |
+| `tts.vits.piper.en-us-lessac-medium` | 합성 (화자: 1, 22.05 kHz) | en | 81.1 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 비상업적 이용만 |
 
 비상업적 이용으로 제한되거나 라이선스를 알 수 없는 모델은 내려받기 전에 라이선스를 보여 주며, 스크립트에서 내려받을 때는 `acceptLicense: true`를 명시해야 합니다. 2025 중국어 스트리밍 모델은 가중치에 라이선스 선언이 없고 학습 데이터에 비상업적 이용 전용 말뭉치가 포함되어 있어, sherpa-onnx 원본 주소에서만 내려받고 공유 자산 저장소에는 미러하지 않습니다. 합성 모델 Kokoro와 Piper에는 eSpeak NG의 발음 데이터 (espeak-ng-data, GPL-3.0-or-later)가 포함됩니다.
 

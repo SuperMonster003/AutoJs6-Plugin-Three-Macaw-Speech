@@ -117,20 +117,20 @@ Les captures proviennent d'un Sony XQ-DQ72 (Android 13). Le texte dicté est ce 
 
 ******
 
-Les modèles de reconnaissance, de mot de réveil et de synthèse occupent de 8 Mo à 390 Mo chacun, ils ne sont donc pas fournis avec l'APK. Le plugin contient un catalogue de modèles signé et télécharge les modèles depuis les versions immuables du dépôt de ressources partagées d'AutoJs6, en se rabattant sur l'adresse amont de sherpa-onnx lorsque le miroir est indisponible; sur les deux chemins, chaque fichier doit passer sa vérification SHA-256 avant que le modèle soit activé. Le catalogue 1.0.0 contient ces modèles (la taille est l'espace occupé une fois installé):
+Les modèles de reconnaissance, de mot de réveil et de synthèse occupent de 9 Mo à 410 Mo chacun, ils ne sont donc pas fournis avec l'APK. Le plugin contient un catalogue de modèles signé et télécharge les modèles depuis les versions immuables du dépôt de ressources partagées d'AutoJs6, en se rabattant sur l'adresse amont de sherpa-onnx lorsque le miroir est indisponible; sur les deux chemins, chaque fichier doit passer sa vérification SHA-256 avant que le modèle soit activé. Le catalogue 1.0.0 contient ces modèles (la taille est l'espace occupé une fois installé):
 
 | ID du modèle | Usage | Langues | Taille | Licence | Usage commercial |
 | --- | --- | --- | --- | --- | --- |
-| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (recommandé) | Reconnaissance (hors ligne, avec ponctuation) | zh, en, ja, ko, yue | 228.5 MB | FunASR Model License 1.1 | Autorisé |
-| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (recommandé) | Reconnaissance (en continu) | zh, en | 189.8 MB | Apache-2.0 | Autorisé |
-| `asr.zipformer-streaming.en.2023-06-26.int8` (recommandé) | Reconnaissance (en continu) | en | 67.1 MB | Apache-2.0 | Autorisé |
-| `asr.zipformer-streaming.zh.2025-06-30.int8` | Reconnaissance (en continu) | zh | 159.6 MB | Aucune déclarée | Non commercial uniquement |
-| `kws.zipformer.zh-en.2025-12-20` (recommandé) | Mot de réveil | zh, en | 8.4 MB | Apache-2.0 | Autorisé |
-| `tts.vits.melo.zh-en` (recommandé) | Synthèse (locuteurs: 1, 44.1 kHz) | zh, en | 169.2 MB | MIT | Autorisé |
-| `tts.vits.icefall.zh-aishell3` (recommandé) | Synthèse (locuteurs: 174, 8 kHz) | zh | 31.2 MB | Aucune déclarée | Inconnu |
-| `tts.kokoro.multi-lang.v1_1` | Synthèse (locuteurs: 103, 24 kHz) | zh, en | 386.9 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | Autorisé |
-| `tts.matcha.icefall.zh-baker` | Synthèse (locuteurs: 1, 22.05 kHz) | zh | 77.2 MB | Aucune déclarée, MIT (vocodeur) | Non commercial uniquement |
-| `tts.vits.piper.en-us-lessac-medium` | Synthèse (locuteurs: 1, 22.05 kHz) | en | 77.4 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | Non commercial uniquement |
+| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (recommandé) | Reconnaissance (hors ligne, avec ponctuation) | zh, en, ja, ko, yue | 239.5 MB | FunASR Model License 1.1 | Autorisé |
+| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (recommandé) | Reconnaissance (en continu) | zh, en | 199.1 MB | Apache-2.0 | Autorisé |
+| `asr.zipformer-streaming.en.2023-06-26.int8` (recommandé) | Reconnaissance (en continu) | en | 70.3 MB | Apache-2.0 | Autorisé |
+| `asr.zipformer-streaming.zh.2025-06-30.int8` | Reconnaissance (en continu) | zh | 167.4 MB | Aucune déclarée | Non commercial uniquement |
+| `kws.zipformer.zh-en.2025-12-20` (recommandé) | Mot de réveil | zh, en | 8.8 MB | Apache-2.0 | Autorisé |
+| `tts.vits.melo.zh-en` (recommandé) | Synthèse (locuteurs: 1, 44.1 kHz) | zh, en | 177.4 MB | MIT | Autorisé |
+| `tts.vits.icefall.zh-aishell3` (recommandé) | Synthèse (locuteurs: 174, 8 kHz) | zh | 32.8 MB | Aucune déclarée | Inconnu |
+| `tts.kokoro.multi-lang.v1_1` | Synthèse (locuteurs: 103, 24 kHz) | zh, en | 405.7 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | Autorisé |
+| `tts.matcha.icefall.zh-baker` | Synthèse (locuteurs: 1, 22.05 kHz) | zh | 81.0 MB | Aucune déclarée, MIT (vocodeur) | Non commercial uniquement |
+| `tts.vits.piper.en-us-lessac-medium` | Synthèse (locuteurs: 1, 22.05 kHz) | en | 81.1 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | Non commercial uniquement |
 
 Les modèles réservés à un usage non commercial ou dont la licence est inconnue affichent leur licence avant le téléchargement, et les scripts doivent passer explicitement `acceptLicense: true`. Les poids du modèle chinois en continu de 2025 ne déclarent aucune licence et ses données d'entraînement comprennent des corpus réservés à un usage non commercial: il n'est donc téléchargé que depuis l'adresse amont de sherpa-onnx, sans miroir dans le dépôt de ressources partagées. Les modèles de synthèse Kokoro et Piper incluent les données de prononciation d'eSpeak NG (espeak-ng-data, GPL-3.0-or-later).
 

@@ -117,20 +117,20 @@
 
 ******
 
-辨識, 喚醒詞與合成模型的大小在 8 MB 到 390 MB 之間, 因此不隨 APK 提供. 外掛內建一份已簽署的模型目錄, 從 AutoJs6 共享資源儲存庫的不可變發布下載模型, 鏡像無法使用時改用 sherpa-onnx 的上游位址; 兩條路徑都要逐一檔案校驗 SHA-256 後才啟用模型. 1.0.0 的目錄包含以下模型 (大小為安裝後佔用的空間):
+辨識, 喚醒詞與合成模型的大小在 9 MB 到 410 MB 之間, 因此不隨 APK 提供. 外掛內建一份已簽署的模型目錄, 從 AutoJs6 共享資源儲存庫的不可變發布下載模型, 鏡像無法使用時改用 sherpa-onnx 的上游位址; 兩條路徑都要逐一檔案校驗 SHA-256 後才啟用模型. 1.0.0 的目錄包含以下模型 (大小為安裝後佔用的空間):
 
 | 模型 ID | 用途 | 語言 | 大小 | 授權 | 商業用途 |
 | --- | --- | --- | --- | --- | --- |
-| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (推薦) | 辨識 (離線, 含標點) | zh, en, ja, ko, yue | 228.5 MB | FunASR Model License 1.1 | 可以 |
-| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (推薦) | 辨識 (串流) | zh, en | 189.8 MB | Apache-2.0 | 可以 |
-| `asr.zipformer-streaming.en.2023-06-26.int8` (推薦) | 辨識 (串流) | en | 67.1 MB | Apache-2.0 | 可以 |
-| `asr.zipformer-streaming.zh.2025-06-30.int8` | 辨識 (串流) | zh | 159.6 MB | 未宣告 | 僅限非商業用途 |
-| `kws.zipformer.zh-en.2025-12-20` (推薦) | 喚醒詞 | zh, en | 8.4 MB | Apache-2.0 | 可以 |
-| `tts.vits.melo.zh-en` (推薦) | 合成 (說話者: 1, 44.1 kHz) | zh, en | 169.2 MB | MIT | 可以 |
-| `tts.vits.icefall.zh-aishell3` (推薦) | 合成 (說話者: 174, 8 kHz) | zh | 31.2 MB | 未宣告 | 未知 |
-| `tts.kokoro.multi-lang.v1_1` | 合成 (說話者: 103, 24 kHz) | zh, en | 386.9 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可以 |
-| `tts.matcha.icefall.zh-baker` | 合成 (說話者: 1, 22.05 kHz) | zh | 77.2 MB | 未宣告, MIT (聲碼器) | 僅限非商業用途 |
-| `tts.vits.piper.en-us-lessac-medium` | 合成 (說話者: 1, 22.05 kHz) | en | 77.4 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 僅限非商業用途 |
+| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (推薦) | 辨識 (離線, 含標點) | zh, en, ja, ko, yue | 239.5 MB | FunASR Model License 1.1 | 可以 |
+| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (推薦) | 辨識 (串流) | zh, en | 199.1 MB | Apache-2.0 | 可以 |
+| `asr.zipformer-streaming.en.2023-06-26.int8` (推薦) | 辨識 (串流) | en | 70.3 MB | Apache-2.0 | 可以 |
+| `asr.zipformer-streaming.zh.2025-06-30.int8` | 辨識 (串流) | zh | 167.4 MB | 未宣告 | 僅限非商業用途 |
+| `kws.zipformer.zh-en.2025-12-20` (推薦) | 喚醒詞 | zh, en | 8.8 MB | Apache-2.0 | 可以 |
+| `tts.vits.melo.zh-en` (推薦) | 合成 (說話者: 1, 44.1 kHz) | zh, en | 177.4 MB | MIT | 可以 |
+| `tts.vits.icefall.zh-aishell3` (推薦) | 合成 (說話者: 174, 8 kHz) | zh | 32.8 MB | 未宣告 | 未知 |
+| `tts.kokoro.multi-lang.v1_1` | 合成 (說話者: 103, 24 kHz) | zh, en | 405.7 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可以 |
+| `tts.matcha.icefall.zh-baker` | 合成 (說話者: 1, 22.05 kHz) | zh | 81.0 MB | 未宣告, MIT (聲碼器) | 僅限非商業用途 |
+| `tts.vits.piper.en-us-lessac-medium` | 合成 (說話者: 1, 22.05 kHz) | en | 81.1 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 僅限非商業用途 |
 
 僅限非商業用途或授權未知的模型在下載前會提示授權, 指令碼下載時需要明確傳入 `acceptLicense: true`. 中文串流 2025 模型的權重未宣告授權, 訓練資料含僅限非商業用途的語料, 因此只從 sherpa-onnx 的上游位址下載, 不經共享資源儲存庫鏡像. Kokoro 與 Piper 兩個合成模型附帶 eSpeak NG 的發音資料 (espeak-ng-data, GPL-3.0-or-later).
 

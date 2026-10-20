@@ -117,20 +117,20 @@
 
 ******
 
-認識, ウェイクワード, 合成のモデルはそれぞれ 8 MB から 390 MB あるため, APK には含まれません. プラグインは署名付きのモデルカタログを内蔵し, AutoJs6 共有アセットリポジトリの変更不可のリリースからモデルをダウンロードします. ミラーを使えない場合は sherpa-onnx の上流アドレスに切り替え, どちらの経路でもすべてのファイルが SHA-256 の検証に合格してからモデルを有効にします. 1.0.0 のカタログには次のモデルがあります (サイズはインストール後の容量です):
+認識, ウェイクワード, 合成のモデルはそれぞれ 9 MB から 410 MB あるため, APK には含まれません. プラグインは署名付きのモデルカタログを内蔵し, AutoJs6 共有アセットリポジトリの変更不可のリリースからモデルをダウンロードします. ミラーを使えない場合は sherpa-onnx の上流アドレスに切り替え, どちらの経路でもすべてのファイルが SHA-256 の検証に合格してからモデルを有効にします. 1.0.0 のカタログには次のモデルがあります (サイズはインストール後の容量です):
 
 | モデル ID | 用途 | 言語 | サイズ | ライセンス | 商用利用 |
 | --- | --- | --- | --- | --- | --- |
-| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (推奨) | 認識 (オフライン, 句読点あり) | zh, en, ja, ko, yue | 228.5 MB | FunASR Model License 1.1 | 可 |
-| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (推奨) | 認識 (ストリーミング) | zh, en | 189.8 MB | Apache-2.0 | 可 |
-| `asr.zipformer-streaming.en.2023-06-26.int8` (推奨) | 認識 (ストリーミング) | en | 67.1 MB | Apache-2.0 | 可 |
-| `asr.zipformer-streaming.zh.2025-06-30.int8` | 認識 (ストリーミング) | zh | 159.6 MB | 宣言なし | 非商用のみ |
-| `kws.zipformer.zh-en.2025-12-20` (推奨) | ウェイクワード | zh, en | 8.4 MB | Apache-2.0 | 可 |
-| `tts.vits.melo.zh-en` (推奨) | 合成 (話者: 1, 44.1 kHz) | zh, en | 169.2 MB | MIT | 可 |
-| `tts.vits.icefall.zh-aishell3` (推奨) | 合成 (話者: 174, 8 kHz) | zh | 31.2 MB | 宣言なし | 不明 |
-| `tts.kokoro.multi-lang.v1_1` | 合成 (話者: 103, 24 kHz) | zh, en | 386.9 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可 |
-| `tts.matcha.icefall.zh-baker` | 合成 (話者: 1, 22.05 kHz) | zh | 77.2 MB | 宣言なし, MIT (ボコーダー) | 非商用のみ |
-| `tts.vits.piper.en-us-lessac-medium` | 合成 (話者: 1, 22.05 kHz) | en | 77.4 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
+| `asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8` (推奨) | 認識 (オフライン, 句読点あり) | zh, en, ja, ko, yue | 239.5 MB | FunASR Model License 1.1 | 可 |
+| `asr.zipformer-streaming.zh-en.2023-02-20.int8` (推奨) | 認識 (ストリーミング) | zh, en | 199.1 MB | Apache-2.0 | 可 |
+| `asr.zipformer-streaming.en.2023-06-26.int8` (推奨) | 認識 (ストリーミング) | en | 70.3 MB | Apache-2.0 | 可 |
+| `asr.zipformer-streaming.zh.2025-06-30.int8` | 認識 (ストリーミング) | zh | 167.4 MB | 宣言なし | 非商用のみ |
+| `kws.zipformer.zh-en.2025-12-20` (推奨) | ウェイクワード | zh, en | 8.8 MB | Apache-2.0 | 可 |
+| `tts.vits.melo.zh-en` (推奨) | 合成 (話者: 1, 44.1 kHz) | zh, en | 177.4 MB | MIT | 可 |
+| `tts.vits.icefall.zh-aishell3` (推奨) | 合成 (話者: 174, 8 kHz) | zh | 32.8 MB | 宣言なし | 不明 |
+| `tts.kokoro.multi-lang.v1_1` | 合成 (話者: 103, 24 kHz) | zh, en | 405.7 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可 |
+| `tts.matcha.icefall.zh-baker` | 合成 (話者: 1, 22.05 kHz) | zh | 81.0 MB | 宣言なし, MIT (ボコーダー) | 非商用のみ |
+| `tts.vits.piper.en-us-lessac-medium` | 合成 (話者: 1, 22.05 kHz) | en | 81.1 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
 
 非商用に限られるモデルやライセンスが不明なモデルは, ダウンロード前にライセンスを表示します. スクリプトからダウンロードするときは `acceptLicense: true` を明示的に渡す必要があります. 中国語ストリーミング 2025 モデルは重みにライセンスの宣言がなく, 学習データに非商用限定のコーパスを含むため, sherpa-onnx の上流アドレスからのみダウンロードし, 共有アセットリポジトリにはミラーしていません. 合成モデルの Kokoro と Piper には eSpeak NG の発音データ (espeak-ng-data, GPL-3.0-or-later) が含まれます.
 

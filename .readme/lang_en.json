@@ -54,7 +54,7 @@
     "Use it in other apps: see System TTS setup below for the system TTS engine and the FAQ for system voice input, the speech recognition service and the digital assistant."
   ],
   "p_usage_note": "There is one package per ABI and a `universal` package for every device. The packages contain no recognition or synthesis models; models are downloaded on demand from the plugin screens or a script, or imported from local files.",
-  "p_models_intro": "Recognition, wake word and synthesis models take 8 MB to 390 MB each, so they are not bundled with the APK. The plugin carries a signed model catalog and downloads the models from immutable releases of the AutoJs6 shared assets repository, falling back to the upstream sherpa-onnx address when the mirror is unavailable; on both paths every file must pass its SHA-256 check before the model is enabled. The 1.0.0 catalog contains these models (sizes are the space they take once installed):",
+  "p_models_intro": "Recognition, wake word and synthesis models take 9 MB to 410 MB each, so they are not bundled with the APK. The plugin carries a signed model catalog and downloads the models from immutable releases of the AutoJs6 shared assets repository, falling back to the upstream sherpa-onnx address when the mirror is unavailable; on both paths every file must pass its SHA-256 check before the model is enabled. The 1.0.0 catalog contains these models (sizes are the space they take once installed):",
   "text_model_column_id": "Model ID",
   "text_model_column_kind": "Purpose",
   "text_model_column_languages": "Languages",

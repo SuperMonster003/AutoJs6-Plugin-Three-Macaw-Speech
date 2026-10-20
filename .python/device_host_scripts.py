@@ -188,32 +188,53 @@ def media_volume(serial):
     return None
 
 
+def set_music_volume(serial, command, index):
+    """Sets the music volume index; HyperOS ignores `cmd media_session volume --set` from the shell, so `cmd audio
+    set-volume` (API 30+) follows; whichever the device lacks fails silently."""
+    adb(serial, "shell", *command, "--stream", "3", "--set", str(index), check=False)
+    adb(serial, "shell", "cmd", "audio", "set-volume", "3", str(index), check=False)
+
+
+def music_muted(serial):
+    """True when the music stream is muted on its own (HyperOS keeps the mute flag when only the index changes)."""
+    dump = adb(serial, "shell", "dumpsys", "audio", check=False)
+    section = dump.split("- STREAM_MUSIC:", 1)
+    return len(section) == 2 and re.search(r"^\s*Muted: true", section[1].split("- STREAM_", 1)[0], re.M) is not None
+
+
 class Volume:
-    """Raises the music volume to MACAW_VOLUME_PERCENT (40 by default) for a playback run when it is lower, then restores it."""
+    """Raises the music volume to MACAW_VOLUME_PERCENT (40 by default) for a playback run when it is lower, unmutes a
+    muted music stream (`cmd audio adj-unmute 3`, API 33+), then restores both."""
 
     def __init__(self, serial):
         self.serial = serial
         self.state = media_volume(serial)
+        self.muted = music_muted(serial)
         self.percent = int(os.environ.get("MACAW_VOLUME_PERCENT", "40"))
 
     def __enter__(self):
+        if self.muted:
+            adb(self.serial, "shell", "cmd", "audio", "adj-unmute", "3", check=False)
         if self.state:
             command, current, maximum = self.state
             target = max(1, maximum * self.percent // 100)
             if current < target:
-                adb(self.serial, "shell", *command, "--stream", "3", "--set", str(target), check=False)
+                set_music_volume(self.serial, command, target)
         return self
 
     def __exit__(self, *exc):
         if self.state:
             command, current, _ = self.state
-            adb(self.serial, "shell", *command, "--stream", "3", "--set", str(current), check=False)
+            set_music_volume(self.serial, command, current)
+        if self.muted:
+            adb(self.serial, "shell", "cmd", "audio", "adj-mute", "3", check=False)
 
     def describe(self):
         if not self.state:
             return "volume unknown"
         _, current, maximum = self.state
-        return f"volume {current}/{maximum} (raised to {max(current, max(1, maximum * self.percent // 100))} for the run)"
+        muted = ", muted stream unmuted for the run" if self.muted else ""
+        return f"volume {current}/{maximum} (raised to {max(current, max(1, maximum * self.percent // 100))} for the run{muted})"
 
 
 def launcher(serial):

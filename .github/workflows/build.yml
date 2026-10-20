@@ -147,7 +147,9 @@ jobs:
             # System error dialogs are hidden so they cannot hold focus during the suite.
             adb shell settings put global hide_error_dialogs 1
             test "${{ matrix.page-size }}" = "4096" || test "$(adb shell getconf PAGE_SIZE | tr -d '\r')" = "${{ matrix.page-size }}"
-            ./gradlew :app:connectedDebugAndroidTest -Pautojs.gradle.build.number.auto.increment.enabled=false -Pautojs.gradle.build.time.update.enabled=false --console=plain --stacktrace; status=$?; mkdir -p app/build/reports/androidTests; adb logcat -d -b main -b system -b crash > app/build/reports/androidTests/logcat.txt || true; exit $status
+            # The suite runs once more after an emulator failure (system_server errors, a lost device), and every adb
+            # command is time limited: run 39284420735 hung on `adb logcat -d` after the API 37.1 emulator was gone.
+            python3 .python/ci_connected_tests.py
 
       - name: Upload instrumentation reports
         if: always()
@@ -156,6 +158,8 @@ jobs:
           name: instrumentation-reports-api${{ matrix.api-level }}-${{ matrix.page-size }}
           path: |
             app/build/reports/androidTests/
+            app/build/reports/androidTests-attempt-1/
             app/build/outputs/androidTest-results/connected/
+            app/build/outputs/androidTest-results/connected-attempt-1/
           if-no-files-found: ignore
           retention-days: 7
