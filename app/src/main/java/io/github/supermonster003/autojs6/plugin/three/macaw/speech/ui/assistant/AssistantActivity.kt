@@ -55,6 +55,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.AssistantSessions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.AssistantEntry
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.SheetVisibility
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.HomeActivity
@@ -140,7 +141,14 @@ class AssistantActivity : StandaloneActivity() {
         if (current?.problem?.kind == VoiceInputProblemKind.MICROPHONE && microphoneGranted()) current.start()
     }
 
+    override fun onStart() {
+        super.onStart()
+        // The floating microphone (roadmap D62) hides while the sheet is visible.
+        SheetVisibility.shown()
+    }
+
     override fun onStop() {
+        SheetVisibility.hidden()
         // The assistant belongs to the visible sheet: leaving it ends listening and closes the sheet (D48).
         if (!isChangingConfigurations && !awaitingPermission && !awaitingUnlock && !isFinishing) {
             voice?.release()

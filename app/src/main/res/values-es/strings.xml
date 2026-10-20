@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">Actualizando el catálogo de modelos</string>
     <string name="notification_channel_microphone">Micrófono</string>
     <string name="notification_channel_model_operations">Descargas de modelos</string>
+    <string name="notification_floating_channel">Micrófono flotante</string>
+    <string name="notification_floating_off">Desactivar</string>
+    <string name="notification_floating_text">Toca el botón flotante para hablar. Hasta entonces no se graba nada</string>
+    <string name="notification_floating_title">El micrófono flotante está activado</string>
     <string name="notification_microphone_text">Un script está usando el micrófono para el reconocimiento de voz o las palabras de activación</string>
     <string name="notification_microphone_title">Escuchando</string>
     <string name="notification_model_download_title">Descargando %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">Tolerante</string>
     <string name="settings_endpoint_sensitive">Sensible</string>
     <string name="settings_endpoint_standard">Estándar</string>
+    <string name="settings_floating">Micrófono flotante</string>
+    <string name="settings_floating_denied">Sin el permiso para mostrarse sobre otras apps, el micrófono flotante sigue desactivado</string>
+    <string name="settings_floating_summary">Un botón de micrófono que puedes arrastrar por el borde de la pantalla; tócalo para hablar. No graba nada por sí mismo y necesita el permiso para mostrarse sobre otras apps</string>
     <string name="settings_follow_autojs6">Seguir AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Seguir AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 no está disponible, así que se aplican los ajustes del sistema</string>

@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">Обновление каталога моделей</string>
     <string name="notification_channel_microphone">Микрофон</string>
     <string name="notification_channel_model_operations">Загрузка моделей</string>
+    <string name="notification_floating_channel">Плавающий микрофон</string>
+    <string name="notification_floating_off">Выключить</string>
+    <string name="notification_floating_text">Нажмите плавающую кнопку, чтобы говорить. До этого ничего не записывается</string>
+    <string name="notification_floating_title">Плавающий микрофон включен</string>
     <string name="notification_microphone_text">Скрипт использует микрофон для распознавания речи или слов активации</string>
     <string name="notification_microphone_title">Идёт прослушивание</string>
     <string name="notification_model_download_title">Загрузка: %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">Мягкая</string>
     <string name="settings_endpoint_sensitive">Чувствительная</string>
     <string name="settings_endpoint_standard">Стандартная</string>
+    <string name="settings_floating">Плавающий микрофон</string>
+    <string name="settings_floating_denied">Без разрешения на показ поверх других приложений плавающий микрофон остается выключенным</string>
+    <string name="settings_floating_summary">Кнопка микрофона, которую можно перетаскивать вдоль края экрана; нажмите ее, чтобы говорить. Сама кнопка ничего не записывает, нужно разрешение на показ поверх других приложений</string>
     <string name="settings_follow_autojs6">Следовать AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Следовать AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 недоступен, поэтому применяются системные настройки</string>

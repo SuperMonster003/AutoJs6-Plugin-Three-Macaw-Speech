@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">모델 카탈로그를 새로 고치는 중</string>
     <string name="notification_channel_microphone">마이크</string>
     <string name="notification_channel_model_operations">모델 다운로드</string>
+    <string name="notification_floating_channel">플로팅 마이크</string>
+    <string name="notification_floating_off">끄기</string>
+    <string name="notification_floating_text">플로팅 버튼을 탭하면 말할 수 있습니다. 그전까지는 녹음하지 않습니다</string>
+    <string name="notification_floating_title">플로팅 마이크가 켜져 있습니다</string>
     <string name="notification_microphone_text">스크립트가 음성 인식 또는 호출어 감지를 위해 마이크를 사용하는 중</string>
     <string name="notification_microphone_title">듣는 중</string>
     <string name="notification_model_download_title">%1$s 다운로드 중</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">낮음</string>
     <string name="settings_endpoint_sensitive">높음</string>
     <string name="settings_endpoint_standard">표준</string>
+    <string name="settings_floating">플로팅 마이크</string>
+    <string name="settings_floating_denied">다른 앱 위에 표시 권한이 없어 플로팅 마이크가 꺼진 상태로 유지됩니다</string>
+    <string name="settings_floating_summary">화면 가장자리를 따라 끌 수 있는 마이크 버튼을 표시하며, 탭하면 말할 수 있습니다. 버튼 자체는 녹음하지 않으며 다른 앱 위에 표시 권한이 필요합니다</string>
     <string name="settings_follow_autojs6">AutoJs6 따르기</string>
     <string name="settings_follow_autojs6_summary">AutoJs6 따르기 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6를 사용할 수 없어 시스템 설정이 적용됩니다</string>

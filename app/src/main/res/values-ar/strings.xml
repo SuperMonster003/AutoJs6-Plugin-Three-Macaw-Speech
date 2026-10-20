@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">جارٍ تحديث كتالوج النماذج</string>
     <string name="notification_channel_microphone">الميكروفون</string>
     <string name="notification_channel_model_operations">تنزيلات النماذج</string>
+    <string name="notification_floating_channel">الميكروفون العائم</string>
+    <string name="notification_floating_off">إيقاف</string>
+    <string name="notification_floating_text">انقر على الزر العائم للتحدث. لا يتم تسجيل أي شيء قبل ذلك</string>
+    <string name="notification_floating_title">الميكروفون العائم قيد التشغيل</string>
     <string name="notification_microphone_text">يستخدم برنامج نصي الميكروفون للتعرف على الكلام أو لكلمات التنبيه</string>
     <string name="notification_microphone_title">جارٍ الاستماع</string>
     <string name="notification_model_download_title">جارٍ تنزيل %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">متساهلة</string>
     <string name="settings_endpoint_sensitive">حساسة</string>
     <string name="settings_endpoint_standard">قياسية</string>
+    <string name="settings_floating">ميكروفون عائم</string>
+    <string name="settings_floating_denied">يبقى الميكروفون العائم متوقفا دون إذن الظهور فوق التطبيقات الأخرى</string>
+    <string name="settings_floating_summary">زر ميكروفون يمكنك سحبه على طول حافة الشاشة; انقر عليه للتحدث. لا يسجل الزر شيئا بنفسه ويحتاج إلى إذن الظهور فوق التطبيقات الأخرى</string>
     <string name="settings_follow_autojs6">اتباع AutoJs6</string>
     <string name="settings_follow_autojs6_summary">اتباع AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 غير متاح, لذا تُطبق إعدادات النظام</string>

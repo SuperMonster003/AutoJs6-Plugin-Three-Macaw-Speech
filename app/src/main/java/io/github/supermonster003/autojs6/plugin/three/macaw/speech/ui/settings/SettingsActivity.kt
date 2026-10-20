@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
@@ -48,7 +49,9 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPr
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TileOutcome
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.VoiceTileService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.VoiceWidgetProvider
@@ -128,6 +131,8 @@ class SettingsActivity : StandaloneActivity() {
     private var voiceLanguage by mutableStateOf<String?>(null)
     private var busy by mutableStateOf<TrackedOperation.Kind?>(null)
     private var assistantActive by mutableStateOf(false)
+    private var floatingOn by mutableStateOf(false)
+    private var awaitingOverlay = false
 
     private val outcomes: (OperationTracker.Outcome) -> Unit = { outcome ->
         val kind = outcome.operation.kind
@@ -158,6 +163,51 @@ class SettingsActivity : StandaloneActivity() {
         loadSpeech()
         // Back from the system settings: the assistant may have been chosen there (roadmap P5.7).
         assistantActive = MacawVoiceInteractionService.isActive(this)
+        resumeFloating()
+    }
+
+    /**
+     * Roadmap D62: back from the overlay permission page, the floating microphone turns on when the permission was
+     * granted; otherwise a switch that is on starts the service again if it is not running (a force stop ends it).
+     * zh-CN: 路线图 D62: 从悬浮窗权限页返回时, 已授权则开启悬浮麦克风; 否则开关为开而服务未运行时重新启动 (强行停止会结束服务).
+     */
+    private fun resumeFloating() {
+        if (awaitingOverlay) {
+            awaitingOverlay = false
+            if (Settings.canDrawOverlays(this)) {
+                TriggerPreferences(this).floating = true
+                FloatingMicService.start(this)
+            } else {
+                pendingMessage = getString(R.string.settings_floating_denied)
+            }
+        } else if (FloatingMicService.isOn(this) && FloatingMicService.running == null) {
+            FloatingMicService.start(this)
+        }
+        floatingOn = FloatingMicService.isOn(this)
+    }
+
+    /** Roadmap D62: off by default; turning it on asks for the overlay permission first. zh-CN: 默认关; 开启时先申请悬浮窗权限. */
+    private fun setFloating(on: Boolean) {
+        val triggers = TriggerPreferences(this)
+        if (!on) {
+            triggers.floating = false
+            FloatingMicService.stop(this)
+            floatingOn = false
+            return
+        }
+        if (Settings.canDrawOverlays(this)) {
+            triggers.floating = true
+            floatingOn = FloatingMicService.start(this)
+            return
+        }
+        awaitingOverlay = true
+        val page = "package:$packageName".toUri()
+        val opened = listOf(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, page), Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+            .any { intent -> runCatching { startActivity(intent) }.isSuccess }
+        if (!opened) {
+            awaitingOverlay = false
+            pendingMessage = getString(R.string.settings_floating_denied)
+        }
     }
 
     /**
@@ -281,6 +331,9 @@ class SettingsActivity : StandaloneActivity() {
                 SectionHeader(stringResource(R.string.settings_triggers), Modifier.onGloballyPositioned { triggersTop = it.positionInParent().y.toInt() })
                 SettingsRow(stringResource(R.string.settings_tile), summary = stringResource(R.string.settings_tile_summary), icon = R.drawable.ic_toggle_24,
                     onClick = ::addTile, modifier = Modifier.testTag("macaw.settings.tile"))
+                Hairline()
+                SwitchRow(stringResource(R.string.settings_floating), floatingOn, ::setFloating, summary = stringResource(R.string.settings_floating_summary),
+                    icon = R.drawable.ic_mic_24, modifier = Modifier.testTag("macaw.settings.floating"))
                 Hairline()
                 // Roadmap D63: the launcher places the widget after its own confirmation; the shortcut needs no setup.
                 SettingsRow(stringResource(R.string.settings_widget), summary = stringResource(R.string.settings_widget_summary), icon = R.drawable.ic_widgets_24,

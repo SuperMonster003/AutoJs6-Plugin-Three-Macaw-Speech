@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">正在重新整理模型目錄</string>
     <string name="notification_channel_microphone">麥克風</string>
     <string name="notification_channel_model_operations">模型下載</string>
+    <string name="notification_floating_channel">懸浮麥克風</string>
+    <string name="notification_floating_off">關閉</string>
+    <string name="notification_floating_text">點按懸浮按鈕即可說話. 在此之前不會錄音</string>
+    <string name="notification_floating_title">懸浮麥克風已開啟</string>
     <string name="notification_microphone_text">腳本正在使用麥克風進行語音辨識或喚醒詞偵測</string>
     <string name="notification_microphone_title">正在收音</string>
     <string name="notification_model_download_title">正在下載 %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">寬鬆</string>
     <string name="settings_endpoint_sensitive">靈敏</string>
     <string name="settings_endpoint_standard">標準</string>
+    <string name="settings_floating">懸浮麥克風</string>
+    <string name="settings_floating_denied">沒有在其他應用程式上層顯示的權限, 懸浮麥克風保持關閉</string>
+    <string name="settings_floating_summary">在螢幕邊緣顯示可拖曳的麥克風按鈕, 點按即可說話. 按鈕本身不錄音, 需要在其他應用程式上層顯示的權限</string>
     <string name="settings_follow_autojs6">跟隨 AutoJs6</string>
     <string name="settings_follow_autojs6_summary">跟隨 AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 無法使用, 將使用系統設定</string>

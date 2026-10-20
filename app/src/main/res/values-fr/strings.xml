@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">Actualisation du catalogue de modèles</string>
     <string name="notification_channel_microphone">Microphone</string>
     <string name="notification_channel_model_operations">Téléchargements de modèles</string>
+    <string name="notification_floating_channel">Micro flottant</string>
+    <string name="notification_floating_off">Désactiver</string>
+    <string name="notification_floating_text">Appuyez sur le bouton flottant pour parler. Rien n\'est enregistré avant</string>
+    <string name="notification_floating_title">Le micro flottant est activé</string>
     <string name="notification_microphone_text">Un script utilise le microphone pour la reconnaissance vocale ou les mots de réveil</string>
     <string name="notification_microphone_title">Écoute en cours</string>
     <string name="notification_model_download_title">Téléchargement de %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">Souple</string>
     <string name="settings_endpoint_sensitive">Sensible</string>
     <string name="settings_endpoint_standard">Standard</string>
+    <string name="settings_floating">Micro flottant</string>
+    <string name="settings_floating_denied">Sans l\'autorisation de se superposer aux autres applications, le micro flottant reste désactivé</string>
+    <string name="settings_floating_summary">Un bouton de micro que vous pouvez faire glisser le long du bord de l\'écran; appuyez dessus pour parler. Il n\'enregistre rien lui-même et nécessite l\'autorisation de se superposer aux autres applications</string>
     <string name="settings_follow_autojs6">Suivre AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Suivre AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 n\'est pas disponible, les paramètres du système s\'appliquent donc</string>

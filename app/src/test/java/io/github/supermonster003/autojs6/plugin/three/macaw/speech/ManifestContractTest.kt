@@ -26,7 +26,7 @@ class ManifestContractTest {
     private val application: Element get() = manifest.child("application")
 
     @Test
-    fun `the permissions are exactly the plugin permission and the roadmap D29 set`() {
+    fun `the permissions are exactly the plugin permission, the roadmap D29 set and the floating microphone's`() {
         assertEquals(
             listOf(
                 PLUGIN_PERMISSION,
@@ -39,6 +39,10 @@ class ManifestContractTest {
                 // Roadmap P5.1: the metered network question and the offline notice of the home screen.
                 "android.permission.ACCESS_NETWORK_STATE",
                 "android.permission.POST_NOTIFICATIONS",
+                // Roadmap D62 (P7.1): the floating microphone's overlay, its foreground service and its return after a reboot.
+                "android.permission.SYSTEM_ALERT_WINDOW",
+                "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+                "android.permission.RECEIVE_BOOT_COMPLETED",
             ),
             manifest.children("uses-permission").map { it.android("name") },
         )
@@ -203,7 +207,7 @@ class ManifestContractTest {
         assertEquals(
             listOf(
                 ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService",
-                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, TILE,
+                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, TILE,
             ),
             application.children("service").map { it.android("name") },
         )
@@ -314,6 +318,25 @@ class ManifestContractTest {
         assertEquals("", activity.android("taskAffinity"))
         assertEquals("D61: a tile tapped on the lock screen needs no unlock", "true", activity.android("showWhenLocked"))
         assertTrue(activity.children("intent-filter").isEmpty())
+    }
+
+    @Test
+    fun `the floating microphone is an internal special use service resumed after a reboot`() {
+        // Roadmap D62: it only keeps the overlay; the type is specialUse with its declared subtype, never microphone.
+        val service = service(FLOATING)
+        assertEquals("false", service.android("exported"))
+        assertEquals("specialUse", service.android("foregroundServiceType"))
+        assertNull(service.androidOrNull("permission"))
+        assertTrue(service.children("intent-filter").isEmpty())
+        val property = service.children("property").single()
+        assertEquals("android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE", property.android("name"))
+        assertTrue("the subtype says it never records", "never records" in property.android("value"))
+        val receiver = application.children("receiver").single { it.android("name") == ".trigger.TriggerResumeReceiver" }
+        assertEquals("false", receiver.android("exported"))
+        assertEquals(
+            listOf("android.intent.action.BOOT_COMPLETED", "android.intent.action.MY_PACKAGE_REPLACED"),
+            receiver.child("intent-filter").children("action").map { it.android("name") },
+        )
     }
 
     @Test
@@ -436,6 +459,7 @@ class ManifestContractTest {
         /** Roadmap P7.1: the launch target of the trigger entries. zh-CN: 触发式入口的启动目标. */
         const val TRIGGER = ".trigger.TriggerActivity"
         const val TILE = ".trigger.VoiceTileService"
+        const val FLOATING = ".trigger.FloatingMicService"
         const val WIDGET = ".trigger.VoiceWidgetProvider"
         const val TRIGGER_SETTINGS = ".ui.settings.TriggerSettingsAlias"
         const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"

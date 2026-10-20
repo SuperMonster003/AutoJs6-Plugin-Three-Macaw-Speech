@@ -19,6 +19,13 @@
     <!-- Roadmap P5.1 (appendix D Q7): the home screen asks before a download on a metered network and waits offline. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!--
+        Roadmap D62 (P7.1): the floating microphone is an overlay the user turns on (off by default); a foreground service
+        of type specialUse keeps it on screen without recording, and it comes back after a reboot while it is on.
+    -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!--
         Roadmap D50 (P5.7): the digital assistant finds the apps that take the recognized text (3-Stove Agent, 3-Stone AI)
@@ -253,6 +260,15 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/voice_widget_info" />
         </receiver>
+        <!-- Roadmap D62: the floating microphone comes back after a reboot or an update while its switch is on. -->
+        <receiver
+            android:name=".trigger.TriggerResumeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
         <receiver
             android:name=".ui.appearance.LauncherIconUpdateReceiver"
@@ -401,6 +417,19 @@
             <meta-data
                 android:name="android.speech"
                 android:resource="@xml/recognition_service" />
+        </service>
+
+        <!--
+            The floating microphone (roadmap P7.1, D62): internal; it only keeps the overlay button on screen and never
+            records, so its type on API 34+ is specialUse.
+        -->
+        <service
+            android:name=".trigger.FloatingMicService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-enabled floating microphone button: keeps a small overlay button on screen that opens the dictation sheet when tapped. It never records by itself; the sheet records only while it is visible." />
         </service>
 
         <!--

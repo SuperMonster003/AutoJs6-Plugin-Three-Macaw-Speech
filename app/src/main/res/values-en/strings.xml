@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">Refreshing the model catalog</string>
     <string name="notification_channel_microphone">Microphone</string>
     <string name="notification_channel_model_operations">Model downloads</string>
+    <string name="notification_floating_channel">Floating microphone</string>
+    <string name="notification_floating_off">Turn off</string>
+    <string name="notification_floating_text">Tap the floating button to speak. Nothing is recorded until then</string>
+    <string name="notification_floating_title">The floating microphone is on</string>
     <string name="notification_microphone_text">A script is using the microphone for speech recognition or wake words</string>
     <string name="notification_microphone_title">Listening</string>
     <string name="notification_model_download_title">Downloading %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">Relaxed</string>
     <string name="settings_endpoint_sensitive">Sensitive</string>
     <string name="settings_endpoint_standard">Standard</string>
+    <string name="settings_floating">Floating microphone</string>
+    <string name="settings_floating_denied">The floating microphone stays off without the permission to display over other apps</string>
+    <string name="settings_floating_summary">A microphone button you can drag along the screen edge; tap it to speak. It records nothing by itself and needs the permission to display over other apps</string>
     <string name="settings_follow_autojs6">Follow AutoJs6</string>
     <string name="settings_follow_autojs6_summary">Follow AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 is not available, so the system settings apply</string>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The floating microphone of roadmap D62: a 48 dp touch target resting 8 dp from the screen edge. -->
+    <dimen name="floating_mic_size">48dp</dimen>
+    <dimen name="floating_mic_padding">12dp</dimen>
+    <dimen name="floating_mic_margin">8dp</dimen>
+</resources>

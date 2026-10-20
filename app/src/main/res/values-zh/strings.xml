@@ -134,6 +134,10 @@
     <string name="notification_catalog_refresh_title">正在刷新模型目录</string>
     <string name="notification_channel_microphone">麦克风</string>
     <string name="notification_channel_model_operations">模型下载</string>
+    <string name="notification_floating_channel">悬浮麦克风</string>
+    <string name="notification_floating_off">关闭</string>
+    <string name="notification_floating_text">点按悬浮按钮即可说话. 在此之前不会录音</string>
+    <string name="notification_floating_title">悬浮麦克风已开启</string>
     <string name="notification_microphone_text">脚本正在使用麦克风进行语音识别或唤醒词检测</string>
     <string name="notification_microphone_title">正在收音</string>
     <string name="notification_model_download_title">正在下载 %1$s</string>
@@ -161,6 +165,9 @@
     <string name="settings_endpoint_relaxed">宽松</string>
     <string name="settings_endpoint_sensitive">灵敏</string>
     <string name="settings_endpoint_standard">标准</string>
+    <string name="settings_floating">悬浮麦克风</string>
+    <string name="settings_floating_denied">没有悬浮窗权限, 悬浮麦克风保持关闭</string>
+    <string name="settings_floating_summary">在屏幕边缘显示可拖动的麦克风按钮, 点按即可说话. 按钮本身不录音, 需要悬浮窗权限</string>
     <string name="settings_follow_autojs6">跟随 AutoJs6</string>
     <string name="settings_follow_autojs6_summary">跟随 AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 不可用, 将使用系统设置</string>
