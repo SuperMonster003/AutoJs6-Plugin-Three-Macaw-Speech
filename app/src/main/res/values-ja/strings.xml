@@ -180,6 +180,8 @@
     <string name="settings_follow_autojs6_summary">AutoJs6 に従う - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 を利用できないため, システムの設定が適用されます</string>
     <string name="settings_follow_system">システムに従う</string>
+    <string name="settings_headset">ヘッドセットの音声キー</string>
+    <string name="settings_headset_summary">Bluetooth ヘッドセットで音声アシスタントを呼び出したとき (音声キーやタッチ部分の長押し) に音声入力パネルを開きます. 他のアプリも応答できる場合は, 先にどれを使うか選びます</string>
     <string name="settings_idle">未使用のモデルを解放</string>
     <string name="settings_idle_message">読み込んだモデルは, この時間使われないと解放されます (スクリプトも同様)</string>
     <string name="settings_idle_value">%1$d 分後</string>

@@ -39,7 +39,7 @@ class TriggerPolicyTest {
 
     @Test
     fun `entry names are stable ids`() {
-        assertEquals(listOf("tile", "widget", "shortcut", "floating", "key"), TriggerSource.entries.map { it.id })
+        assertEquals(listOf("tile", "widget", "shortcut", "floating", "key", "headset"), TriggerSource.entries.map { it.id })
         TriggerSource.entries.forEach { assertEquals(it, TriggerSource.of(it.id)) }
         assertNull("the assist gesture names no entry", TriggerSource.of(null))
         assertNull(TriggerSource.of("TILE"))

@@ -180,6 +180,8 @@
     <string name="settings_follow_autojs6_summary">Suivre AutoJs6 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6 n\'est pas disponible, les paramètres du système s\'appliquent donc</string>
     <string name="settings_follow_system">Suivre le système</string>
+    <string name="settings_headset">Touche vocale du casque</string>
+    <string name="settings_headset_summary">Ouvre le panneau de dictée quand un casque Bluetooth appelle l\'assistant vocal (appui long sur sa touche vocale ou sa zone tactile). Si une autre application y répond aussi, le système vous demande de choisir</string>
     <string name="settings_idle">Libérer les modèles inactifs</string>
     <string name="settings_idle_message">Un modèle chargé est libéré après cette durée sans utilisation, y compris pour les scripts</string>
     <string name="settings_idle_value">Après %1$d min</string>

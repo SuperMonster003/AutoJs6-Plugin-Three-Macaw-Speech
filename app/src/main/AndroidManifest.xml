@@ -257,6 +257,26 @@
             android:theme="@android:style/Theme.NoDisplay"
             tools:targetApi="o_mr1" />
         <!--
+            The headset entry (roadmap D65): answers VOICE_COMMAND, which the Bluetooth service starts when a headset asks
+            for voice recognition, and opens the sheet like the targets above (D60). Exported without a permission like the
+            voice input: it only opens the plugin's own sheet. It shows over the lock screen (D55). The settings switch
+            disables the component.
+        -->
+        <activity
+            android:name=".trigger.HeadsetTriggerActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay"
+            tools:targetApi="o_mr1">
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <!--
             The "Tap to speak" widget (roadmap P7.1, D63): the system broadcasts APPWIDGET_UPDATE to it; its button opens the
             assistant sheet through TriggerActivity. It records nothing.
         -->

@@ -19,6 +19,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.MicrophonePermissionActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ThreeMacawSpeechInfoService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ThreeMacawSpeechService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetTriggerActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetTriggerComponent
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.CheckVoiceDataActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.GetSampleTextActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ttsengine.ThreeMacawSpeechTtsEngineService
@@ -132,6 +134,27 @@ class ThreeMacawSpeechContractTest {
     }
 
     @Test
+    fun theHeadsetEntryAnswersVoiceCommandUntilTheSettingTurnsItOff() {
+        // Roadmap D65: one activity of the plugin answers VOICE_COMMAND of the Bluetooth service, without a permission.
+        val command = Intent(Intent.ACTION_VOICE_COMMAND).setPackage(packageName)
+        val info = context.packageManager.getActivityInfo(HeadsetTriggerComponent.component(context), PackageManager.MATCH_DISABLED_COMPONENTS)
+        assertTrue(info.exported)
+        assertEquals(null, info.permission)
+        assertTrue(info.flags and ActivityInfo.FLAG_EXCLUDE_FROM_RECENTS != 0)
+        val before = HeadsetTriggerComponent.isEnabled(context)
+        try {
+            HeadsetTriggerComponent.setEnabled(context, true)
+            assertEquals(listOf(HeadsetTriggerActivity::class.java.name), queryActivities(command))
+            HeadsetTriggerComponent.setEnabled(context, false)
+            assertFalse(HeadsetTriggerComponent.isEnabled(context))
+            assertEquals("the settings switch takes the entry out of the chooser", emptyList<String>(), queryActivities(command))
+        } finally {
+            HeadsetTriggerComponent.setEnabled(context, before)
+        }
+        assertEquals(before, HeadsetTriggerComponent.isEnabled(context))
+    }
+
+    @Test
     fun infoServiceAnswersTheSpeechIdentity() {
         val serviceInfo = discoverSingleService(PluginActions.INFO, ThreeMacawSpeechContract.INFO_CATEGORY, ThreeMacawSpeechInfoService::class.java.name)
         assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION.toString(), serviceInfo.metaData?.get(PluginCapabilityKeys.REQUIRES_HOST_VERSION)?.toString())
@@ -222,8 +245,9 @@ class ThreeMacawSpeechContractTest {
         val (library, rest) = exported.partition { it.first in LIBRARY_COMPONENTS }
         val (screens, rest2) = rest.partition { it.first in screenEntries() || it.first.startsWith("$packageName.launcher.") }
         val (systemTts, rest3) = rest2.partition { it.first in systemTtsComponents() }
-        // Roadmap P5.6: the voice input answers any app with the recognized text only (absent while switched off).
-        val (voiceInput, rest4) = rest3.partition { it.first == VoiceInputActivity::class.java.name }
+        // Roadmap P5.6: the voice input answers any app with the recognized text only; D65: the headset entry answers
+        // VOICE_COMMAND by opening the plugin's own sheet (both absent while switched off).
+        val (voiceInput, rest4) = rest3.partition { it.first == VoiceInputActivity::class.java.name || it.first == HeadsetTriggerActivity::class.java.name }
         voiceInput.forEach { (name, permission) -> assertEquals("$name is reached by any app", null, permission) }
         // Roadmap P5.7: the digital assistant is bound by the system only (BIND_VOICE_INTERACTION); the recognition
         // service is reached by any app and checks the caller's microphone permission itself.

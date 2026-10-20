@@ -17,6 +17,7 @@ internal enum class TriggerSource(val id: String) {
     SHORTCUT("shortcut"),
     FLOATING("floating"),
     KEY("key"),
+    HEADSET("headset"),
     ;
 
     companion object {

@@ -180,6 +180,8 @@
     <string name="settings_follow_autojs6_summary">AutoJs6 따르기 - %1$s</string>
     <string name="settings_follow_autojs6_unavailable">AutoJs6를 사용할 수 없어 시스템 설정이 적용됩니다</string>
     <string name="settings_follow_system">시스템 따르기</string>
+    <string name="settings_headset">헤드셋 음성 키</string>
+    <string name="settings_headset_summary">블루투스 헤드셋으로 음성 어시스턴트를 부를 때 (음성 키나 터치 영역 길게 누르기) 받아쓰기 패널을 엽니다. 다른 앱도 응답할 수 있으면 시스템이 먼저 선택을 요청합니다</string>
     <string name="settings_idle">유휴 모델 해제</string>
     <string name="settings_idle_message">로드된 모델은 이 시간 동안 사용되지 않으면 해제되며, 스크립트에도 적용됩니다</string>
     <string name="settings_idle_value">%1$d분 후</string>

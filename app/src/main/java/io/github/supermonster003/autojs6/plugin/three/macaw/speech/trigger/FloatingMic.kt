@@ -307,7 +307,7 @@ class FloatingMicService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_mic_24)
+            .setSmallIcon(R.drawable.ic_touch_app_24)
             .setContentTitle(getString(R.string.notification_floating_title))
             .setContentText(getString(R.string.notification_floating_text))
             .setContentIntent(settings)

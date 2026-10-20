@@ -17,6 +17,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.AssistantDevi
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetTriggerComponent
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.KeyGesture
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPreferences
@@ -38,9 +39,9 @@ import org.junit.runner.RunWith
 
 /**
  * The trigger entries on a device (roadmap P7.1, opt-in `-e macawTriggers true`, run by `.python/device_trigger_run.py`):
- * the widget, the launcher shortcut, the quick settings tile and the floating microphone each open the assistant sheet,
- * through the assistant session while 3-Macaw Speech is the default digital assistant and its service is bound, directly
- * otherwise (D60). An instrumentation run force-stops the plugin, after which the system leaves the assistant service
+ * the widget, the launcher shortcut, the quick settings tile, the floating microphone and the headset entry each open the
+ * assistant sheet, through the assistant session while 3-Macaw Speech is the default digital assistant and its service is
+ * bound, directly otherwise (D60). An instrumentation run force-stops the plugin, after which the system leaves the assistant service
  * unbound in the test process, so on phones the expected route is the sheet itself; on emulators the script hands the role
  * over again (`-e macawRebindAssistant true`) and both routes run. Where the microphone permission and a recognition model are present, the sheet
  * must start listening, and the device must show no active recording before the entry and after the sheet closed (the
@@ -49,7 +50,7 @@ import org.junit.runner.RunWith
  * PIN. Nothing on the screen is tapped by coordinates; the key trigger is driven from the script (an instrumentation would
  * suppress accessibility services).
  * zh-CN: 设备上的触发式入口 (路线图 P7.1, 需显式开启 `-e macawTriggers true`, 由 `.python/device_trigger_run.py` 运行): 桌面小部件, 启动器快捷方式,
- * 快速设置磁贴与悬浮麦克风各自打开助理弹层, 3-Macaw Speech 是默认数字助理且其服务已绑定时经助理会话, 否则直接打开 (D60). instrumentation 会强行停止
+ * 快速设置磁贴, 悬浮麦克风与耳机入口各自打开助理弹层, 3-Macaw Speech 是默认数字助理且其服务已绑定时经助理会话, 否则直接打开 (D60). instrumentation 会强行停止
  * 插件, 之后系统不再把助理服务绑定到测试进程, 因此手机上预期直接打开; 模拟器上脚本重新分配角色 (`-e macawRebindAssistant true`), 两种路由都运行. 有麦克风权限与
  * 识别模型时弹层必须开始收音, 且入口之前与弹层关闭之后设备上没有进行中的录音 (麦克风指示灯只在听写期间出现, D58). 弹层显示期间悬浮麦克风隐藏. 磁贴用例
  * 需要磁贴已在快速设置中 (`-e macawTile true`); `-e macawKeyguard true` 另在没有 PIN 的锁屏上点磁贴. 不按坐标点按屏幕; 按键触发由脚本驱动 (instrumentation
@@ -122,6 +123,21 @@ class TriggerEntryDeviceTest {
         val started = System.currentTimeMillis()
         context.startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         opened(TriggerSource.SHORTCUT, started, before)
+    }
+
+    @Test
+    fun theHeadsetVoiceCommandOpensTheSheet() {
+        // Roadmap D65: the Bluetooth service starts VOICE_COMMAND without a package; naming the plugin skips the chooser.
+        val before = recordings()
+        val enabled = HeadsetTriggerComponent.isEnabled(context)
+        HeadsetTriggerComponent.setEnabled(context, true)
+        try {
+            val started = System.currentTimeMillis()
+            context.startActivity(Intent(Intent.ACTION_VOICE_COMMAND).setPackage(context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            opened(TriggerSource.HEADSET, started, before)
+        } finally {
+            HeadsetTriggerComponent.setEnabled(context, enabled)
+        }
     }
 
     @Test

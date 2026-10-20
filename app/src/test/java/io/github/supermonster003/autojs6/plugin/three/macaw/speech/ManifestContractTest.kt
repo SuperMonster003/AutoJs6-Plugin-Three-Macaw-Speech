@@ -87,7 +87,8 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, ".service.MicrophoneStartActivity",
+                ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
             application.children("activity").map { it.android("name") },
@@ -342,6 +343,21 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the headset entry answers VOICE_COMMAND of any app over the lock screen, windowless`() {
+        // Roadmap D65: the Bluetooth service starts VOICE_COMMAND; enabled by default, the settings switch changes the state.
+        val activity = application.children("activity").single { it.android("name") == HEADSET }
+        assertEquals("true", activity.android("exported"))
+        assertNull("the Bluetooth service holds no plugin permission", activity.androidOrNull("permission"))
+        assertNull("enabled by default; the settings switch changes the component state", activity.androidOrNull("enabled"))
+        assertEquals("@android:style/Theme.NoDisplay", activity.android("theme"))
+        assertEquals("true", activity.android("excludeFromRecents"))
+        assertEquals("true", activity.android("noHistory"))
+        assertEquals("", activity.android("taskAffinity"))
+        assertEquals("D55: the sheet dictates over the lock screen", "true", activity.android("showWhenLocked"))
+        assertFilter(activity, action = "android.intent.action.VOICE_COMMAND", category = DEFAULT_CATEGORY)
+    }
+
+    @Test
     fun `the floating microphone is an internal special use service resumed after a reboot`() {
         // Roadmap D62: it only keeps the overlay; the type is specialUse with its declared subtype, never microphone.
         val service = service(FLOATING)
@@ -449,8 +465,9 @@ class ManifestContractTest {
         assertEquals(
             "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
                 "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7), the tile bound by the system UI " +
-                "only, the key trigger bound by the accessibility system only, the widget provider (P7.1), and the separate permissioned packaged speech entry",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + KEY + WIDGET + PACKAGED,
+                "only, the key trigger bound by the accessibility system only, the widget provider and the headset entry (P7.1), and the separate " +
+                "permissioned packaged speech entry",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + KEY + WIDGET + HEADSET + PACKAGED,
             unprotected.map { it.android("name") }.toSet(),
         )
         assertEquals(
@@ -502,6 +519,7 @@ class ManifestContractTest {
         /** Roadmap P7.1: the launch target of the trigger entries. zh-CN: 触发式入口的启动目标. */
         const val TRIGGER = ".trigger.TriggerActivity"
         const val LOCKED_TRIGGER = ".trigger.LockedTriggerActivity"
+        const val HEADSET = ".trigger.HeadsetTriggerActivity"
         const val TILE = ".trigger.VoiceTileService"
         const val FLOATING = ".trigger.FloatingMicService"
         const val KEY = ".trigger.KeyTriggerService"

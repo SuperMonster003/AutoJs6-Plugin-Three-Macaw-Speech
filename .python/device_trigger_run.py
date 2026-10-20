@@ -17,9 +17,14 @@ never a transcript.
                                                         reinstalls the same APK (an instrumentation leaves the assistant
                                                         service unbound; an update binds it again, a force stop would
                                                         clear the default assistant on Android 12) and clicks the tile in
-                                                        the plugin's own process when it is listed. Refuses while the key
-                                                        trigger is on: an instrumentation force-stops the plugin, which
-                                                        may turn its accessibility service off
+                                                        the plugin's own process when it is listed, then the headset entry
+                                                        as below. Refuses while the key trigger is on: an instrumentation
+                                                        force-stops the plugin, which may turn its accessibility service off
+    py .python/device_trigger_run.py headset <serial>  the headset entry (D65) without an instrumentation: lists the apps
+                                                        that answer VOICE_COMMAND (more than one: the headset key shows a
+                                                        chooser), starts it for the plugin as the Bluetooth service would
+                                                        and checks the sheet and its route; the real headset key is
+                                                        pressed by the maintainer under `watch`
     py .python/device_trigger_run.py keys <serial> [gesture]
                                                         the key trigger after the maintainer turned it on (gesture: the one
                                                         chosen in the settings, longVolumeDown by default): the gesture
@@ -33,9 +38,11 @@ never a transcript.
                                                         devices, so `keys` needs a root emulator): the maintainer presses
                                                         the real keys while this prints the plugin's log (trigger, route,
                                                         volume step of a consumed press), volume and screen changes with
-                                                        times; volumes are restored at the end
+                                                        times; volumes are restored at the end unless `--keep-volumes` is
+                                                        passed (a headset that connects changes them on purpose)
     py .python/device_trigger_run.py overlay <serial>  the floating microphone and the floating ball of 3-Stove Agent on
-                                                        screen at the same time (window list and a screenshot)
+                                                        screen at the same time (window list and a screenshot), and the
+                                                        notification shade with the floating microphone's notification
 
 Screenshots go to .bak/visual/1.1.0/<serial>/ (not in the repository). Build first:
 `.\\gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest`. Nothing on the screen is tapped by coordinates.
@@ -55,6 +62,7 @@ from device_ui_run import pull_screens  # noqa: E402
 TILE = f"{PACKAGE}/{PACKAGE}.trigger.VoiceTileService"
 KEY_SERVICE = f"{PACKAGE}/{PACKAGE}.trigger.KeyTriggerService"
 SHEET = f"{PACKAGE}/.ui.assistant.AssistantActivity"
+VOICE_COMMAND = "android.intent.action.VOICE_COMMAND"
 MODEL = "asr.zipformer-streaming.en.2023-06-26.int8"
 GESTURES = ("longVolumeDown", "longVolumeUp", "doubleVolumeDown")
 KEY_VOLUME_UP, KEY_VOLUME_DOWN = 115, 114
@@ -304,6 +312,28 @@ def tile_check(serial):
     return ok
 
 
+def headset_answerers(serial):
+    """The activities that answer VOICE_COMMAND; the Bluetooth service starts it without a package."""
+    output = adb(serial, "shell", "cmd", "package", "query-activities", "--brief", "-a", VOICE_COMMAND, check=False)
+    return [line.strip() for line in output.splitlines() if "/" in line and " " not in line.strip()]
+
+
+def headset(serial):
+    """The headset entry (D65) in the plugin's own process: who answers VOICE_COMMAND, then the action for the plugin
+    (with its package, as the chooser would pass it on) opens the sheet with the route of D60; answers ok."""
+    answerers = headset_answerers(serial)
+    listed = any(answerer.startswith(PACKAGE + "/") for answerer in answerers)
+    print(f"{label(serial)}: VOICE_COMMAND answered by {len(answerers)}: {', '.join(answerers) or 'none'}")
+    since = log_since(serial)
+    adb(serial, "shell", "am", "start", "-a", VOICE_COMMAND, "-p", PACKAGE, check=False)
+    opened = wait_sheet(serial)
+    sheet = re.search(r"Sheet opened \(source headset, (session|direct)\)", trigger_log(serial, since))
+    closed = close_sheet(serial)
+    ok = listed and opened and bool(sheet) and closed
+    print(f"{label(serial)}: headset entry opens the sheet: {'PASS' if ok else 'FAIL'} (route {sheet.group(1) if sheet else 'none'})")
+    return ok
+
+
 def reinstall(serial):
     """Replaces the plugin with the same APK. After an instrumentation run the system leaves the assistant service
     unbound (`dumpsys voiceinteraction`: mBound=true mService=null); a package update binds it and the accessibility
@@ -361,7 +391,7 @@ def watch(serial, seconds=180):
     while this prints, with times, what the plugin logged (trigger, route, volume step of a consumed press), every volume
     change and every screen change; the volumes are restored at the end. Prints the gesture the service reported."""
     enabled, _ = key_service_enabled(serial)
-    bound = "3-Macaw Speech key trigger" in adb(serial, "shell", "dumpsys", "accessibility", check=False)
+    bound = "label=3-Macaw Speech" in adb(serial, "shell", "dumpsys", "accessibility", check=False)
     _, values = assistant_state(serial)
     assistant = values.get("voice_interaction_service", "").startswith(PACKAGE)
     print(f"{label(serial)}: watch {seconds} s (key trigger {'on' if enabled else 'OFF'}, {'bound' if bound else 'NOT bound'}; "
@@ -399,9 +429,11 @@ def watch(serial, seconds=180):
                 print(f"  +{time.time() - started:5.1f} s the sheet closed", flush=True)
             time.sleep(0.3)
     finally:
-        for stream, (index, _) in saved.items():
-            set_volume(serial, stream, index)
-        print(f"{label(serial)}: watch ended, volumes restored", flush=True)
+        keep = "--keep-volumes" in sys.argv
+        if not keep:
+            for stream, (index, _) in saved.items():
+                set_volume(serial, stream, index)
+        print(f"{label(serial)}: watch ended, volumes {'kept' if keep else 'restored'}", flush=True)
     return True
 
 
@@ -422,6 +454,7 @@ def phone(serial):
         ok &= tile_check(serial)
     elif assistant:
         print(f"{label(serial)}: tile not in Quick Settings; the session route is checked with `keys`")
+    ok &= headset(serial)
     return pull_screens(serial, screens_dir(serial), ok)
 
 
@@ -498,11 +531,19 @@ def overlay(serial):
     ok = macaw and stove
     print(f"{label(serial)}: overlay {'PASS' if ok else 'FAIL'} (floating microphone {'shown' if macaw else 'missing'}, "
           f"3-Stove Agent ball {'shown' if stove else 'missing'}, screenshot {target / 'overlay-both.png'})")
-    return ok
+    # The floating microphone's notification (its small icon is not a microphone, so it does not read as a recording).
+    notified = "floating_microphone" in adb(serial, "shell", "dumpsys", "notification", check=False)
+    adb(serial, "shell", "cmd", "statusbar", "expand-notifications", check=False)
+    time.sleep(1.5)
+    with open(target / "overlay-shade.png", "wb") as handle:
+        handle.write(subprocess.run(["adb", "-s", serial, "exec-out", "screencap", "-p"], capture_output=True).stdout)
+    adb(serial, "shell", "cmd", "statusbar", "collapse", check=False)
+    print(f"{label(serial)}: floating microphone notification {'posted' if notified else 'MISSING'} (screenshot {target / 'overlay-shade.png'})")
+    return ok and notified
 
 
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("avd", "phone", "keys", "watch", "overlay"):
+    if len(argv) < 2 or argv[0] not in ("avd", "phone", "keys", "watch", "overlay", "headset"):
         print(__doc__)
         return 2
     action, serial = argv[0], argv[1]
@@ -510,9 +551,11 @@ def main(argv):
         gesture = argv[2] if len(argv) > 2 and argv[2] in GESTURES else "longVolumeDown"
         return 0 if keys(serial, gesture) else 1
     if action == "watch":
-        return 0 if watch(serial, int(argv[2]) if len(argv) > 2 else 180) else 1
+        return 0 if watch(serial, int(argv[2]) if len(argv) > 2 and argv[2].isdigit() else 180) else 1
     if action == "overlay":
         return 0 if overlay(serial) else 1
+    if action == "headset":
+        return 0 if headset(serial) else 1
     if not install(serial):
         return 1
     return 0 if {"avd": avd, "phone": phone}[action](serial) else 1

@@ -50,6 +50,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPr
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetTriggerComponent
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.KeyGesture
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.KeyTriggerService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TileOutcome
@@ -346,6 +347,11 @@ class SettingsActivity : StandaloneActivity() {
                 Hairline()
                 SettingsRow(stringResource(R.string.settings_key_gesture), summary = stringResource(gestureLabel(TriggerPreferences(this@SettingsActivity).keyGesture)),
                     icon = R.drawable.ic_tune_24, onClick = { dialog = Dialog.KEY_GESTURE }, modifier = Modifier.testTag("macaw.settings.keyGesture"))
+                Hairline()
+                // Roadmap D65: the component state of the headset entry is the setting itself.
+                var headset by remember { mutableStateOf(HeadsetTriggerComponent.isEnabled(this@SettingsActivity)) }
+                SwitchRow(stringResource(R.string.settings_headset), headset, { headset = it; HeadsetTriggerComponent.setEnabled(this@SettingsActivity, it) },
+                    summary = stringResource(R.string.settings_headset_summary), icon = R.drawable.ic_headset_24, modifier = Modifier.testTag("macaw.settings.headset"))
                 Hairline()
                 // Roadmap D63: the launcher places the widget after its own confirmation; the shortcut needs no setup.
                 SettingsRow(stringResource(R.string.settings_widget), summary = stringResource(R.string.settings_widget_summary), icon = R.drawable.ic_widgets_24,
