@@ -52,7 +52,12 @@ class HomeDownloadDeviceTest {
             compose.onNodeWithTag("macaw.model.$id.download", useUnmergedTree = true).performClick()
             compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("macaw.model.$id.progress"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
             SpeechDevice.log("home download $id progress shown after ${System.currentTimeMillis() - started} ms")
-            compose.waitUntil(900_000) { compose.onAllNodes(hasTestTag("macaw.model.$id.installed"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+            // Installed rows sort first in their group (ModelRows) while the list keeps its first visible row, so on a small
+            // screen the finished row can move above the viewport and is no longer composed (Redmi 720 x 1650): wait for the
+            // store, then scroll the row back in before looking for its installed mark.
+            compose.waitUntil(900_000) { manager.store.installed(id) != null }
+            compose.onNodeWithTag("macaw.home.list").performScrollToNode(hasTestTag("macaw.model.$id"))
+            compose.waitUntil(30_000) { compose.onAllNodes(hasTestTag("macaw.model.$id.installed"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
             val seconds = (System.currentTimeMillis() - started) / 1000.0
             val entry = manager.entry(id)!!
             SpeechDevice.log("home download $id installed in ${"%.1f".format(seconds)} s, ${entry.installedBytes} bytes, default=${entry.isDefault}")
