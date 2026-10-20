@@ -7,7 +7,16 @@
   "$data": {
     "v1.1.0": {
       "released_date": "2026/10/20",
+      "hint": [
+        "Nouveaux déclencheurs: rien n'est enregistré entre-temps; un appui sur le bloc des Réglages rapides, le widget, le raccourci ou le micro flottant, ou sur une touche de volume, ouvre le même panneau de dictée que l'assistant numérique",
+        "Nouvelles autorisations: superposition aux autres applications (uniquement pour le micro flottant, désactivé par défaut), démarrage au boot (uniquement pour rétablir un micro flottant activé après un redémarrage) et service de premier plan à usage spécial (garde seulement le micro flottant affiché, sans enregistrer). Le déclencheur par touche s'active dans les paramètres d'accessibilité du système et filtre uniquement les touches"
+      ],
       "feature": [
+        "Bloc des Réglages rapides (Commande vocale): ajoutez-le dans le groupe Déclencheurs des paramètres (Android 13 et versions ultérieures confirment via le système; les versions antérieures affichent les étapes manuelles) et appuyez dessus dans les Réglages rapides pour parler; sur l'écran de verrouillage, vous dictez directement et ne déverrouillez qu'avant d'envoyer ou de copier (ColorOS et HyperOS demandent d'abord le déverrouillage); un appui long sur le bloc ouvre les paramètres Déclencheurs",
+        "Micro flottant: désactivé par défaut, il demande l'autorisation de se superposer aux autres applications quand vous l'activez; un bouton rond que vous déplacez le long du bord de l'écran et touchez pour parler; le bouton n'enregistre rien lui-même, reste affiché avec une notification silencieuse (qui permet de le désactiver) et revient après un redémarrage tant qu'il est activé; il se masque pendant l'affichage du panneau de dictée et peut s'afficher en même temps que la bulle flottante de 3-Stove Agent",
+        "Widget de l'écran d'accueil (Appuyer pour parler) et raccourci de l'appui long sur l'icône de l'application (Commande vocale) ouvrent tous deux le panneau de dictée; les paramètres peuvent placer le widget sur l'écran d'accueil et affichent les étapes manuelles quand le lanceur ne le permet pas",
+        "Déclencheur par touche: un service d'accessibilité qui filtre uniquement les touches et ne lit jamais le contenu de l'écran, à activer dans les paramètres d'accessibilité du système; par défaut, maintenir la baisse du volume environ 0,8 seconde ouvre le panneau de dictée, ou au choix un maintien de la hausse du volume ou un double appui sur la baisse du volume; un appui court change toujours le volume, et les touches ne sont pas interceptées quand l'écran est éteint ni pendant un appel",
+        "Chaque entrée ouvre le même panneau qu'un appui long sur le bouton Marche/Arrêt: via la session d'assistant quand 3-Macaw Speech est l'assistant numérique par défaut, sinon le même panneau directement; quand le système n'affiche pas la session d'assistant (par exemple après un appui sur le bloc depuis l'écran de verrouillage qui demande de déverrouiller), le panneau s'ouvre aussi directement",
         "Les applications empaquetées utilisent une entrée distincte pour la reconnaissance vocale et les modèles, avec leur propre autorisation de microphone"
       ]
     },

@@ -7,7 +7,16 @@
   "$data": {
     "v1.1.0": {
       "released_date": "2026/10/20",
+      "hint": [
+        "Nuevas formas de activación: no se graba nada entretanto; tocar el icono de Ajustes rápidos, el widget, el acceso directo o el micrófono flotante, o pulsar una tecla de volumen, abre el mismo panel de dictado que el asistente digital",
+        "Nuevos permisos: mostrarse sobre otras apps (solo para el micrófono flotante, desactivado por defecto), inicio al arrancar (solo para recuperar un micrófono flotante activado tras reiniciar) y un servicio en primer plano de uso especial (solo mantiene el micrófono flotante en pantalla, nunca graba). El activador por tecla se activa en los ajustes de accesibilidad del sistema y solo filtra teclas"
+      ],
       "feature": [
+        "Icono de Ajustes rápidos (Comando de voz): añádelo en el grupo Formas de activación de los ajustes (Android 13 y posteriores lo confirman con el sistema; las versiones anteriores muestran los pasos manuales) y tócalo en Ajustes rápidos para hablar; en la pantalla de bloqueo puedes dictar directamente y solo desbloqueas antes de enviar o copiar (ColorOS y HyperOS piden desbloquear primero); mantener pulsado el icono abre los ajustes de Formas de activación",
+        "Micrófono flotante: desactivado por defecto, al activarlo pide el permiso para mostrarse sobre otras apps; un botón redondo que arrastras por el borde de la pantalla y tocas para hablar; el botón no graba nada por sí mismo, sigue en pantalla con una notificación silenciosa (desde la que se puede desactivar) y vuelve tras reiniciar mientras esté activado; se oculta mientras se muestra el panel de dictado y puede mostrarse junto a la bola flotante de 3-Stove Agent",
+        "El widget de la pantalla de inicio (Toca para hablar) y el acceso directo de mantener pulsado el icono de la app (Comando de voz) abren el panel de dictado; los ajustes pueden poner el widget en la pantalla de inicio y muestran los pasos manuales cuando el lanzador no lo admite",
+        "Activador por tecla: un servicio de accesibilidad que solo filtra teclas y nunca lee el contenido de la pantalla, que se activa en los ajustes de accesibilidad del sistema; por defecto, mantener pulsada la tecla de bajar volumen unos 0,8 segundos abre el panel de dictado, y puede cambiarse a mantener pulsada la de subir volumen o pulsar dos veces la de bajar volumen; una pulsación corta sigue cambiando el volumen, y las teclas no se interceptan con la pantalla apagada ni durante una llamada",
+        "Todas las entradas abren el mismo panel que mantener pulsado el botón de encendido: a través de la sesión del asistente si 3-Macaw Speech es el asistente digital predeterminado, y si no, el mismo panel directamente; cuando el sistema no muestra la sesión del asistente (por ejemplo, tras tocar el icono en la pantalla de bloqueo y desbloquear), el panel también se abre directamente",
         "Las aplicaciones empaquetadas usan una entrada separada para reconocimiento y modelos, con su propio permiso de micrófono"
       ]
     },

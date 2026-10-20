@@ -8,6 +8,13 @@
 
 ###### 2026/10/20
 
+* `Hint` New trigger entries: nothing records in between; a tap on the Quick Settings tile, the home screen widget, the shortcut or the floating microphone, or a press of a volume key, opens the same dictation sheet as the digital assistant
+* `Hint` New permissions: display over other apps (only for the floating microphone, off by default), start at boot (only to bring back a floating microphone that is on after a restart) and a special use foreground service (only keeps the floating microphone on screen, never records). The key trigger is turned on in the system accessibility settings and only filters keys
+* `Feature` Quick Settings tile (Voice command): add it in the Triggers group of the settings (Android 13 and later confirm through the system; older versions show the manual steps) and tap it in Quick Settings to speak; on the lock screen you can dictate right away and unlock only before sending or copying (ColorOS and HyperOS ask for the unlock first); a long press of the tile opens the Triggers settings
+* `Feature` Floating microphone: off by default and asks for the permission to display over other apps when turned on; a round button you drag along the screen edge and tap to speak; the button records nothing itself, stays on screen with a quiet notification (which can turn it off) and comes back after a restart while it is on; it hides while the dictation sheet shows and can show together with the floating ball of 3-Stove Agent
+* `Feature` Home screen widget (Tap to speak) and the shortcut of a long press on the app icon (Voice command) both open the dictation sheet; the settings can put the widget on the home screen and show the manual steps where the launcher cannot
+* `Feature` Key trigger: an accessibility service that only filters keys and never reads the screen content, turned on in the system accessibility settings; by default a hold of volume down for about 0.8 seconds opens the dictation sheet, and it can be a hold of volume up or a double press of volume down instead; a short press still changes the volume, and keys are left alone while the screen is off or during a call
+* `Feature` Every entry opens the same sheet as a long press of the power button: through the assistant session while 3-Macaw Speech is the default digital assistant, otherwise the same sheet directly; when the system does not show the assistant session (for example after a tile tapped on the lock screen asks for the unlock), the sheet opens directly as well
 * `Feature` Packaged applications can use speech recognition and model management through a separate entry; microphone access follows each application's own permission
 
 # v1.0.0
