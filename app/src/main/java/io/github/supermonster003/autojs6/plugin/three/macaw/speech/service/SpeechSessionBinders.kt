@@ -9,6 +9,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechEx
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCapture
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCaptures
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.EarlyAudio
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MicrophoneSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
@@ -96,13 +97,19 @@ internal class CallbackWakeEvents(
  * How a session of the plugin's own entries runs (roadmap D56, D57): [takeover] silences a wake session that holds the
  * microphone instead of failing with `SESSION_BUSY`; [foreground] holds the microphone foreground service (an entry
  * that records only while a screen of the plugin or of its caller is visible does without it); [attribution] is the
- * context the recording is attributed to (the caller of the recognition service, API 31+). Never reachable over the
- * contract: only in-process callers pass it.
+ * context the recording is attributed to (the caller of the recognition service, API 31+); [recording] is called on the
+ * ASR thread once such an entry without the foreground service records, which it does before the model is ready (the
+ * audio waits in [EarlyAudio]). Never reachable over the contract: only in-process callers pass it.
  * zh-CN: 插件自己入口的会话如何运行 (路线图 D56, D57): [takeover] 让占用麦克风的唤醒会话静默, 而不是以 `SESSION_BUSY` 失败; [foreground] 持有麦克风
- * 前台服务 (只在插件或其调用方界面可见时录音的入口不需要); [attribution] 是录音所归属的 Context (识别服务的调用方, API 31+). 契约无法传入: 只有进程内
- * 调用方会传.
+ * 前台服务 (只在插件或其调用方界面可见时录音的入口不需要); [attribution] 是录音所归属的 Context (识别服务的调用方, API 31+); 不持有前台服务的入口在模型
+ * 就绪之前就开始录音 (音频在 [EarlyAudio] 中等待), 开始录音时在 ASR 线程上调用 [recording]. 契约无法传入: 只有进程内调用方会传.
  */
-internal data class LocalSession(val takeover: Boolean = true, val foreground: Boolean = true, val attribution: Context? = null)
+internal data class LocalSession(
+    val takeover: Boolean = true,
+    val foreground: Boolean = true,
+    val attribution: Context? = null,
+    val recording: (() -> Unit)? = null,
+)
 
 /**
  * What every session Binder shares (roadmap D16): the admission slot, the death links of the host callbacks, the
@@ -336,26 +343,53 @@ internal class DictationBinder(
     private val external: Boolean,
     private val foreground: Boolean,
     attribution: Context?,
+    private val recordingStarted: (() -> Unit)? = null,
     makeSession: (DictationEvents) -> DictationSession,
 ) : SessionBinder(runtime, slot, listOf(callback.asBinder()), attribution) {
 
     private val session: DictationSession = makeSession(CallbackDictationEvents(callback, beforeEnd = { freeMicrophone() }) { binderDied() })
+    private val early = EarlyAudio()
 
     override val isEnded: Boolean get() = session.isEnded
 
+    /**
+     * Loads the model, then starts the dictation. A plugin entry without the foreground service (the sheets, the
+     * recognition service, the tryout screen) records at once and keeps the audio until the dictation exists, so a word
+     * spoken as the sheet appears is not lost while the model loads; a client's session records after `ready`, as the
+     * protocol describes.
+     * zh-CN: 加载模型后开始听写. 不持有前台服务的插件入口 (弹层, 识别服务, 试听试说页) 立即录音并保留音频直到听写建立, 因此弹层出现时说出的字不会在模型
+     * 加载期间丢失; 客户端的会话按协议在 `ready` 之后录音.
+     */
     fun open(model: InstalledModel, warnings: List<SpeechWarning>) {
         link()
         if (!external && foreground) holdForeground()
         val options = session.options
+        val recordEarly = !external && !foreground
+        // Queued after a yielding wake session stops its recording (D57): both run on the ASR thread.
+        if (recordEarly) onAsr { startRecording() }
         loadThen({ listOf(runtime.acquireAsr(model, options.language, options.hotwords.isNotEmpty())) }) {
             val engine = leases.first().engine
             session.start(model.modelId) { sink -> runtime.dictation(engine, options, sink) }
             warnings.forEach { session.warning(it.code, it.message) }
-            if (!external && !session.isEnded) startMicrophone()
+            if (external || session.isEnded) return@loadThen
+            if (recording) early.drain { if (!session.isEnded) session.accept(it) } else startMicrophone()
         }
     }
 
-    override fun accept(samples: FloatArray) = session.accept(samples)
+    private fun startRecording() {
+        if (isEnded) return
+        try {
+            startMicrophone()
+        } catch (e: SpeechException) {
+            fail(e.code, e.message ?: e.code)
+            return
+        }
+        recordingStarted?.invoke()
+    }
+
+    override fun accept(samples: FloatArray) {
+        if (session.state == SessionState.PENDING) early.add(samples) else session.accept(samples)
+    }
 
     override fun stopSession(discard: Boolean) = if (discard) session.cancel() else session.finish()
 

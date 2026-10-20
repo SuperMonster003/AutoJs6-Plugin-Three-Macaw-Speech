@@ -40,6 +40,11 @@ never a transcript.
                                                         volume step of a consumed press), volume and screen changes with
                                                         times; volumes are restored at the end unless `--keep-volumes` is
                                                         passed (a headset that connects changes them on purpose)
+    py .python/device_trigger_run.py onset <serial> [times]
+                                                        how soon the sheet records: opens it [times] (default 4) through
+                                                        VOICE_COMMAND and prints, from the plugin's log, the milliseconds
+                                                        from the sheet to the recording, to the listening state and to the
+                                                        first sound of the microphone; the sheet closes with BACK
     py .python/device_trigger_run.py overlay <serial>  the floating microphone and the floating ball of 3-Stove Agent on
                                                         screen at the same time (window list and a screenshot), and the
                                                         notification shade with the floating microphone's notification
@@ -334,6 +339,32 @@ def headset(serial):
     return ok
 
 
+def onset(serial, times=4):
+    """The start of a dictation in the sheet: sheet opened -> recording started -> listening -> first sound."""
+    rows = []
+    for run in range(times):
+        since = log_since(serial)
+        adb(serial, "shell", "am", "start", "-a", VOICE_COMMAND, "-p", PACKAGE, check=False)
+        opened = wait_sheet(serial)
+        time.sleep(4)
+        log = adb(serial, "logcat", "-d", "-v", "epoch", "-T", since, "-s", "MacawAssistant:I", "MacawVoiceInput:I", "MacawMicrophone:I", check=False, timeout=60)
+        close_sheet(serial)
+        stamps = {}
+        for line in log.splitlines():
+            parts = line.split()
+            if not parts or not re.match(r"^\d+\.\d+$", parts[0]):
+                continue
+            for key, marker in (("sheet", "Sheet opened"), ("recording", "Recording started"), ("listening", "Voice input listening"), ("sound", "First sound")):
+                if marker in line and key not in stamps:
+                    stamps[key] = float(parts[0]) * 1000
+        base = stamps.get("sheet")
+        cells = [f"{key} +{stamps[key] - base:.0f} ms" if base and key in stamps else f"{key} none" for key in ("recording", "listening", "sound")]
+        rows.append(bool(opened and base and "recording" in stamps))
+        print(f"{label(serial)}: onset run {run + 1}: sheet {'opened' if opened else 'MISSING'}, " + ", ".join(cells), flush=True)
+        time.sleep(1)
+    return all(rows)
+
+
 def reinstall(serial):
     """Replaces the plugin with the same APK. After an instrumentation run the system leaves the assistant service
     unbound (`dumpsys voiceinteraction`: mBound=true mService=null); a package update binds it and the accessibility
@@ -543,7 +574,7 @@ def overlay(serial):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("avd", "phone", "keys", "watch", "overlay", "headset"):
+    if len(argv) < 2 or argv[0] not in ("avd", "phone", "keys", "watch", "overlay", "headset", "onset"):
         print(__doc__)
         return 2
     action, serial = argv[0], argv[1]
@@ -556,6 +587,8 @@ def main(argv):
         return 0 if overlay(serial) else 1
     if action == "headset":
         return 0 if headset(serial) else 1
+    if action == "onset":
+        return 0 if onset(serial, int(argv[2]) if len(argv) > 2 and argv[2].isdigit() else 4) else 1
     if not install(serial):
         return 1
     return 0 if {"avd": avd, "phone": phone}[action](serial) else 1

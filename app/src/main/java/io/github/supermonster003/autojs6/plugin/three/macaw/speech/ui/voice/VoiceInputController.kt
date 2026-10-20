@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +52,7 @@ internal class VoiceInputController(
     private var delivered = false
     private var generation = 0
     private var modelLanguages: List<String> = emptyList()
+    private var startedAt = 0L
 
     var phase by mutableStateOf(VoiceInputPhase.PREPARING)
         private set
@@ -72,6 +74,7 @@ internal class VoiceInputController(
     fun start() {
         if (delivered || session != null) return
         val expected = ++generation
+        startedAt = SystemClock.elapsedRealtime()
         problem = null
         partial = ""
         phase = VoiceInputPhase.PREPARING
@@ -98,10 +101,12 @@ internal class VoiceInputController(
     fun microphoneDenied() = show(VoiceInputPolicy.problem(SpeechErrorCodes.PERMISSION_DENIED, recording = false))
 
     private fun open(options: Bundle) {
+        val expected = generation
         ready = false
         phase = VoiceInputPhase.LOADING
         session = try {
-            binder.openLocalSession(options, callback, local)
+            // The microphone records before the model is ready (EarlyAudio): the sheet asks for speech from then on.
+            binder.openLocalSession(options, callback, local.copy(recording = { recording(expected) }))
         } catch (e: RuntimeException) {
             // The binder throws `CODE: detail` as the contract defines. zh-CN: Binder 按契约以 `CODE: detail` 抛出.
             val code = SpeechErrorCodes.decode(e.message.orEmpty())?.first
@@ -109,6 +114,12 @@ internal class VoiceInputController(
             show(VoiceInputPolicy.problem(code, recording = false))
             null
         }
+    }
+
+    private fun recording(expected: Int) = main.post {
+        if (expected != generation || delivered) return@post
+        Log.i(TAG, "Voice input recording ${SystemClock.elapsedRealtime() - startedAt} ms after the start")
+        if (phase == VoiceInputPhase.LOADING) phase = VoiceInputPhase.LISTENING
     }
 
     /** "Stop": ends the utterance now; the final of what was heard follows. zh-CN: "停止": 立即结束语句, 随后给出已听到内容的 final. */
@@ -154,6 +165,7 @@ internal class VoiceInputController(
 
     private val callback = object : ISpeechSessionCallback.Stub() {
         override fun onReady(event: Bundle?) = post {
+            Log.i(TAG, "Voice input listening ${SystemClock.elapsedRealtime() - startedAt} ms after the start")
             ready = true
             if (phase == VoiceInputPhase.LOADING) phase = VoiceInputPhase.LISTENING
         }
@@ -163,12 +175,16 @@ internal class VoiceInputController(
         override fun onFinal(event: Bundle?) = post {
             // D44: the first final with text is the answer; an empty one (noise) keeps listening.
             val text = event?.getString(SpeechResultKeys.TEXT)?.trim().orEmpty()
+            Log.i(TAG, "Final of ${text.length} chars ${SystemClock.elapsedRealtime() - startedAt} ms after the start")
             if (text.isNotEmpty()) complete(VoiceInputOutcome.Text(text, VoiceInputPolicy.spokenLanguage(event?.getString(SpeechResultKeys.LANGUAGE), modelLanguages)))
         }
 
         override fun onEndpoint() = Unit
 
-        override fun onVoiceActivity(event: Bundle?) = post { voiceActive = event?.getBoolean(SpeechResultKeys.ACTIVE) == true }
+        override fun onVoiceActivity(event: Bundle?) = post {
+            voiceActive = event?.getBoolean(SpeechResultKeys.ACTIVE) == true
+            Log.i(TAG, "Voice ${if (voiceActive) "starts" else "ends"} ${SystemClock.elapsedRealtime() - startedAt} ms after the start")
+        }
 
         override fun onWarning(event: Bundle?) = post { Log.i(TAG, "Voice input warning ${event?.getString(SpeechContract.KEY_ERROR_CODE)}") }
 

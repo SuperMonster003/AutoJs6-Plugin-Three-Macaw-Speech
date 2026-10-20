@@ -167,7 +167,7 @@ internal class SpeechPluginBinder(
         val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true)
         try {
             val id = runtime.nextId(if (listen.isExternal) "external" else "listen")
-            return DictationBinder(runtime, slot, listener, listen.isExternal, local?.foreground != false, local?.attribution) { events ->
+            return DictationBinder(runtime, slot, listener, listen.isExternal, local?.foreground != false, local?.attribution, local?.recording) { events ->
                 DictationSession(id, listen, events)
             }.also { it.open(model, warnings) }
         } catch (t: Throwable) {

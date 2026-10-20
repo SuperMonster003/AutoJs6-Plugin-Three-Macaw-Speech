@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.KeyguardManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.SystemClock
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +17,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.AssistantDevi
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.AssistantDevice.text
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.assistant.AssistantActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.assistant.AssistantPolicy
 import org.autojs.plugin.speech.api.SpeechContract
@@ -210,6 +212,25 @@ class AssistantDeviceTest {
         }
     }
 
+    /**
+     * Speech that starts as the sheet appears, while the model still loads (found on the phones on 2026-10-20: the first
+     * syllable was lost and a short phrase brought nothing, because the recording began only after a load of 1.5 - 2 s):
+     * the sheet records at once and keeps the audio until the dictation exists. Virtual room only, where the speech
+     * starts at a known moment; the idle models are released first, so the model must load.
+     * zh-CN: 弹层一出现就开始说话, 模型仍在加载 (2026-10-20 在手机上发现: 录音要等 1.5 - 2 秒的加载结束才开始, 第一个音节丢失, 短句没有结果): 弹层立即
+     * 录音并保留音频直到听写建立. 只在虚拟房间运行, 语音开始的时刻确定; 先释放空闲模型, 使模型必须加载.
+     */
+    @Test
+    fun speechThatStartsWhileTheModelLoadsIsKept() {
+        assumeTrue("the virtual room (-e macawRoom virtual)", AssistantDevice.virtual)
+        SpeechRuntime.get(context).engines.trim()
+        val started = SystemClock.elapsedRealtime()
+        context.startActivity(AssistantActivity.intent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        Thread.sleep(SPEECH_DELAY_MILLIS)
+        speakAndRead()
+        SpeechDevice.log("assistant early speech ${SPEECH_DELAY_MILLIS + EN_SILENCE_MILLIS} ms after the sheet, result after ${SystemClock.elapsedRealtime() - started} ms")
+    }
+
     private fun launch() {
         context.startActivity(AssistantActivity.intent(context).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         awaitListening()
@@ -240,5 +261,9 @@ class AssistantDeviceTest {
         const val PACKAGE = AssistantDevice.PLUGIN
         const val STOVE = "io.github.supermonster003.autojs6.plugin.three.stove.agent"
         const val MAX_CER = 0.15
+
+        /** The recording starts this long after the sheet; `en.wav` speaks after [EN_SILENCE_MILLIS]. zh-CN: 弹层之后多久开始播放. */
+        const val SPEECH_DELAY_MILLIS = 300L
+        const val EN_SILENCE_MILLIS = 400L
     }
 }

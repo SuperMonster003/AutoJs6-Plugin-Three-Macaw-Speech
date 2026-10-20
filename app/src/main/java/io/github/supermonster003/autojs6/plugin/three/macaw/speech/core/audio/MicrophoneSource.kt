@@ -8,6 +8,7 @@ import android.media.MediaRecorder
 import android.os.Build
 import android.os.Process
 import android.os.SystemClock
+import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import kotlin.concurrent.thread
@@ -80,6 +81,7 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
         }
         record = recorder
         running = true
+        Log.i(TAG, "Recording started")
         worker = thread(name = "MacawMicrophone", priority = Thread.MAX_PRIORITY) { capture(recorder) }
     }
 
@@ -94,6 +96,8 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
     private fun capture(recorder: AudioRecord) {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
         val buffer = ShortArray(FRAME_SAMPLES)
+        val started = SystemClock.elapsedRealtime()
+        var heard = false
         var zeroSamples = 0L
         var silenced = false
         var lastCheck = SystemClock.elapsedRealtime()
@@ -114,6 +118,10 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
                     }
                 }
                 zeroSamples = if (zero) zeroSamples + count else 0
+                if (!zero && !heard) {
+                    heard = true
+                    Log.i(TAG, "First sound ${SystemClock.elapsedRealtime() - started} ms after the recording started")
+                }
                 var nowSilenced = zeroSamples >= SILENCE_SAMPLES
                 val now = SystemClock.elapsedRealtime()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && now - lastCheck >= CHECK_MILLIS) {
@@ -141,6 +149,7 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
     companion object {
         /** 20 ms at 16 kHz (roadmap P3.1). zh-CN: 16 kHz 下 20 ms. */
         const val FRAME_SAMPLES = 320
+        private const val TAG = "MacawMicrophone"
         private const val BUFFER_BYTES = 16_000 * 2 / 2
         private const val SILENCE_SAMPLES = 16_000L
         private const val CHECK_MILLIS = 1000L
