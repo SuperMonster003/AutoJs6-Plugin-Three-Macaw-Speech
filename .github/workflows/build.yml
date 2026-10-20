@@ -154,12 +154,14 @@ jobs:
           ram-size: ${{ matrix.ram-size }}
           disk-size: ${{ matrix.disk-size }}
           avd-name: Three_Macaw_Speech_CI_${{ matrix.api-level }}_${{ matrix.page-size }}
+          # Run 39367320469: the runner's own `settings put global animator_duration_scale 0.0` right after the API 37.1
+          # boot met a restarting system_server ("Failure calling service settings: Broken pipe") and failed the job before
+          # the tests; ci_connected_tests.py turns the animations off (and hides system error dialogs) once settled.
+          disable-animations: false
           script: |
             chmod +x gradlew
             # The emulator runner executes every script line as a separate shell command, so a backslash continuation
             # would become a literal Gradle task name; keep each command on one line (3-Block Compose lesson).
-            # System error dialogs are hidden so they cannot hold focus during the suite.
-            adb shell settings put global hide_error_dialogs 1
             test "${{ matrix.page-size }}" = "4096" || test "$(adb shell getconf PAGE_SIZE | tr -d '\r')" = "${{ matrix.page-size }}"
             # The suite runs once more after an emulator failure (system_server errors or restarts, a lost device), and
             # every adb command is time limited: run 39284420735 hung on `adb logcat -d` after the API 37.1 emulator was gone.

@@ -8,12 +8,16 @@ DELETE_FAILED_INTERNAL_ERROR; in the second attempt the API 37.1 emulator was go
 right after boot and the `adb logcat -d` that followed waited for it until the job's 50 minute limit cancelled the
 run. 3-Stove Agent met the same images (its run_main_suite.py).
 
-This script builds the APKs first, waits for a settled emulator (below), runs the suite with a time limit and, when it
-fails with one of the emulator signatures below, after a system_server restart or when adb lost the device, settles
-again (bounded), keeps the first attempt's reports in app/build/reports/androidTests-attempt-1 and runs the suite once
+This script builds the APKs first (after --three-button-navigation, below), waits for a settled emulator, runs the
+suite with a time limit and, when it fails with one of the emulator signatures below, after a system_server restart or
+when adb lost the device, settles again (bounded), keeps the first attempt's reports in app/build/reports/androidTests-attempt-1 and runs the suite once
 more. A failure that repeats stays a failure; a test failure without such a cause is never retried. Every adb command
 has a timeout, so a lost emulator ends the job instead of hanging it. The logcat of each attempt goes to
 app/build/reports/androidTests/.
+
+Once settled, the script turns the animations off (what the emulator runner's disable-animations does, which build.yml
+leaves to this script: run 39367320469 failed in the runner's own `settings put` while system_server restarted) and
+hides system error dialogs, so they cannot hold focus during the suite.
 
 Settled means: the device answers, sys.boot_completed is 1, user 0 is RUNNING_UNLOCKED (API 26+) and the system_server
 start count has not changed for 10 seconds. Run 39360787126 of 17f63c7 (2026-10-20) shows why: on the API 37.1 image
@@ -111,6 +115,13 @@ def settle(stage):
     return False
 
 
+def prepare_settings():
+    """No animations and no system error dialogs; settings needs a running system_server, so only after settling."""
+    for name, value in (("window_animation_scale", "0.0"), ("transition_animation_scale", "0.0"),
+                        ("animator_duration_scale", "0.0"), ("hide_error_dialogs", "1")):
+        adb("shell", "settings", "put", "global", name, value, timeout=30)
+
+
 def three_button_navigation():
     """Enables the three-button navigation overlay, retried while system_server may be restarting."""
     began = time.time()
@@ -149,6 +160,7 @@ def run_suite(attempt, suite):
     """Runs one settled attempt; returns its status and the emulator cause of a failure, if any."""
     if not settle(f"attempt {attempt}"):
         return 1, "the emulator did not settle"
+    prepare_settings()
     before = start_count()
     status, output = gradle(suite, SUITE_TIMEOUT, f"attempt {attempt}")
     REPORTS.mkdir(parents=True, exist_ok=True)
@@ -182,11 +194,12 @@ def main(argv):
         suite.append("-Pandroid.testInstrumentationRunnerArguments.class=" + ",".join(f"{TEST_PACKAGE}.{name}" for name in classes))
         log(f"only these test classes: {', '.join(classes)}")
 
+    # Before the build, so the restarts stop while Gradle compiles.
+    if args.three_button_navigation and not three_button_navigation():
+        return 1
     status, _ = gradle(BUILD, BUILD_TIMEOUT, "build")
     if status != 0:
         return status
-    if args.three_button_navigation and not three_button_navigation():
-        return 1
 
     status, cause = run_suite(1, suite)
     if status == 0:
@@ -195,7 +208,6 @@ def main(argv):
         log("test failure without an emulator cause: no retry")
         return status
     log(f"emulator failure ({cause}); retrying once")
-    adb("shell", "settings", "put", "global", "hide_error_dialogs", "1", timeout=30)
     for source in (REPORTS, RESULTS):
         if source.exists():
             target = source.with_name(source.name + "-attempt-1")
