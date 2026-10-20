@@ -199,7 +199,13 @@ class TriggerEntryDeviceTest {
         assertEquals("D60: through the session exactly when 3-Macaw Speech is the assistant and its service is bound", expected, sheet.viaSession)
         if (canListen) {
             compose.waitUntil(30_000) { compose.text("macaw.voice.state") in AssistantDevice.listeningTexts() }
-            val during = recordings()
+            // The listening state can show a moment before the system lists the recording.
+            var during = recordings()
+            val listed = System.currentTimeMillis() + 2_000
+            while (during == 0 && System.currentTimeMillis() < listed) {
+                Thread.sleep(100)
+                during = recordings()
+            }
             SpeechDevice.log("trigger ${source.id} listening recordings=$during")
             capture(prefix, "${source.id}-listening")
             assertTrue("the sheet records while it listens", during >= 1)

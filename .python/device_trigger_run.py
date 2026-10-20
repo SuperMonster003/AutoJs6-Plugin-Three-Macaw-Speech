@@ -452,6 +452,8 @@ def avd(serial):
         # As a plain app first: the assistant role goes back to its previous holders other than 3-Macaw Speech.
         restore_assistant(serial, state)
         ok &= entries(serial, "trigger-direct", ["macawKeyguard=true"])
+        # After the instrumentation's force stop the system UI binds no tile of the stopped package; an update starts it.
+        reinstall(serial)
         ok &= tile_check(serial)
         ok &= make_assistant(serial) and entries(serial, "trigger-session", ["macawRebindAssistant=true"])
         ok &= reinstall(serial) and tile_check(serial)

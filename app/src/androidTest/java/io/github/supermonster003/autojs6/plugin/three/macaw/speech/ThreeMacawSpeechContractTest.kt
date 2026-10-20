@@ -231,9 +231,12 @@ class ThreeMacawSpeechContractTest {
         assertEquals(assistantComponents().keys, assistant.map { it.first }.toSet())
         assistant.forEach { (name, permission) -> assertEquals("$name keeps its protection", assistantComponents().getValue(name), permission) }
         // Roadmap P7.1: the trigger entries the system binds or broadcasts to.
-        val (triggers, own) = rest5.partition { it.first in triggerComponents() }
+        val (triggers, rest6) = rest5.partition { it.first in triggerComponents() }
         assertEquals(triggerComponents().keys, triggers.map { it.first }.toSet())
         triggers.forEach { (name, permission) -> assertEquals("$name keeps its protection", triggerComponents().getValue(name), permission) }
+        // The packaged speech entry for independently signed applications has a normal permission of its own.
+        val (packaged, own) = rest6.partition { it.first == "$PACKAGE.service.ThreeMacawSpeechPackagedService" }
+        assertEquals(listOf("$PACKAGE.service.ThreeMacawSpeechPackagedService" to SpeechPluginActions.PACKAGED_PERMISSION), packaged)
         screens.forEach { (name, permission) -> assertEquals("$name only shows the plugin's own screens", null, permission) }
         assertTrue("the home and settings screens and the recognition settings entry are exported", screens.map { it.first }.containsAll(screenEntries()))
         assertEquals(
