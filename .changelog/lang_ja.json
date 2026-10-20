@@ -5,6 +5,12 @@
   "changelog_label_improvement": "改善",
   "changelog_label_dependency": "依存関係",
   "$data": {
+    "v1.1.0": {
+      "released_date": "2026/10/20",
+      "feature": [
+        "パッケージ化したアプリが専用の入口から音声認識とモデル管理を利用でき, マイクの利用は各アプリ自身の録音権限に従います"
+      ]
+    },
     "v1.0.0": {
       "released_date": "2026/10/20",
       "hint": [

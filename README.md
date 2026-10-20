@@ -319,6 +319,12 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 
 ******
 
+#### v1.1.0
+
+_2026/10/20_
+
+- `新增` 打包应用通过独立入口使用语音识别与模型管理, 麦克风访问遵循各应用自身的录音授权
+
 #### v1.0.0
 
 _2026/10/20_

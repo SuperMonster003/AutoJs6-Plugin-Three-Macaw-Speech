@@ -319,6 +319,12 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 ******
 
+#### v1.1.0
+
+_2026/10/20_
+
+- `Feature` Packaged applications can use speech recognition and model management through a separate entry; microphone access follows each application's own permission
+
 #### v1.0.0
 
 _2026/10/20_

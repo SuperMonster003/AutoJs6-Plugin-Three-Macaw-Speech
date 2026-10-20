@@ -2,6 +2,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="org.autojs.permission.PLUGIN" />
+    <permission
+        android:name="org.autojs.plugin.speech.permission.RUNTIME"
+        android:protectionLevel="normal" />
 
     <!--
         Roadmap D29: the plugin records audio itself (D6). The host binding with BIND_INCLUDE_CAPABILITIES (D22) lends it
@@ -306,7 +309,21 @@
             </intent-filter>
         </service>
 
-        <!-- Model downloads, imports and catalog refreshes (roadmap P2.3); internal, started by the plugin itself. -->
+        <!-- Independently signed applications use an explicit normal permission; microphone calls also check their own RECORD_AUDIO grant. -->
+        <service
+            android:name=".service.ThreeMacawSpeechPackagedService"
+            android:exported="true"
+            android:permission="org.autojs.plugin.speech.permission.RUNTIME">
+            <meta-data
+                android:name="requiresHostVersion"
+                android:value="@string/plugin_requires_host_version" />
+            <intent-filter>
+                <action android:name="org.autojs.plugin.speech.PACKAGED" />
+                <category android:name="speech" />
+            </intent-filter>
+        </service>
+
+        <!-- Model operations stay internal to the plugin. -->
         <service
             android:name=".service.ModelOperationService"
             android:exported="false"

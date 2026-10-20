@@ -4,6 +4,12 @@
 
 ******
 
+# v1.1.0
+
+###### 2026/10/20
+
+* `Función` Las aplicaciones empaquetadas usan una entrada separada para reconocimiento y modelos, con su propio permiso de micrófono
+
 # v1.0.0
 
 ###### 2026/10/20

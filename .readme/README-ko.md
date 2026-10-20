@@ -319,6 +319,12 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 
 ******
 
+#### v1.1.0
+
+_2026/10/20_
+
+- `기능` 패키징된 앱이 별도 진입점으로 음성 인식과 모델 관리를 사용하며 마이크 접근은 각 앱의 녹음 권한을 따름
+
 #### v1.0.0
 
 _2026/10/20_

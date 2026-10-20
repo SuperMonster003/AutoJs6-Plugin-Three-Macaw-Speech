@@ -4,6 +4,12 @@
 
 ******
 
+# v1.1.0
+
+###### 2026/10/20
+
+* `Fonctionnalité` Les applications empaquetées utilisent une entrée distincte pour la reconnaissance vocale et les modèles, avec leur propre autorisation de microphone
+
 # v1.0.0
 
 ###### 2026/10/20

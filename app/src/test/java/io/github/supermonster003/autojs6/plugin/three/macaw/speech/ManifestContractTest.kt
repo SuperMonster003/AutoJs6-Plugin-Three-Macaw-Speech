@@ -6,6 +6,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFil
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles.children
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
+import org.autojs.plugin.speech.api.SpeechPluginActions
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -206,7 +207,7 @@ class ManifestContractTest {
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
             listOf(
-                ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService",
+                ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", PACKAGED, ".service.ModelOperationService", ".service.MicrophoneService",
                 ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, KEY, TILE,
             ),
             application.children("service").map { it.android("name") },
@@ -226,6 +227,18 @@ class ManifestContractTest {
             assertNull("services run in the plugin's default process", service.androidOrNull("process"))
             assertNull("no foreground service type in the skeleton", service.androidOrNull("foregroundServiceType"))
         }
+    }
+
+    @Test
+    fun `packaged speech has its own normal permission without changing the signed entry`() {
+        val packaged = service(PACKAGED)
+        assertEquals("true", packaged.android("exported"))
+        assertEquals(SpeechPluginActions.PACKAGED_PERMISSION, packaged.android("permission"))
+        assertFilter(packaged, SpeechPluginActions.PACKAGED_SPEECH, SpeechPluginActions.SERVICE_CATEGORY)
+        assertRequiresHostVersion(packaged)
+        val permission = manifest.children("permission").single { it.android("name") == SpeechPluginActions.PACKAGED_PERMISSION }
+        assertEquals("normal", permission.android("protectionLevel"))
+        assertEquals(PLUGIN_PERMISSION, service(".service.ThreeMacawSpeechService").android("permission"))
     }
 
     @Test
@@ -428,8 +441,8 @@ class ManifestContractTest {
         assertEquals(
             "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
                 "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7), the tile bound by the system UI " +
-                "only, the key trigger bound by the accessibility system only and the widget provider (P7.1)",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + KEY + WIDGET,
+                "only, the key trigger bound by the accessibility system only, the widget provider (P7.1), and the separate permissioned packaged speech entry",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + KEY + WIDGET + PACKAGED,
             unprotected.map { it.android("name") }.toSet(),
         )
         assertEquals(
@@ -456,6 +469,7 @@ class ManifestContractTest {
     }
 
     private companion object {
+        const val PACKAGED = ".service.ThreeMacawSpeechPackagedService"
         const val PLUGIN_PERMISSION = "org.autojs.permission.PLUGIN"
         const val DEFAULT_CATEGORY = "android.intent.category.DEFAULT"
 

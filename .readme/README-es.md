@@ -319,6 +319,12 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 ******
 
+#### v1.1.0
+
+_2026/10/20_
+
+- `Función` Las aplicaciones empaquetadas usan una entrada separada para reconocimiento y modelos, con su propio permiso de micrófono
+
 #### v1.0.0
 
 _2026/10/20_

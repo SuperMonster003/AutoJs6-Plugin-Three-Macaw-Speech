@@ -66,7 +66,10 @@ class ThreeMacawSpeechService : Service() {
  * (P3.3, 在调用方 Binder 线程上), 听写会话 (P3.2) 与唤醒会话 (P3.4) 基于 [SpeechRuntime], 以及合成到文件 (P4.3, [SpeechSynthesis]: 在合成线程上
  * 运行的操作, 带进度与取消).
  */
-internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.Stub() {
+internal class SpeechPluginBinder(
+    private val context: Context,
+    private val requireCallerMicrophone: () -> Unit = {},
+) : ISpeechPlugin.Stub() {
 
     private val manager: ModelManager get() = SpeechModels.get(context)
 
@@ -155,7 +158,10 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
     private fun dictation(options: Bundle?, callback: ISpeechSessionCallback?, local: LocalSession?): ISpeechSession {
         val listen = SpeechOptions.listen(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A session callback is required")
-        if (!listen.isExternal) runtime.requireMicrophone()
+        if (!listen.isExternal) {
+            requireCallerMicrophone()
+            runtime.requireMicrophone()
+        }
         val model = runtime.resolve(SpeechContract.KIND_ASR, listen.model)
         val warnings = runtime.warnings(model, listen.language, listen.hotwords)
         val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true)
@@ -191,6 +197,7 @@ internal class SpeechPluginBinder(private val context: Context) : ISpeechPlugin.
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
+        requireCallerMicrophone()
         runtime.requireMicrophone()
         val keywordModel = runtime.resolve(SpeechContract.KIND_KWS, wake.model)
         val listenModel = wake.thenListen?.let { runtime.resolve(SpeechContract.KIND_ASR, it.model) }

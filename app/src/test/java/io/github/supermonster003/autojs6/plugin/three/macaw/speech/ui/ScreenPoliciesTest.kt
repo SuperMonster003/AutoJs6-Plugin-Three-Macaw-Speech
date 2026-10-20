@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsModelVoices
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
@@ -36,9 +37,10 @@ class ScreenPoliciesTest {
             val text = String(Files.readAllBytes(RepositoryFiles.path("app/src/main/assets/doc/$file")), Charsets.UTF_8)
             val entries = ReleaseHistoryParser.parse(text)
             assertTrue(file, entries.isNotEmpty())
-            assertEquals(file, "v1.0.0", entries.first().version)
+            assertEquals(file, "v" + BuildConfig.VERSION_NAME.substringBefore('-'), entries.first().version)
             assertTrue(file, entries.first().date?.matches(Regex("\\d{4}/\\d{2}/\\d{2}")) == true)
-            assertTrue(file, entries.first().items.size >= 5 && entries.first().items.all { it.tag != null && it.text.isNotBlank() })
+            assertTrue(file, entries.all { release -> release.items.isNotEmpty() && release.items.all { it.tag != null && it.text.isNotBlank() } })
+            assertTrue(file, entries.single { it.version == "v1.0.0" }.items.size >= 5)
         }
     }
 

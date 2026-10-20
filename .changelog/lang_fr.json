@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Amélioration",
   "changelog_label_dependency": "Dépendance",
   "$data": {
+    "v1.1.0": {
+      "released_date": "2026/10/20",
+      "feature": [
+        "Les applications empaquetées utilisent une entrée distincte pour la reconnaissance vocale et les modèles, avec leur propre autorisation de microphone"
+      ]
+    },
     "v1.0.0": {
       "released_date": "2026/10/20",
       "hint": [

@@ -10,4 +10,7 @@ format=1
 common-plugin-api.file=common-plugin-api.aar
 common-plugin-api.sha256=ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a
 speech-api.file=speech-api.aar
-speech-api.sha256=0b1d9a0d26dcd68c7f59c403e88c70b4491fd64d7ec38a2edcc14ea9e6a62cb3
+speech-api.sha256=18d98c5dd386de30a02c34cd80d44ef822abc5729b6570209ba55119c2990e1f
+
+# Packaged speech entry: release AAR from host commit be1b3eee0ab9817fff5ebbdffcada282330e9313 (2026-10-20).
+# Original AIDL and required host version 5456 are unchanged.

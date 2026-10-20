@@ -910,3 +910,10 @@ Redmi: 第一次核对时 AutoJs6 为 5592, 冒烟开始前已换成 5352 (该�
 | 自编译 sherpa-onnx 以瘦身 | 1.0.0 以官方 AAR 为准, 体积预算 D31 可满足; 仅当 16 KB 对齐不合格时重新评估 (D14) |
 | 宿主 `tts` 模块插件 backend | 系统引擎路线已覆盖, 避免宿主重复实现 (D3) |
 | 标点恢复, 说话人识别, 语种识别, 音频标签 | 上游有模型, 但 1.0.0 先把四项核心做稳 (P7) |
+
+
+## Runtime packaged speech entry (2026-10-20)
+
+The Node/Bun/Worker speech batch exposed a binding failure in independently signed generated applications. A separate service, org.autojs.plugin.speech.PACKAGED, requires the normal permission org.autojs.plugin.speech.permission.RUNTIME; the original host service keeps its signature permission. Both share the same speech implementation and plugin model store. Microphone and wake calls through the packaged entry additionally require the calling application UID to hold RECORD_AUDIO. Model/synthesis operation cancellation is restricted to the creating UID, including caller death and late creation. The speech-api AAR is staged from host commit be1b3eee0ab9817fff5ebbdffcada282330e9313; AIDL version and transaction order are unchanged.
+
+JVM ownership and Manifest cases cover the new boundary. Device and generated-application validation is in progress; final evidence is recorded in the host docs/dev/runtime-speech-2026-10-20.md. No new native payload or public release is claimed.

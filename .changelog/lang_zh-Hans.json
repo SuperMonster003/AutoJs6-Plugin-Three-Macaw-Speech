@@ -5,6 +5,12 @@
   "changelog_label_improvement": "优化",
   "changelog_label_dependency": "依赖",
   "$data": {
+    "v1.1.0": {
+      "released_date": "2026/10/20",
+      "feature": [
+        "打包应用通过独立入口使用语音识别与模型管理, 麦克风访问遵循各应用自身的录音授权"
+      ]
+    },
     "v1.0.0": {
       "released_date": "2026/10/20",
       "hint": [

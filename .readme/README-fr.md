@@ -319,6 +319,12 @@ Les plans, décisions de conception et l'avancement sont suivis sous forme de li
 
 ******
 
+#### v1.1.0
+
+_2026/10/20_
+
+- `Fonctionnalité` Les applications empaquetées utilisent une entrée distincte pour la reconnaissance vocale et les modèles, avec leur propre autorisation de microphone
+
 #### v1.0.0
 
 _2026/10/20_

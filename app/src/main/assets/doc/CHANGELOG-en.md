@@ -4,6 +4,12 @@
 
 ******
 
+# v1.1.0
+
+###### 2026/10/20
+
+* `Feature` Packaged applications can use speech recognition and model management through a separate entry; microphone access follows each application's own permission
+
 # v1.0.0
 
 ###### 2026/10/20

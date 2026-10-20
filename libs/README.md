@@ -13,12 +13,12 @@ process and needs the AIDL stubs and constants at run time.
 | File | Host module | Content | SHA-256 |
 | --- | --- | --- | --- |
 | `common-plugin-api.aar` | `plugin-api/common-plugin-api` | `PluginInfo`, `IPluginInfoProvider`, `PluginActions`, `PluginCapabilityKeys`, `AutoJs6HostSettingsContract` | `ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a` |
-| `speech-api.aar` | `plugin-api/speech-api` | `ISpeechPlugin`, `ISpeechSession`, the session, wake and progress callbacks, `SpeechPluginActions`, `SpeechPluginIds`, `SpeechContract`, `SpeechCapabilityKeys`, `SpeechLimits`, `SpeechOptionKeys`, `SpeechResultKeys`, `SpeechModelKeys`, `SpeechErrorCodes` | `0b1d9a0d26dcd68c7f59c403e88c70b4491fd64d7ec38a2edcc14ea9e6a62cb3` |
+| `speech-api.aar` | `plugin-api/speech-api` | `ISpeechPlugin`, `ISpeechSession`, the session, wake and progress callbacks, `SpeechPluginActions`, `SpeechPluginIds`, `SpeechContract`, `SpeechCapabilityKeys`, `SpeechLimits`, `SpeechOptionKeys`, `SpeechResultKeys`, `SpeechModelKeys`, `SpeechErrorCodes` | `18d98c5dd386de30a02c34cd80d44ef822abc5729b6570209ba55119c2990e1f` |
 
 Provenance (2026-10-16): `common-plugin-api.aar` was assembled with `:plugin-api:common-plugin-api:assembleRelease`
 on the host snapshot `6c151c900e` (6.8.0, versionCode 5352). The module last changed at host commit `aa8ebaf72e`
 and is unchanged at the roadmap baseline `33a1514b74`, so this is the byte-identical artifact that Batch Rename
-stages; rebuilt next to `speech-api` it is still byte-identical. `speech-api.aar` (contract version 1, roadmap
+stages; rebuilt next to `speech-api` it is still byte-identical. The previous `speech-api.aar` (contract version 1, roadmap
 P1.1 / D21, introduced at host commit `1d6280bf8`) was assembled with `:plugin-api:speech-api:assembleRelease` on
 2026-10-20 from the sources of host commit `6c08e53e2` (6.8.0), which raises
 `SpeechPluginIds.REQUIRED_HOST_VERSION_CODE` from the P1.3 temporary value 5451 to 5456, the first host build with
@@ -46,3 +46,7 @@ from the AAR and `--check` keeps it in sync.
 
 To update: download the new release asset, record its tag commit, size and SHA-256 in the lock, update
 `THIRD_PARTY_NOTICES.md`, run `py .python/verify_native_alignment.py` and the device tests on every ABI.
+
+## Packaged speech entry (2026-10-20)
+
+The current speech-api.aar is rebuilt from host commit be1b3eee0ab9817fff5ebbdffcada282330e9313 using :plugin-api:speech-api:assembleRelease. SpeechPluginActions adds the separate packaged service action and normal permission; the original signed service, AIDL transaction order, contract version 1 and minimum host build 5456 remain unchanged. This replaces the earlier 0b1d9a0d26dcd68c7f59c403e88c70b4491fd64d7ec38a2edcc14ea9e6a62cb3 artifact.
