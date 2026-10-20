@@ -23,7 +23,6 @@ The debug APK and the test APK are installed with `adb install -r` first (data a
 preferences are restored afterwards. Nothing on the device is tapped: permission dialogs stay with the maintainer.
 """
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -32,6 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from device_speech_run import PACKAGE, ROOT, adb, install, label, run_test  # noqa: E402
+import device_host_scripts as hs  # noqa: E402
 
 VARIANTS = [
     # (prefix, language, night, font scale)
@@ -80,20 +80,13 @@ def pull_screens(serial, out, ok):
 
 def tryout(serial, out, test="TryoutDeviceTest", arguments=("macawTryout=true", "macawPrefix=tryout")):
     adb(serial, "shell", "rm", "-rf", f"/sdcard/Android/data/{PACKAGE}/files/screens", check=False)
-    state = adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--get", check=False)
-    match = re.search(r"volume is (\d+) in range \[(\d+)\.\.(\d+)\]", state)
-    original = None
-    if match:
-        original, maximum = int(match.group(1)), int(match.group(3))
-        wanted = max(1, maximum * int(os.environ.get("MACAW_VOLUME_PERCENT", "70")) // 100)
-        adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(max(original, wanted)), check=False)
-        print(f"{label(serial)}: music volume {original}/{maximum} -> {max(original, wanted)}")
-    adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
-    try:
+    # device_host_scripts.Volume also covers HyperOS / MIUI, which ignore `cmd media_session volume --set` from the shell
+    # and keep a muted music stream muted (roadmap P6.3 smoke run).
+    os.environ.setdefault("MACAW_VOLUME_PERCENT", "70")
+    with hs.Volume(serial) as volume:
+        print(f"{label(serial)}: music {volume.describe()}")
+        adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
         ok = run_test(serial, test, list(arguments))
-    finally:
-        if original is not None:
-            adb(serial, "shell", "cmd", "media_session", "volume", "--stream", "3", "--set", str(original), check=False)
     return pull_screens(serial, out, ok)
 
 
