@@ -35,10 +35,15 @@ import kotlin.concurrent.withLock
 
 /**
  * [DictationEvents] delivered to an `ISpeechSessionCallback` (oneway). A dead callback (the host process died) cancels
- * the session through [onDead].
- * zh-CN: 投递到 `ISpeechSessionCallback` (oneway) 的 [DictationEvents]. 回调已失效 (宿主进程死亡) 时经 [onDead] 取消会话.
+ * the session through [onDead]; [beforeEnd] runs before the `onEnd` of the session itself (not of a wake round) leaves.
+ * zh-CN: 投递到 `ISpeechSessionCallback` (oneway) 的 [DictationEvents]. 回调已失效 (宿主进程死亡) 时经 [onDead] 取消会话; [beforeEnd]
+ * 在会话本身 (而非唤醒轮次) 的 `onEnd` 发出之前运行.
  */
-internal class CallbackDictationEvents(private val callback: ISpeechSessionCallback, private val onDead: () -> Unit) : DictationEvents {
+internal class CallbackDictationEvents(
+    private val callback: ISpeechSessionCallback,
+    private val beforeEnd: () -> Unit = {},
+    private val onDead: () -> Unit,
+) : DictationEvents {
     override fun ready(sessionId: String, modelId: String, round: Int?) = send { callback.onReady(SpeechBundles.ready(sessionId, modelId, round)) }
     override fun partial(text: String, segmentIndex: Int) = send { callback.onPartial(SpeechBundles.partial(text, segmentIndex)) }
     override fun final(utterance: Utterance) = send { callback.onFinal(SpeechBundles.utterance(utterance)) }
@@ -46,7 +51,10 @@ internal class CallbackDictationEvents(private val callback: ISpeechSessionCallb
     override fun voiceActivity(active: Boolean) = send { callback.onVoiceActivity(SpeechBundles.activity(active)) }
     override fun warning(code: String, message: String) = send { callback.onWarning(SpeechBundles.problem(code, message)) }
     override fun error(code: String, message: String) = send { callback.onError(SpeechBundles.problem(code, message)) }
-    override fun end(reason: String, text: String, round: Int?) = send { callback.onEnd(SpeechBundles.end(reason, text, round)) }
+    override fun end(reason: String, text: String, round: Int?) {
+        if (round == null) beforeEnd()
+        send { callback.onEnd(SpeechBundles.end(reason, text, round)) }
+    }
 
     private inline fun send(block: () -> Unit) {
         try {
@@ -57,13 +65,23 @@ internal class CallbackDictationEvents(private val callback: ISpeechSessionCallb
     }
 }
 
-/** [WakeEvents] delivered to an `ISpeechWakeCallback`. zh-CN: 投递到 `ISpeechWakeCallback` 的 [WakeEvents]. */
-internal class CallbackWakeEvents(private val callback: ISpeechWakeCallback, private val onDead: () -> Unit) : WakeEvents {
+/**
+ * [WakeEvents] delivered to an `ISpeechWakeCallback`; [beforeEnd] runs before `onEnd` leaves.
+ * zh-CN: 投递到 `ISpeechWakeCallback` 的 [WakeEvents]; [beforeEnd] 在 `onEnd` 发出之前运行.
+ */
+internal class CallbackWakeEvents(
+    private val callback: ISpeechWakeCallback,
+    private val beforeEnd: () -> Unit = {},
+    private val onDead: () -> Unit,
+) : WakeEvents {
     override fun ready(sessionId: String, modelId: String) = send { callback.onReady(SpeechBundles.ready(sessionId, modelId, null)) }
     override fun wake(keyword: String, score: Float, timestampMillis: Long, round: Int?) = send { callback.onWake(SpeechBundles.wake(keyword, score, timestampMillis, round)) }
     override fun warning(code: String, message: String) = send { callback.onWarning(SpeechBundles.problem(code, message)) }
     override fun error(code: String, message: String) = send { callback.onError(SpeechBundles.problem(code, message)) }
-    override fun end(reason: String) = send { callback.onEnd(SpeechBundles.end(reason, null, null)) }
+    override fun end(reason: String) {
+        beforeEnd()
+        send { callback.onEnd(SpeechBundles.end(reason, null, null)) }
+    }
 
     private inline fun send(block: () -> Unit) {
         try {
@@ -102,6 +120,7 @@ internal abstract class SessionBinder(
 
     protected val leases = ArrayList<EngineCache.Lease<out Closeable>>()
     private val cleaned = AtomicBoolean(false)
+    private val freed = AtomicBoolean(false)
     private val pending = AtomicLong(0)
     private val pendingLock = ReentrantLock()
     private val drained = pendingLock.newCondition()
@@ -254,13 +273,28 @@ internal abstract class SessionBinder(
         }
     }
 
-    /** Releases everything the session held; runs once, on the ASR thread. zh-CN: 释放会话持有的一切; 只在 ASR 线程上运行一次. */
-    protected fun cleanup() {
-        if (!cleaned.compareAndSet(false, true)) return
+    /**
+     * Stops recording and frees the microphone foreground service and the admission slot (ASR thread, once). It runs
+     * before the terminal `onEnd` leaves, so a client that opens its next session as soon as it sees the end finds the
+     * microphone free: a script's `speech.wake` 43 ms after a `speech.listen` ended failed with `SESSION_BUSY` on a Sony
+     * XQ-AT72 (roadmap P6.3 smoke run) when this happened only in [cleanup]. The engine leases stay until [cleanup]: the
+     * session still closes its recognizer stream after the end.
+     * zh-CN: 停止录音并释放麦克风前台服务与准入位置 (ASR 线程, 一次). 它在终结的 `onEnd` 发出之前运行, 客户端一看到结束就打开下一个会话时麦克风已空闲:
+     * 只在 [cleanup] 中释放时, Sony XQ-AT72 上脚本在 `speech.listen` 结束 43 ms 后打开的 `speech.wake` 以 `SESSION_BUSY` 失败 (路线图 P6.3
+     * 冒烟). 引擎租约留到 [cleanup]: 会话在结束之后仍要关闭识别流.
+     */
+    protected fun freeMicrophone() {
+        if (!freed.compareAndSet(false, true)) return
         microphone?.stop()
         microphone = null
         if (foreground) MicrophoneService.release(this)
         runtime.sessions.release(slot)
+    }
+
+    /** Releases everything the session held; runs once, on the ASR thread. zh-CN: 释放会话持有的一切; 只在 ASR 线程上运行一次. */
+    protected fun cleanup() {
+        if (!cleaned.compareAndSet(false, true)) return
+        freeMicrophone()
         callbacks.forEach { runCatching { it.unlinkToDeath(this, 0) } }
         leases.forEach { runCatching { it.close() } }
         leases.clear()
@@ -305,7 +339,7 @@ internal class DictationBinder(
     makeSession: (DictationEvents) -> DictationSession,
 ) : SessionBinder(runtime, slot, listOf(callback.asBinder()), attribution) {
 
-    private val session: DictationSession = makeSession(CallbackDictationEvents(callback) { binderDied() })
+    private val session: DictationSession = makeSession(CallbackDictationEvents(callback, beforeEnd = { freeMicrophone() }) { binderDied() })
 
     override val isEnded: Boolean get() = session.isEnded
 
@@ -361,7 +395,7 @@ internal class WakeBinder(
 ) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())), SessionTable.Yielding {
 
     private val session: WakeSession = makeSession(
-        CallbackWakeEvents(callback) { binderDied() },
+        CallbackWakeEvents(callback, beforeEnd = { freeMicrophone() }) { binderDied() },
         listenCallback?.let { listen -> CallbackDictationEvents(listen) { binderDied() } },
     )
 
