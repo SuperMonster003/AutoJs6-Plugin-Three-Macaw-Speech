@@ -97,6 +97,12 @@ internal class AssistantSession(context: Context) : VoiceInteractionSession(cont
 
     override fun onShow(args: Bundle?, showFlags: Int) {
         super.onShow(args, showFlags)
+        if (AssistantSessions.directSheetOpen) {
+            // A trigger entry already opened the sheet itself because this session came late (roadmap D60): one sheet only.
+            Log.i(TAG, "Assistant session shown after the sheet opened directly; hiding it")
+            hide()
+            return
+        }
         AssistantSessions.shown(this)
         Log.i(TAG, "Assistant session shown (flags $showFlags)")
         try {
@@ -141,8 +147,16 @@ internal object AssistantSessions {
     private var session: WeakReference<VoiceInteractionSession>? = null
     private var sheet: WeakReference<AssistantActivity>? = null
 
+    /** How many sessions were shown, so a trigger entry can tell whether its request was answered. zh-CN: 已显示的会话数. */
+    var shownCount = 0
+        private set
+
+    /** A sheet is open that no session started (a trigger entry's direct sheet). zh-CN: 有一个不是由会话启动的弹层 (触发式入口直接打开). */
+    val directSheetOpen: Boolean get() = sheet?.get()?.let { !it.viaSession && !it.isFinishing } == true
+
     fun shown(shown: VoiceInteractionSession) {
         session = WeakReference(shown)
+        shownCount++
     }
 
     fun hidden(hidden: VoiceInteractionSession) {

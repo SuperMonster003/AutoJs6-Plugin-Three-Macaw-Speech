@@ -253,6 +253,8 @@
     <string name="settings_voices">Default voice per language</string>
     <string name="settings_voices_message">The voice the system engine uses when an app asks for a language without naming a voice</string>
     <string name="settings_widget">Home screen widget and shortcut</string>
+    <string name="settings_widget_pin_note">Tap Place on home screen, then confirm on the home screen. If no confirmation appears, add the widget by hand:</string>
+    <string name="settings_widget_place">Place on home screen</string>
     <string name="settings_widget_steps">1. Long press an empty spot of the home screen and choose Widgets.\n2. Find Tap to speak of 3-Macaw Speech and drag it to the home screen.\nA long press on the app icon also shows the Voice command shortcut, which can be dragged to the home screen on its own.</string>
     <string name="settings_widget_steps_title">Add the widget</string>
     <string name="settings_widget_summary">Tap to put the Tap to speak widget on the home screen. You can also long press the app icon and choose Voice command</string>

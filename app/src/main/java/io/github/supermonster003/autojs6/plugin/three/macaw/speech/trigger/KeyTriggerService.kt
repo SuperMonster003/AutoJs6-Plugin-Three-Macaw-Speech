@@ -86,7 +86,11 @@ class KeyTriggerService : AccessibilityService() {
     private fun apply(decision: KeyDecision) {
         handler.removeCallbacks(tick)
         decision.timerAt?.let { handler.postAtTime(tick, it) }
-        repeat(decision.adjust) { adjustVolume() }
+        if (decision.adjust > 0) {
+            // A consumed press that did not trigger: the volume step it would have made (for device runs and reports).
+            Log.i(TAG, "Key trigger ${trigger.gesture.id}: volume step")
+            repeat(decision.adjust) { adjustVolume() }
+        }
         if (decision.trigger) {
             Log.i(TAG, "Key trigger ${trigger.gesture.id}")
             runCatching { AssistantEntry.open(this, TriggerSource.KEY) }.onFailure { Log.w(TAG, "The key trigger could not open the sheet: $it") }

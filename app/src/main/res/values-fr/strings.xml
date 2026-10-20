@@ -253,6 +253,8 @@
     <string name="settings_voices">Voix par défaut par langue</string>
     <string name="settings_voices_message">La voix utilisée par le moteur du système quand une application demande une langue sans préciser de voix</string>
     <string name="settings_widget">Widget et raccourci de l\'écran d\'accueil</string>
+    <string name="settings_widget_pin_note">Appuyez sur Placer sur l\'écran d\'accueil, puis confirmez sur l\'écran d\'accueil. Si aucune confirmation n\'apparaît, ajoutez le widget à la main:</string>
+    <string name="settings_widget_place">Placer sur l\'écran d\'accueil</string>
     <string name="settings_widget_steps">1. Appuyez longuement sur un espace vide de l\'écran d\'accueil et choisissez Widgets.\n2. Trouvez Appuyer pour parler de 3-Macaw Speech et faites-le glisser sur l\'écran d\'accueil.\nUn appui long sur l\'icône de l\'application affiche aussi le raccourci Commande vocale, que vous pouvez faire glisser seul sur l\'écran d\'accueil.</string>
     <string name="settings_widget_steps_title">Ajouter le widget</string>
     <string name="settings_widget_summary">Appuyez pour placer le widget Appuyer pour parler sur l\'écran d\'accueil. Vous pouvez aussi appuyer longuement sur l\'icône de l\'application et choisir Commande vocale</string>

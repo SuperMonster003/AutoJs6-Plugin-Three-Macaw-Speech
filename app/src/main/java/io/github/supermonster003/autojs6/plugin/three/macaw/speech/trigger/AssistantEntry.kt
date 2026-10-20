@@ -3,7 +3,10 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.AssistantSessions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.assistant.AssistantActivity
 
@@ -83,18 +86,43 @@ internal object AssistantEntry {
     /** The entry that opened the sheet, in the session arguments and the sheet intent. zh-CN: 打开弹层的入口, 用于会话参数与弹层 Intent. */
     const val EXTRA_SOURCE = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.extra.TRIGGER_SOURCE"
 
+    /**
+     * How long a session request may take before the sheet opens directly. ColorOS and HyperOS (Android 15) silently drop
+     * a request made while the keyguard goes away, as after a tile tapped on the lock screen; a request normally shows
+     * within 50 ms.
+     * zh-CN: 会话请求在直接打开弹层之前可等待的时长. ColorOS 与 HyperOS (Android 15) 会静默丢弃锁屏正在退出时发出的请求 (例如在锁屏上点磁贴之后);
+     * 请求通常在 50 毫秒内显示.
+     */
+    private const val SESSION_WAIT_MILLIS = 1_200L
+
+    private val main = Handler(Looper.getMainLooper())
+
+    /** Main thread. zh-CN: 主线程. */
     fun open(context: Context, source: TriggerSource): TriggerRoute {
         val service = MacawVoiceInteractionService.running
         if (TriggerPolicy.route(MacawVoiceInteractionService.isActive(context), service != null) == TriggerRoute.SESSION && service != null) {
+            val requested = AssistantSessions.shownCount
             val shown = runCatching { service.showSession(Bundle().apply { putString(EXTRA_SOURCE, source.id) }, 0) }
             if (shown.isSuccess) {
                 Log.i(TAG, "Trigger ${source.id}: through the assistant session")
+                // The bound assistant service lets the plugin start the sheet from the background if the session never shows.
+                val application = context.applicationContext
+                main.postDelayed({
+                    if (AssistantSessions.shownCount == requested && !AssistantSessions.directSheetOpen) {
+                        Log.w(TAG, "Trigger ${source.id}: the assistant session did not show, opening the sheet")
+                        runCatching { openSheet(application, source) }.onFailure { Log.w(TAG, "The sheet could not open: $it") }
+                    }
+                }, SESSION_WAIT_MILLIS)
                 return TriggerRoute.SESSION
             }
             Log.w(TAG, "Trigger ${source.id}: the assistant session did not show (${shown.exceptionOrNull()}), opening the sheet")
         }
+        openSheet(context, source)
+        return TriggerRoute.SHEET
+    }
+
+    private fun openSheet(context: Context, source: TriggerSource) {
         context.startActivity(AssistantActivity.intent(context, source).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP))
         Log.i(TAG, "Trigger ${source.id}: the sheet directly")
-        return TriggerRoute.SHEET
     }
 }

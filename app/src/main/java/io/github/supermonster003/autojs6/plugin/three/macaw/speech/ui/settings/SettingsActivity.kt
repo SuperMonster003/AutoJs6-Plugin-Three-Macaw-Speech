@@ -349,7 +349,7 @@ class SettingsActivity : StandaloneActivity() {
                 Hairline()
                 // Roadmap D63: the launcher places the widget after its own confirmation; the shortcut needs no setup.
                 SettingsRow(stringResource(R.string.settings_widget), summary = stringResource(R.string.settings_widget_summary), icon = R.drawable.ic_widgets_24,
-                    onClick = { if (!VoiceWidgetProvider.requestPin(this@SettingsActivity)) dialog = Dialog.WIDGET_STEPS },
+                    onClick = { dialog = Dialog.WIDGET_STEPS },
                     modifier = Modifier.testTag("macaw.settings.widget"))
                 Text(
                     stringResource(R.string.settings_triggers_note),
@@ -570,14 +570,21 @@ class SettingsActivity : StandaloneActivity() {
                 dismissText = null,
                 tag = "macaw.dialog.tileSteps",
             )
-            Dialog.WIDGET_STEPS -> MessageDialog(
-                title = stringResource(R.string.settings_widget_steps_title),
-                message = stringResource(R.string.settings_widget_steps),
-                onDismissRequest = close,
-                onConfirm = close,
-                dismissText = null,
-                tag = "macaw.dialog.widgetSteps",
-            )
+            Dialog.WIDGET_STEPS -> {
+                // Roadmap D63: the steps always show, because some launchers (ColorOS, HyperOS tablets) accept a pin request
+                // without showing anything; where the launcher supports it, a button asks it to place the widget as well.
+                val pinnable = remember { VoiceWidgetProvider.canRequestPin(this) }
+                val steps = stringResource(R.string.settings_widget_steps)
+                MessageDialog(
+                    title = stringResource(R.string.settings_widget_steps_title),
+                    message = if (pinnable) stringResource(R.string.settings_widget_pin_note) + PARAGRAPH + steps else steps,
+                    onDismissRequest = close,
+                    onConfirm = { close(); if (pinnable) VoiceWidgetProvider.requestPin(this) },
+                    confirmText = stringResource(if (pinnable) R.string.settings_widget_place else R.string.ui_dialog_confirm),
+                    dismissText = if (pinnable) stringResource(R.string.ui_dialog_cancel) else null,
+                    tag = "macaw.dialog.widgetSteps",
+                )
+            }
             Dialog.KEY_SERVICE -> MessageDialog(
                 title = stringResource(R.string.settings_key),
                 message = stringResource(R.string.settings_key_message),
@@ -852,6 +859,9 @@ class SettingsActivity : StandaloneActivity() {
          * zh-CN: 磁贴 (长按) 与按键服务的设置入口 (路线图 P7.1, Manifest 别名).
          */
         const val TRIGGER_ALIAS = ".ui.settings.TriggerSettingsAlias"
+
+        /** A blank line between two paragraphs of a dialog message. zh-CN: 对话框消息两段之间的空行. */
+        val PARAGRAPH: String = System.lineSeparator().repeat(2)
 
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawSettings").apply { isDaemon = true } }
         val main = Handler(Looper.getMainLooper())

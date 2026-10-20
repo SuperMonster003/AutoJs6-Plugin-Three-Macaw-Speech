@@ -253,6 +253,8 @@
     <string name="settings_voices">الصوت الافتراضي لكل لغة</string>
     <string name="settings_voices_message">الصوت الذي يستخدمه محرك النظام عندما يطلب تطبيق لغة دون تحديد صوت</string>
     <string name="settings_widget">أداة الشاشة الرئيسية والاختصار</string>
+    <string name="settings_widget_pin_note">انقر على الوضع على الشاشة الرئيسية ثم أكد على الشاشة الرئيسية. إذا لم يظهر أي تأكيد, أضف الأداة يدويا:</string>
+    <string name="settings_widget_place">الوضع على الشاشة الرئيسية</string>
     <string name="settings_widget_steps">1. اضغط مطولا على مكان فارغ في الشاشة الرئيسية واختر الأدوات.\n2. ابحث عن انقر للتحدث من ⁨3-Macaw Speech⁩ واسحبها إلى الشاشة الرئيسية.\nيعرض الضغط المطول على أيقونة التطبيق أيضا اختصار أمر صوتي, ويمكن سحبه وحده إلى الشاشة الرئيسية.</string>
     <string name="settings_widget_steps_title">إضافة الأداة</string>
     <string name="settings_widget_summary">انقر لوضع أداة انقر للتحدث على الشاشة الرئيسية. يمكنك أيضا الضغط مطولا على أيقونة التطبيق واختيار أمر صوتي</string>

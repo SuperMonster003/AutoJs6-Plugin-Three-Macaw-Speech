@@ -253,6 +253,8 @@
     <string name="settings_voices">언어별 기본 음성</string>
     <string name="settings_voices_message">앱이 음성을 지정하지 않고 언어만 요청할 때 시스템 엔진이 사용하는 음성</string>
     <string name="settings_widget">홈 화면 위젯과 바로가기</string>
+    <string name="settings_widget_pin_note">홈 화면에 놓기를 탭한 뒤 홈 화면에서 확인하세요. 확인 창이 나타나지 않으면 직접 추가할 수 있습니다:</string>
+    <string name="settings_widget_place">홈 화면에 놓기</string>
     <string name="settings_widget_steps">1. 홈 화면의 빈 곳을 길게 누르고 위젯을 선택합니다.\n2. 3-Macaw Speech의 탭하여 말하기를 찾아 홈 화면으로 끌어다 놓습니다.\n앱 아이콘을 길게 누르면 음성 명령 바로가기도 보이며, 따로 홈 화면에 끌어다 놓을 수 있습니다.</string>
     <string name="settings_widget_steps_title">위젯 추가</string>
     <string name="settings_widget_summary">탭하여 말하기 위젯을 홈 화면에 놓으려면 여기를 탭하세요. 앱 아이콘을 길게 누르고 음성 명령을 선택해도 됩니다</string>

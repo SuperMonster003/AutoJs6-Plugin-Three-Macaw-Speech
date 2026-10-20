@@ -253,6 +253,8 @@
     <string name="settings_voices">Voz predeterminada por idioma</string>
     <string name="settings_voices_message">La voz que usa el motor del sistema cuando una aplicación pide un idioma sin indicar una voz</string>
     <string name="settings_widget">Widget y acceso directo de la pantalla de inicio</string>
+    <string name="settings_widget_pin_note">Toca Poner en la pantalla de inicio y confirma en la pantalla de inicio. Si no aparece ninguna confirmación, añade el widget a mano:</string>
+    <string name="settings_widget_place">Poner en la pantalla de inicio</string>
     <string name="settings_widget_steps">1. Mantén pulsado un espacio vacío de la pantalla de inicio y elige Widgets.\n2. Busca Toca para hablar de 3-Macaw Speech y arrástralo a la pantalla de inicio.\nAl mantener pulsado el icono de la app también aparece el acceso directo Comando de voz, que puedes arrastrar por separado a la pantalla de inicio.</string>
     <string name="settings_widget_steps_title">Añadir el widget</string>
     <string name="settings_widget_summary">Toca para poner el widget Toca para hablar en la pantalla de inicio. También puedes mantener pulsado el icono de la app y elegir Comando de voz</string>

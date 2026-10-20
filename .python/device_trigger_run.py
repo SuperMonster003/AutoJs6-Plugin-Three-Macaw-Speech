@@ -26,8 +26,14 @@ never a transcript.
                                                         opens the sheet (route and time from the log), a short press makes
                                                         one volume step and opens nothing, the other volume key goes to the
                                                         system, nothing opens with the screen off; keys go through the
-                                                        kernel (`sendevent`), the sheet closes with BACK, the music volume
-                                                        is restored
+                                                        kernel (`sendevent`, which needs root: emulators), the sheet closes
+                                                        with BACK, every volume is restored
+    py .python/device_trigger_run.py watch <serial> [seconds]
+                                                        phones (their SELinux policy keeps the shell from writing input
+                                                        devices, so `keys` needs a root emulator): the maintainer presses
+                                                        the real keys while this prints the plugin's log (trigger, route,
+                                                        volume step of a consumed press), volume and screen changes with
+                                                        times; volumes are restored at the end
     py .python/device_trigger_run.py overlay <serial>  the floating microphone and the floating ball of 3-Stove Agent on
                                                         screen at the same time (window list and a screenshot)
 
@@ -86,17 +92,25 @@ def entries(serial, prefix, extra=()):
 
 # Keys -----------------------------------------------------------------------------------------------------------------
 
-def key_device(serial):
-    """The input device with the volume keys: the built-in keys (gpio-keys and the like), never a headset jack."""
+def key_devices(serial):
+    """The built-in input device of each volume key ({code: (path, name)}): phones often put volume down and volume up on
+    different devices (gpio-keys, qpnp_pon, pmic_resin); a headset jack, a keyboard cover or a consumer control device is
+    never used."""
     blocks = re.split(r"(?m)^add device \d+: ", adb(serial, "shell", "getevent", "-pl", check=False))
-    candidates = []
-    for block in blocks:
-        path = block.split("\n", 1)[0].strip()
-        name = re.search(r'name:\s+"([^"]*)"', block)
-        if path.startswith("/dev/input/") and "KEY_VOLUMEDOWN" in block and "KEY_VOLUMEUP" in block:
-            candidates.append((path, name.group(1) if name else ""))
-    candidates.sort(key=lambda item: ("jack" in item[1].lower() or "headset" in item[1].lower(), item[0]))
-    return candidates[0] if candidates else (None, None)
+    found = {}
+    for code, label_name in ((KEY_VOLUME_DOWN, "KEY_VOLUMEDOWN"), (KEY_VOLUME_UP, "KEY_VOLUMEUP")):
+        candidates = []
+        for block in blocks:
+            path = block.split("\n", 1)[0].strip()
+            name = re.search(r'name:\s+"([^"]*)"', block)
+            name = name.group(1) if name else ""
+            if path.startswith("/dev/input/") and re.search(rf"\b{label_name}\b", block):
+                external = any(word in name.lower() for word in ("jack", "headset", "keyboard", "consumer"))
+                candidates.append((external, path, name))
+        candidates.sort()
+        if candidates and not candidates[0][0]:
+            found[code] = (candidates[0][1], candidates[0][2])
+    return found
 
 
 def press(serial, device, code, hold, times=1, gap=0.12):
@@ -186,12 +200,14 @@ def describe(before, after):
 def key_checks(serial, gesture):
     """The checks of one gesture with the key trigger on; answers ok. Ring and music start in the middle of their range
     (so that a step never reaches silent or vibrate) and every stream is restored afterwards."""
-    device, name = key_device(serial)
-    if not device:
-        print(f"{label(serial)}: keys FAIL: no input device with the volume keys")
+    devices = key_devices(serial)
+    if len(devices) < 2:
+        print(f"{label(serial)}: keys FAIL: no built-in input device for both volume keys ({devices})")
         return False
     key = KEY_VOLUME_UP if gesture == "longVolumeUp" else KEY_VOLUME_DOWN
     other = KEY_VOLUME_DOWN if key == KEY_VOLUME_UP else KEY_VOLUME_UP
+    device, name = devices[key]
+    other_device = devices[other][0]
     saved = volumes(serial)
     muted = music_muted(serial)
     ok = True
@@ -224,7 +240,7 @@ def key_checks(serial, gesture):
         time.sleep(1.0)
         # 2. A short press opens nothing and makes the one volume step of the key. The system shows the volume panel on
         # a first press without a step on some devices, so the other key (which goes to the system) shows it first.
-        press(serial, device, other, 0.1)
+        press(serial, other_device, other, 0.1)
         time.sleep(0.6)
         since = log_since(serial)
         before = volumes(serial)
@@ -240,7 +256,7 @@ def key_checks(serial, gesture):
         # 3. The other volume key goes to the system (the panel is still on screen).
         since = log_since(serial)
         before = volumes(serial)
-        press(serial, device, other, 0.12)
+        press(serial, other_device, other, 0.12)
         time.sleep(1.0)
         after = volumes(serial)
         opened = sheet_resumed(serial) or "Sheet opened" in trigger_log(serial, since)
@@ -325,6 +341,68 @@ def keys(serial, gesture="longVolumeDown"):
         print(f"{label(serial)}: keys FAIL: the maintainer turns 3-Macaw Speech key trigger on in the accessibility settings first")
         return False
     return key_checks(serial, gesture)
+
+
+def top_activity(serial):
+    """The resumed activity (component only), to see what a headset key or a gesture opened."""
+    for line in adb(serial, "shell", "dumpsys", "activity", "activities", check=False).splitlines():
+        if "ResumedActivity" in line:
+            match = re.search(r"\{\S+ \S+ (\S+)", line)
+            return match.group(1) if match else line.strip()
+    return None
+
+
+def screen_on(serial):
+    return "mWakefulness=Awake" in adb(serial, "shell", "dumpsys", "power", check=False)
+
+
+def watch(serial, seconds=180):
+    """Phones, whose SELinux policy keeps the shell from writing input devices: the maintainer presses the real keys
+    while this prints, with times, what the plugin logged (trigger, route, volume step of a consumed press), every volume
+    change and every screen change; the volumes are restored at the end. Prints the gesture the service reported."""
+    enabled, _ = key_service_enabled(serial)
+    bound = "3-Macaw Speech key trigger" in adb(serial, "shell", "dumpsys", "accessibility", check=False)
+    _, values = assistant_state(serial)
+    assistant = values.get("voice_interaction_service", "").startswith(PACKAGE)
+    print(f"{label(serial)}: watch {seconds} s (key trigger {'on' if enabled else 'OFF'}, {'bound' if bound else 'NOT bound'}; "
+          f"{'the assistant' if assistant else 'not the assistant'})", flush=True)
+    saved = volumes(serial)
+    since = log_since(serial)
+    seen = set()
+    previous, awake, last_top = saved, screen_on(serial), None
+    started = time.time()
+    try:
+        while time.time() - started < seconds:
+            elapsed = time.time() - started
+            for line in trigger_log(serial, since).splitlines():
+                text = line.split(": ", 1)[-1].strip() if ": " in line else ""
+                stamp = line.split()[0] if line.split() else ""
+                if text and (stamp, text) not in seen and any(word in text for word in ("Key trigger", "Sheet opened", "Trigger ", "Floating microphone", "Assistant session")):
+                    seen.add((stamp, text))
+                    print(f"  +{elapsed:5.1f} s log: {text}", flush=True)
+            current = volumes(serial)
+            if current != previous:
+                print(f"  +{elapsed:5.1f} s volume: {describe(previous, current)}", flush=True)
+                previous = current
+            now_awake = screen_on(serial)
+            if now_awake != awake:
+                print(f"  +{elapsed:5.1f} s screen {'on' if now_awake else 'off'}", flush=True)
+                awake = now_awake
+            top = top_activity(serial)
+            if top != last_top:
+                print(f"  +{elapsed:5.1f} s top: {top}", flush=True)
+                last_top = top
+            if sheet_resumed(serial):
+                print(f"  +{elapsed:5.1f} s the sheet is on screen", flush=True)
+                while sheet_resumed(serial) and time.time() - started < seconds:
+                    time.sleep(0.5)
+                print(f"  +{time.time() - started:5.1f} s the sheet closed", flush=True)
+            time.sleep(0.3)
+    finally:
+        for stream, (index, _) in saved.items():
+            set_volume(serial, stream, index)
+        print(f"{label(serial)}: watch ended, volumes restored", flush=True)
+    return True
 
 
 # Runs -----------------------------------------------------------------------------------------------------------------
@@ -422,13 +500,15 @@ def overlay(serial):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("avd", "phone", "keys", "overlay"):
+    if len(argv) < 2 or argv[0] not in ("avd", "phone", "keys", "watch", "overlay"):
         print(__doc__)
         return 2
     action, serial = argv[0], argv[1]
     if action == "keys":
         gesture = argv[2] if len(argv) > 2 and argv[2] in GESTURES else "longVolumeDown"
         return 0 if keys(serial, gesture) else 1
+    if action == "watch":
+        return 0 if watch(serial, int(argv[2]) if len(argv) > 2 else 180) else 1
     if action == "overlay":
         return 0 if overlay(serial) else 1
     if not install(serial):

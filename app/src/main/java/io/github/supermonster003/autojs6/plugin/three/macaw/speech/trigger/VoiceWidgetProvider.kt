@@ -36,6 +36,10 @@ class VoiceWidgetProvider : AppWidgetProvider() {
             context, REQUEST_WIDGET, TriggerActivity.intent(context, TriggerSource.WIDGET), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+        /** The launcher accepts pin requests (API 26+). zh-CN: 启动器接受固定请求 (API 26+). */
+        fun canRequestPin(context: Context): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            runCatching { context.getSystemService(AppWidgetManager::class.java)?.isRequestPinAppWidgetSupported == true }.getOrDefault(false)
+
         /**
          * API 26+: asks the launcher to place the widget (the launcher shows its own confirmation); false when the launcher
          * cannot, so the settings screen shows the manual steps instead.

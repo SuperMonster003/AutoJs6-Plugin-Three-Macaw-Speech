@@ -236,11 +236,19 @@
             tools:targetApi="o_mr1" />
         <!--
             The trigger entries (roadmap P7.1, D58 - D65): the widget, the launcher shortcut and the quick settings tile start
-            this windowless activity, which opens the sheet through the assistant session or directly (D60). Internal; it
-            shows over the lock screen like the sheet, so a tile tapped there needs no unlock (D61).
+            this windowless activity, which opens the sheet through the assistant session or directly (D60). Internal. It
+            does not show over the lock screen: the system UI starts a pending intent of such an activity without collapsing
+            the shade (AOSP 14+, ColorOS). A tile tapped on the lock screen starts the second one, which shows over it (D61).
         -->
         <activity
             android:name=".trigger.TriggerActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
+        <activity
+            android:name=".trigger.LockedTriggerActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:noHistory="true"

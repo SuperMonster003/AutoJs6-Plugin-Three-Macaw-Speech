@@ -253,6 +253,8 @@
     <string name="settings_voices">言語ごとのデフォルトの音声</string>
     <string name="settings_voices_message">アプリが音声を指定せずに言語だけを指定したときに, システムエンジンが使う音声</string>
     <string name="settings_widget">ホーム画面のウィジェットとショートカット</string>
+    <string name="settings_widget_pin_note">ホーム画面に置くをタップし, ホーム画面で確認してください. 確認が表示されない場合は手動で追加できます:</string>
+    <string name="settings_widget_place">ホーム画面に置く</string>
     <string name="settings_widget_steps">1. ホーム画面の何もない所を長押しして, ウィジェットを選びます.\n2. 3-Macaw Speech のタップして話すを探し, ホーム画面にドラッグします.\nアプリアイコンを長押しすると音声コマンドのショートカットも表示され, 単独でホーム画面にドラッグできます.</string>
     <string name="settings_widget_steps_title">ウィジェットを追加</string>
     <string name="settings_widget_summary">タップして話すウィジェットをホーム画面に置くには, ここをタップします. アプリアイコンを長押しして音声コマンドを選ぶこともできます</string>

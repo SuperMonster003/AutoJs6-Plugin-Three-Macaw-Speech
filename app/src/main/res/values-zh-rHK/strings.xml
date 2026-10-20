@@ -253,6 +253,8 @@
     <string name="settings_voices">各語言的預設語音</string>
     <string name="settings_voices_message">應用程式只指定語言而未指定語音時, 系統引擎使用的語音</string>
     <string name="settings_widget">主畫面小工具與捷徑</string>
+    <string name="settings_widget_pin_note">點按放到主畫面後在主畫面上確認. 如果沒有出現確認, 也可以手動加入:</string>
+    <string name="settings_widget_place">放到主畫面</string>
     <string name="settings_widget_steps">1. 長按主畫面空白處, 選擇小工具.\n2. 找到 3-Macaw Speech 的按一下說話, 拖到主畫面上.\n長按應用程式圖示也能看到語音指令捷徑, 它可以單獨拖到主畫面上.</string>
     <string name="settings_widget_steps_title">加入主畫面小工具</string>
     <string name="settings_widget_summary">點按把按一下說話小工具放到主畫面. 也可以長按應用程式圖示, 選擇語音指令</string>

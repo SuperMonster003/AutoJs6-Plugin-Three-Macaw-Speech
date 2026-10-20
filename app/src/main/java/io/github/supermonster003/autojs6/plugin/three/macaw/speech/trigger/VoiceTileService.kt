@@ -34,7 +34,8 @@ class VoiceTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
-        val intent = TriggerActivity.intent(this, TriggerSource.TILE)
+        // D61: over the lock screen only while it shows; unlocked, the plain target lets the system collapse the shade.
+        val intent = TriggerActivity.intent(this, TriggerSource.TILE, overKeyguard = isLocked)
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startActivityAndCollapse(PendingIntent.getActivity(this, REQUEST_TILE, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))

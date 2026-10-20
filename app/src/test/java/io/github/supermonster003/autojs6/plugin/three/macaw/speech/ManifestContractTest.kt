@@ -87,7 +87,7 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
             application.children("activity").map { it.android("name") },
@@ -320,17 +320,25 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `the trigger activity is internal, windowless and shows over the lock screen`() {
-        // Roadmap D60, D61, D63: the widget, the shortcut and the tile start it; it opens the sheet and finishes.
-        val activity = application.children("activity").single { it.android("name") == TRIGGER }
-        assertEquals("false", activity.android("exported"))
-        assertNull(activity.androidOrNull("permission"))
-        assertEquals("@android:style/Theme.NoDisplay", activity.android("theme"))
-        assertEquals("true", activity.android("excludeFromRecents"))
-        assertEquals("true", activity.android("noHistory"))
-        assertEquals("", activity.android("taskAffinity"))
-        assertEquals("D61: a tile tapped on the lock screen needs no unlock", "true", activity.android("showWhenLocked"))
-        assertTrue(activity.children("intent-filter").isEmpty())
+    fun `the trigger activities are internal and windowless, and only the lock screen one shows over it`() {
+        // Roadmap D60, D61, D63: the widget, the shortcut and the tile start them; they open the sheet and finish.
+        listOf(TRIGGER, LOCKED_TRIGGER).forEach { name ->
+            val activity = application.children("activity").single { it.android("name") == name }
+            assertEquals("false", activity.android("exported"))
+            assertNull(activity.androidOrNull("permission"))
+            assertEquals("@android:style/Theme.NoDisplay", activity.android("theme"))
+            assertEquals("true", activity.android("excludeFromRecents"))
+            assertEquals("true", activity.android("noHistory"))
+            assertEquals("", activity.android("taskAffinity"))
+            assertTrue(activity.children("intent-filter").isEmpty())
+        }
+        // The system UI starts a pending intent of a showWhenLocked activity without collapsing the shade (ColorOS).
+        assertNull(application.children("activity").single { it.android("name") == TRIGGER }.androidOrNull("showWhenLocked"))
+        assertEquals(
+            "D61: a tile tapped on the lock screen needs no unlock",
+            "true",
+            application.children("activity").single { it.android("name") == LOCKED_TRIGGER }.android("showWhenLocked"),
+        )
     }
 
     @Test
@@ -493,6 +501,7 @@ class ManifestContractTest {
 
         /** Roadmap P7.1: the launch target of the trigger entries. zh-CN: 触发式入口的启动目标. */
         const val TRIGGER = ".trigger.TriggerActivity"
+        const val LOCKED_TRIGGER = ".trigger.LockedTriggerActivity"
         const val TILE = ".trigger.VoiceTileService"
         const val FLOATING = ".trigger.FloatingMicService"
         const val KEY = ".trigger.KeyTriggerService"

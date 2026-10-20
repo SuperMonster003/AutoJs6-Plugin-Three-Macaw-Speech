@@ -253,6 +253,8 @@
     <string name="settings_voices">各语言的默认语音</string>
     <string name="settings_voices_message">应用只指定语言而未指定语音时, 系统引擎使用的语音</string>
     <string name="settings_widget">桌面小部件与快捷方式</string>
+    <string name="settings_widget_pin_note">点按放到桌面后在桌面上确认. 如果没有出现确认, 也可以手动添加:</string>
+    <string name="settings_widget_place">放到桌面</string>
     <string name="settings_widget_steps">1. 长按桌面空白处, 选择小部件.\n2. 找到 3-Macaw Speech 的按一下说话, 拖到桌面上.\n长按应用图标也能看到语音指令快捷方式, 它可以单独拖到桌面上.</string>
     <string name="settings_widget_steps_title">添加桌面小部件</string>
     <string name="settings_widget_summary">点按把按一下说话小部件放到桌面. 也可以长按应用图标, 选择语音指令</string>
