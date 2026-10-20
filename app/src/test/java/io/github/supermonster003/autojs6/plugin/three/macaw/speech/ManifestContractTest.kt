@@ -207,7 +207,7 @@ class ManifestContractTest {
         assertEquals(
             listOf(
                 ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService",
-                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, TILE,
+                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, KEY, TILE,
             ),
             application.children("service").map { it.android("name") },
         )
@@ -340,6 +340,27 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the key trigger is an accessibility service that filters keys and reads no screen content`() {
+        // Roadmap D64 (and D54): bound by the system only, key events only, never the window content.
+        val service = service(KEY)
+        assertEquals("true", service.android("exported"))
+        assertEquals("android.permission.BIND_ACCESSIBILITY_SERVICE", service.android("permission"))
+        assertEquals("@string/key_service_label", service.android("label"))
+        assertFilter(service, action = "android.accessibilityservice.AccessibilityService", category = null)
+        assertEquals(mapOf("android.accessibilityservice" to "@xml/key_trigger_service"), service.children("meta-data").associate { it.android("name") to it.android("resource") })
+        val config = RepositoryFiles.xml("app/src/main/res/xml/key_trigger_service.xml")
+        assertEquals("accessibility-service", config.tagName)
+        assertEquals("flagRequestFilterKeyEvents", config.android("accessibilityFlags"))
+        assertEquals("true", config.android("canRequestFilterKeyEvents"))
+        assertEquals("false", config.android("canRetrieveWindowContent"))
+        assertNull("no accessibility events at all", config.androidOrNull("accessibilityEventTypes"))
+        listOf("canPerformGestures", "canTakeScreenshot", "canRequestTouchExplorationMode", "canControlMagnification", "packageNames").forEach { attribute ->
+            assertNull("$attribute is not requested", config.androidOrNull(attribute))
+        }
+        assertEquals("$PACKAGE$TRIGGER_SETTINGS", config.android("settingsActivity"))
+    }
+
+    @Test
     fun `the widget and the launcher shortcut open the sheet through the trigger activity`() {
         // Roadmap D63: the widget provider answers the system's APPWIDGET_UPDATE only and never updates on a schedule.
         val widget = application.children("receiver").single { it.android("name") == WIDGET }
@@ -407,8 +428,8 @@ class ManifestContractTest {
         assertEquals(
             "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
                 "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7), the tile bound by the system UI " +
-                "only and the widget provider (P7.1)",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + WIDGET,
+                "only, the key trigger bound by the accessibility system only and the widget provider (P7.1)",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + KEY + WIDGET,
             unprotected.map { it.android("name") }.toSet(),
         )
         assertEquals(
@@ -460,6 +481,7 @@ class ManifestContractTest {
         const val TRIGGER = ".trigger.TriggerActivity"
         const val TILE = ".trigger.VoiceTileService"
         const val FLOATING = ".trigger.FloatingMicService"
+        const val KEY = ".trigger.KeyTriggerService"
         const val WIDGET = ".trigger.VoiceWidgetProvider"
         const val TRIGGER_SETTINGS = ".ui.settings.TriggerSettingsAlias"
         const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"

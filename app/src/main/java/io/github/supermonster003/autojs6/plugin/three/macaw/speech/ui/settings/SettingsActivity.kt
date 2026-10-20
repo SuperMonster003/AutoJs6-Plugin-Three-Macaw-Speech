@@ -50,6 +50,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPr
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.KeyGesture
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.KeyTriggerService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TileOutcome
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPolicy
@@ -109,7 +111,7 @@ class SettingsActivity : StandaloneActivity() {
 
     private enum class Dialog {
         LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, ASR_MODEL, ENDPOINT, TTS_MODEL, SPEAKER, SPEED, VOICE_LANGUAGE, VOICE,
-        IDLE, RECYCLE, IGNORED, TILE_STEPS, WIDGET_STEPS,
+        IDLE, RECYCLE, IGNORED, TILE_STEPS, WIDGET_STEPS, KEY_SERVICE, KEY_GESTURE,
     }
 
     /** What the speech rows show, loaded off the main thread. zh-CN: 语音相关行显示的内容, 在主线程之外加载. */
@@ -132,6 +134,7 @@ class SettingsActivity : StandaloneActivity() {
     private var busy by mutableStateOf<TrackedOperation.Kind?>(null)
     private var assistantActive by mutableStateOf(false)
     private var floatingOn by mutableStateOf(false)
+    private var keyEnabled by mutableStateOf(false)
     private var awaitingOverlay = false
 
     private val outcomes: (OperationTracker.Outcome) -> Unit = { outcome ->
@@ -164,6 +167,8 @@ class SettingsActivity : StandaloneActivity() {
         // Back from the system settings: the assistant may have been chosen there (roadmap P5.7).
         assistantActive = MacawVoiceInteractionService.isActive(this)
         resumeFloating()
+        // Back from the accessibility settings: the key trigger may have been turned on there (roadmap D64).
+        keyEnabled = KeyTriggerService.isEnabled(this)
     }
 
     /**
@@ -334,6 +339,13 @@ class SettingsActivity : StandaloneActivity() {
                 Hairline()
                 SwitchRow(stringResource(R.string.settings_floating), floatingOn, ::setFloating, summary = stringResource(R.string.settings_floating_summary),
                     icon = R.drawable.ic_mic_24, modifier = Modifier.testTag("macaw.settings.floating"))
+                Hairline()
+                // Roadmap D64: the key service is switched in the system accessibility settings; the gesture is set here.
+                SettingsRow(stringResource(R.string.settings_key), summary = stringResource(if (keyEnabled) R.string.settings_key_on else R.string.settings_key_off),
+                    icon = R.drawable.ic_volume_down_24, onClick = { dialog = Dialog.KEY_SERVICE }, modifier = Modifier.testTag("macaw.settings.key"))
+                Hairline()
+                SettingsRow(stringResource(R.string.settings_key_gesture), summary = stringResource(gestureLabel(TriggerPreferences(this@SettingsActivity).keyGesture)),
+                    icon = R.drawable.ic_tune_24, onClick = { dialog = Dialog.KEY_GESTURE }, modifier = Modifier.testTag("macaw.settings.keyGesture"))
                 Hairline()
                 // Roadmap D63: the launcher places the widget after its own confirmation; the shortcut needs no setup.
                 SettingsRow(stringResource(R.string.settings_widget), summary = stringResource(R.string.settings_widget_summary), icon = R.drawable.ic_widgets_24,
@@ -566,6 +578,28 @@ class SettingsActivity : StandaloneActivity() {
                 dismissText = null,
                 tag = "macaw.dialog.widgetSteps",
             )
+            Dialog.KEY_SERVICE -> MessageDialog(
+                title = stringResource(R.string.settings_key),
+                message = stringResource(R.string.settings_key_message),
+                onDismissRequest = close,
+                onConfirm = {
+                    close()
+                    if (!KeyTriggerService.openSettings(this)) pendingMessage = getString(R.string.settings_key_unavailable)
+                },
+                confirmText = stringResource(R.string.settings_key_open),
+                tag = "macaw.dialog.keyService",
+            )
+            Dialog.KEY_GESTURE -> {
+                val triggers = TriggerPreferences(this)
+                ChoiceDialog(
+                    title = stringResource(R.string.settings_key_gesture),
+                    options = KeyGesture.entries.map { Choice(stringResource(gestureLabel(it)), stringResource(if (it.double) R.string.key_gesture_double_note else R.string.key_gesture_long_note)) },
+                    selectedIndex = triggers.keyGesture.ordinal,
+                    onDismissRequest = close,
+                    onConfirm = { index -> close(); triggers.keyGesture = KeyGesture.entries[index]; saved() },
+                    tag = "macaw.dialog.keyGesture",
+                )
+            }
             Dialog.IGNORED -> {
                 val store = AppUpdateStore.of(this)
                 val tags = store.ignoredTags.sorted()
@@ -790,6 +824,13 @@ class SettingsActivity : StandaloneActivity() {
         0 -> R.string.settings_endpoint_sensitive
         2 -> R.string.settings_endpoint_relaxed
         else -> R.string.settings_endpoint_standard
+    }
+
+    @StringRes
+    private fun gestureLabel(gesture: KeyGesture): Int = when (gesture) {
+        KeyGesture.LONG_VOLUME_DOWN -> R.string.key_gesture_long_volume_down
+        KeyGesture.LONG_VOLUME_UP -> R.string.key_gesture_long_volume_up
+        KeyGesture.DOUBLE_VOLUME_DOWN -> R.string.key_gesture_double_volume_down
     }
 
     @StringRes

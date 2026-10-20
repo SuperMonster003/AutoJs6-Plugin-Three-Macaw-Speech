@@ -4,8 +4,9 @@ import android.content.Context
 import android.content.SharedPreferences
 
 /**
- * The settings of the trigger entries (roadmap P7.1): the floating microphone (D62, off by default) and where it rests.
- * zh-CN: 触发式入口的设置 (路线图 P7.1): 悬浮麦克风 (D62, 默认关) 及其停靠位置.
+ * The settings of the trigger entries (roadmap P7.1): the floating microphone (D62, off by default) and where it rests,
+ * and the key gesture of the key service (D64). The key service itself is switched in the system accessibility settings.
+ * zh-CN: 触发式入口的设置 (路线图 P7.1): 悬浮麦克风 (D62, 默认关) 及其停靠位置, 以及按键服务的按键手势 (D64). 按键服务本身在系统无障碍设置中开关.
  */
 internal class TriggerPreferences(context: Context) {
 
@@ -26,6 +27,11 @@ internal class TriggerPreferences(context: Context) {
         get() = preferences.getFloat(KEY_FLOATING_Y, FloatingMicPolicy.DEFAULT_Y).coerceIn(0f, 1f)
         set(value) = edit { putFloat(KEY_FLOATING_Y, value.coerceIn(0f, 1f)) }
 
+    /** D64: the key gesture, a long press of volume down by default. zh-CN: D64: 按键手势, 默认长按音量下键. */
+    var keyGesture: KeyGesture
+        get() = KeyGesture.of(preferences.getString(KEY_GESTURE, null))
+        set(value) = edit { putString(KEY_GESTURE, value.id) }
+
     private inline fun edit(block: SharedPreferences.Editor.() -> Unit) {
         preferences.edit().apply(block).apply()
     }
@@ -35,5 +41,6 @@ internal class TriggerPreferences(context: Context) {
         const val KEY_FLOATING = "floating"
         const val KEY_FLOATING_RIGHT = "floatingRight"
         const val KEY_FLOATING_Y = "floatingY"
+        const val KEY_GESTURE = "keyGesture"
     }
 }

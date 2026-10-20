@@ -426,6 +426,7 @@ class ThreeMacawSpeechContractTest {
          */
         fun triggerComponents(): Map<String, String?> = mapOf(
             "$PACKAGE.trigger.VoiceTileService" to "android.permission.BIND_QUICK_SETTINGS_TILE",
+            "$PACKAGE.trigger.KeyTriggerService" to "android.permission.BIND_ACCESSIBILITY_SERVICE",
             "$PACKAGE.trigger.VoiceWidgetProvider" to null,
         )
 
