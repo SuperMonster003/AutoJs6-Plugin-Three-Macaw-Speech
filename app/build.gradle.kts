@@ -351,6 +351,8 @@ dependencies {
     androidTestImplementation(libs.test.ext.junit)
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)
+    // Compose UI tests pull Espresso 3.5.0, whose idling sync reflects on InputManager.getInstance (gone on API 36).
+    androidTestImplementation(libs.test.espresso.core)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
 }

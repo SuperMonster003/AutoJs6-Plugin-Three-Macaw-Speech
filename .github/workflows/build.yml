@@ -3,7 +3,14 @@ name: Build integrity
 on:
   push:
   pull_request:
+  # A manual run with full-suite also runs every test class on the API 37.1 entry (to check a newer image).
   workflow_dispatch:
+    inputs:
+      full-suite:
+        description: "Run every test class on API 37.1 too"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -102,8 +109,13 @@ jobs:
             profile: pixel_7
             page-size: 16384
             ram-size: 4096M
-          # Android 17 only ships the 16 KB image; 3-Stove Agent saw its first install fail inside the image, so the job
-          # stays non-blocking until it is known to be stable.
+          # Android 17 only ships the 16 KB image. On the GitHub runner its surfaceflinger aborts in the image's gralloc
+          # mapper ("Assertion failed: !rcEnc->featureInfo()->hasReadColorBufferDma") each time the launcher samples the
+          # gesture navigation handle, and system_server restarts with it about every 25 seconds: run 39360787126 installed
+          # the APKs while user 0 was still locked, so the plugin's own components and data directory were missing (roadmap
+          # P0.3). Three-button navigation stops the sampling; 3-Stove Agent saw system_server abort on the same assertion
+          # when it copies the task snapshot of a finishing activity (gpu guest and -feature -GLDMA alike), so this entry
+          # runs only the test classes that open no window and stays non-blocking until the image is fixed.
           - api-level: 37.1
             arch: x86_64
             target: google_apis_ps16k
@@ -111,6 +123,8 @@ jobs:
             page-size: 16384
             ram-size: 4096M
             disk-size: 4096M
+            suite-args: --three-button-navigation
+            window-free-classes: ThreeMacawSpeechContractTest,SherpaRuntimeDeviceTest,SpeechSynthesisDeviceTest
             experimental: true
 
     steps:
@@ -147,9 +161,9 @@ jobs:
             # System error dialogs are hidden so they cannot hold focus during the suite.
             adb shell settings put global hide_error_dialogs 1
             test "${{ matrix.page-size }}" = "4096" || test "$(adb shell getconf PAGE_SIZE | tr -d '\r')" = "${{ matrix.page-size }}"
-            # The suite runs once more after an emulator failure (system_server errors, a lost device), and every adb
-            # command is time limited: run 39284420735 hung on `adb logcat -d` after the API 37.1 emulator was gone.
-            python3 .python/ci_connected_tests.py
+            # The suite runs once more after an emulator failure (system_server errors or restarts, a lost device), and
+            # every adb command is time limited: run 39284420735 hung on `adb logcat -d` after the API 37.1 emulator was gone.
+            python3 .python/ci_connected_tests.py ${{ matrix.suite-args }} ${{ (matrix.window-free-classes && !inputs.full-suite) && format('--classes {0}', matrix.window-free-classes) || '' }}
 
       - name: Upload instrumentation reports
         if: always()
