@@ -425,6 +425,7 @@ class ThreeMacawSpeechContractTest {
          */
         fun triggerComponents(): Map<String, String?> = mapOf(
             "$PACKAGE.trigger.VoiceTileService" to "android.permission.BIND_QUICK_SETTINGS_TILE",
+            "$PACKAGE.trigger.VoiceWidgetProvider" to null,
         )
 
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")

@@ -230,7 +230,12 @@
     <string name="settings_voice_label">%1$s, المتحدث %2$d</string>
     <string name="settings_voices">الصوت الافتراضي لكل لغة</string>
     <string name="settings_voices_message">الصوت الذي يستخدمه محرك النظام عندما يطلب تطبيق لغة دون تحديد صوت</string>
+    <string name="settings_widget">أداة الشاشة الرئيسية والاختصار</string>
+    <string name="settings_widget_steps">1. اضغط مطولا على مكان فارغ في الشاشة الرئيسية واختر الأدوات.\n2. ابحث عن انقر للتحدث من ⁨3-Macaw Speech⁩ واسحبها إلى الشاشة الرئيسية.\nيعرض الضغط المطول على أيقونة التطبيق أيضا اختصار أمر صوتي, ويمكن سحبه وحده إلى الشاشة الرئيسية.</string>
+    <string name="settings_widget_steps_title">إضافة الأداة</string>
+    <string name="settings_widget_summary">انقر لوضع أداة انقر للتحدث على الشاشة الرئيسية. يمكنك أيضا الضغط مطولا على أيقونة التطبيق واختيار أمر صوتي</string>
     <string name="settings_working">قيد التنفيذ</string>
+    <string name="shortcut_voice_long">قل أمرا صوتيا</string>
     <string name="speech_model_license_commercial">يسمح ترخيص هذا النموذج بالاستخدام التجاري. اقرأ بطاقة النموذج والترخيص قبل استخدامه.</string>
     <string name="speech_model_license_non_commercial">لا يجوز استخدام هذا النموذج إلا لأغراض غير تجارية: ترخيصه أو بيانات تدريبه تحظر الاستخدام التجاري. تنزيله يعني أنك تقبل هذا القيد.</string>
     <string name="speech_model_license_unknown">لم يعلن ناشر هذا النموذج عن أي ترخيص, لذا لا يُعرف ما إذا كان الاستخدام التجاري مسموحا. تحقق من الترخيص بنفسك قبل استخدامه.</string>
@@ -319,4 +324,6 @@
     <string name="voice_input_recognizing">جارٍ التعرف</string>
     <string name="voice_input_speak_now">تحدث الآن</string>
     <string name="voice_input_stop">إيقاف</string>
+    <string name="widget_voice_description">يفتح لوحة الأمر الصوتي بنقرة واحدة</string>
+    <string name="widget_voice_label">انقر للتحدث</string>
 </resources>

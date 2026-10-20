@@ -230,7 +230,12 @@
     <string name="settings_voice_label">%1$s, speaker %2$d</string>
     <string name="settings_voices">Default voice per language</string>
     <string name="settings_voices_message">The voice the system engine uses when an app asks for a language without naming a voice</string>
+    <string name="settings_widget">Home screen widget and shortcut</string>
+    <string name="settings_widget_steps">1. Long press an empty spot of the home screen and choose Widgets.\n2. Find Tap to speak of 3-Macaw Speech and drag it to the home screen.\nA long press on the app icon also shows the Voice command shortcut, which can be dragged to the home screen on its own.</string>
+    <string name="settings_widget_steps_title">Add the widget</string>
+    <string name="settings_widget_summary">Tap to put the Tap to speak widget on the home screen. You can also long press the app icon and choose Voice command</string>
     <string name="settings_working">Running</string>
+    <string name="shortcut_voice_long">Speak a voice command</string>
     <string name="speech_model_license_commercial">The license of this model allows commercial use. Read the model card and the license before using it.</string>
     <string name="speech_model_license_non_commercial">This model may only be used for non-commercial purposes: its license or its training data forbid commercial use. Downloading it means you accept this restriction.</string>
     <string name="speech_model_license_unknown">The publisher of this model declares no license, so it is unknown whether commercial use is allowed. Check the license yourself before using it.</string>
@@ -319,4 +324,6 @@
     <string name="voice_input_recognizing">Recognizing</string>
     <string name="voice_input_speak_now">Speak now</string>
     <string name="voice_input_stop">Stop</string>
+    <string name="widget_voice_description">Opens the voice command sheet with one tap</string>
+    <string name="widget_voice_label">Tap to speak</string>
 </resources>

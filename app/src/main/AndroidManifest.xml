@@ -71,7 +71,8 @@
         <!--
             The plugin's screens (roadmap D7 / D26, P5). The home screen is the launcher target: the launcher entry is one
             of four fixed aliases that persist the icon choice as component state (icon specification section 4, roadmap
-            P5.5); only the automatic alias is enabled by default. The home screen also answers INSTALL_TTS_DATA of the
+            P5.5); only the automatic alias is enabled by default. Each alias carries the launcher shortcut "Voice command"
+            (roadmap P7.1, D63), which opens the assistant sheet. The home screen also answers INSTALL_TTS_DATA of the
             system TTS settings (it opens at the synthesis models), and the settings screen is the engine's settingsActivity
             (res/xml/tts_engine.xml), so both are exported without a permission: they only show the plugin's own screens.
         -->
@@ -96,6 +97,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".launcher.AdaptiveDarkIconAlias"
@@ -108,6 +112,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".launcher.AdaptiveAutoIconAlias"
@@ -120,6 +127,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name=".launcher.TransparentIconAlias"
@@ -132,6 +142,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity
             android:name=".ui.settings.SettingsActivity"
@@ -225,6 +238,21 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.NoDisplay"
             tools:targetApi="o_mr1" />
+        <!--
+            The "Tap to speak" widget (roadmap P7.1, D63): the system broadcasts APPWIDGET_UPDATE to it; its button opens the
+            assistant sheet through TriggerActivity. It records nothing.
+        -->
+        <receiver
+            android:name=".trigger.VoiceWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_voice_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/voice_widget_info" />
+        </receiver>
         <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
         <receiver
             android:name=".ui.appearance.LauncherIconUpdateReceiver"

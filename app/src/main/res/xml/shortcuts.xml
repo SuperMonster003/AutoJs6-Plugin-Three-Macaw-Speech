@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The launcher shortcut "Voice command" (roadmap D63) of every launcher alias: it opens the assistant sheet through the
+    internal TriggerActivity (D60), which the launcher starts as the plugin itself.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:targetApi="n_mr1">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_voice"
+        android:shortcutId="voice_command"
+        android:shortcutLongLabel="@string/shortcut_voice_long"
+        android:shortcutShortLabel="@string/tile_voice_label">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerActivity"
+            android:targetPackage="io.github.supermonster003.autojs6.plugin.three.macaw.speech">
+            <extra
+                android:name="io.github.supermonster003.autojs6.plugin.three.macaw.speech.extra.TRIGGER_SOURCE"
+                android:value="shortcut" />
+        </intent>
+    </shortcut>
+</shortcuts>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The trigger entries of roadmap P7.1 (widget, floating microphone): the Three background and ink of the light theme. -->
+    <color name="trigger_button_background">#FAFAFA</color>
+    <color name="trigger_button_icon">#272727</color>
+    <!-- The launcher shortcut icon keeps the light colors in both themes, like an app icon. -->
+    <color name="shortcut_voice_background">#FAFAFA</color>
+    <color name="shortcut_voice_icon">#272727</color>
+</resources>

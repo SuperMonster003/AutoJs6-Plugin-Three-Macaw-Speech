@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The trigger entries of roadmap P7.1 in the dark theme: the Three dark background and ink. -->
+    <color name="trigger_button_background">#212121</color>
+    <color name="trigger_button_icon">#D8D8D8</color>
+</resources>

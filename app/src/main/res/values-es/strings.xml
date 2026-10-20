@@ -230,7 +230,12 @@
     <string name="settings_voice_label">%1$s, hablante %2$d</string>
     <string name="settings_voices">Voz predeterminada por idioma</string>
     <string name="settings_voices_message">La voz que usa el motor del sistema cuando una aplicación pide un idioma sin indicar una voz</string>
+    <string name="settings_widget">Widget y acceso directo de la pantalla de inicio</string>
+    <string name="settings_widget_steps">1. Mantén pulsado un espacio vacío de la pantalla de inicio y elige Widgets.\n2. Busca Toca para hablar de 3-Macaw Speech y arrástralo a la pantalla de inicio.\nAl mantener pulsado el icono de la app también aparece el acceso directo Comando de voz, que puedes arrastrar por separado a la pantalla de inicio.</string>
+    <string name="settings_widget_steps_title">Añadir el widget</string>
+    <string name="settings_widget_summary">Toca para poner el widget Toca para hablar en la pantalla de inicio. También puedes mantener pulsado el icono de la app y elegir Comando de voz</string>
     <string name="settings_working">En curso</string>
+    <string name="shortcut_voice_long">Decir un comando de voz</string>
     <string name="speech_model_license_commercial">La licencia de este modelo permite el uso comercial. Lea la ficha del modelo y su licencia antes de usarlo.</string>
     <string name="speech_model_license_non_commercial">Este modelo solo puede usarse con fines no comerciales: su licencia o sus datos de entrenamiento prohíben el uso comercial. Al descargarlo, acepta esta restricción.</string>
     <string name="speech_model_license_unknown">El editor de este modelo no declara ninguna licencia, por lo que se desconoce si se permite el uso comercial. Compruebe la licencia usted mismo antes de usarlo.</string>
@@ -319,4 +324,6 @@
     <string name="voice_input_recognizing">Reconociendo</string>
     <string name="voice_input_speak_now">Habla ahora</string>
     <string name="voice_input_stop">Detener</string>
+    <string name="widget_voice_description">Abre el panel de comando de voz con un toque</string>
+    <string name="widget_voice_label">Toca para hablar</string>
 </resources>

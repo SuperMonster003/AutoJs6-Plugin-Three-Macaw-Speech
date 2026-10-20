@@ -230,7 +230,12 @@
     <string name="settings_voice_label">%1$s, 說話人 %2$d</string>
     <string name="settings_voices">各語言的預設語音</string>
     <string name="settings_voices_message">應用程式只指定語言而未指定語音時, 系統引擎使用的語音</string>
+    <string name="settings_widget">主畫面小工具與捷徑</string>
+    <string name="settings_widget_steps">1. 長按主畫面空白處, 選擇小工具.\n2. 找到 3-Macaw Speech 的按一下說話, 拖到主畫面上.\n長按應用程式圖示也能看到語音指令捷徑, 它可以單獨拖到主畫面上.</string>
+    <string name="settings_widget_steps_title">加入主畫面小工具</string>
+    <string name="settings_widget_summary">點按把按一下說話小工具放到主畫面. 也可以長按應用程式圖示, 選擇語音指令</string>
     <string name="settings_working">正在進行</string>
+    <string name="shortcut_voice_long">說一句語音指令</string>
     <string name="speech_model_license_commercial">此模型的授權允許商業用途. 使用前請閱讀模型卡與授權條款.</string>
     <string name="speech_model_license_non_commercial">此模型僅限非商業用途: 其授權或訓練資料禁止商業使用. 下載即表示你接受此限制.</string>
     <string name="speech_model_license_unknown">此模型的發佈者未聲明授權, 是否允許商業用途未知. 請在使用前自行確認授權.</string>
@@ -319,4 +324,6 @@
     <string name="voice_input_recognizing">正在識別</string>
     <string name="voice_input_speak_now">請說話</string>
     <string name="voice_input_stop">停止</string>
+    <string name="widget_voice_description">點一下即開啟語音指令面板</string>
+    <string name="widget_voice_label">按一下說話</string>
 </resources>

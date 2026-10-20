@@ -51,6 +51,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.Speec
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TileOutcome
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.VoiceTileService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.VoiceWidgetProvider
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.about.NoticesActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.appearance.AppearancePreferences
@@ -105,7 +106,7 @@ class SettingsActivity : StandaloneActivity() {
 
     private enum class Dialog {
         LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, ASR_MODEL, ENDPOINT, TTS_MODEL, SPEAKER, SPEED, VOICE_LANGUAGE, VOICE,
-        IDLE, RECYCLE, IGNORED, TILE_STEPS,
+        IDLE, RECYCLE, IGNORED, TILE_STEPS, WIDGET_STEPS,
     }
 
     /** What the speech rows show, loaded off the main thread. zh-CN: 语音相关行显示的内容, 在主线程之外加载. */
@@ -280,6 +281,11 @@ class SettingsActivity : StandaloneActivity() {
                 SectionHeader(stringResource(R.string.settings_triggers), Modifier.onGloballyPositioned { triggersTop = it.positionInParent().y.toInt() })
                 SettingsRow(stringResource(R.string.settings_tile), summary = stringResource(R.string.settings_tile_summary), icon = R.drawable.ic_toggle_24,
                     onClick = ::addTile, modifier = Modifier.testTag("macaw.settings.tile"))
+                Hairline()
+                // Roadmap D63: the launcher places the widget after its own confirmation; the shortcut needs no setup.
+                SettingsRow(stringResource(R.string.settings_widget), summary = stringResource(R.string.settings_widget_summary), icon = R.drawable.ic_widgets_24,
+                    onClick = { if (!VoiceWidgetProvider.requestPin(this@SettingsActivity)) dialog = Dialog.WIDGET_STEPS },
+                    modifier = Modifier.testTag("macaw.settings.widget"))
                 Text(
                     stringResource(R.string.settings_triggers_note),
                     style = MaterialTheme.typography.bodySmall,
@@ -498,6 +504,14 @@ class SettingsActivity : StandaloneActivity() {
                 onConfirm = close,
                 dismissText = null,
                 tag = "macaw.dialog.tileSteps",
+            )
+            Dialog.WIDGET_STEPS -> MessageDialog(
+                title = stringResource(R.string.settings_widget_steps_title),
+                message = stringResource(R.string.settings_widget_steps),
+                onDismissRequest = close,
+                onConfirm = close,
+                dismissText = null,
+                tag = "macaw.dialog.widgetSteps",
             )
             Dialog.IGNORED -> {
                 val store = AppUpdateStore.of(this)

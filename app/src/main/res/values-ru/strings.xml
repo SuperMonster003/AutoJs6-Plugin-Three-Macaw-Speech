@@ -230,7 +230,12 @@
     <string name="settings_voice_label">%1$s, диктор %2$d</string>
     <string name="settings_voices">Голос по умолчанию для каждого языка</string>
     <string name="settings_voices_message">Голос, который использует системный движок, когда приложение запрашивает язык без указания голоса</string>
+    <string name="settings_widget">Виджет и ярлык на главном экране</string>
+    <string name="settings_widget_steps">1. Нажмите и удерживайте пустое место на главном экране и выберите Виджеты.\n2. Найдите Нажмите и говорите от 3-Macaw Speech и перетащите его на главный экран.\nДолгое нажатие на значок приложения также показывает ярлык Голосовая команда, который можно отдельно перетащить на главный экран.</string>
+    <string name="settings_widget_steps_title">Добавить виджет</string>
+    <string name="settings_widget_summary">Нажмите, чтобы поместить виджет Нажмите и говорите на главный экран. Также можно нажать и удерживать значок приложения и выбрать Голосовая команда</string>
     <string name="settings_working">Выполняется</string>
+    <string name="shortcut_voice_long">Произнести голосовую команду</string>
     <string name="speech_model_license_commercial">Лицензия этой модели разрешает коммерческое использование. Перед использованием прочитайте карточку модели и лицензию.</string>
     <string name="speech_model_license_non_commercial">Эту модель можно использовать только в некоммерческих целях: её лицензия или обучающие данные запрещают коммерческое использование. Загружая её, вы принимаете это ограничение.</string>
     <string name="speech_model_license_unknown">Издатель этой модели не указал лицензию, поэтому неизвестно, разрешено ли коммерческое использование. Перед использованием проверьте лицензию самостоятельно.</string>
@@ -319,4 +324,6 @@
     <string name="voice_input_recognizing">Распознавание</string>
     <string name="voice_input_speak_now">Говорите</string>
     <string name="voice_input_stop">Остановить</string>
+    <string name="widget_voice_description">Открывает панель голосовой команды одним нажатием</string>
+    <string name="widget_voice_label">Нажмите и говорите</string>
 </resources>

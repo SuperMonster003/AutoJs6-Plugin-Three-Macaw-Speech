@@ -151,11 +151,12 @@ class ManifestContractTest {
             assertEquals("true", alias.android("exported"))
             assertEquals(if (alias.android("name") == ".launcher.AdaptiveAutoIconAlias") "true" else "false", alias.android("enabled"))
             assertFilter(alias, action = "android.intent.action.MAIN", category = "android.intent.category.LAUNCHER")
+            // Roadmap D63: every alias carries the launcher shortcut "Voice command".
+            assertEquals(mapOf("android.app.shortcuts" to "@xml/shortcuts"), alias.children("meta-data").associate { it.android("name") to it.android("resource") })
         }
         val names = activities.map { it.android("name") }
         assertTrue("the real activity is declared before the aliases", names.indexOf(HOME) >= 0)
-        val receiver = application.children("receiver").single()
-        assertEquals(".ui.appearance.LauncherIconUpdateReceiver", receiver.android("name"))
+        val receiver = application.children("receiver").single { it.android("name") == ".ui.appearance.LauncherIconUpdateReceiver" }
         assertEquals("false", receiver.android("exported"))
         assertFilter(receiver, action = "android.intent.action.MY_PACKAGE_REPLACED", category = null)
     }
@@ -316,6 +317,32 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the widget and the launcher shortcut open the sheet through the trigger activity`() {
+        // Roadmap D63: the widget provider answers the system's APPWIDGET_UPDATE only and never updates on a schedule.
+        val widget = application.children("receiver").single { it.android("name") == WIDGET }
+        assertEquals("true", widget.android("exported"))
+        assertNull(widget.androidOrNull("permission"))
+        assertEquals("@string/widget_voice_label", widget.android("label"))
+        assertFilter(widget, action = "android.appwidget.action.APPWIDGET_UPDATE", category = null)
+        assertEquals(mapOf("android.appwidget.provider" to "@xml/voice_widget_info"), widget.children("meta-data").associate { it.android("name") to it.android("resource") })
+        val info = RepositoryFiles.xml("app/src/main/res/xml/voice_widget_info.xml")
+        assertEquals("appwidget-provider", info.tagName)
+        assertEquals("0", info.android("updatePeriodMillis"))
+        assertEquals("@layout/widget_voice", info.android("initialLayout"))
+        assertNull("no configuration activity", info.androidOrNull("configure"))
+        // The static shortcut names the internal trigger activity of this package and its entry name.
+        val shortcuts = RepositoryFiles.xml("app/src/main/res/xml/shortcuts.xml").children("shortcut")
+        assertEquals(listOf("voice_command"), shortcuts.map { it.android("shortcutId") })
+        val intent = shortcuts.single().child("intent")
+        assertEquals(PACKAGE, intent.android("targetPackage"))
+        assertEquals("$PACKAGE$TRIGGER", intent.android("targetClass"))
+        assertEquals(
+            mapOf("$PACKAGE.extra.TRIGGER_SOURCE" to "shortcut"),
+            intent.children("extra").associate { it.android("name") to it.android("value") },
+        )
+    }
+
+    @Test
     fun `the quick settings tile is bound by the system UI only and its settings open at the triggers`() {
         // Roadmap D61: a tile service of the system UI; a long press opens the settings screen at the triggers group.
         val tile = service(TILE)
@@ -357,8 +384,8 @@ class ManifestContractTest {
         assertEquals(
             "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
                 "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7), the tile bound by the system UI " +
-                "only (P7.1)",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE,
+                "only and the widget provider (P7.1)",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + WIDGET,
             unprotected.map { it.android("name") }.toSet(),
         )
         assertEquals(
@@ -367,7 +394,7 @@ class ManifestContractTest {
             unprotected.filter { it.androidOrNull("permission") == BIND_VOICE_INTERACTION }.map { it.android("name") }.toSet(),
         )
         assertTrue("no provider is declared", application.children("provider").isEmpty())
-        assertTrue("the receiver is internal", application.children("receiver").all { it.android("exported") == "false" })
+        assertEquals("only the widget provider is an exported receiver", listOf(WIDGET), application.children("receiver").filter { it.android("exported") == "true" }.map { it.android("name") })
     }
 
     private fun service(name: String): Element = application.children("service").single { it.android("name") == name }
@@ -409,6 +436,7 @@ class ManifestContractTest {
         /** Roadmap P7.1: the launch target of the trigger entries. zh-CN: 触发式入口的启动目标. */
         const val TRIGGER = ".trigger.TriggerActivity"
         const val TILE = ".trigger.VoiceTileService"
+        const val WIDGET = ".trigger.VoiceWidgetProvider"
         const val TRIGGER_SETTINGS = ".ui.settings.TriggerSettingsAlias"
         const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"
 

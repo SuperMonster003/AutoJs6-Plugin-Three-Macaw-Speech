@@ -230,7 +230,12 @@
     <string name="settings_voice_label">%1$s, 話者 %2$d</string>
     <string name="settings_voices">言語ごとのデフォルトの音声</string>
     <string name="settings_voices_message">アプリが音声を指定せずに言語だけを指定したときに, システムエンジンが使う音声</string>
+    <string name="settings_widget">ホーム画面のウィジェットとショートカット</string>
+    <string name="settings_widget_steps">1. ホーム画面の何もない所を長押しして, ウィジェットを選びます.\n2. 3-Macaw Speech のタップして話すを探し, ホーム画面にドラッグします.\nアプリアイコンを長押しすると音声コマンドのショートカットも表示され, 単独でホーム画面にドラッグできます.</string>
+    <string name="settings_widget_steps_title">ウィジェットを追加</string>
+    <string name="settings_widget_summary">タップして話すウィジェットをホーム画面に置くには, ここをタップします. アプリアイコンを長押しして音声コマンドを選ぶこともできます</string>
     <string name="settings_working">実行中</string>
+    <string name="shortcut_voice_long">音声コマンドを話す</string>
     <string name="speech_model_license_commercial">このモデルのライセンスは商用利用を認めています. 使用前にモデルカードとライセンスをお読みください.</string>
     <string name="speech_model_license_non_commercial">このモデルは非商用目的でのみ使用できます: ライセンスまたは学習データが商用利用を禁止しています. ダウンロードすると, この制限に同意したものとみなされます.</string>
     <string name="speech_model_license_unknown">このモデルの公開者はライセンスを示していないため, 商用利用が認められるかは不明です. 使用前にご自身でライセンスを確認してください.</string>
@@ -319,4 +324,6 @@
     <string name="voice_input_recognizing">認識しています</string>
     <string name="voice_input_speak_now">話してください</string>
     <string name="voice_input_stop">停止</string>
+    <string name="widget_voice_description">タップするだけで音声コマンドのパネルを開きます</string>
+    <string name="widget_voice_label">タップして話す</string>
 </resources>

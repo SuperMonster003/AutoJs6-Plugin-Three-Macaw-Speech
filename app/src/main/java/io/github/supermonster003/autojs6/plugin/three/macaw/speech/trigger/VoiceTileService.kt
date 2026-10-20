@@ -1,9 +1,11 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.StatusBarManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.quicksettings.Tile
@@ -37,13 +39,17 @@ class VoiceTileService : TileService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 startActivityAndCollapse(PendingIntent.getActivity(this, REQUEST_TILE, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT))
             } else {
-                @Suppress("DEPRECATION")
-                startActivityAndCollapse(intent)
+                // Below API 34 the PendingIntent variant does not exist; the Intent variant throws only from API 34.
+                startWithIntent(intent)
             }
         } catch (e: RuntimeException) {
             Log.w(TAG, "The tile could not open the sheet: $e")
         }
     }
+
+    @SuppressLint("StartActivityAndCollapseDeprecated")
+    @Suppress("DEPRECATION")
+    private fun startWithIntent(intent: Intent) = startActivityAndCollapse(intent)
 
     companion object {
         private const val TAG = "MacawTrigger"

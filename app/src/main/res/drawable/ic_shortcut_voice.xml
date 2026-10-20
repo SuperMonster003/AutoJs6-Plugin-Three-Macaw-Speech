@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher shortcut "Voice command" (roadmap D63) on API 25: a round icon; API 26+ uses the adaptive icon. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <solid android:color="@color/shortcut_voice_background" />
+            <size android:width="48dp" android:height="48dp" />
+        </shape>
+    </item>
+    <item android:bottom="10dp" android:left="10dp" android:right="10dp" android:top="10dp">
+        <vector android:width="28dp" android:height="28dp" android:viewportWidth="24" android:viewportHeight="24">
+            <path android:fillColor="@color/shortcut_voice_icon" android:pathData="M12,14a3,3 0,0 0,3,-3V5a3,3 0,0 0,-6,0v6a3,3 0,0 0,3,3M17,11a5,5 0,0 1,-10,0H5a7,7 0,0 0,6,6.93V21h2v-3.07A7,7 0,0 0,19,11z" />
+        </vector>
+    </item>
+</layer-list>
