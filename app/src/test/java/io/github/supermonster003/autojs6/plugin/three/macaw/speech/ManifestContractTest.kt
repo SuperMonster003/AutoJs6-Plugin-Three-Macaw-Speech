@@ -202,7 +202,7 @@ class ManifestContractTest {
         assertEquals(
             listOf(
                 ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", ".service.ModelOperationService", ".service.MicrophoneService",
-                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION,
+                ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, TILE,
             ),
             application.children("service").map { it.android("name") },
         )
@@ -316,6 +316,23 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the quick settings tile is bound by the system UI only and its settings open at the triggers`() {
+        // Roadmap D61: a tile service of the system UI; a long press opens the settings screen at the triggers group.
+        val tile = service(TILE)
+        assertEquals("true", tile.android("exported"))
+        assertEquals("android.permission.BIND_QUICK_SETTINGS_TILE", tile.android("permission"))
+        assertEquals("@string/tile_voice_label", tile.android("label"))
+        assertEquals("@drawable/ic_mic_24", tile.android("icon"))
+        assertNull("the tile records nothing (D58)", tile.androidOrNull("foregroundServiceType"))
+        assertFilter(tile, action = "android.service.quicksettings.action.QS_TILE", category = null)
+        val alias = application.children("activity-alias").single { it.android("name") == TRIGGER_SETTINGS }
+        assertEquals("true", alias.android("exported"))
+        assertNull(alias.androidOrNull("permission"))
+        assertEquals(SETTINGS, alias.android("targetActivity"))
+        assertFilter(alias, action = "android.service.quicksettings.action.QS_TILE_PREFERENCES", category = DEFAULT_CATEGORY)
+    }
+
+    @Test
     fun `the recognition service is the system's and opens the settings at recognition`() {
         // Roadmap D56: exported without a permission like the TTS engine; the service checks the caller's microphone.
         val service = service(RECOGNITION)
@@ -339,8 +356,9 @@ class ManifestContractTest {
         val unprotected = components.filter { it.androidOrNull("exported") == "true" && it.androidOrNull("permission") != PLUGIN_PERMISSION }
         assertEquals(
             "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
-                "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7)",
-            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION,
+                "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7), the tile bound by the system UI " +
+                "only (P7.1)",
+            SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE,
             unprotected.map { it.android("name") }.toSet(),
         )
         assertEquals(
@@ -390,6 +408,8 @@ class ManifestContractTest {
 
         /** Roadmap P7.1: the launch target of the trigger entries. zh-CN: 触发式入口的启动目标. */
         const val TRIGGER = ".trigger.TriggerActivity"
+        const val TILE = ".trigger.VoiceTileService"
+        const val TRIGGER_SETTINGS = ".ui.settings.TriggerSettingsAlias"
         const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"
 
         /**
@@ -398,7 +418,7 @@ class ManifestContractTest {
          */
         val SCREEN_ENTRIES = setOf(
             HOME, SETTINGS, ".launcher.AdaptiveLightIconAlias", ".launcher.AdaptiveDarkIconAlias", ".launcher.AdaptiveAutoIconAlias",
-            ".launcher.TransparentIconAlias", RECOGNITION_SETTINGS,
+            ".launcher.TransparentIconAlias", RECOGNITION_SETTINGS, TRIGGER_SETTINGS,
         )
     }
 

@@ -208,7 +208,15 @@
     <string name="settings_speed_value">%1$.1fx</string>
     <string name="settings_synthesis">Synthesis</string>
     <string name="settings_theme_color">Theme color</string>
+    <string name="settings_tile">Quick Settings tile</string>
+    <string name="settings_tile_added">The Voice command tile was added</string>
+    <string name="settings_tile_present">The Voice command tile is already in Quick Settings</string>
+    <string name="settings_tile_steps">1. Swipe down twice from the top of the screen to open Quick Settings.\n2. Tap the edit button (the pencil).\n3. Find the Voice command tile of 3-Macaw Speech and drag it into the panel.</string>
+    <string name="settings_tile_steps_title">Add to Quick Settings</string>
+    <string name="settings_tile_summary">Tap to add the Voice command tile. Then tap it in Quick Settings to speak, also on the lock screen</string>
     <string name="settings_title">Settings</string>
+    <string name="settings_triggers">Triggers</string>
+    <string name="settings_triggers_note">Each of these opens the same dictation sheet as the digital assistant. Nothing is recorded before the sheet listens, and the microphone is used only for the few seconds of dictation.</string>
     <string name="settings_tts_model">Default synthesis model</string>
     <string name="settings_update_summary">Look for a newer release on GitHub</string>
     <string name="settings_vad">Voice activity detection</string>
@@ -226,6 +234,7 @@
     <string name="speech_model_license_commercial">The license of this model allows commercial use. Read the model card and the license before using it.</string>
     <string name="speech_model_license_non_commercial">This model may only be used for non-commercial purposes: its license or its training data forbid commercial use. Downloading it means you accept this restriction.</string>
     <string name="speech_model_license_unknown">The publisher of this model declares no license, so it is unknown whether commercial use is allowed. Check the license yourself before using it.</string>
+    <string name="tile_voice_label">Voice command</string>
     <string name="tryout_dictation_settings">Endpoint: %1$s · VAD: %2$s (change them in Settings)</string>
     <string name="tryout_engine_failed">The speech engine failed</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>

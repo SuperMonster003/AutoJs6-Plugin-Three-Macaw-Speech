@@ -208,7 +208,15 @@
     <string name="settings_speed_value">%1$.1fx</string>
     <string name="settings_synthesis">Síntesis</string>
     <string name="settings_theme_color">Color del tema</string>
+    <string name="settings_tile">Icono de Ajustes rápidos</string>
+    <string name="settings_tile_added">Se añadió el icono Comando de voz</string>
+    <string name="settings_tile_present">El icono Comando de voz ya está en Ajustes rápidos</string>
+    <string name="settings_tile_steps">1. Desliza dos veces hacia abajo desde la parte superior de la pantalla para abrir Ajustes rápidos.\n2. Toca el botón de editar (el lápiz).\n3. Busca el icono Comando de voz de 3-Macaw Speech y arrástralo al panel.</string>
+    <string name="settings_tile_steps_title">Añadir a Ajustes rápidos</string>
+    <string name="settings_tile_summary">Toca para añadir el icono Comando de voz. Después tócalo en Ajustes rápidos para hablar, también en la pantalla de bloqueo</string>
     <string name="settings_title">Ajustes</string>
+    <string name="settings_triggers">Formas de activación</string>
+    <string name="settings_triggers_note">Cada una de estas opciones abre el mismo panel de dictado que el asistente digital. No se graba nada hasta que el panel escucha, y el micrófono solo se usa durante los pocos segundos del dictado.</string>
     <string name="settings_tts_model">Modelo de síntesis predeterminado</string>
     <string name="settings_update_summary">Buscar una versión más reciente en GitHub</string>
     <string name="settings_vad">Detección de actividad de voz</string>
@@ -226,6 +234,7 @@
     <string name="speech_model_license_commercial">La licencia de este modelo permite el uso comercial. Lea la ficha del modelo y su licencia antes de usarlo.</string>
     <string name="speech_model_license_non_commercial">Este modelo solo puede usarse con fines no comerciales: su licencia o sus datos de entrenamiento prohíben el uso comercial. Al descargarlo, acepta esta restricción.</string>
     <string name="speech_model_license_unknown">El editor de este modelo no declara ninguna licencia, por lo que se desconoce si se permite el uso comercial. Compruebe la licencia usted mismo antes de usarlo.</string>
+    <string name="tile_voice_label">Comando de voz</string>
     <string name="tryout_dictation_settings">Fin de frase: %1$s · VAD: %2$s (se cambian en Ajustes)</string>
     <string name="tryout_engine_failed">El motor de voz falló</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>

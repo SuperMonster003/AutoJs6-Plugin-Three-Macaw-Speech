@@ -208,7 +208,15 @@
     <string name="settings_speed_value">%1$.1fx</string>
     <string name="settings_synthesis">Синтез</string>
     <string name="settings_theme_color">Цвет темы</string>
+    <string name="settings_tile">Плитка быстрых настроек</string>
+    <string name="settings_tile_added">Плитка Голосовая команда добавлена</string>
+    <string name="settings_tile_present">Плитка Голосовая команда уже есть в быстрых настройках</string>
+    <string name="settings_tile_steps">1. Дважды проведите вниз от верхнего края экрана, чтобы открыть быстрые настройки.\n2. Нажмите кнопку изменения (карандаш).\n3. Найдите плитку Голосовая команда от 3-Macaw Speech и перетащите ее на панель.</string>
+    <string name="settings_tile_steps_title">Добавить в быстрые настройки</string>
+    <string name="settings_tile_summary">Нажмите, чтобы добавить плитку Голосовая команда. Затем нажмите ее в быстрых настройках, чтобы говорить, в том числе на экране блокировки</string>
     <string name="settings_title">Настройки</string>
+    <string name="settings_triggers">Способы запуска</string>
+    <string name="settings_triggers_note">Каждый из этих способов открывает ту же панель диктовки, что и цифровой помощник. До начала прослушивания ничего не записывается, а микрофон используется только несколько секунд диктовки.</string>
     <string name="settings_tts_model">Модель синтеза по умолчанию</string>
     <string name="settings_update_summary">Найти более новый выпуск на GitHub</string>
     <string name="settings_vad">Определение речевой активности</string>
@@ -226,6 +234,7 @@
     <string name="speech_model_license_commercial">Лицензия этой модели разрешает коммерческое использование. Перед использованием прочитайте карточку модели и лицензию.</string>
     <string name="speech_model_license_non_commercial">Эту модель можно использовать только в некоммерческих целях: её лицензия или обучающие данные запрещают коммерческое использование. Загружая её, вы принимаете это ограничение.</string>
     <string name="speech_model_license_unknown">Издатель этой модели не указал лицензию, поэтому неизвестно, разрешено ли коммерческое использование. Перед использованием проверьте лицензию самостоятельно.</string>
+    <string name="tile_voice_label">Голосовая команда</string>
     <string name="tryout_dictation_settings">Конец фразы: %1$s · VAD: %2$s (можно изменить в настройках)</string>
     <string name="tryout_engine_failed">Ошибка речевого движка</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>

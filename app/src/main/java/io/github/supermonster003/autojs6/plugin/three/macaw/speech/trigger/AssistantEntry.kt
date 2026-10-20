@@ -42,7 +42,35 @@ internal object TriggerPolicy {
      */
     fun route(assistantActive: Boolean, serviceRunning: Boolean): TriggerRoute =
         if (assistantActive && serviceRunning) TriggerRoute.SESSION else TriggerRoute.SHEET
+
+    /** API level of `StatusBarManager.requestAddTileService`. zh-CN: `StatusBarManager.requestAddTileService` 的 API 级别. */
+    const val TILE_REQUEST_API = 33
+
+    /** The request could not be made (no status bar service, an exception). zh-CN: 无法发出请求 (没有状态栏服务, 抛出异常). */
+    const val TILE_REQUEST_UNAVAILABLE = -1
+
+    // Result codes of StatusBarManager.requestAddTileService (API 33); every error code is 1000 or higher.
+    private const val TILE_NOT_ADDED = 0
+    private const val TILE_ALREADY_ADDED = 1
+    private const val TILE_ADDED = 2
+
+    /**
+     * D61: "Add to Quick Settings" asks the system on Android 13+ and shows the manual steps on older versions; a request
+     * that fails for any reason also falls back to the manual steps. A declined request shows nothing.
+     * zh-CN: D61: "添加到快速设置" 在 Android 13+ 请系统询问用户, 更早的版本显示手动步骤; 请求因任何原因失败时同样退回手动步骤. 用户拒绝则不显示任何内容.
+     */
+    fun tileOutcome(sdk: Int, code: Int? = null): TileOutcome = when {
+        sdk < TILE_REQUEST_API -> TileOutcome.MANUAL
+        code == null -> TileOutcome.REQUEST
+        code == TILE_ADDED -> TileOutcome.ADDED
+        code == TILE_ALREADY_ADDED -> TileOutcome.ALREADY_ADDED
+        code == TILE_NOT_ADDED -> TileOutcome.DECLINED
+        else -> TileOutcome.MANUAL
+    }
 }
+
+/** What "Add to Quick Settings" does next (roadmap D61). zh-CN: "添加到快速设置" 的下一步 (路线图 D61). */
+internal enum class TileOutcome { REQUEST, ADDED, ALREADY_ADDED, DECLINED, MANUAL }
 
 /**
  * The single way the trigger entries open the assistant sheet (roadmap D60). Nothing records before the sheet listens

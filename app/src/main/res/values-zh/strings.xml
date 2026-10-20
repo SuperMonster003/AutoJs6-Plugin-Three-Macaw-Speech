@@ -208,7 +208,15 @@
     <string name="settings_speed_value">%1$.1f 倍</string>
     <string name="settings_synthesis">合成</string>
     <string name="settings_theme_color">主题色</string>
+    <string name="settings_tile">快速设置磁贴</string>
+    <string name="settings_tile_added">已添加语音指令磁贴</string>
+    <string name="settings_tile_present">语音指令磁贴已在快速设置中</string>
+    <string name="settings_tile_steps">1. 从屏幕顶部下滑两次, 打开快速设置.\n2. 点编辑按钮 (铅笔图标).\n3. 找到 3-Macaw Speech 的语音指令磁贴, 拖到面板中.</string>
+    <string name="settings_tile_steps_title">添加到快速设置</string>
+    <string name="settings_tile_summary">点按添加语音指令磁贴. 之后在快速设置中点它即可说话, 锁屏上也可以</string>
     <string name="settings_title">设置</string>
+    <string name="settings_triggers">触发方式</string>
+    <string name="settings_triggers_note">以上入口都打开与数字助理相同的听写弹层. 平时不录音, 只在听写的几秒内使用麦克风.</string>
     <string name="settings_tts_model">默认合成模型</string>
     <string name="settings_update_summary">在 GitHub 上查找新版本</string>
     <string name="settings_vad">语音活动检测</string>
@@ -226,6 +234,7 @@
     <string name="speech_model_license_commercial">此模型的许可允许商业用途. 使用前请阅读模型卡与许可证.</string>
     <string name="speech_model_license_non_commercial">此模型仅限非商业用途: 其许可或训练数据禁止商业使用. 下载即表示你接受此限制.</string>
     <string name="speech_model_license_unknown">此模型的发布者未声明许可, 是否允许商业用途未知. 请在使用前自行确认许可.</string>
+    <string name="tile_voice_label">语音指令</string>
     <string name="tryout_dictation_settings">端点: %1$s · VAD: %2$s (可在设置中更改)</string>
     <string name="tryout_engine_failed">语音引擎出错</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>

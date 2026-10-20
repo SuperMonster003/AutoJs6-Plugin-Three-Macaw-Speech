@@ -227,9 +227,13 @@ class ThreeMacawSpeechContractTest {
         voiceInput.forEach { (name, permission) -> assertEquals("$name is reached by any app", null, permission) }
         // Roadmap P5.7: the digital assistant is bound by the system only (BIND_VOICE_INTERACTION); the recognition
         // service is reached by any app and checks the caller's microphone permission itself.
-        val (assistant, own) = rest4.partition { it.first in assistantComponents() }
+        val (assistant, rest5) = rest4.partition { it.first in assistantComponents() }
         assertEquals(assistantComponents().keys, assistant.map { it.first }.toSet())
         assistant.forEach { (name, permission) -> assertEquals("$name keeps its protection", assistantComponents().getValue(name), permission) }
+        // Roadmap P7.1: the trigger entries the system binds or broadcasts to.
+        val (triggers, own) = rest5.partition { it.first in triggerComponents() }
+        assertEquals(triggerComponents().keys, triggers.map { it.first }.toSet())
+        triggers.forEach { (name, permission) -> assertEquals("$name keeps its protection", triggerComponents().getValue(name), permission) }
         screens.forEach { (name, permission) -> assertEquals("$name only shows the plugin's own screens", null, permission) }
         assertTrue("the home and settings screens and the recognition settings entry are exported", screens.map { it.first }.containsAll(screenEntries()))
         assertEquals(
@@ -403,13 +407,24 @@ class ThreeMacawSpeechContractTest {
 
         /** Roadmap P5: the screens the launcher and the system TTS settings open. zh-CN: 启动器与系统 TTS 设置打开的界面. */
         fun screenEntries(): Set<String> =
-            setOf("$PACKAGE.ui.home.HomeActivity", "$PACKAGE.ui.settings.SettingsActivity", "$PACKAGE.ui.settings.RecognitionSettingsAlias")
+            setOf(
+                "$PACKAGE.ui.home.HomeActivity", "$PACKAGE.ui.settings.SettingsActivity", "$PACKAGE.ui.settings.RecognitionSettingsAlias",
+                "$PACKAGE.ui.settings.TriggerSettingsAlias",
+            )
 
         /** Roadmap P5.7: the assistant services and the recognition service with their permission. zh-CN: 助理服务与识别服务及其权限. */
         fun assistantComponents(): Map<String, String?> = mapOf(
             "$PACKAGE.assistant.MacawVoiceInteractionService" to "android.permission.BIND_VOICE_INTERACTION",
             "$PACKAGE.assistant.MacawVoiceInteractionSessionService" to "android.permission.BIND_VOICE_INTERACTION",
             "$PACKAGE.recognition.MacawRecognitionService" to null,
+        )
+
+        /**
+         * Roadmap P7.1: the trigger entries the system binds or broadcasts to, with their permission.
+         * zh-CN: 路线图 P7.1: 由系统绑定或广播的触发式入口及其权限.
+         */
+        fun triggerComponents(): Map<String, String?> = mapOf(
+            "$PACKAGE.trigger.VoiceTileService" to "android.permission.BIND_QUICK_SETTINGS_TILE",
         )
 
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")

@@ -22,6 +22,22 @@ class TriggerPolicyTest {
     }
 
     @Test
+    fun `adding the tile asks the system on Android 13 and shows the steps otherwise`() {
+        // D61: no system request before API 33, the manual steps instead.
+        assertEquals(TileOutcome.MANUAL, TriggerPolicy.tileOutcome(sdk = 24))
+        assertEquals(TileOutcome.MANUAL, TriggerPolicy.tileOutcome(sdk = 32))
+        assertEquals(TileOutcome.REQUEST, TriggerPolicy.tileOutcome(sdk = 33))
+        // StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED / _TILE_ALREADY_ADDED / _TILE_NOT_ADDED.
+        assertEquals(TileOutcome.ADDED, TriggerPolicy.tileOutcome(sdk = 33, code = 2))
+        assertEquals(TileOutcome.ALREADY_ADDED, TriggerPolicy.tileOutcome(sdk = 35, code = 1))
+        assertEquals("a declined request shows nothing", TileOutcome.DECLINED, TriggerPolicy.tileOutcome(sdk = 35, code = 0))
+        // Every error code (1000 and higher) and a request that could not be made fall back to the steps.
+        listOf(1000, 1001, 1004, 1005, TriggerPolicy.TILE_REQUEST_UNAVAILABLE).forEach { code ->
+            assertEquals("code $code", TileOutcome.MANUAL, TriggerPolicy.tileOutcome(sdk = 34, code = code))
+        }
+    }
+
+    @Test
     fun `entry names are stable ids`() {
         assertEquals(listOf("tile", "widget", "shortcut", "floating", "key"), TriggerSource.entries.map { it.id })
         TriggerSource.entries.forEach { assertEquals(it, TriggerSource.of(it.id)) }

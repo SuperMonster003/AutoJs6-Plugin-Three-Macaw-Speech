@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings
 
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -47,6 +48,9 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPr
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TileOutcome
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPolicy
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.VoiceTileService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.about.NoticesActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.appearance.AppearancePreferences
@@ -88,17 +92,20 @@ import java.util.concurrent.Executors
  * system settings start it with `ACTION_MAIN`, and it then opens at the synthesis group. Through `RecognitionSettingsAlias`
  * it is also the settings entry of the digital assistant and the recognition service (roadmap P5.7) and opens at the
  * recognition group, whose "Digital assistant" row tells whether 3-Macaw Speech is the default assistant and opens the
- * system settings to choose it (the plugin cannot choose it itself, D48).
+ * system settings to choose it (the plugin cannot choose it itself, D48). Its triggers group (roadmap P7.1, D58 - D65)
+ * sets up the entries that open the assistant sheet; through `TriggerSettingsAlias` (a long press on the tile) the screen
+ * opens there.
  * zh-CN: 设置页 (路线图 P5.2, 独立设置规范): 外观 (语言, 夜间模式, 主题色, 启动器图标; 前三项默认跟随 AutoJs6), 识别与合成默认值 (按维护者 2026-10-16
  * 的决定只作用于试听试说页与系统 TTS 引擎), 资源与关于. 每个选择对话框编辑草稿, 确定时保存一次. 它也是系统 TTS 引擎的 `settingsActivity`
  * (`res/xml/tts_engine.xml`): 系统设置以 `ACTION_MAIN` 启动它, 此时定位到合成分组. 经 `RecognitionSettingsAlias` 它也是数字助理与识别服务的设置入口
  * (路线图 P5.7), 此时定位到识别分组; 该组的 "数字助理" 行显示 3-Macaw Speech 是否为默认助理, 并打开系统设置供用户选择 (插件无法自行选择, D48).
+ * "触发方式" 分组 (路线图 P7.1, D58 - D65) 设置打开助理弹层的各个入口; 经 `TriggerSettingsAlias` (长按磁贴) 打开时定位到该分组.
  */
 class SettingsActivity : StandaloneActivity() {
 
     private enum class Dialog {
         LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, ASR_MODEL, ENDPOINT, TTS_MODEL, SPEAKER, SPEED, VOICE_LANGUAGE, VOICE,
-        IDLE, RECYCLE, IGNORED,
+        IDLE, RECYCLE, IGNORED, TILE_STEPS,
     }
 
     /** What the speech rows show, loaded off the main thread. zh-CN: 语音相关行显示的内容, 在主线程之外加载. */
@@ -206,15 +213,18 @@ class SettingsActivity : StandaloneActivity() {
                 pendingMessage = null
             }
         }
-        // The recognition entry of the assistant and the recognition service first, then the TTS engine's (ACTION_MAIN).
+        // The recognition entry of the assistant and the recognition service first, then the trigger entry of the tile and
+        // the key service (roadmap P7.1), then the TTS engine's (ACTION_MAIN).
         val fromRecognition = intent?.component?.className?.endsWith(RECOGNITION_ALIAS) == true
-        val fromSystem = !fromRecognition && intent?.action == Intent.ACTION_MAIN
+        val fromTriggers = !fromRecognition && intent?.component?.className?.endsWith(TRIGGER_ALIAS) == true
+        val fromSystem = !fromRecognition && !fromTriggers && intent?.action == Intent.ACTION_MAIN
         val scroll = rememberScrollState()
         var synthesisTop by remember { mutableIntStateOf(-1) }
         var recognitionTop by remember { mutableIntStateOf(-1) }
+        var triggersTop by remember { mutableIntStateOf(-1) }
         var scrolled by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(synthesisTop, recognitionTop) {
-            val target = if (fromRecognition) recognitionTop else if (fromSystem) synthesisTop else -1
+        LaunchedEffect(synthesisTop, recognitionTop, triggersTop) {
+            val target = if (fromRecognition) recognitionTop else if (fromTriggers) triggersTop else if (fromSystem) synthesisTop else -1
             if (!scrolled && target >= 0) {
                 scroll.scrollTo(target)
                 scrolled = true
@@ -261,6 +271,17 @@ class SettingsActivity : StandaloneActivity() {
                     icon = R.drawable.ic_tune_24, modifier = Modifier.testTag("macaw.settings.vad"))
                 Text(
                     stringResource(R.string.settings_scope_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 64.dp, end = 24.dp, top = 4.dp),
+                )
+
+                // Roadmap P7.1 (D58 - D65): the entries that open the assistant sheet; none of them records until it listens.
+                SectionHeader(stringResource(R.string.settings_triggers), Modifier.onGloballyPositioned { triggersTop = it.positionInParent().y.toInt() })
+                SettingsRow(stringResource(R.string.settings_tile), summary = stringResource(R.string.settings_tile_summary), icon = R.drawable.ic_toggle_24,
+                    onClick = ::addTile, modifier = Modifier.testTag("macaw.settings.tile"))
+                Text(
+                    stringResource(R.string.settings_triggers_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 64.dp, end = 24.dp, top = 4.dp),
@@ -470,6 +491,14 @@ class SettingsActivity : StandaloneActivity() {
                 confirmText = stringResource(R.string.settings_recycle_confirm),
                 tag = "macaw.dialog.recycle",
             )
+            Dialog.TILE_STEPS -> MessageDialog(
+                title = stringResource(R.string.settings_tile_steps_title),
+                message = stringResource(R.string.settings_tile_steps),
+                onDismissRequest = close,
+                onConfirm = close,
+                dismissText = null,
+                tag = "macaw.dialog.tileSteps",
+            )
             Dialog.IGNORED -> {
                 val store = AppUpdateStore.of(this)
                 val tags = store.ignoredTags.sorted()
@@ -572,6 +601,27 @@ class SettingsActivity : StandaloneActivity() {
 
     private fun open(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    }
+
+    /**
+     * Roadmap D61: Android 13+ asks the system to add the tile, older versions show the manual steps; nothing pops up
+     * unasked.
+     * zh-CN: 路线图 D61: Android 13+ 请系统添加磁贴, 更早的版本显示手动步骤; 不主动弹窗.
+     */
+    private fun addTile() {
+        if (TriggerPolicy.tileOutcome(Build.VERSION.SDK_INT) != TileOutcome.REQUEST || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            dialog = Dialog.TILE_STEPS
+            return
+        }
+        VoiceTileService.requestAdd(this) { code ->
+            Log.i(TAG, "Tile request result $code")
+            when (TriggerPolicy.tileOutcome(Build.VERSION.SDK_INT, code)) {
+                TileOutcome.ADDED -> pendingMessage = getString(R.string.settings_tile_added)
+                TileOutcome.ALREADY_ADDED -> pendingMessage = getString(R.string.settings_tile_present)
+                TileOutcome.MANUAL -> dialog = Dialog.TILE_STEPS
+                TileOutcome.REQUEST, TileOutcome.DECLINED -> Unit
+            }
+        }
     }
 
     // Summaries and labels --------------------------------------------------------------------------------------
@@ -688,6 +738,12 @@ class SettingsActivity : StandaloneActivity() {
 
         /** The settings entry of the assistant and the recognition service (Manifest alias). zh-CN: 助理与识别服务的设置入口 (Manifest 别名). */
         const val RECOGNITION_ALIAS = ".ui.settings.RecognitionSettingsAlias"
+
+        /**
+         * The settings entry of the tile (long press) and the key service (roadmap P7.1, Manifest alias).
+         * zh-CN: 磁贴 (长按) 与按键服务的设置入口 (路线图 P7.1, Manifest 别名).
+         */
+        const val TRIGGER_ALIAS = ".ui.settings.TriggerSettingsAlias"
 
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawSettings").apply { isDaemon = true } }
         val main = Handler(Looper.getMainLooper())

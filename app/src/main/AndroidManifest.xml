@@ -147,6 +147,20 @@
             android:exported="true"
             android:label="@string/settings_title"
             android:targetActivity=".ui.settings.SettingsActivity" />
+        <!--
+            The settings entry of the trigger entries (roadmap P7.1): the settings screen at its triggers group, opened by a
+            long press on the quick settings tile (QS_TILE_PREFERENCES).
+        -->
+        <activity-alias
+            android:name=".ui.settings.TriggerSettingsAlias"
+            android:exported="true"
+            android:label="@string/settings_title"
+            android:targetActivity=".ui.settings.SettingsActivity">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity-alias>
         <activity
             android:name=".ui.tryout.TryoutActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
@@ -359,6 +373,21 @@
             <meta-data
                 android:name="android.speech"
                 android:resource="@xml/recognition_service" />
+        </service>
+
+        <!--
+            The quick settings tile "Voice command" (roadmap P7.1, D61): bound by the system UI only
+            (BIND_QUICK_SETTINGS_TILE); a tap opens the assistant sheet, also on the lock screen. It records nothing.
+        -->
+        <service
+            android:name=".trigger.VoiceTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_mic_24"
+            android:label="@string/tile_voice_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
         </service>
 
 

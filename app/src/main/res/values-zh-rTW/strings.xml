@@ -208,7 +208,15 @@
     <string name="settings_speed_value">%1$.1f 倍</string>
     <string name="settings_synthesis">合成</string>
     <string name="settings_theme_color">主題色</string>
+    <string name="settings_tile">快速設定圖塊</string>
+    <string name="settings_tile_added">已加入語音指令圖塊</string>
+    <string name="settings_tile_present">語音指令圖塊已在快速設定中</string>
+    <string name="settings_tile_steps">1. 從螢幕頂端向下滑動兩次, 開啟快速設定.\n2. 點編輯按鈕 (鉛筆圖示).\n3. 找到 3-Macaw Speech 的語音指令圖塊, 拖曳到面板中.</string>
+    <string name="settings_tile_steps_title">加入快速設定</string>
+    <string name="settings_tile_summary">點按加入語音指令圖塊. 之後在快速設定中點它即可說話, 螢幕鎖定時也可以</string>
     <string name="settings_title">設定</string>
+    <string name="settings_triggers">觸發方式</string>
+    <string name="settings_triggers_note">以上入口都會開啟與數位助理相同的聽寫面板. 平時不錄音, 只在聽寫的幾秒內使用麥克風.</string>
     <string name="settings_tts_model">預設合成模型</string>
     <string name="settings_update_summary">在 GitHub 上尋找新版本</string>
     <string name="settings_vad">語音活動偵測</string>
@@ -226,6 +234,7 @@
     <string name="speech_model_license_commercial">此模型的授權允許商業用途. 使用前請閱讀模型卡與授權條款.</string>
     <string name="speech_model_license_non_commercial">此模型僅限非商業用途: 其授權或訓練資料禁止商業使用. 下載即表示你接受此限制.</string>
     <string name="speech_model_license_unknown">此模型的發布者未聲明授權, 是否允許商業用途未知. 請在使用前自行確認授權.</string>
+    <string name="tile_voice_label">語音指令</string>
     <string name="tryout_dictation_settings">端點: %1$s · VAD: %2$s (可在設定中變更)</string>
     <string name="tryout_engine_failed">語音引擎發生錯誤</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
