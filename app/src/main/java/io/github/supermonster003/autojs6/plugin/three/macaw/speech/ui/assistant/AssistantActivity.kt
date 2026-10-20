@@ -54,6 +54,8 @@ import androidx.core.graphics.drawable.toBitmap
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.AssistantSessions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.AssistantEntry
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.HomeActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.voice.VoiceAction
@@ -74,10 +76,12 @@ import java.text.Collator
  * text can be edited and goes to one of the apps that answer `VOICE_COMMAND` (D49, D50, D53), or is copied, or the user
  * speaks again. Nothing is sent before a target button is tapped, no target is the default and no choice is remembered.
  * It also shows over the lock screen; sending, copying and the guidance actions unlock first (D55). Started by the
- * session of the voice interaction service, and not exported.
+ * session of the voice interaction service, or directly by the trigger entries while 3-Macaw Speech is not the assistant
+ * (roadmap P7.1, D60), in a task of its own; not exported.
  * zh-CN: 数字助理的弹层 (路线图 P5.7, D48 - D55): 语音输入的底部卡片 (D42) 经语音输入路径听写一次 (D44 - D47, 从唤醒会话手中接管麦克风, D57); 之后可以
  * 编辑识别文字, 交给应答 `VOICE_COMMAND` 的应用之一 (D49, D50, D53), 或复制, 或重说. 点目标按钮之前不发送任何内容, 没有默认目标, 不记住选择. 弹层也
- * 显示在锁屏之上; 发送, 复制与引导中的操作先解锁 (D55). 由语音交互服务的会话启动, 不导出.
+ * 显示在锁屏之上; 发送, 复制与引导中的操作先解锁 (D55). 由语音交互服务的会话启动, 3-Macaw Speech 不是助理时由触发式入口直接打开 (路线图 P7.1, D60),
+ * 位于自己的任务中; 不导出.
  */
 class AssistantActivity : StandaloneActivity() {
 
@@ -101,18 +105,31 @@ class AssistantActivity : StandaloneActivity() {
         if (granted) current.start() else current.microphoneDenied()
     }
 
+    /** The trigger entry that opened the sheet (roadmap P7.1), null for the assist gesture. zh-CN: 打开弹层的触发式入口, 助理手势为 null. */
+    internal val source: TriggerSource? get() = TriggerSource.of(intent?.getStringExtra(AssistantEntry.EXTRA_SOURCE))
+
+    /** Started by the assistant session rather than directly (roadmap D60). zh-CN: 由助理会话启动而非直接打开 (路线图 D60). */
+    internal val viaSession: Boolean get() = intent?.getBooleanExtra(EXTRA_VIA_SESSION, false) == true
+
     override fun onCreate(savedInstanceState: Bundle?) {
         showOverKeyguard()
         super.onCreate(savedInstanceState)
         onBackPressedDispatcher.addCallback(this) { dismiss() }
         AssistantSessions.opened(this)
+        logOpened()
         listen()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        // The assist gesture again: listen again unless listening already.
+        setIntent(intent)
+        logOpened()
+        // The assist gesture or a trigger entry again: listen again unless listening already.
         if (stage != Stage.LISTENING || voice?.problem != null) redo()
+    }
+
+    private fun logOpened() {
+        Log.i(TAG, "Sheet opened (source ${source?.id ?: "assist"}, ${if (viaSession) "session" else "direct"})")
     }
 
     override fun onResume() {
@@ -408,8 +425,15 @@ class AssistantActivity : StandaloneActivity() {
         @Suppress("DEPRECATION")
         private const val LEGACY_DISMISS_KEYGUARD = WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
 
-        /** The intent the assistant session starts. zh-CN: 助理会话启动的 Intent. */
-        fun intent(context: Context): Intent = Intent(context, AssistantActivity::class.java)
+        /** Set by the assistant session on the sheet it starts. zh-CN: 助理会话在其启动的弹层上设置. */
+        internal const val EXTRA_VIA_SESSION = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.extra.VIA_SESSION"
+
+        /**
+         * The intent the assistant session starts, and the trigger entries when 3-Macaw Speech is not the assistant (D60).
+         * zh-CN: 助理会话启动的 Intent; 3-Macaw Speech 不是助理时触发式入口也用它 (D60).
+         */
+        internal fun intent(context: Context, source: TriggerSource? = null): Intent = Intent(context, AssistantActivity::class.java)
+            .apply { source?.let { putExtra(AssistantEntry.EXTRA_SOURCE, it.id) } }
     }
 }
 

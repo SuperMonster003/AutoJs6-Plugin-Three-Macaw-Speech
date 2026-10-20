@@ -82,7 +82,7 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".ui.assistant.AssistantActivity", ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
+                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, ".service.MicrophoneStartActivity", ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
             application.children("activity").map { it.android("name") },
@@ -287,9 +287,11 @@ class ManifestContractTest {
         assertEquals("disabledShowContext is set for the service and every session", 2, Regex("disabledShowContext = ").findAll(source).count())
 
         val sheet = application.children("activity").single { it.android("name") == ".ui.assistant.AssistantActivity" }
-        assertEquals("started by the assistant session only", "false", sheet.android("exported"))
+        assertEquals("started by the assistant session and the trigger entries only", "false", sheet.android("exported"))
         assertEquals("true", sheet.android("excludeFromRecents"))
         assertEquals("@style/Theme.ThreeMacawSpeech.VoiceInput", sheet.android("theme"))
+        assertEquals("D55 for every start, not only the session's", "true", sheet.android("showWhenLocked"))
+        assertEquals("D60: a task of its own, never over the plugin's other screens", "", sheet.android("taskAffinity"))
         assertTrue(sheet.children("intent-filter").isEmpty())
 
         // D50: the targets are visible on API 30+ through one query of their action.
@@ -297,6 +299,20 @@ class ManifestContractTest {
         assertEquals(listOf("org.autojs.plugin.action.VOICE_COMMAND"), queries.flatMap { intent -> intent.children("action").map { it.android("name") } })
         val answered = application.children("activity").flatMap { activity -> activity.children("intent-filter").flatMap { filter -> filter.children("action").map { it.android("name") } } }
         assertTrue("the plugin never answers VOICE_COMMAND itself", "org.autojs.plugin.action.VOICE_COMMAND" !in answered)
+    }
+
+    @Test
+    fun `the trigger activity is internal, windowless and shows over the lock screen`() {
+        // Roadmap D60, D61, D63: the widget, the shortcut and the tile start it; it opens the sheet and finishes.
+        val activity = application.children("activity").single { it.android("name") == TRIGGER }
+        assertEquals("false", activity.android("exported"))
+        assertNull(activity.androidOrNull("permission"))
+        assertEquals("@android:style/Theme.NoDisplay", activity.android("theme"))
+        assertEquals("true", activity.android("excludeFromRecents"))
+        assertEquals("true", activity.android("noHistory"))
+        assertEquals("", activity.android("taskAffinity"))
+        assertEquals("D61: a tile tapped on the lock screen needs no unlock", "true", activity.android("showWhenLocked"))
+        assertTrue(activity.children("intent-filter").isEmpty())
     }
 
     @Test
@@ -371,6 +387,9 @@ class ManifestContractTest {
         const val ASSISTANT_SESSION = ".assistant.MacawVoiceInteractionSessionService"
         const val RECOGNITION = ".recognition.MacawRecognitionService"
         const val RECOGNITION_SETTINGS = ".ui.settings.RecognitionSettingsAlias"
+
+        /** Roadmap P7.1: the launch target of the trigger entries. zh-CN: 触发式入口的启动目标. */
+        const val TRIGGER = ".trigger.TriggerActivity"
         const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"
 
         /**

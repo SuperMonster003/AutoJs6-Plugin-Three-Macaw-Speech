@@ -182,16 +182,35 @@
             </intent-filter>
         </activity>
         <!--
-            The sheet of the digital assistant (roadmap P5.7, D48 - D55): started by the assistant session only, so it is
-            internal; it shows over the lock screen (set in code, D55) and in a task of its own, as assistant activities are.
+            The sheet of the digital assistant (roadmap P5.7, D48 - D55): started by the assistant session, or by the trigger
+            entries below while 3-Macaw Speech is not the assistant (roadmap P7.1, D60), so it is internal; it shows over the
+            lock screen (D55; API 24 - 26 in code) and in a task of its own, as assistant activities are, never over the
+            plugin's other screens.
         -->
         <activity
             android:name=".ui.assistant.AssistantActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:excludeFromRecents="true"
             android:exported="false"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
             android:theme="@style/Theme.ThreeMacawSpeech.VoiceInput"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustResize"
+            tools:targetApi="o_mr1" />
+        <!--
+            The trigger entries (roadmap P7.1, D58 - D65): the widget, the launcher shortcut and the quick settings tile start
+            this windowless activity, which opens the sheet through the assistant session or directly (D60). Internal; it
+            shows over the lock screen like the sheet, so a tile tapped there needs no unlock (D61).
+        -->
+        <activity
+            android:name=".trigger.TriggerActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay"
+            tools:targetApi="o_mr1" />
         <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
         <receiver
             android:name=".ui.appearance.LauncherIconUpdateReceiver"

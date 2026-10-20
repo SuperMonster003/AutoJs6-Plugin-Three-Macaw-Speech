@@ -12,6 +12,8 @@ import android.service.voice.VoiceInteractionSession
 import android.service.voice.VoiceInteractionSessionService
 import android.util.Log
 import android.view.WindowManager
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.AssistantEntry
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.assistant.AssistantActivity
 import java.lang.ref.WeakReference
 
@@ -30,11 +32,30 @@ class MacawVoiceInteractionService : VoiceInteractionService() {
     override fun onReady() {
         super.onReady()
         disabledShowContext = NO_SCREEN_CONTENT
+        running = this
         Log.i(TAG, "Digital assistant ready")
+    }
+
+    override fun onShutdown() {
+        if (running === this) running = null
+        super.onShutdown()
+    }
+
+    override fun onDestroy() {
+        if (running === this) running = null
+        super.onDestroy()
     }
 
     companion object {
         private const val TAG = "MacawAssistant"
+
+        /**
+         * The service while the system keeps it ready, so the trigger entries can show a session (roadmap D60).
+         * zh-CN: 系统保持其就绪期间的服务实例, 供触发式入口显示会话 (路线图 D60).
+         */
+        @Volatile
+        internal var running: MacawVoiceInteractionService? = null
+            private set
 
         /** D54: neither the `AssistStructure` of the current app nor a screenshot. zh-CN: D54: 既不要当前应用的 `AssistStructure`, 也不要截图. */
         internal const val NO_SCREEN_CONTENT = VoiceInteractionSession.SHOW_WITH_ASSIST or VoiceInteractionSession.SHOW_WITH_SCREENSHOT
@@ -79,7 +100,9 @@ internal class AssistantSession(context: Context) : VoiceInteractionSession(cont
         AssistantSessions.shown(this)
         Log.i(TAG, "Assistant session shown (flags $showFlags)")
         try {
-            val sheet = AssistantActivity.intent(context)
+            // A trigger entry (roadmap D60) names itself in the arguments; the assist gesture names nothing.
+            val source = runCatching { args?.getString(AssistantEntry.EXTRA_SOURCE) }.getOrNull()
+            val sheet = AssistantActivity.intent(context, TriggerSource.of(source)).putExtra(AssistantActivity.EXTRA_VIA_SESSION, true)
             // startAssistantActivity is API 26; below it the sheet starts as an ordinary task over the current app (API 24 - 25
             // have no background activity start limits) and the empty session window stays out of the way (onCreate).
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startAssistantActivity(sheet) else context.startActivity(sheet.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -109,9 +132,10 @@ internal class AssistantSession(context: Context) : VoiceInteractionSession(cont
 /**
  * Links the shown session and the assistant sheet (main thread): the sheet closes when the system hides the session
  * (the Home button, another app, the lock screen), and closing the sheet hides the session. The sheet also opens without
- * a session (device tests, the settings screen); then nothing is linked.
+ * a session (the trigger entries of roadmap P7.1 while 3-Macaw Speech is not the assistant, D60; device tests); then
+ * nothing is linked.
  * zh-CN: 关联已显示的会话与助理弹层 (主线程): 系统隐藏会话时 (Home 键, 切到其他应用, 锁屏) 弹层关闭, 弹层关闭时隐藏会话. 弹层也可以在没有会话时打开
- * (设备测试, 设置页), 此时不关联.
+ * (3-Macaw Speech 不是助理时路线图 P7.1 的触发式入口, D60; 设备测试), 此时不关联.
  */
 internal object AssistantSessions {
     private var session: WeakReference<VoiceInteractionSession>? = null
