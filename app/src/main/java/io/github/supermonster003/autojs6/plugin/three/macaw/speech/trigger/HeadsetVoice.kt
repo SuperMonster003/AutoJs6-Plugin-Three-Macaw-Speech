@@ -150,12 +150,19 @@ internal class HeadsetVoice(context: Context, private val onEnded: () -> Unit) {
         }
         val current = headset ?: return
         headset = null
-        if (started) {
-            // The service stops it only for its active device, which is the requesting headset (it may not be the first).
-            val ended = runCatching { current.connectedDevices.count { device -> current.stopVoiceRecognition(device) } }
-            Log.i(TAG, "Headset voice recognition stopped (${ended.getOrElse { it.toString() }})")
-        }
+        if (started) end(current)
         close(current)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun end(current: BluetoothHeadset) {
+        try {
+            // The service stops it only for its active device, which is the requesting headset (it may not be the first).
+            val ended = current.connectedDevices.count { device -> current.stopVoiceRecognition(device) }
+            Log.i(TAG, "Headset voice recognition stopped ($ended)")
+        } catch (e: SecurityException) {
+            Log.w(TAG, "Headset voice recognition could not stop: $e")
+        }
     }
 
     @SuppressLint("MissingPermission")
