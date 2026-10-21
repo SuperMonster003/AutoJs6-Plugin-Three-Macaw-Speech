@@ -4,6 +4,19 @@
 
 ******
 
+# v1.2.0
+
+###### 2026/10/21
+
+* `Note` Nouveau mot de réveil permanent, désactivé par défaut: une fois activé, il écoute en continu le mot de réveil sur l'appareil, le voyant du micro reste allumé, une notification reste affichée et la batterie s'use plus vite (voir le README pour une mesure de 30 minutes écran éteint). Il est conseillé de l'utiliser avec "Durée d'écoute" ou "Écouter uniquement pendant la charge"
+* `Fonctionnalité` Mot de réveil permanent (Paramètres > Mot de réveil permanent): dire un mot de réveil ("小鹦小鹦" et "Hey Macaw" par défaut; modifiables, avec une sensibilité élevée, moyenne ou faible) ouvre le même panneau de dictée que l'assistant numérique; écran éteint ou verrouillé, l'écran s'allume, et le déverrouillage n'est demandé qu'avant l'envoi ou la copie
+* `Fonctionnalité` Un panneau ouvert par le mot de réveil lit le texte reconnu à voix haute, avec une voix de 3-Macaw Speech de cette langue s'il y en a une, sinon avec la voix du système; cela se désactive dans les paramètres
+* `Fonctionnalité` Durée d'écoute (désactiver après 10, 30 ou 60 minutes, ou toujours active) et Écouter uniquement pendant la charge (pause une fois débranché, reprise une fois rebranché), les mêmes options que dans 3-Stove Agent
+* `Fonctionnalité` Si 3-Macaw Speech n'est pas l'assistant numérique par défaut, l'activation du mot de réveil permanent demande une fois l'autorisation de se superposer aux autres applications; sans elle, un mot de réveil entendu affiche une notification "Appuyer pour parler" qui ouvre le panneau
+* `Fonctionnalité` Quand un script, une autre application ou un autre déclencheur de ce plugin utilise le micro, le mot de réveil permanent s'efface et reprend l'écoute une fois qu'ils ont terminé
+* `Fonctionnalité` Une seule écoute permanente à la fois entre 3-Stone AI, 3-Stove Agent et 3-Macaw Speech; si une autre est active, il vous est demandé de la désactiver d'abord et vous pouvez ouvrir directement ses paramètres
+* `Fonctionnalité` Aucun enregistrement ne démarre seul après un redémarrage ou une mise à jour: tant que l'interrupteur est activé, une notification "Appuyez pour reprendre le mot de réveil permanent" apparaît, et ouvrir l'écran d'accueil ou les paramètres le reprend aussi
+
 # v1.1.0
 
 ###### 2026/10/21

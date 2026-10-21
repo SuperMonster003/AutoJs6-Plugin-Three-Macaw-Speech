@@ -5,6 +5,21 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.2.0": {
+      "released_date": "2026/10/21",
+      "hint": [
+        "Nueva palabra de activación permanente, desactivada por defecto: mientras está activa escucha la palabra de activación en el dispositivo, el indicador del micrófono sigue encendido, hay una notificación fija y la batería se gasta más rápido (consulta el README para una medición de 30 minutos con la pantalla apagada). Se recomienda usarla con \"Tiempo de escucha\" o \"Escuchar solo mientras se carga\""
+      ],
+      "feature": [
+        "Palabra de activación permanente (Ajustes > Palabra de activación permanente): al decir una palabra de activación (\"小鹦小鹦\" y \"Hey Macaw\" por defecto; editables, con sensibilidad alta, media o baja) se abre el mismo panel de dictado que con el asistente digital; con la pantalla apagada o bloqueada la enciende, y solo hay que desbloquear antes de enviar o copiar",
+        "Un panel abierto por la palabra de activación lee en voz alta el texto reconocido, con una voz de 3-Macaw Speech de ese idioma si la hay o, si no, con la voz del sistema; se puede desactivar en los ajustes",
+        "Tiempo de escucha (desactivar tras 10, 30 o 60 minutos, o siempre activa) y Escuchar solo mientras se carga (se pausa al desconectar el cargador y continúa al volver a conectarlo), las mismas opciones que en 3-Stove Agent",
+        "Si 3-Macaw Speech no es el asistente digital predeterminado, al activar la palabra de activación permanente se pide una vez el permiso para mostrarse sobre otras apps; sin él, al oír la palabra de activación aparece una notificación \"Toca para hablar\" que abre el panel",
+        "Cuando un script, otra app u otra forma de activación de este plugin usa el micrófono, la palabra de activación permanente se aparta y vuelve a escuchar cuando terminan",
+        "Solo puede haber una escucha permanente a la vez entre 3-Stone AI, 3-Stove Agent y 3-Macaw Speech; si otra está activa, se te pide desactivarla primero y puedes abrir sus ajustes directamente",
+        "Tras un reinicio o una actualización no se graba nada por sí solo: con el interruptor activado aparece una notificación \"Toca para reanudar la palabra de activación permanente\", y abrir la pantalla de inicio o los ajustes también la reanuda"
+      ]
+    },
     "v1.1.0": {
       "released_date": "2026/10/21",
       "hint": [

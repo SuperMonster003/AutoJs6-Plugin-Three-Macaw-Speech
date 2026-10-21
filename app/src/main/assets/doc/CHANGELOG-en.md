@@ -4,6 +4,19 @@
 
 ******
 
+# v1.2.0
+
+###### 2026/10/21
+
+* `Hint` New resident wake word, off by default: while on, it keeps listening for the wake word on the device, the microphone indicator stays lit, a notification stays and the battery drains faster (see the README for a 30 minute screen-off measurement). Using it with "Listening time" or "Listen only while charging" is recommended
+* `Feature` Resident wake word (Settings > Resident wake word): saying a wake word ("小鹦小鹦" and "Hey Macaw" by default; editable, with high, medium and low sensitivity) opens the same dictation sheet as the digital assistant; with the screen off or locked it turns the screen on, and you unlock only before sending or copying
+* `Feature` A sheet opened by the wake word reads the recognized text aloud, with a 3-Macaw Speech voice of that language if there is one, else with the system voice; this can be turned off in the settings
+* `Feature` Listening time (turn off after 10, 30 or 60 minutes, or always on) and Listen only while charging (pauses when unplugged and continues when plugged in again), the same options as in 3-Stove Agent
+* `Feature` When 3-Macaw Speech is not the default digital assistant, turning the resident wake word on asks once for the permission to display over other apps; without it, a heard wake word shows a "Tap to speak" notification that opens the sheet
+* `Feature` When a script, another app or another entry of this plugin uses the microphone, the resident wake word steps aside and listens again once they finish
+* `Feature` Only one resident listener can run at a time among 3-Stone AI, 3-Stove Agent and 3-Macaw Speech; while another one is on, you are asked to turn it off first and can open its settings directly
+* `Feature` No recording starts by itself after a restart or an update: while the switch is on, a "Tap to resume the resident wake word" notification appears, and opening the home screen or the settings resumes it as well
+
 # v1.1.0
 
 ###### 2026/10/21
