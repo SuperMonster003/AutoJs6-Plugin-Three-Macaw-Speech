@@ -113,6 +113,77 @@ class SessionTableTest {
     }
 
     @Test
+    fun `the resident background holder records only while the microphone is free`() {
+        // Roadmap D72 / D76: every microphone reservation silences it, without a takeover flag, and it records again after.
+        val resident = FakeWake()
+        val background = table.reserve(1, microphone = true, background = true)
+        table.yieldable(background, resident)
+        assertTrue(table.backgroundListening)
+        assertFalse("the background holder never counts as the microphone holder", table.microphoneInUse)
+        assertBusy("one background holder at a time") { table.reserve(1, microphone = true, background = true) }
+        val script = table.reserve(10, microphone = true)
+        assertEquals(1, resident.yields)
+        assertFalse(table.backgroundListening)
+        assertBusy { table.reserve(11, microphone = true) }
+        table.release(script)
+        assertEquals(1, resident.resumes)
+        assertTrue(table.backgroundListening)
+        table.release(background)
+        assertFalse(table.backgroundListening)
+        table.release(table.reserve(10, microphone = true))
+        assertEquals("a released background holder is left alone", 1, resident.yields)
+    }
+
+    @Test
+    fun `a background holder reserved while the microphone is in use starts silenced`() {
+        val dictation = table.reserve(10, microphone = true)
+        val resident = FakeWake()
+        val background = table.reserve(1, microphone = true, background = true)
+        assertFalse(table.backgroundListening)
+        table.yieldable(background, resident)
+        assertEquals("it stops before it records", 1, resident.yields)
+        table.release(dictation)
+        assertEquals(1, resident.resumes)
+        assertTrue(table.backgroundListening)
+        table.release(background)
+    }
+
+    @Test
+    fun `the background holder waits for the takeover and the holder to end`() {
+        // D57 stays intact above it: a sheet takes a script's wake session over, and the resident word waits for both.
+        val resident = FakeWake()
+        val background = table.reserve(1, microphone = true, background = true)
+        table.yieldable(background, resident)
+        val wake = FakeWake()
+        val holder = table.reserve(10, microphone = true)
+        table.yieldable(holder, wake)
+        val taker = table.reserve(20, microphone = true, takeover = true)
+        assertEquals(1, wake.yields)
+        table.release(taker)
+        assertEquals(1, wake.resumes)
+        assertEquals("the script's session still records", 0, resident.resumes)
+        table.release(holder)
+        assertEquals(1, resident.resumes)
+        assertEquals(1, resident.yields)
+        table.release(background)
+    }
+
+    @Test
+    fun `a background holder that cannot yield keeps the microphone and one that ends silenced is not resumed`() {
+        val resident = FakeWake(allow = false)
+        val background = table.reserve(1, microphone = true, background = true)
+        table.yieldable(background, resident)
+        assertBusy { table.reserve(10, microphone = true) }
+        assertFalse(table.microphoneInUse)
+        resident.allow = true
+        val dictation = table.reserve(10, microphone = true)
+        table.release(background)
+        table.release(dictation)
+        assertEquals(0, resident.resumes)
+        assertFalse(table.backgroundListening)
+    }
+
+    @Test
     fun `external sessions are counted per uid beside the microphone`() {
         val slots = List(SpeechLimits.MAX_PCM_SESSIONS_PER_TOKEN) { table.reserve(10, microphone = false) }
         assertBusy { table.reserve(10, microphone = false) }

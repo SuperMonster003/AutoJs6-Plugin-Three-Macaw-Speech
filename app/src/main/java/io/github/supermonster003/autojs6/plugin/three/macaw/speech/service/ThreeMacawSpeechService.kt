@@ -193,7 +193,18 @@ internal class SpeechPluginBinder(
      */
     fun openLocalWakeSession(options: Bundle?, callback: ISpeechWakeCallback?): ISpeechSession = throwing { wake(options, callback, null, takeover = true) }
 
-    private fun wake(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?, takeover: Boolean): ISpeechSession {
+    /**
+     * The resident wake word (roadmap P7.4, D72, D75, D76): as [openWakeSession], as the background holder of the session
+     * table, which every other microphone session silences until the microphone is free again, and without the microphone
+     * foreground service (the resident service is that foreground service itself). Without `thenListen`.
+     * zh-CN: 常驻唤醒 (路线图 P7.4, D72, D75, D76): 与 [openWakeSession] 相同, 但作为会话表的后台持有者 (其他任何麦克风会话都让它静默, 直到麦克风
+     * 再次空闲), 不持有麦克风前台服务 (常驻服务本身就是这个前台服务). 不带 `thenListen`.
+     */
+    fun openResidentWakeSession(options: Bundle?, callback: ISpeechWakeCallback?): ISpeechSession = throwing {
+        wake(options, callback, null, takeover = false, resident = true)
+    }
+
+    private fun wake(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?, takeover: Boolean, resident: Boolean = false): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
@@ -202,10 +213,11 @@ internal class SpeechPluginBinder(
         val keywordModel = runtime.resolve(SpeechContract.KIND_KWS, wake.model)
         val listenModel = wake.thenListen?.let { runtime.resolve(SpeechContract.KIND_ASR, it.model) }
         val buffer = runtime.keywordBuffer(keywordModel, wake.keywords)
-        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover)
+        if (resident && wake.thenListen != null) invalid("The resident wake word has no thenListen round")
+        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = resident)
         try {
-            val id = runtime.nextId("wake")
-            return WakeBinder(runtime, slot, listener, listen) { events, listenEvents ->
+            val id = runtime.nextId(if (resident) "resident" else "wake")
+            return WakeBinder(runtime, slot, listener, listen, foreground = !resident) { events, listenEvents ->
                 WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
             }.also { it.open(keywordModel, buffer, listenModel) }
         } catch (t: Throwable) {

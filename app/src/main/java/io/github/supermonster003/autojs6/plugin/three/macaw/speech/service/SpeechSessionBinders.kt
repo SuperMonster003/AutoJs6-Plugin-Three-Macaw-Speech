@@ -417,14 +417,18 @@ internal class DictationBinder(
  * dictation round per hit on the same audio, on a second recognizer lease. Roadmap D57: while no round runs, a
  * dictation of the plugin's own entries may take the microphone over; the session then stops recording, reports
  * nothing and records again when the takeover is released (the microphone foreground service stays held throughout).
+ * The resident wake word (roadmap D76) is the same session as the background holder of the session table, without the
+ * microphone foreground service of its own ([foreground] false): every microphone session silences it the same way.
  * zh-CN: 唤醒会话 (`openWakeSession`, 路线图 P3.4): 在麦克风上检测关键词; 有 `thenListen` 时每次命中在同一音频上进行一轮听写, 使用第二个识别器租约.
  * 路线图 D57: 没有轮次进行时, 插件自己入口的听写可以接管麦克风; 此时会话停止录音, 不报告任何事件, 接管释放后重新录音 (期间一直持有麦克风前台服务).
+ * 常驻唤醒 (路线图 D76) 是同一种会话, 作为会话表的后台持有者, 不另持麦克风前台服务 ([foreground] 为 false): 任何麦克风会话都以同样方式让它静默.
  */
 internal class WakeBinder(
     runtime: SpeechRuntime,
     slot: SessionTable.Slot,
     callback: ISpeechWakeCallback,
     listenCallback: ISpeechSessionCallback?,
+    private val foreground: Boolean = true,
     makeSession: (WakeEvents, DictationEvents?) -> WakeSession,
 ) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())), SessionTable.Yielding {
 
@@ -437,7 +441,8 @@ internal class WakeBinder(
 
     fun open(keywordModel: InstalledModel, buffer: String, listenModel: InstalledModel?) {
         link()
-        holdForeground()
+        // The resident wake word runs inside its own microphone foreground service (roadmap D75).
+        if (foreground) holdForeground()
         runtime.sessions.yieldable(slot, this)
         val listen = session.options.thenListen
         loadThen({
