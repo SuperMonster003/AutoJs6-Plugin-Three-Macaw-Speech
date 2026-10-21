@@ -242,7 +242,7 @@ class ThreeMacawSpeechContractTest {
             packageInfo.services.orEmpty().filter { it.exported }.map { it.name to it.permission } +
             packageInfo.receivers.orEmpty().filter { it.exported }.map { it.name to it.permission } +
             packageInfo.providers.orEmpty().filter { it.exported }.map { it.name to it.readPermission }
-        val (library, rest) = exported.partition { it.first in LIBRARY_COMPONENTS }
+        val (library, rest) = exported.partition { it.first in LIBRARY_COMPONENTS || it.first in DEBUG_COMPONENTS }
         val (screens, rest2) = rest.partition { it.first in screenEntries() || it.first.startsWith("$packageName.launcher.") }
         val (systemTts, rest3) = rest2.partition { it.first in systemTtsComponents() }
         // Roadmap P5.6: the voice input answers any app with the recognized text only; D65: the headset entry answers
@@ -259,7 +259,10 @@ class ThreeMacawSpeechContractTest {
         assertEquals(triggerComponents().keys, triggers.map { it.first }.toSet())
         triggers.forEach { (name, permission) -> assertEquals("$name keeps its protection", triggerComponents().getValue(name), permission) }
         // The packaged speech entry for independently signed applications has a normal permission of its own.
-        val (packaged, own) = rest6.partition { it.first == "$PACKAGE.service.ThreeMacawSpeechPackagedService" }
+        val (packaged, rest7) = rest6.partition { it.first == "$PACKAGE.service.ThreeMacawSpeechPackagedService" }
+        // Roadmap D75: the resident wake word service is listed only while its switch is on (a disabled component).
+        val (resident, own) = rest7.partition { it.first == "$PACKAGE.resident.ResidentWakeService" }
+        resident.forEach { (name, permission) -> assertEquals("$name is queried by the other resident listeners only", PLUGIN_PERMISSION, permission) }
         assertEquals(listOf("$PACKAGE.service.ThreeMacawSpeechPackagedService" to SpeechPluginActions.PACKAGED_PERMISSION), packaged)
         screens.forEach { (name, permission) -> assertEquals("$name only shows the plugin's own screens", null, permission) }
         assertTrue("the home and settings screens and the recognition settings entry are exported", screens.map { it.first }.containsAll(screenEntries()))
@@ -275,7 +278,7 @@ class ThreeMacawSpeechContractTest {
         // activities, so these four are exported without a permission.
         assertEquals(systemTtsComponents(), systemTts.map { it.first }.toSet())
         systemTts.forEach { (name, permission) -> assertEquals("$name is reached by the system", null, permission) }
-        library.forEach { (name, permission) -> assertEquals("$name keeps its system protection", LIBRARY_COMPONENTS.getValue(name), permission) }
+        library.forEach { (name, permission) -> assertEquals("$name keeps its system protection", (LIBRARY_COMPONENTS + DEBUG_COMPONENTS).getValue(name), permission) }
         assertEquals(
             setOf(
                 PLUGIN_PERMISSION, "android.permission.RECORD_AUDIO", "android.permission.FOREGROUND_SERVICE",
@@ -439,7 +442,7 @@ class ThreeMacawSpeechContractTest {
         fun screenEntries(): Set<String> =
             setOf(
                 "$PACKAGE.ui.home.HomeActivity", "$PACKAGE.ui.settings.SettingsActivity", "$PACKAGE.ui.settings.RecognitionSettingsAlias",
-                "$PACKAGE.ui.settings.TriggerSettingsAlias",
+                "$PACKAGE.ui.settings.TriggerSettingsAlias", "$PACKAGE.ui.settings.ResidentSettingsAlias",
             )
 
         /** Roadmap P5.7: the assistant services and the recognition service with their permission. zh-CN: 助理服务与识别服务及其权限. */
@@ -460,6 +463,12 @@ class ThreeMacawSpeechContractTest {
         )
 
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")
+
+        /**
+         * Debug builds only (the instrumented build): the adb switch of the resident wake word (roadmap P7.4), for holders of
+         * DUMP only. zh-CN: 仅调试构建 (被测构建): 常驻唤醒的 adb 开关 (路线图 P7.4), 只对持有 DUMP 的调用方开放.
+         */
+        val DEBUG_COMPONENTS: Map<String, String> = mapOf("$PACKAGE.ResidentDebugActivity" to "android.permission.DUMP")
 
         /** The Parcelize-generated `CREATOR` is a JVM static field that Kotlin sources cannot name directly. */
         @Suppress("UNCHECKED_CAST")

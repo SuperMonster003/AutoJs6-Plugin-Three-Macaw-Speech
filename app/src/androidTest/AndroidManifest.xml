@@ -33,5 +33,24 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+        <!--
+            Another app's resident listener (roadmap P7.4, D75) for ResidentWakeDeviceTest: disabled until the test turns it on
+            through the switch below; its settings entry is the second test target, which reports its start by broadcast.
+        -->
+        <service
+            android:name="io.github.supermonster003.autojs6.plugin.three.macaw.speech.RivalResidentListener"
+            android:enabled="false"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.speech.action.RESIDENT_LISTENER" />
+            </intent-filter>
+            <meta-data
+                android:name="org.autojs.plugin.speech.RESIDENT_LISTENER_SETTINGS"
+                android:value="io.github.supermonster003.autojs6.plugin.three.macaw.speech.VoiceCommandTargetTwo" />
+        </service>
+        <receiver
+            android:name="io.github.supermonster003.autojs6.plugin.three.macaw.speech.RivalResidentListener$Switch"
+            android:exported="true" />
     </application>
 </manifest>

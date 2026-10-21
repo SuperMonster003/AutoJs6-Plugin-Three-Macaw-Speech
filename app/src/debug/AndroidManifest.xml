@@ -8,5 +8,17 @@
         <activity
             android:name=".ComposeTestHostActivity"
             android:exported="false" />
+        <!--
+            Debug builds only: the adb switch of the resident wake word for the device runs of roadmap P7.4 that must not be
+            instrumented (.python/device_resident_run.py background|battery). Only holders of DUMP (adb, the system) start it.
+        -->
+        <activity
+            android:name=".ResidentDebugActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:permission="android.permission.DUMP"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 </manifest>
