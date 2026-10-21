@@ -2,8 +2,10 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.media.AudioDeviceInfo
 import android.media.AudioFormat
 import android.media.AudioRecord
+import android.media.AudioRouting
 import android.media.MediaRecorder
 import android.os.Build
 import android.os.Process
@@ -82,6 +84,8 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
         record = recorder
         running = true
         Log.i(TAG, "Recording started")
+        // The input in use, for the device runs: the headset's microphone of roadmap D68 comes once its audio link is up.
+        recorder.addOnRoutingChangedListener(AudioRouting.OnRoutingChangedListener { routing -> Log.i(TAG, "Recording routed to ${inputName(routing.routedDevice?.type)}") }, null)
         worker = thread(name = "MacawMicrophone", priority = Thread.MAX_PRIORITY) { capture(recorder) }
     }
 
@@ -154,6 +158,14 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
         private const val SILENCE_SAMPLES = 16_000L
         private const val CHECK_MILLIS = 1000L
         private const val JOIN_MILLIS = 2000L
+
+        private fun inputName(type: Int?): String = when (type) {
+            null -> "no device"
+            AudioDeviceInfo.TYPE_BUILTIN_MIC -> "the built-in microphone"
+            AudioDeviceInfo.TYPE_BLUETOOTH_SCO -> "a Bluetooth headset (SCO)"
+            AudioDeviceInfo.TYPE_WIRED_HEADSET -> "a wired headset"
+            else -> "device type $type"
+        }
     }
 }
 

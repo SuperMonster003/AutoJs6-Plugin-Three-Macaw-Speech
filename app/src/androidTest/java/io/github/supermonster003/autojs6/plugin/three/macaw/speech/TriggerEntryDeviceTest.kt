@@ -18,6 +18,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.Mac
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetTriggerComponent
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetVoice
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.KeyGesture
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPreferences
@@ -127,6 +128,12 @@ class TriggerEntryDeviceTest {
 
     @Test
     fun theHeadsetVoiceCommandOpensTheSheet() {
+        // Roadmap D68: the sheet asks for "Nearby devices" before it listens. Emulators grant it here; on phones the
+        // maintainer answers the sheet's dialog once, which a test must not answer for them.
+        HeadsetVoice.permission?.takeIf { context.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }?.let { permission ->
+            assumeTrue("\"Nearby devices\" is granted (on phones the maintainer answers the sheet's dialog)", Build.HARDWARE in EMULATOR_HARDWARE)
+            instrumentation.uiAutomation.grantRuntimePermission(context.packageName, permission)
+        }
         // Roadmap D65: the Bluetooth service starts VOICE_COMMAND without a package; naming the plugin skips the chooser.
         val before = recordings()
         val enabled = HeadsetTriggerComponent.isEnabled(context)
@@ -286,6 +293,9 @@ class TriggerEntryDeviceTest {
         const val SHORT_WAIT_MILLIS = 3_000L
         const val ASSISTANT_WAIT_MILLIS = 15_000L
         const val TILE_BIND_MILLIS = 1_500L
+
+        /** `Build.HARDWARE` of the Android emulator. zh-CN: Android 模拟器的 `Build.HARDWARE`. */
+        val EMULATOR_HARDWARE = setOf("ranchu", "goldfish")
     }
 }
 

@@ -55,6 +55,9 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.AssistantSessions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.AssistantEntry
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetAccess
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetVoice
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetVoicePolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.SheetVisibility
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
@@ -97,13 +100,20 @@ class AssistantActivity : StandaloneActivity() {
     private var awaitingPermission = false
     private var awaitingUnlock = false
     private var pendingUnlock: (() -> Unit)? = null
+    private var headset: HeadsetVoice? = null
 
     override val translucentWindow: Boolean get() = true
 
     private val microphone = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         awaitingPermission = false
         val current = voice ?: return@registerForActivityResult
-        if (granted) current.start() else current.microphoneDenied()
+        if (granted) begin(current) else current.microphoneDenied()
+    }
+
+    private val nearbyDevices = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        awaitingPermission = false
+        val current = voice ?: return@registerForActivityResult
+        dictate(current, headsetVoice = granted)
     }
 
     /** The trigger entry that opened the sheet (roadmap P7.1), null for the assist gesture. zh-CN: 打开弹层的触发式入口, 助理手势为 null. */
@@ -159,6 +169,7 @@ class AssistantActivity : StandaloneActivity() {
 
     override fun onDestroy() {
         voice?.release()
+        stopHeadset()
         AssistantSessions.closed(this)
         super.onDestroy()
     }
@@ -183,12 +194,13 @@ class AssistantActivity : StandaloneActivity() {
     /** One dictation of the voice input path; the sheet is visible, so no microphone foreground service. zh-CN: 一次语音输入路径的听写. */
     private fun listen() {
         voice?.release()
+        stopHeadset()
         notice = null
         stage = Stage.LISTENING
-        val controller = VoiceInputController(this, VoiceInputRequest(), ::onOutcome, LocalSession(takeover = true, foreground = false))
+        val controller = VoiceInputController(this, VoiceInputRequest(), ::onOutcome, LocalSession(takeover = true, foreground = false), ::stopHeadset)
         voice = controller
         if (microphoneGranted()) {
-            controller.start()
+            begin(controller)
         } else {
             // D47: the system permission dialog right in the sheet.
             awaitingPermission = true
@@ -199,6 +211,41 @@ class AssistantActivity : StandaloneActivity() {
         }
     }
 
+    /**
+     * D68: a sheet opened by the headset voice key asks for "Nearby devices" before it listens, then takes the headset's
+     * voice recognition over, so the headset's microphone is heard and the next press opens the sheet again.
+     * zh-CN: D68: 由耳机语音键打开的弹层在收音前申请 "附近的设备", 然后接管耳机的语音识别, 因此收到耳机麦克风的声音, 下一次按键也能再打开弹层.
+     */
+    private fun begin(controller: VoiceInputController) {
+        when (HeadsetVoicePolicy.access(source, Build.VERSION.SDK_INT, HeadsetVoice.permitted(this), keyguardLocked())) {
+            HeadsetAccess.START -> dictate(controller, headsetVoice = true)
+            HeadsetAccess.SKIP -> dictate(controller, headsetVoice = false)
+            HeadsetAccess.REQUEST -> {
+                val permission = HeadsetVoice.permission ?: return dictate(controller, headsetVoice = true)
+                awaitingPermission = true
+                runCatching { nearbyDevices.launch(permission) }.onFailure {
+                    awaitingPermission = false
+                    dictate(controller, headsetVoice = false)
+                }
+            }
+        }
+    }
+
+    private fun dictate(controller: VoiceInputController, headsetVoice: Boolean) {
+        if (headsetVoice) headset = HeadsetVoice(this, ::onHeadsetEnded).also { it.start() }
+        controller.start()
+    }
+
+    /** The headset ended its recognition (its voice key again): what was heard is final. zh-CN: 耳机结束了识别 (再按语音键): 已听到的内容即结果. */
+    private fun onHeadsetEnded() {
+        if (stage == Stage.LISTENING) voice?.stop()
+    }
+
+    private fun stopHeadset() {
+        headset?.stop()
+        headset = null
+    }
+
     /** "Speak again" (D49): the text is dropped and a new dictation starts. zh-CN: "重说" (D49): 丢弃文字, 开始新的听写. */
     private fun redo() {
         text = ""
@@ -207,6 +254,7 @@ class AssistantActivity : StandaloneActivity() {
     }
 
     private fun onOutcome(outcome: VoiceInputOutcome) {
+        stopHeadset()
         when (outcome) {
             is VoiceInputOutcome.Text -> {
                 text = outcome.text.take(AssistantPolicy.MAX_TEXT_CHARS)

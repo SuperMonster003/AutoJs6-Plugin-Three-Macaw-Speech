@@ -27,7 +27,7 @@ class ManifestContractTest {
     private val application: Element get() = manifest.child("application")
 
     @Test
-    fun `the permissions are exactly the plugin permission, the roadmap D29 set and the floating microphone's`() {
+    fun `the permissions are exactly the plugin permission, the roadmap D29 set, the floating microphone's and the headset's`() {
         assertEquals(
             listOf(
                 PLUGIN_PERMISSION,
@@ -44,10 +44,16 @@ class ManifestContractTest {
                 "android.permission.SYSTEM_ALERT_WINDOW",
                 "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
                 "android.permission.RECEIVE_BOOT_COMPLETED",
+                // Roadmap D68 (P7.1): the headset's voice recognition; BLUETOOTH only below Android 12.
+                "android.permission.BLUETOOTH",
+                "android.permission.BLUETOOTH_CONNECT",
             ),
             manifest.children("uses-permission").map { it.android("name") },
         )
+        val bluetooth = manifest.children("uses-permission").single { it.android("name") == "android.permission.BLUETOOTH" }
+        assertEquals("BLUETOOTH_CONNECT replaces it on Android 12+", "30", bluetooth.android("maxSdkVersion"))
         val permissions = manifest.children("uses-permission").map { it.android("name") }
+        assertTrue("no scanning and no location (roadmap D68)", permissions.none { it.contains("SCAN") || it.contains("LOCATION") || it.contains("BLUETOOTH_ADMIN") })
         assertTrue("no storage permission (roadmap D23 / D29)", permissions.none { it.contains("STORAGE") || it.contains("MEDIA") })
         assertEquals("only the VOICE_COMMAND query of roadmap D50", 1, manifest.children("queries").size)
         assertTrue("no uses-sdk override: SDK levels come from version.properties", manifest.children("uses-sdk").isEmpty())

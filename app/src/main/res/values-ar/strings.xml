@@ -181,7 +181,7 @@
     <string name="settings_follow_autojs6_unavailable">AutoJs6 غير متاح, لذا تُطبق إعدادات النظام</string>
     <string name="settings_follow_system">اتباع النظام</string>
     <string name="settings_headset">زر الصوت في سماعة الرأس</string>
-    <string name="settings_headset_summary">يفتح لوحة الإملاء عندما تستدعي سماعة بلوتوث المساعد الصوتي (ضغطة طويلة على زر الصوت أو منطقة اللمس). إذا كان تطبيق آخر يستجيب أيضا, يطلب منك النظام الاختيار</string>
+    <string name="settings_headset_summary">يفتح لوحة الإملاء عندما تستدعي سماعة بلوتوث المساعد الصوتي (ضغطة طويلة على زر الصوت أو منطقة اللمس). إذا كان تطبيق آخر يستجيب أيضا, يطلب منك النظام الاختيار. اسمح بإذن \"الأجهزة المجاورة\" عند طلبه, فيُستخدم ميكروفون السماعة وتعمل كل ضغطة</string>
     <string name="settings_idle">تحرير النماذج الخاملة</string>
     <string name="settings_idle_message">يُحرَّر النموذج المحمّل بعد هذه المدة دون استخدام, وينطبق ذلك على البرامج النصية أيضا</string>
     <string name="settings_idle_value">بعد %1$d دقيقة</string>

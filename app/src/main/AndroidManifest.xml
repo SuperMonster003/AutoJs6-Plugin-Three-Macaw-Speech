@@ -29,6 +29,16 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!--
+        Roadmap D68 (P7.1): the sheet opened by a Bluetooth headset's voice key takes the headset's voice recognition over
+        (BluetoothHeadset.startVoiceRecognition), so the headset's microphone is heard and every press opens the sheet.
+        Android 12+ asks for "Nearby devices" in that sheet only; below it BLUETOOTH is granted at install. No scanning,
+        no location.
+    -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
 
     <!--
         Roadmap D50 (P5.7): the digital assistant finds the apps that take the recognized text (3-Stove Agent, 3-Stone AI)
@@ -260,7 +270,7 @@
             The headset entry (roadmap D65): answers VOICE_COMMAND, which the Bluetooth service starts when a headset asks
             for voice recognition, and opens the sheet like the targets above (D60). Exported without a permission like the
             voice input: it only opens the plugin's own sheet. It shows over the lock screen (D55). The settings switch
-            disables the component.
+            disables the component. The sheet then takes the headset's voice recognition over (D68).
         -->
         <activity
             android:name=".trigger.HeadsetTriggerActivity"

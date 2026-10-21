@@ -181,7 +181,7 @@
     <string name="settings_follow_autojs6_unavailable">AutoJs6 is not available, so the system settings apply</string>
     <string name="settings_follow_system">Follow system</string>
     <string name="settings_headset">Headset voice key</string>
-    <string name="settings_headset_summary">Opens the dictation sheet when a Bluetooth headset calls the voice assistant (a long press on its voice key or touch area). If another app answers it too, the system asks you to choose</string>
+    <string name="settings_headset_summary">Opens the dictation sheet when a Bluetooth headset calls the voice assistant (a long press on its voice key or touch area). If another app answers it too, the system asks you to choose. Allow \"Nearby devices\" when asked, so that the headset\'s microphone is heard and every press works</string>
     <string name="settings_idle">Release idle models</string>
     <string name="settings_idle_message">A loaded model is released after this time without use, for scripts as well</string>
     <string name="settings_idle_value">After %1$d min</string>

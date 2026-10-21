@@ -181,7 +181,7 @@
     <string name="settings_follow_autojs6_unavailable">AutoJs6 不可用, 将使用系统设置</string>
     <string name="settings_follow_system">跟随系统</string>
     <string name="settings_headset">耳机语音键</string>
-    <string name="settings_headset_summary">蓝牙耳机呼出语音助理 (长按语音键或触控区) 时打开听写弹层. 其他应用也能应答时, 系统会先让你选择</string>
+    <string name="settings_headset_summary">蓝牙耳机呼出语音助理 (长按语音键或触控区) 时打开听写弹层. 其他应用也能应答时, 系统会先让你选择. 询问时请允许 \"附近的设备\", 这样会用耳机麦克风收音, 每次按键都有效</string>
     <string name="settings_idle">空闲模型释放</string>
     <string name="settings_idle_message">已加载的模型在无人使用这么长时间后释放, 对脚本同样生效</string>
     <string name="settings_idle_value">%1$d 分钟后</string>

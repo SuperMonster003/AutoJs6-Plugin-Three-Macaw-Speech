@@ -32,16 +32,18 @@ internal enum class VoiceInputPhase { PREPARING, LOADING, LISTENING, STOPPING, P
  * microphone), with the rules of [VoiceInputPolicy]. The first usable final ends the input (D44). Callbacks arrive on
  * the ASR thread and are posted to the main thread; [deliver] runs once with the outcome. The recognized text is never
  * logged (appendix D Q8 (a)). The digital assistant (roadmap P5.7, D48) runs the same dictation; both take the
- * microphone over from a wake session (D57) as [local] says.
+ * microphone over from a wake session (D57) as [local] says. [problemShown] hears that the listening stopped at a problem.
  * zh-CN: 系统语音输入的引擎部分 (路线图 P5.6): 经同进程内插件自己的 `ISpeechPlugin` Binder 运行一个听写会话, 与试听试说页的路径完全相同 (选项, 错误码,
  * 唯一的麦克风), 规则见 [VoiceInputPolicy]. 第一个可用的 final 即结束输入 (D44). 回调在 ASR 线程上到达, 投递到主线程; [deliver] 以结局运行一次.
- * 识别文字从不写日志 (附录 D Q8 (a)). 数字助理 (路线图 P5.7, D48) 运行同一听写; 两者都按 [local] 从唤醒会话手中接管麦克风 (D57).
+ * 识别文字从不写日志 (附录 D Q8 (a)). 数字助理 (路线图 P5.7, D48) 运行同一听写; 两者都按 [local] 从唤醒会话手中接管麦克风 (D57). [problemShown]
+ * 得知收音因问题而停止.
  */
 internal class VoiceInputController(
     context: Context,
     private val request: VoiceInputRequest,
     private val deliver: (VoiceInputOutcome) -> Unit,
     private val local: LocalSession = LocalSession(),
+    private val problemShown: () -> Unit = {},
 ) {
     private val app = context.applicationContext
     private val binder = SpeechPluginBinder(app)
@@ -153,6 +155,7 @@ internal class VoiceInputController(
         problem = shown
         phase = VoiceInputPhase.PROBLEM
         voiceActive = false
+        problemShown()
     }
 
     private fun complete(outcome: VoiceInputOutcome) {

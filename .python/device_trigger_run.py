@@ -23,7 +23,12 @@ never a transcript.
     py .python/device_trigger_run.py headset <serial>  the headset entry (D65) without an instrumentation: lists the apps
                                                         that answer VOICE_COMMAND (more than one: the headset key shows a
                                                         chooser), starts it for the plugin as the Bluetooth service would
-                                                        and checks the sheet and its route; the real headset key is
+                                                        and checks the sheet and its route; then the headset's voice
+                                                        recognition (D68): with a headset connected it runs while the sheet
+                                                        listens (`mVoiceRecognitionStarted`), the recording goes to the
+                                                        headset (SCO) and both end with the sheet. On Android 12+ without
+                                                        "Nearby devices" the sheet asks first: the maintainer answers the
+                                                        dialog on the phone, the script waits. The real headset key is
                                                         pressed by the maintainer under `watch`
     py .python/device_trigger_run.py keys <serial> [gesture]
                                                         the key trigger after the maintainer turned it on (gesture: the one
@@ -323,24 +328,73 @@ def headset_answerers(serial):
     return [line.strip() for line in output.splitlines() if "/" in line and " " not in line.strip()]
 
 
+NEARBY = "android.permission.BLUETOOTH_CONNECT"
+
+
+def nearby_granted(serial):
+    """The "Nearby devices" permission (D68); granted at install below Android 12."""
+    if sdk(serial) < 31:
+        return True
+    dump = adb(serial, "shell", "dumpsys", "package", PACKAGE, check=False)
+    return f"{NEARBY}: granted=true" in dump
+
+
+def voice_recognition(serial):
+    """`mVoiceRecognitionStarted` of the Bluetooth headset service, None when it is not listed (Bluetooth off)."""
+    match = re.search(r"mVoiceRecognitionStarted: (true|false)", adb(serial, "shell", "dumpsys", "bluetooth_manager", check=False, timeout=60))
+    return match.group(1) == "true" if match else None
+
+
+def headset_log(serial, since):
+    return adb(serial, "logcat", "-d", "-v", "time", "-T", since, "-s", "MacawHeadset:I", "MacawMicrophone:I", check=False, timeout=60)
+
+
 def headset(serial):
     """The headset entry (D65) in the plugin's own process: who answers VOICE_COMMAND, then the action for the plugin
-    (with its package, as the chooser would pass it on) opens the sheet with the route of D60; answers ok."""
+    (with its package, as the chooser would pass it on) opens the sheet with the route of D60; then the headset's voice
+    recognition of D68 while the sheet listens and after it closed; answers ok."""
     answerers = headset_answerers(serial)
     listed = any(answerer.startswith(PACKAGE + "/") for answerer in answerers)
     print(f"{label(serial)}: VOICE_COMMAND answered by {len(answerers)}: {', '.join(answerers) or 'none'}")
+    asked = not nearby_granted(serial)
     since = log_since(serial)
     adb(serial, "shell", "am", "start", "-a", VOICE_COMMAND, "-p", PACKAGE, check=False)
-    opened = wait_sheet(serial)
+    if asked:
+        # The sheet asks before it listens; the dialog is the maintainer's to answer (never tapped or dismissed here).
+        print(f"{label(serial)}: the sheet asks for \"Nearby devices\": answer the dialog on the phone (waiting up to 120 s)", flush=True)
+        opened = wait_sheet(serial, seconds=120)
+        print(f"{label(serial)}: \"Nearby devices\" {'granted' if nearby_granted(serial) else 'NOT granted'} after the dialog")
+    else:
+        opened = wait_sheet(serial)
     sheet = re.search(r"Sheet opened \(source headset, (session|direct)\)", trigger_log(serial, since))
+    time.sleep(3)
+    during = voice_recognition(serial)
     closed = close_sheet(serial)
+    time.sleep(2)
+    after = voice_recognition(serial)
+    log = headset_log(serial, since)
+    started = "Headset voice recognition started" in log
+    routes = re.findall(r"Recording routed to (.+)$", log, re.M)
+    for line in log.splitlines():
+        if "Headset" in line or "routed" in line:
+            print(f"{label(serial)}:   {line.split(': ', 1)[-1].strip()}")
     ok = listed and opened and bool(sheet) and closed
     print(f"{label(serial)}: headset entry opens the sheet: {'PASS' if ok else 'FAIL'} (route {sheet.group(1) if sheet else 'none'})")
+    if started:
+        voice_ok = during is True and after is False and any("SCO" in route for route in routes)
+        print(f"{label(serial)}: headset voice recognition: {'PASS' if voice_ok else 'FAIL'} (during {during}, after close {after}, routes {routes or 'none'})")
+        ok &= voice_ok
+    else:
+        print(f"{label(serial)}: headset voice recognition not started (no headset, Bluetooth off or no permission; see above)")
     return ok
 
 
 def onset(serial, times=4):
     """The start of a dictation in the sheet: sheet opened -> recording started -> listening -> first sound."""
+    if not nearby_granted(serial):
+        # The headset entry would ask for "Nearby devices" first (D68), which is the maintainer's to answer: run `headset`.
+        print(f"{label(serial)}: onset needs \"Nearby devices\" (the headset entry asks first); run `headset` and answer the dialog")
+        return False
     rows = []
     for run in range(times):
         since = log_since(serial)

@@ -282,7 +282,9 @@ class ThreeMacawSpeechContractTest {
                 "android.permission.FOREGROUND_SERVICE_MICROPHONE", "android.permission.FOREGROUND_SERVICE_DATA_SYNC",
                 "android.permission.INTERNET", "android.permission.ACCESS_NETWORK_STATE", "android.permission.POST_NOTIFICATIONS",
                 "android.permission.SYSTEM_ALERT_WINDOW", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.RECEIVE_BOOT_COMPLETED",
-            ),
+                // Roadmap D68: the system drops BLUETOOTH (maxSdkVersion 30) from the request on Android 12+.
+                "android.permission.BLUETOOTH_CONNECT",
+            ) + (if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) setOf("android.permission.BLUETOOTH") else emptySet()),
             packageInfo.requestedPermissions.orEmpty().toSet() - MERGED_PLATFORM_PERMISSIONS,
         )
         assertTrue("backups stay disabled", context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_ALLOW_BACKUP == 0)
