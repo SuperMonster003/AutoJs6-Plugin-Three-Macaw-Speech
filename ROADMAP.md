@@ -41,13 +41,13 @@
 
 ## 2. 派生技术决策
 
-D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定. D48-D56 是 P5.7 (系统数字助理) 开工前维护者经两轮选择题选定的决策 (2026-10-17; 除 D49 选 "说完后点按钮选" 外均为推荐项), 视同固定; 同日第三轮按 3-Stone AI ROADMAP D27 改正 D48 中关于常驻监听的说法, 并选定 D57 (推荐项). 2026-10-18 按 Sony XQ-AT72 实测与 AOSP 源码改正 D56 中关于默认识别服务的说法 (维护者选定按 Android 版本写, 推荐项). D58-D67 是 1.1.0 触发式入口 (P7.1) 开工前维护者经三轮选择题选定的决策 (2026-10-20; 首批入口选了全部四类, 按键触发选 "本插件自带无障碍服务", 其余均为推荐项), 视同固定; 同日维护者看过真机实测后改定 D65 (应答 `VOICE_COMMAND`), 2026-10-21 选定 D68 (推荐项). D69-D74 是 1.2.0 常驻唤醒 (P7.4) 开工前维护者经两轮选择题选定的决策 (2026-10-21, 全部为推荐项; 第一轮的答复经调度会话转达), 视同固定 (题面与选项见附录 D Q13-Q18); D75-D80 是同一阶段的派生决策, 实现中如有偏差逐条回填.
+D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条), 之后视同固定. D33-D40 是 P5 开工前维护者经两轮选择题选定的界面决策 (2026-10-16, 均为推荐项), 视同固定. D41-D47 是 P5.6 (系统语音输入入口) 开工前维护者经两轮选择题选定的决策 (2026-10-16; 除 D46 选 "最小集合 + 偏置词" 外均为推荐项), 视同固定. D48-D56 是 P5.7 (系统数字助理) 开工前维护者经两轮选择题选定的决策 (2026-10-17; 除 D49 选 "说完后点按钮选" 外均为推荐项), 视同固定; 同日第三轮按 3-Stone AI ROADMAP D27 改正 D48 中关于常驻监听的说法, 并选定 D57 (推荐项). 2026-10-18 按 Sony XQ-AT72 实测与 AOSP 源码改正 D56 中关于默认识别服务的说法 (维护者选定按 Android 版本写, 推荐项). D58-D67 是 1.1.0 触发式入口 (P7.1) 开工前维护者经三轮选择题选定的决策 (2026-10-20; 首批入口选了全部四类, 按键触发选 "本插件自带无障碍服务", 其余均为推荐项), 视同固定; 同日维护者看过真机实测后改定 D65 (应答 `VOICE_COMMAND`), 2026-10-21 选定 D68 (推荐项). D69-D74 是 1.2.0 常驻唤醒 (P7.4) 开工前维护者经两轮选择题选定的决策 (2026-10-21, 全部为推荐项; 第一轮的答复经调度会话转达), 视同固定 (题面与选项见附录 D Q13-Q18); D75-D80 是同一阶段的派生决策, 实现中如有偏差逐条回填. D81-D84 是 1.2.0 非 WAV 解码 (P7.5) 开工前维护者经一轮选择题选定的决策 (2026-10-22; Q21 选 "另写 Ogg 解析补 Opus", 其余为推荐项), 视同固定 (题面见附录 D Q21-Q24); D85 / D86 是同一阶段的派生决策, 实现中如有偏差逐条回填.
 
 | 编号 | 决策 | 含义 | 推翻点 |
 | --- | --- | --- | --- |
 | D13 | 运行时: sherpa-onnx v1.13.8 官方 Android AAR | 使用上游预编译 AAR (`libsherpa-onnx-jni.so` + `libonnxruntime.so`, 4 ABI; GitHub Release 资源 `sherpa-onnx-1.13.8.aar` 47.8 MB). 优先 Maven Central `com.k2fsa.sherpa.onnx:sherpa-onnx-android` 的同版本坐标 (P0.2 确认版本存在且字节与 Release 一致); 坐标不可用时把 AAR 放入 `libs/` 并在 `locks/` 记录来源, 版本与 SHA-256. 1.0.0 不自行编译 C++. P0.2 结论 (2026-10-16): Maven Central 没有任何 k2-fsa 坐标, 采用 `libs/sherpa-onnx-1.13.8.aar` + `locks/sherpa-onnx.lock` (附录 D Q2 (b)); AAR 另含的 `libsherpa-onnx-c-api.so` / `libsherpa-onnx-cxx-api.so` 不被 JNI 库依赖, 不打入 APK. | P0.2 |
 | D14 | ABI 拆分: 4 ABI + Universal | `splits.abi.include("arm64-v8a", "armeabi-v7a", "x86_64", "x86")`, `PluginInfo.supportedAbis` 与之一致; P0.2 对 AAR 内每个 `.so` 做 16 KB 页对齐与 ZIP 对齐检查, 不合格时 P0.2 改为 `libs/` 内自行重打包或等待上游修复, 不以 "多数设备 4 KB" 为由跳过. P0.2 结论: AAR 内 16 个 `.so` (含 32 位) 的 PT_LOAD 对齐均为 16384, 无需重打包; 原生库按 D31 压缩存储, 由安装器解压, 因此只需 ELF 对齐. | P0.2 |
-| D15 | 音频格式 | 内部统一 16 kHz 单声道 float; 外部 PCM 输入为 16 kHz 单声道 PCM16 LE, 每次 `feed` 不超过 1 MB; 文件输入 1.0.0 只收 WAV (PCM 8 / 16 / 24 / 32-bit 与 float, 任意采样率, 单 / 双声道, 插件内重采样并混为单声道), 其他容器报 `UNSUPPORTED_FORMAT`; 单文件上限 200 MB 或 30 分钟. | P3.3 |
+| D15 | 音频格式 | 内部统一 16 kHz 单声道 float; 外部 PCM 输入为 16 kHz 单声道 PCM16 LE, 每次 `feed` 不超过 1 MB; 文件输入 1.0.0 只收 WAV (PCM 8 / 16 / 24 / 32-bit 与 float, 任意采样率, 单 / 双声道, 插件内重采样并混为单声道), 其他容器报 `UNSUPPORTED_FORMAT`; 单文件上限 200 MB 或 30 分钟. (2026-10-22: "其他容器报 `UNSUPPORTED_FORMAT`" 一句被 D81 推翻, 1.2.0 起非 WAV 文件经系统解码器读取, 上限不变, 见 P7.5.) | P3.3 |
 | D16 | 会话模型 | `openSession` / `openWakeSession` 返回会话 Binder, 事件经 oneway 回调 Binder 推送; 每个宿主 Binder token 同时最多 1 个麦克风会话 (听写与唤醒互斥, 唤醒会话提供 "唤醒后自动转听写" 模式以免切换), 外部 PCM 会话最多 4 个; 宿主进程死亡 (`linkToDeath`) 或脚本退出时插件释放会话与麦克风. P3 实现时的细化 (提交见 P3.1): 插件只有一个麦克风, 因此整个插件同一时刻只有一个麦克风会话 (听写或唤醒, 不分宿主), 外部 PCM 会话按调用方 uid 至多 4 个, 超出均为 `SESSION_BUSY`; 宿主回调 Binder 死亡即取消会话, 停掉麦克风与前台服务 (实测宿主被杀后 0.25 - 0.45 秒内停止); `timeoutMillis` / `maxDurationMillis` 按已消费的音频计时, 外部会话因此按音频而非墙钟超时, `timeoutMillis` 从最近一次语音或新文本起算. | P3.2 |
 | D17 | 识别管线 | 流式模型 (zipformer transducer online) 走 `OnlineRecognizer` + 端点检测 (sherpa rule1 / rule2 / rule3 默认值可调) + 可选 VAD 门控; 离线模型 (SenseVoice, 离线 zipformer) 走 VAD 切段 + `OfflineRecognizer` 逐段识别. 两类模型在 `speech.listen` 上提供同一事件集, 离线模型的 `partial` 为段级而非字级 (文档注明). 热词 (hotwords) 仅 transducer 模型支持, 其余模型收到热词时返回 `warnings[]` 而非抛错. P3.2 实现: 端点由 silero VAD 判定 (静音达 `silenceEndMillis`, 或语句满 20 秒), sherpa 自身的端点规则关闭 (会话的 `silenceEndMillis` 改不了共享识别器的配置); `vad: true` 时只把语音送进流式识别器, 并回溯到 VAD 触发前 1 秒 (480 ms 时实测流式模型丢掉 `en.wav` 句首五个词: 流从语音中间开始会丢至多两秒的词); 离线模型同样在 `final` 之后发 `endpoint`, 两类模型事件集一致; 热词仅对带 `bpe.vocab` 的 transducer 生效 (按需加载 `modified_beam_search` 的独立实例), SenseVoice 与无 `bpe.vocab` 的模型返回 `warnings[]`. | P3.2 |
 | D18 | 唤醒词 | sherpa-onnx `KeywordSpotter` + zipformer KWS zh-en 3M 模型; 脚本传关键词原文 (`string[]` 或 `{keyword, boost, threshold}[]`, 上限 50 条), 插件进程内转换为模型 token (中文拼音, 英文 BPE). P3.4 先做 spike 确认 1.13.8 的 Kotlin API 是否内置原文转换 (上游已集成 cppinyin 与 ssentencepiece, 附录 D Q4), 不内置则插件内置拼音表 (`pinyin-data`, MIT) 与 BPE 编码. P3.4 spike 结论 (附录 D Q4 (b)): 1.13.8 的 JNI 库没有任何拼音转换, 原文关键词传给 `createStream` 时编码失败, Kotlin `OnlineStream` 以 `IllegalArgumentException` 拒绝 (设备实测); 插件内置 pinyin-data (MIT, 与 Batch Rename 同一固定提交) 生成的单字常用读音表 `assets/kws/pinyin.txt`, 按 pypinyin `strict=False` 拆为声母与带调韵母, 英文按模型自带 `en.phone` 查 ARPAbet 音素, 也接受直接写模型 token (可借此为多音字指定读音); 检测器以空的内置关键词文件加载, 关键词随会话经 `createStream` 传入. 1.13.8 不报告命中分数, `wake` 事件的 `score` 为该关键词的触发阈值. | P3.4 |
@@ -113,6 +113,12 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D78 | (派生) 可用性与开启顺序 | 开关可用的条件: 已授麦克风权限, 已装唤醒词模型与识别模型 (弹层听写要用), 唤醒词可被拼写; 缺哪项时开关置灰, 说明行写明缺什么, 点该行去授权或打开首页安装模型. 开启顺序: 互斥检查 (D75) -> Android 13+ 未授通知权限时申请一次 (常驻通知与恢复通知要用; 拒绝也可开启) -> D71 的悬浮窗询问 (只在既不是默认助理又无权限时, 返回后无论结果都开启) -> 记录截止时刻, 启用组件, 启动服务. | P7.4 |
 | D79 | (派生) 命中后的流程 | 命中 -> 弹层可见则忽略 -> 能从后台打开界面 (D71) 时经 `AssistantEntry.open(source = wake)` (D60: 默认助理经会话, 否则直接打开), 弹层由唤醒打开时点亮屏幕 (D73) -> 否则发 "点此说话" 通知. 弹层的听写预留麦克风时常驻唤醒按 D76 让出, 听写结束即继续检测 (弹层仍可见, 命中被忽略); 朗读按 D69, 在弹层关闭, 重说, 发送或复制时停止. 识别文字不写日志. | P7.4 |
 | D80 | (派生) 验证方式 | E2: 常驻规则 (时长与截止, 改时长, 到点关闭且截止优先于充电, 拔电暂停 / 接电恢复且暂停期间计时, 首页可见恢复与开机提醒的过点关闭, 唤醒词与灵敏度, 互斥列表, 后台打开方式), `SessionTableTest` 的后台持有者用例, `ManifestContractTest` (互斥组件默认禁用与权限, meta-data 别名, `<queries>`). E3: AVD (`VirtualRoom` 播放唤醒词) 上的服务生命周期; 真机三台 Sony 与一台 ColorOS 或 HyperOS: 开关, 命中, 限时关闭 (截止时刻前移代替等满), `dumpsys battery unplug` / `set ac 1` 模拟拔电与接电, 与 3-Stove Agent 常驻监听的互斥提示; 熄屏 30 分钟耗电 (batterystats 估算与进程 CPU 时间, 与关闭时对照). 手机上需要维护者确认的对话框 (悬浮窗, 通知权限) 不由脚本点击. | P7.4 |
+| D81 | 非 WAV 解码的范围 | 文件输入 (`recognizeFile` / `detectVoice`) 按文件头分派: `RIFF` / `WAVE` 仍走纯 JVM 的 `WavReader`; 其他文件交给 `MediaExtractor` + `MediaCodec`, 凡系统能解的编码与容器都接受 (MP3, AAC 的 ADTS 与 M4A, Ogg Vorbis, Ogg Opus, FLAC, AMR, WebM / MKV 等, 不设白名单). Android 9 及以下 (API < 29) 的系统读不了 Ogg 封装的 Opus: 插件自带纯 JVM 的 Ogg 页解析, 只取第一个 Opus 逻辑流, 把 Opus 包连同 `OpusHead`, 编码延迟与预滚三项 CSD 交给系统的 `audio/opus` 解码器 (Android 5 起就有), 不增加原生库. 推翻 D15 中 "其他容器报 `UNSUPPORTED_FORMAT`" 一句. | P7.5 |
+| D82 | 视频文件的音轨 | MP4 / 3GP / MKV / WebM 等含视频轨的文件也接受, 只解第一条音轨, 忽略视频; 200 MB 上限按整个文件计. | P7.5 |
+| D83 | 边解边喂 | 解出一块即混为单声道, 重采样后送入识别 / VAD (与 WAV 相同的 `AudioInput.decode` 路径), 额外内存约 1-2 MB; 30 分钟上限先按音轨时长 (`KEY_DURATION`, 允许 1 s 编码填充) 检查, 解码中再按实际解出的帧数兜底, 超过即 `LIMIT_EXCEEDED`; 200 MB 上限照旧在打开前检查. | P7.5 |
+| D84 | 宿主按功能声明放行 | 插件 capabilities 的功能集合新增 `audioDecode` (脚本可用 `speech.capabilities().features` 判断); 宿主 `SpeechAudioInput` 不再在选定插件前拒绝非 WAV, 改为选定插件后: 插件声明了 `audioDecode` 则直接交出描述符, 否则 (1.0.0 / 1.1.0) 保留 `RIFF` / `WAVE` 头检查, 报 `UNSUPPORTED_FORMAT` 并提示把 3-Macaw Speech 更新到 1.2.0. 契约常量 `SpeechContract.FEATURE_AUDIO_DECODE` 只追加, 插件仍用字符串声明 (不重新暂存 AAR). 宿主改动只本地提交, 脚本用上要等宿主 6.8.0; 最低宿主仍为 5456 (旧宿主照旧只收 WAV). | P7.5 |
+| D85 | (派生) 错误与解码细节 | 系统不识别的容器或截断的头 -> `UNSUPPORTED_FORMAT` (信息写明看起来像什么容器); 没有音轨 -> `UNSUPPORTED_FORMAT` "no audio track"; 设备上没有该编码的解码器 -> `UNSUPPORTED_FORMAT` (写明 MIME 与 Android 版本); 加密轨 -> `UNSUPPORTED_FORMAT`; 解码中出错或解不出任何采样 -> `UNSUPPORTED_FORMAT` (写明出错位置的毫秒数); 读描述符失败 -> `IO_FAILED`. 解码器输出 PCM 8 / 16 / 24 (packed) / 32 位整数与 float, 1-8 声道混为单声道; 采样率与声道以解码器的输出格式为准 (HE-AAC 的 SBR 会让采样率翻倍), 解码中途采样率改变 -> `UNSUPPORTED_FORMAT`; `audio/raw` 音轨 (Android 7 / 8 的 FLAC 提取器直接给 PCM) 不经解码器直接读取. 文件名与识别文字不写日志. | P7.5 |
+| D86 | (派生) 验证方式 | E2: 容器探测, Ogg 页与包重组 (跨页包, CRC 错, 多逻辑流, 截断), `OpusHead` 解析与 Opus 包时长, PCM 编码转换与混单声道, 时长守卫, 错误信息; 宿主 `SpeechAudioInput` 的放行规则. E3: 本机 ffmpeg 5.0 从 `en.wav` / `zh.wav` 生成 MP3, AAC (ADTS), M4A, Ogg Vorbis, Ogg Opus, FLAC 与带视频轨的 MP4 / WebM, 入库并锁定; 不需要模型的解码用例 (时长, 与 WAV 的相关系数, 坏文件 / 无音轨 / 只有视频轨的错误码, 自带 Ogg 解析在任意 API 上强制运行) 随 CI 的 AVD 运行; 需要模型的用例对照 WAV 基线的 CER; 真机 G8441 (API 28, Ogg Opus 走自带解析), 至少另一台 Sony 与 OnePlus OPD2413 (ColorOS). | P7.5 |
 
 ---
 
@@ -132,7 +138,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 - 触发式入口 (快速设置磁贴, 悬浮麦克风, 桌面小部件与快捷方式, 无障碍按键; 1.1.0 的 P7.1, D58-D65) 先于常驻唤醒 (1.1.0 的 P7, 默认关, D66 / D67); 由助理手势触发的数字助理与系统识别服务在 1.0.0 的 P5.7 (D48-D56).
 - 在线识别 / 合成服务对接 (云 ASR / TTS API).
 - 标点恢复模型, 说话人识别 / 分离, 语种识别, 音频事件标签 (1.1.0 候选).
-- 非 WAV 音频解码 (MP3 / AAC / OGG), 系统音频 / 通话录音抓取.
+- 非 WAV 音频解码 (MP3 / AAC / OGG; 1.2.0 起支持, 见 P7.5 与 D81), 系统音频 / 通话录音抓取.
 - 自行编译 sherpa-onnx 或 onnxruntime; NPU (QNN / NNAPI) 加速.
 - 宿主 `tts` 模块新增插件 backend (D3 已选系统引擎路线).
 
@@ -308,7 +314,7 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 已完成 (2026-10-16 提交 `17771c1`, 设备 API 28 / 33 / 35); 宿主缺口已修 (2026-10-16 宿主本地提交 `ba4c92d5f` / `11f75efbe`, 三台真机复核); 剩余: TalkBack / 随选朗读未试 |
 | P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标, 系统语音输入入口, 系统数字助理 | P5.1-P5.7 已完成 (P5.7 数字助理, 系统识别服务与唤醒会话接管: 2026-10-18 提交 `5f63d87`, API 24 / 35 AVD 与 Sony XQ-AT72 实测; 其他插件条目 2026-10-20 勾选 (3-Stone AI 1.4.0 已实现入口并完成往返); 2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33; P5.6 系统语音输入 (D41-D47) 提交 `fed02d7`, Sony G8441 / XQ-AT72 / XQ-DQ72 与 API 24 / 36.1 AVD, 3-Stove Agent 实测通过); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
 | P6 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | P6.1 / P6.2 已完成 (2026-10-20, 文档站 `2912b01` / `3fce20a`, d.ts `c1e2a23`, Ace `422f55f`, Offline Docs `2e6555d`, 四仓库均只落本地提交); P6.3 已完成 (2026-10-20, 插件 `1cbbec0` / `0360725`, 宿主样例 `014f12491`, 6 台真机 R3 冒烟); P6.4 已完成: 1.0.0 于 2026-10-20 发布 (维护者决定不等宿主 6.8.0 公开; tag `v1.0.0` = `6974369`, versionCode 56, 最低宿主 5456 (宿主 `6c08e53e2` 仅本地), 附对应源码归档 `ac68c80b`; 索引 `6d39b1f`) |
-| P7 | 1.1.0 / 1.2.0 | 1.1.0: P7.1 触发式入口 (D58-D65, D68); 1.2.0 (维护者 2026-10-21 选定四项, 依次进行): P7.4 常驻唤醒 (D66 / D67, D69-D80), 非 WAV 解码, MCP 工具, 目录 v2; 其余候选见 P7.2 | 进行中 (P7.1 插件条目已完成, 含 D65 改定, 弹层开头丢字修复与 D68; 1.1.0 已于 2026-10-21 发布 (tag `v1.1.0` = `8fdf6d8`, versionCode 81, 索引 81.json / `9848127`), 见 P7.3; 剩 P7.1 的 D67 其他插件条目; 1.2.0 第 1 项 P7.4 已完成 (2026-10-21, 推送至 `5591ac9`), 下一项为非 WAV 解码) |
+| P7 | 1.1.0 / 1.2.0 | 1.1.0: P7.1 触发式入口 (D58-D65, D68); 1.2.0 (维护者 2026-10-21 选定四项, 依次进行): P7.4 常驻唤醒 (D66 / D67, D69-D80), 非 WAV 解码, MCP 工具, 目录 v2; 其余候选见 P7.2 | 进行中 (P7.1 插件条目已完成, 含 D65 改定, 弹层开头丢字修复与 D68; 1.1.0 已于 2026-10-21 发布 (tag `v1.1.0` = `8fdf6d8`, versionCode 81, 索引 81.json / `9848127`), 见 P7.3; 剩 P7.1 的 D67 其他插件条目; 1.2.0 第 1 项 P7.4 已完成 (2026-10-21, 推送至 `5591ac9`); 第 2 项非 WAV 解码 P7.5 进行中 (2026-10-22 起, D81-D86)) |
 
 依赖顺序:
 
@@ -594,7 +600,7 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 
 ### P7.2 其他候选
 
-1.2.0 的范围: 维护者 2026-10-21 选定 (原话 "常驻唤醒, 非 WAV 解码, MCP 工具, 目录 v2") 四项为 1.2.0, 按此顺序依次进行, 每项一个会话; 分配方式为卡片, 由维护者点击启动 (调度见 `D:/idea-projects/.claude/boards/new-plugins.md`); 1.2.0 的发布在四项完成后另行调度. 第 1 项常驻唤醒在 P7.4 实施 (决策 D69-D80).
+1.2.0 的范围: 维护者 2026-10-21 选定 (原话 "常驻唤醒, 非 WAV 解码, MCP 工具, 目录 v2") 四项为 1.2.0, 按此顺序依次进行, 每项一个会话; 分配方式为卡片, 由维护者点击启动 (调度见 `D:/idea-projects/.claude/boards/3-macaw.md`); 1.2.0 的发布在四项完成后另行调度. 第 1 项常驻唤醒在 P7.4 实施 (决策 D69-D80), 第 2 项非 WAV 解码在 P7.5 实施 (决策 D81-D86).
 
 | 候选 | 说明 | 依赖 |
 | --- | --- | --- |
@@ -602,11 +608,12 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 | 标点恢复 | sherpa-onnx `ct-transformer` 标点模型 (体积较大, 单独目录条目) | P2 目录 v2 |
 | 说话人识别 / 验证 | 3D-Speaker 模型, `speech.speaker.*` (注册, 比对), 用于 "只听主人" | 隐私文案 |
 | 说话人分离, 语种识别, 音频事件标签 | 上游已有模型与 API | 需求验证 |
-| 非 WAV 解码 | `MediaCodec` 解码 MP3 / AAC / OGG 为 PCM. 状态: 1.2.0 第 2 项 | D15 推翻 |
+| 非 WAV 解码 | `MediaCodec` 解码 MP3 / AAC / OGG 为 PCM. 状态: 1.2.0 第 2 项, 在 P7.5 实施 (D81-D86) | D15 推翻 (D81) |
 | MCP 工具 | 经 `plugin-tool-api` 暴露 "听一句话" / "朗读" 工具给 MCP Server 与 Agent. 状态: 1.2.0 第 3 项 | 宿主 plugin-tool 发现落地 |
 | 更多语言模型 | 日 / 韩 / 粤 (SenseVoice 已含), 俄 / 法 / 西 / 阿 流式模型, 多语 TTS (piper 各语种) | 目录 v2 审核 |
 | NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型 | 上游稳定性 |
-| 常驻唤醒降耗 | P7.4.8 实测开启时插件 CPU 平均约为一个核心的 25% (XQ-DQ72 熄屏 30 分钟 453.9 s, 估算 17.9 mAh); 可评估静音时不送唤醒词模型 (VAD 门控) 或减少推理线程, 需与命中率 (P7.4.7 的声学用例) 对照 | 维护者决定是否纳入 |
+| 常驻唤醒降耗 | P7.4.8 实测开启时插件 CPU 平均约为一个核心的 25% (XQ-DQ72 熄屏 30 分钟 453.9 s, 估算 17.9 mAh); 可评估静音时不送唤醒词模型 (VAD 门控) 或减少推理线程, 需与命中率 (P7.4.7 的声学用例) 对照. 状态: 保留候选, 1.2.0 不做, 1.3.0 再评估 (附录 D Q19) | 1.3.0 评估 |
+| 试听试说页 "识别文件" | 在试听试说页用系统文件选择器选一个音频文件识别 (P7.5 之后不写脚本也能用非 WAV 解码); P7.5 开工时登记, 未纳入 1.2.0 | 维护者决定是否纳入 |
 
 ### P7.3 1.1.0 发布
 
@@ -629,6 +636,19 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 - [x] (测试) P7.4.7 真机: 至少三台 Sony 与一台 ColorOS 或 HyperOS 设备上开关, 命中, 限时关闭, 拔电 / 接电, 与 3-Stove Agent 常驻监听的互斥提示. 证据 (2026-10-21, 调试构建 1.2.0 build 85, `device_resident_run.py phone`, 声学用例依次运行, 音量为媒体音量的 70%, 维护者同日同意; 40% 时 XQ-DQ72 3 项未命中): XQ-DQ72 (API 33) 6 过 0 失败 2 跳过, XQ-AT72 (API 31) 5/0/3 (重启用例因悬浮麦克风开着跳过), G8441 (API 28) 6/0/2, OnePlus OPD2413 (ColorOS, API 35) 6/0/2; 跳过项为 `macawStove` 与 `macawKeyguard` (模拟器专用). 各机输出: `hit route=open plays=1 silencedBySheet=true resumed=true again=1` (开关与命中), `yields client hits=1 resident hits meanwhile=0 dictation silenced=true resumed=true` (让出), `time limit off=true` (限时关闭, 截止时刻前移代替等满), `power paused=true silent=true plugged state=WAITING background hit plays=1` (`dumpsys battery unplug` / `set ac 1`), `conflict dialog names rival=true` 与 `conflict at start off=true` (测试 APK 的对方组件). 与真实 3-Stove Agent (build 422) 的互斥: XQ-DQ72 上维护者在 Stove 设置中打开其常驻监听后 `device_resident_run.py stove` 通过 (对话框列出 3-Stove Agent, "打开 3-Stove Agent 设置" 打开其设置页), 之后维护者关闭. HyperOS (Xiaomi Pad 23046RP50C) 未执行 (ColorOS 已满足 "一台 ColorOS 或 HyperOS").
 - [x] (测试) P7.4.8 熄屏 30 分钟耗电实测 (开 / 关对照), 结果写进 README. 证据: `device_resident_run.py battery` 在 Sony XQ-DQ72 (Android 13) 上 (2026-10-21): 每段先 `dumpsys batterystats --reset` 与 `dumpsys battery unplug` (手机经 USB 连接, 未充电状态为模拟), 回到桌面后熄屏 30 分钟, 读 batterystats 对本插件 UID 的估算与插件进程的 CPU 时间 (`/proc/<pid>/stat`). 关闭 (16:33 起, 调试构建 build 85): 插件进程未运行, 估算 0.00567 mAh. 开启 (17:37 起, `301f2dc` 的调试构建, "只在充电时监听" 关, 不限时): 估算 17.9 mAh, CPU 时间 453.9 s (平均约为一个核心的 25%), 结束时服务仍在前台且仍在录音; 功耗表容量 4134 mAh, 17.9 mAh 约为 0.4%. 第一次的开启段无效: 之前的 `background` 运行把 "只在充电时监听" 存成了开, 模拟拔电使会话暂停 (CPU 0.1 s, 0.00157 mAh); 提交 `301f2dc` 让耗电运行显式关闭该选项并核对结束时仍在录音, `background` 与 `battery` 结束时把改过的选项恢复默认 (调试开关在 `off` 时也保存选项), 之后只重测了开启段. 估算值来自机型功耗表, 不是实测电流. 写进 README: 提交 `aa15533` (常见问题 "耗电多少" 与兼容性一节, 10 种语言).
 - [x] (插件) P7.4.9 README 与 changelog 1.2.0 (10 种语言, 阿拉伯语品牌名 FSI / PDI): 常驻唤醒用法, 指示灯与耗电说明, 推荐限时用法, 与另外两个应用互斥; `generate_markdown.py --check`; 日期先写占位; 推送且 CI 通过 (不打 tag, 不建 Release, 不登记索引). 证据: 提交 `aa15533`: 10 种语言 README (功能一条, 常见问题改写 "为什么麦克风指示灯一直亮, 耗电多少" 并新增 "点此说话" 与互斥两问, 隐私两条改写一条新增, 兼容性新增一条) 与 changelog 1.2.0 (提示 1 条, 新增 7 条, 日期占位 2026/10/21), 阿拉伯语新增文字中的 16 处品牌名均以 FSI / PDI 包裹, `generate_markdown.py --check` 为 `MARKDOWN_OK languages=10 artifacts=36`. prepush 7/7 后于 2026-10-21 推送 `2052b9e..5591ac9` (9 个提交); 远端 CI 全绿: Build integrity run 39582706431 (仓库检查与单元测试, API 24, API 35 4 KB 与 16 KB, API 37.1 全部通过), Markdown integrity 39582709736, Icon Studio recipe 39582706451. 未打 tag, 未建 Release, 未登记索引.
+
+### P7.5 非 WAV 解码 (1.2.0)
+
+1.2.0 第 2 项 (维护者 2026-10-21 选定, 见 P7.2 上方). 让 `speech.recognize` / `speech.detectVoice` 的文件参数也接受 MP3, AAC, Ogg, FLAC 等常见音频, 以及视频文件里的音轨: 推翻 D15 的 "只收 WAV", 200 MB / 30 分钟上限不变. 决策 D81-D86, 附录 D Q21-Q24 (2026-10-22 一轮选择题). 系统语音输入 (P5.6), 助理弹层 (P5.7) 与系统识别服务都不接受文件路径 (系统识别服务的 `EXTRA_AUDIO_SOURCE` 是调用方的原始 PCM 流, 仍按 `RecognitionPolicy` 拒绝), 不在本项范围; 试听试说页 "识别文件" 登记为 P7.2 候选. 条目编号 P7.5.1 - P7.5.8 供汇报引用.
+
+- [ ] (插件) P7.5.1 解码核心 (纯 JVM, D83, D85): `MonoAudio` 接口 (`WavReader` 与系统解码读取器共用, `AudioInput.decode` 与 `FileRecognition` 改为接受它), 容器探测 `AudioContainers` (WAV, MP3, ADTS, MP4 系, Ogg (Opus / Vorbis / 其他), FLAC, AMR, Matroska, 未知), 解码器输出 PCM 到单声道浮点的 `PcmFrames`, 时长守卫与错误信息. 验收: JVM 单测覆盖各容器签名与截断的头, 5 种 PCM 编码 x 1 / 2 / 6 声道, 时长守卫 (轨道时长超限, 解码中超限, 1 s 容差); 现有 `WavReaderTest`, `ResamplerTest`, `WakeSessionTest` 照常通过.
+- [ ] (插件) P7.5.2 系统解码读取器 (D81-D83, D85): `MediaAudioReader` (`MediaExtractor` 读宿主的只读描述符, 第一条音轨, `MediaCodec` 同步解码, `audio/raw` 直读, 输出格式变化, 加密轨拒绝), `SpeechRuntime` 按文件头分派 WAV / 系统解码, capabilities 功能 `audioDecode`. 验收: `recognizeFile` / `detectVoice` 对 P7.5.6 的全部素材成功; 坏文件, 无音轨与只有视频轨的文件按 D85 报错且信息写明原因; `ThreeMacawSpeechContractTest` 看到 `audioDecode`.
+- [ ] (插件) P7.5.3 Ogg Opus 自带解析 (D81): 纯 JVM 的 Ogg 页解析 (页同步与 CRC, 段表, 跨页包, 只取第一个 Opus 逻辑流, 跳过 `OpusTags`), `OpusHead` 解析与 Opus 包时长, 喂 `audio/opus` 解码器 (CSD-0 `OpusHead`, CSD-1 编码延迟, CSD-2 预滚 80 ms, 单位纳秒); API < 29 的 Ogg Opus 自动走此路径, 测试可在任何 API 上强制. 验收: JVM 单测 (页解析, 跨页包, CRC 错, 多逻辑流, 截断); AVD 上强制路径与系统路径解出的音频一致 (相关系数 > 0.99) 且识别文字相同; G8441 (API 28) 上 Ogg Opus 识别成功.
+- [ ] (宿主) P7.5.4 宿主按功能放行 (D84): `SpeechContract.FEATURE_AUDIO_DECODE`; `SpeechAudioInput.open` 只做存在 / 可读 / 大小检查, 选定插件后按功能决定是否要求 WAV 头, 对旧插件提示更新; 宿主本地提交, 不推送. 验收: 宿主 JVM 测试 (声明 / 未声明 x WAV / 非 WAV 头) 通过, 宿主编译通过.
+- [ ] (测试) P7.5.5 E2: P7.5.1 / P7.5.3 的 JVM 单测, 插件全量单测 0 失败, `lintDebug` 在改动文件中无新问题.
+- [ ] (测试) P7.5.6 E3 AVD: `.python/generate_encoded_test_audio.py` 用本机 ffmpeg 从 `en.wav` / `zh.wav` 生成 MP3, AAC (ADTS), M4A, Ogg Vorbis, Ogg Opus, FLAC 与带视频轨的 MP4 / WebM, 入库并锁定; 不需要模型的 `AudioDecodeDeviceTest` (时长与 WAV 相差不超过 100 ms, 与 WAV 的相关系数, 坏文件 / 无音轨 / 只有视频轨的错误码, 强制自带 Ogg 解析) 随 CI 的 AVD 运行; 需要模型的 `EncodedRecognitionDeviceTest`: 流式与 SenseVoice 两个模型对每份素材识别, 英文 CER 与 WAV 基线相差不超过 0.05, 中文结果相对 WAV 结果的 CER 不超过 0.10, `detectVoice` 段数与 WAV 相差不超过 1. 验收: API 35 AVD 全部通过, 不需要模型的用例在 API 24 AVD 上通过.
+- [ ] (测试) P7.5.7 真机: G8441 (API 28, 核对 Ogg Opus 走自带解析且识别成功), 至少另一台 Sony (XQ-DQ72 或 XQ-AT72) 与 OnePlus OPD2413 (ColorOS) 上 P7.5.6 的两个测试通过; 宿主端到端 (`speech.recognize('x.mp3')`) 视宿主构建能否安装另记执行与否.
+- [ ] (插件) P7.5.8 README 与 changelog 1.2.0 (10 种语言, 阿拉伯语品牌名 FSI / PDI), 文档站 / d.ts / 离线文档 / Ace 声明中 "只收 WAV" 的说法 (按各仓库惯例本地提交); `generate_markdown.py --check`; prepush 后推送, 远端 CI 全绿 (不打 tag, 不建 Release, 不登记索引).
 
 ---
 
@@ -881,6 +901,12 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q16 | 常驻唤醒开着时脚本或其他应用要用麦克风 (P7.4) | (a) 让出给全部客户端, 对方结束后自动恢复; (b) 只让给本插件自己的入口 (D57 原样) | 已定 (a) (同上, 第一轮), 见 D72 / D76 |
 | Q17 | 熄屏时常驻唤醒怎么做 (P7.4) | (a) 照常监听, 命中点亮屏幕; (b) 熄屏时暂停, 亮屏后继续; (c) 照常监听, 不点亮屏幕 | 已定 (a) (维护者 2026-10-21 第二轮, 推荐项, 在本插件 P7.4 会话中作答), 见 D73 |
 | Q18 | 重启或更新后常驻唤醒怎么恢复 (P7.4) | (a) 各版本都发 "点此恢复" 通知 (同 Stove D67), 打开插件界面也恢复; (b) Android 10 及以下开机自动恢复, 更高版本发通知 | 已定 (a) (同上, 第二轮), 见 D74 |
+| Q19 | 常驻唤醒降耗是否纳入 1.2.0 (P7.4 子会话登记; 开启时插件 CPU 约为一个核心的 25%, XQ-DQ72 熄屏 30 分钟估算 17.9 mAh) | (a) 保留候选, 1.2.0 不做, 1.3.0 再评估 (推荐); (b) 纳入 1.2.0 | 已定 (a) (维护者 2026-10-21 20:25 经调度会话选择题选定, 推荐项), P7.2 候选表 "常驻唤醒降耗" 行已同步 |
+| Q20 | 测试机 (XQ-DQ72, XQ-AT72, G8441, OnePlus OPD2413) 上的 1.2.0 调试构建是否换回 release 1.1.0 (P7.4 子会话登记) | (a) 保持调试构建到 1.2.0 发布 (推荐, 已实施); (b) 换回 release 1.1.0 | 已定 (a) (维护者 2026-10-21 20:25 经调度会话选择题选定, 推荐项) |
+| Q21 | 非 WAV 文件接受哪些编码 / 容器, Android 9 及以下的 Ogg Opus 怎么处理 (P7.5) | (a) 系统能解就收 (MP3, AAC, Ogg Vorbis / Opus, FLAC, AMR, WebM / MKV 等), Android 9 及以下的 Ogg Opus 报 `UNSUPPORTED_FORMAT` 并写明需 Android 10+ (推荐, 约 0.5 天); (b) 同 (a), 另写约 300 行 Kotlin 的 Ogg 页解析把 Opus 包喂给系统 Opus 解码器, 让 Android 7-9 也能读 (多约 1 天, 不增加原生库); (c) 只收点名的 6 种 (白名单) | 已定 (b) (维护者 2026-10-22 在 P7.5 会话中作答), 见 D81 |
+| Q22 | 视频文件 (MP4 / 3GP / MKV / WebM) 里的音轨是否接受 (P7.5) | (a) 接受, 取第一条音轨, 200 MB 上限按整个文件算 (推荐); (b) 拒绝含视频轨的文件 | 已定 (a) (同上, 推荐项), 见 D82 |
+| Q23 | 解码方式与内存上限 (P7.5) | (a) 边解边喂, 额外内存约 1-2 MB, 30 分钟上限先按轨道时长再按实际解出的时长 (推荐); (b) 先整段解成临时 16 kHz WAV (30 分钟约 58 MB 磁盘) 再走 WAV 路径; (c) 整段解到内存 (30 分钟约 115 MB) | 已定 (a) (同上, 推荐项), 见 D83 |
+| Q24 | 宿主在插件看到文件前就按 `RIFF` / `WAVE` 头拒绝非 WAV, 怎么放行 (P7.5) | (a) 插件声明功能 `audioDecode`, 宿主只对未声明的旧插件保留 WAV 头检查并提示更新 (推荐, 宿主约 30 行 + JVM 测试, 最低宿主不变); (b) 宿主取消检查, 一律交给插件; (c) 不改宿主 (脚本仍只能传 WAV) | 已定 (a) (同上, 推荐项), 见 D84 |
 
 ---
 
