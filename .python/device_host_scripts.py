@@ -238,6 +238,13 @@ class Volume:
 
 
 def launcher(serial):
+    """AutoJs6's own launcher activity. A debug host with LeakCanary lists a second launcher entry, for which
+    `resolve-activity` answers the system chooser (not exported on HyperOS, shown over the script on ColorOS)."""
+    listed = adb(serial, "shell", "cmd", "package", "query-activities", "--brief", "-a", "android.intent.action.MAIN",
+                 "-c", "android.intent.category.LAUNCHER", HOST)
+    own = [line.strip() for line in listed.splitlines() if line.strip().startswith(HOST + "/") and "leakcanary" not in line]
+    if own:
+        return own[0]
     return adb(serial, "shell", "cmd", "package", "resolve-activity", "--brief", "-c", "android.intent.category.LAUNCHER", HOST).splitlines()[-1].strip()
 
 
