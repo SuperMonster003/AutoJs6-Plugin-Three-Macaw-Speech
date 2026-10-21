@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.ReleaseHistoryActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.SettingsActivity
@@ -113,6 +114,8 @@ class HomeActivity : StandaloneActivity() {
         super.onResume()
         refreshStatus()
         controller.refresh()
+        // Roadmap D74 / D77: a visible home screen resumes the resident wake word, or turns it off when its time ran out.
+        ResidentWake.resume(this)
     }
 
     override fun onStop() {
