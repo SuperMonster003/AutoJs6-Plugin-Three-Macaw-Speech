@@ -10,7 +10,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.Ass
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.assistant.AssistantActivity
 
-/** The entries of roadmap P7.1 (D59) that open the assistant sheet. zh-CN: 路线图 P7.1 (D59) 中打开助理弹层的入口. */
+/** The entries of roadmap P7.1 (D59) and the wake word of P7.4 that open the assistant sheet. zh-CN: 路线图 P7.1 (D59) 与 P7.4 唤醒词中打开助理弹层的入口. */
 internal enum class TriggerSource(val id: String) {
     TILE("tile"),
     WIDGET("widget"),
@@ -18,6 +18,9 @@ internal enum class TriggerSource(val id: String) {
     FLOATING("floating"),
     KEY("key"),
     HEADSET("headset"),
+
+    /** The resident wake word (roadmap P7.4, D79). zh-CN: 常驻唤醒 (路线图 P7.4, D79). */
+    WAKE("wake"),
     ;
 
     companion object {

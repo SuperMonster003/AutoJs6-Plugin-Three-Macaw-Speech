@@ -4,6 +4,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFil
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles.androidOrNull
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles.child
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles.children
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentNotifications
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.speech.api.SpeechPluginActions
@@ -55,7 +57,7 @@ class ManifestContractTest {
         val permissions = manifest.children("uses-permission").map { it.android("name") }
         assertTrue("no scanning and no location (roadmap D68)", permissions.none { it.contains("SCAN") || it.contains("LOCATION") || it.contains("BLUETOOTH_ADMIN") })
         assertTrue("no storage permission (roadmap D23 / D29)", permissions.none { it.contains("STORAGE") || it.contains("MEDIA") })
-        assertEquals("only the VOICE_COMMAND query of roadmap D50", 1, manifest.children("queries").size)
+        assertEquals("one queries element: VOICE_COMMAND (roadmap D50) and RESIDENT_LISTENER (D75)", 1, manifest.children("queries").size)
         assertTrue("no uses-sdk override: SDK levels come from version.properties", manifest.children("uses-sdk").isEmpty())
         assertTrue("no feature requirements", manifest.children("uses-feature").isEmpty())
     }
@@ -93,7 +95,7 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, ".service.MicrophoneStartActivity",
+                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, RESIDENT_START, ".service.MicrophoneStartActivity",
                 ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
@@ -214,7 +216,7 @@ class ManifestContractTest {
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
             listOf(
-                ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", PACKAGED, ".service.ModelOperationService", ".service.MicrophoneService",
+                RESIDENT, ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", PACKAGED, ".service.ModelOperationService", ".service.MicrophoneService",
                 ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, KEY, TILE,
             ),
             application.children("service").map { it.android("name") },
@@ -319,9 +321,9 @@ class ManifestContractTest {
         assertEquals("D60: a task of its own, never over the plugin's other screens", "", sheet.android("taskAffinity"))
         assertTrue(sheet.children("intent-filter").isEmpty())
 
-        // D50: the targets are visible on API 30+ through one query of their action.
+        // D50: the targets are visible on API 30+ through one query of their action; D75 adds the resident listeners.
         val queries = manifest.child("queries").children("intent")
-        assertEquals(listOf("org.autojs.plugin.action.VOICE_COMMAND"), queries.flatMap { intent -> intent.children("action").map { it.android("name") } })
+        assertEquals(listOf("org.autojs.plugin.action.VOICE_COMMAND", RESIDENT_LISTENER), queries.flatMap { intent -> intent.children("action").map { it.android("name") } })
         val answered = application.children("activity").flatMap { activity -> activity.children("intent-filter").flatMap { filter -> filter.children("action").map { it.android("name") } } }
         assertTrue("the plugin never answers VOICE_COMMAND itself", "org.autojs.plugin.action.VOICE_COMMAND" !in answered)
     }
@@ -465,14 +467,46 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the resident wake word service is the disabled, protected mutual exclusion component of roadmap D75`() {
+        // 3-Stone AI D31: the enabled state is the switch, the action makes it visible to the other resident listeners and
+        // the meta-data names the settings entry they open; it records, so it is a microphone foreground service.
+        val service = service(RESIDENT)
+        assertEquals("false", service.android("enabled"))
+        assertEquals("true", service.android("exported"))
+        assertEquals(PLUGIN_PERMISSION, service.android("permission"))
+        assertEquals("microphone", service.android("foregroundServiceType"))
+        assertFilter(service, action = RESIDENT_LISTENER, category = null)
+        assertEquals(RESIDENT_LISTENER, ResidentWake.ACTION_RESIDENT_LISTENER)
+        assertEquals(
+            mapOf(ResidentWake.META_SETTINGS to "$PACKAGE$RESIDENT_SETTINGS"),
+            service.children("meta-data").associate { it.android("name") to it.android("value") },
+        )
+        assertEquals("org.autojs.plugin.speech.RESIDENT_LISTENER_SETTINGS", ResidentWake.META_SETTINGS)
+        val alias = application.children("activity-alias").single { it.android("name") == RESIDENT_SETTINGS }
+        assertEquals("true", alias.android("exported"))
+        assertNull("the other apps hold no plugin permission for an activity start", alias.androidOrNull("permission"))
+        assertEquals(SETTINGS, alias.android("targetActivity"))
+        assertTrue(alias.children("intent-filter").isEmpty())
+        assertEquals(RESIDENT_SETTINGS, ResidentNotifications.RESIDENT_SETTINGS)
+        // D74 / D76: the notification trampoline that starts the service while visible is internal and transparent.
+        val start = application.children("activity").single { it.android("name") == RESIDENT_START }
+        assertEquals("false", start.android("exported"))
+        assertEquals("true", start.android("excludeFromRecents"))
+        assertEquals("true", start.android("noHistory"))
+        assertEquals("", start.android("taskAffinity"))
+        assertEquals("@android:style/Theme.Translucent.NoTitleBar", start.android("theme"))
+        assertTrue(start.children("intent-filter").isEmpty())
+    }
+
+    @Test
     fun `every exported component requires the plugin permission`() {
         val components = listOf("activity", "activity-alias", "service", "receiver", "provider").flatMap { application.children(it) }
         val unprotected = components.filter { it.androidOrNull("exported") == "true" && it.androidOrNull("permission") != PLUGIN_PERMISSION }
         assertEquals(
             "exported without the plugin permission: the system TTS engine with its activities (roadmap P4.2), the screen entries (P5), the voice " +
                 "input (P5.6), the digital assistant bound by the system only and the recognition service (P5.7), the tile bound by the system UI " +
-                "only, the key trigger bound by the accessibility system only, the widget provider and the headset entry (P7.1), and the separate " +
-                "permissioned packaged speech entry",
+                "only, the key trigger bound by the accessibility system only, the widget provider and the headset entry (P7.1), the resident " +
+                "settings entry of the other resident listener apps (P7.4, a screen entry), and the separate permissioned packaged speech entry",
             SYSTEM_TTS_COMPONENTS + SCREEN_ENTRIES + VOICE_INPUT + ASSISTANT + ASSISTANT_SESSION + RECOGNITION + TILE + KEY + WIDGET + HEADSET + PACKAGED,
             unprotected.map { it.android("name") }.toSet(),
         )
@@ -533,13 +567,19 @@ class ManifestContractTest {
         const val TRIGGER_SETTINGS = ".ui.settings.TriggerSettingsAlias"
         const val BIND_VOICE_INTERACTION = "android.permission.BIND_VOICE_INTERACTION"
 
+        /** Roadmap P7.4: the resident wake word. zh-CN: 常驻唤醒. */
+        const val RESIDENT = ".resident.ResidentWakeService"
+        const val RESIDENT_START = ".resident.ResidentStartActivity"
+        const val RESIDENT_SETTINGS = ".ui.settings.ResidentSettingsAlias"
+        const val RESIDENT_LISTENER = "org.autojs.plugin.speech.action.RESIDENT_LISTENER"
+
         /**
          * The screens the launcher and the system TTS settings open (roadmap P5): they show the plugin's own screens only.
          * zh-CN: 启动器与系统 TTS 设置打开的界面 (路线图 P5): 只显示插件自己的界面.
          */
         val SCREEN_ENTRIES = setOf(
             HOME, SETTINGS, ".launcher.AdaptiveLightIconAlias", ".launcher.AdaptiveDarkIconAlias", ".launcher.AdaptiveAutoIconAlias",
-            ".launcher.TransparentIconAlias", RECOGNITION_SETTINGS, TRIGGER_SETTINGS,
+            ".launcher.TransparentIconAlias", RECOGNITION_SETTINGS, TRIGGER_SETTINGS, RESIDENT_SETTINGS,
         )
     }
 

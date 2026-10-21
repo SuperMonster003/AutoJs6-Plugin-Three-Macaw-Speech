@@ -48,6 +48,10 @@
         <intent>
             <action android:name="org.autojs.plugin.action.VOICE_COMMAND" />
         </intent>
+        <!-- Roadmap D75 (3-Stone AI D31): the resident listeners of 3-Stone AI and 3-Stove Agent, one at a time. -->
+        <intent>
+            <action android:name="org.autojs.plugin.speech.action.RESIDENT_LISTENER" />
+        </intent>
     </queries>
 
     <!-- The screens and the launcher entry are roadmap P5; the system TTS engine (roadmap P4.2) is below. -->
@@ -194,6 +198,15 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity-alias>
+        <!--
+            The settings entry another resident listener app opens (roadmap D75, the RESIDENT_LISTENER_SETTINGS meta-data
+            below): the settings screen at its resident wake word group.
+        -->
+        <activity-alias
+            android:name=".ui.settings.ResidentSettingsAlias"
+            android:exported="true"
+            android:label="@string/settings_title"
+            android:targetActivity=".ui.settings.SettingsActivity" />
         <activity
             android:name=".ui.tryout.TryoutActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
@@ -301,7 +314,10 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/voice_widget_info" />
         </receiver>
-        <!-- Roadmap D62: the floating microphone comes back after a reboot or an update while its switch is on. -->
+        <!--
+            Roadmap D62 / D74: the floating microphone comes back after a reboot or an update while its switch is on; the
+            resident wake word only posts a reminder (no microphone from these broadcasts).
+        -->
         <receiver
             android:name=".trigger.TriggerResumeReceiver"
             android:exported="false">
@@ -310,6 +326,34 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
+        <!--
+            The resident wake word (roadmap P7.4, D69 - D80): a microphone foreground service the user turns on in the
+            settings (the component is disabled until then, and its enabled state is the switch). It is the component of the
+            mutual exclusion convention of the resident listeners (3-Stone AI D31, roadmap D75): exported behind the plugin
+            permission only for the query of 3-Stone AI and 3-Stove Agent, which never start it; the meta-data names the
+            settings entry they open. It starts from a visible state only and records while it runs (D58, D66).
+        -->
+        <service
+            android:name=".resident.ResidentWakeService"
+            android:enabled="false"
+            android:exported="true"
+            android:foregroundServiceType="microphone"
+            android:permission="org.autojs.permission.PLUGIN">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.speech.action.RESIDENT_LISTENER" />
+            </intent-filter>
+            <meta-data
+                android:name="org.autojs.plugin.speech.RESIDENT_LISTENER_SETTINGS"
+                android:value="io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.ResidentSettingsAlias" />
+        </service>
+        <!-- Roadmap D74 / D76: "tap to resume" and "Tap to continue listening" start the service while visible; internal. -->
+        <activity
+            android:name=".resident.ResidentStartActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <!-- Package replacement repairs the launcher alias state only (no screen, network or model loading). -->
         <receiver
             android:name=".ui.appearance.LauncherIconUpdateReceiver"

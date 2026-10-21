@@ -12,6 +12,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
@@ -51,8 +53,11 @@ import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.lifecycle.Lifecycle
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.AssistantSessions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ReadAloud
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.AssistantEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.HeadsetAccess
@@ -101,6 +106,10 @@ class AssistantActivity : StandaloneActivity() {
     private var awaitingUnlock = false
     private var pendingUnlock: (() -> Unit)? = null
     private var headset: HeadsetVoice? = null
+    private var readAloud: ReadAloud? = null
+
+    /** Until then (uptime) a stop comes from the screen the wake word turns on (D73). zh-CN: 此前 (uptime) 的停止来自唤醒词点亮屏幕 (D73). */
+    private var wakingUntil = 0L
 
     override val translucentWindow: Boolean get() = true
 
@@ -124,6 +133,11 @@ class AssistantActivity : StandaloneActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         showOverKeyguard()
+        // Roadmap D73: a wake word heard with the screen off turns it on for the sheet.
+        if (source == TriggerSource.WAKE) {
+            turnScreenOn()
+            if (getSystemService(PowerManager::class.java)?.isInteractive == false) wakingUntil = SystemClock.uptimeMillis() + WAKE_SETTLE_MILLIS
+        }
         super.onCreate(savedInstanceState)
         onBackPressedDispatcher.addCallback(this) { dismiss() }
         AssistantSessions.opened(this)
@@ -161,14 +175,26 @@ class AssistantActivity : StandaloneActivity() {
         SheetVisibility.hidden()
         // The assistant belongs to the visible sheet: leaving it ends listening and closes the sheet (D48).
         if (!isChangingConfigurations && !awaitingPermission && !awaitingUnlock && !isFinishing) {
-            voice?.release()
-            finish()
+            if (SystemClock.uptimeMillis() < wakingUntil) {
+                // Started while the screen was off (D73), the sheet is stopped once before the screen turns on and then
+                // started again; it closes only when that restart does not come.
+                window.decorView.postDelayed({ if (!lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) leave() }, WAKE_SETTLE_MILLIS)
+            } else {
+                leave()
+            }
         }
         super.onStop()
     }
 
+    private fun leave() {
+        if (isFinishing) return
+        voice?.release()
+        finish()
+    }
+
     override fun onDestroy() {
         voice?.release()
+        readAloud?.shutdown()
         stopHeadset()
         AssistantSessions.closed(this)
         super.onDestroy()
@@ -191,9 +217,15 @@ class AssistantActivity : StandaloneActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setShowWhenLocked(true) else window.addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED)
     }
 
+    @Suppress("DEPRECATION")
+    private fun turnScreenOn() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) setTurnScreenOn(true) else window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+    }
+
     /** One dictation of the voice input path; the sheet is visible, so no microphone foreground service. zh-CN: 一次语音输入路径的听写. */
     private fun listen() {
         voice?.release()
+        readAloud?.stop()
         stopHeadset()
         notice = null
         stage = Stage.LISTENING
@@ -261,6 +293,10 @@ class AssistantActivity : StandaloneActivity() {
                 language = outcome.language
                 stage = Stage.RESULT
                 Log.i(TAG, "Dictation done (${outcome.text.length} chars, language ${outcome.language ?: "unknown"})")
+                // Roadmap D69: a sheet opened by the wake word reads what it heard; the user still picks the target (D49).
+                if (source == TriggerSource.WAKE && ResidentPreferences(this).read().readAloud) {
+                    readAloud = (readAloud ?: ReadAloud(this)).also { it.speak(text, language) }
+                }
             }
             VoiceInputOutcome.NoMatch -> stage = Stage.NO_MATCH
             VoiceInputOutcome.Cancelled, is VoiceInputOutcome.Failed -> finish()
@@ -477,6 +513,9 @@ class AssistantActivity : StandaloneActivity() {
         private const val ICON_DP = 24
         private const val LEGACY_UNLOCK_POLL_MILLIS = 250L
         private const val LEGACY_UNLOCK_WAIT_MILLIS = 60_000L
+
+        /** How long a sheet started with the screen off waits for the screen to turn on. zh-CN: 熄屏时启动的弹层等待屏幕点亮的时长. */
+        private const val WAKE_SETTLE_MILLIS = 3_000L
 
         @Suppress("DEPRECATION")
         private const val LEGACY_DISMISS_KEYGUARD = WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
