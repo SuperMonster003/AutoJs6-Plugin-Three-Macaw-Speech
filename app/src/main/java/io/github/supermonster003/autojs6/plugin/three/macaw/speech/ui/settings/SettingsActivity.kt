@@ -1,6 +1,8 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -8,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -47,6 +51,16 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsV
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.HitRoute
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ListeningDuration
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentAvailability
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentKeywords
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentListenerApp
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentNotifications
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentSettings
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.WakeSensitivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
@@ -101,18 +115,35 @@ import java.util.concurrent.Executors
  * recognition group, whose "Digital assistant" row tells whether 3-Macaw Speech is the default assistant and opens the
  * system settings to choose it (the plugin cannot choose it itself, D48). Its triggers group (roadmap P7.1, D58 - D65)
  * sets up the entries that open the assistant sheet; through `TriggerSettingsAlias` (a long press on the tile) the screen
- * opens there.
- * zh-CN: 设置页 (路线图 P5.2, 独立设置规范): 外观 (语言, 夜间模式, 主题色, 启动器图标; 前三项默认跟随 AutoJs6), 识别与合成默认值 (按维护者 2026-10-16
+ * opens there. Its resident wake word group (roadmap P7.4, D66 - D80) switches the resident wake word, whose switch is the
+ * component state of `ResidentWakeService`; through `ResidentSettingsAlias` (the notification, other resident listener
+ * apps) the screen opens there.
+ * zh-CN:设置页 (路线图 P5.2, 独立设置规范): 外观 (语言, 夜间模式, 主题色, 启动器图标; 前三项默认跟随 AutoJs6), 识别与合成默认值 (按维护者 2026-10-16
  * 的决定只作用于试听试说页与系统 TTS 引擎), 资源与关于. 每个选择对话框编辑草稿, 确定时保存一次. 它也是系统 TTS 引擎的 `settingsActivity`
  * (`res/xml/tts_engine.xml`): 系统设置以 `ACTION_MAIN` 启动它, 此时定位到合成分组. 经 `RecognitionSettingsAlias` 它也是数字助理与识别服务的设置入口
  * (路线图 P5.7), 此时定位到识别分组; 该组的 "数字助理" 行显示 3-Macaw Speech 是否为默认助理, 并打开系统设置供用户选择 (插件无法自行选择, D48).
- * "触发方式" 分组 (路线图 P7.1, D58 - D65) 设置打开助理弹层的各个入口; 经 `TriggerSettingsAlias` (长按磁贴) 打开时定位到该分组.
+ * "触发方式" 分组 (路线图 P7.1, D58 - D65) 设置打开助理弹层的各个入口; 经 `TriggerSettingsAlias` (长按磁贴) 打开时定位到该分组. "常驻唤醒" 分组
+ * (路线图 P7.4, D66 - D80) 开关常驻唤醒, 开关即 `ResidentWakeService` 的组件状态; 经 `ResidentSettingsAlias` (通知, 其他常驻监听应用) 打开时定位到该分组.
  */
 class SettingsActivity : StandaloneActivity() {
 
     private enum class Dialog {
         LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, ASR_MODEL, ENDPOINT, TTS_MODEL, SPEAKER, SPEED, VOICE_LANGUAGE, VOICE,
         IDLE, RECYCLE, IGNORED, TILE_STEPS, WIDGET_STEPS, KEY_SERVICE, KEY_GESTURE,
+        RESIDENT_KEYWORDS, RESIDENT_SENSITIVITY, RESIDENT_DURATION, RESIDENT_CONFLICT, RESIDENT_OVERLAY,
+    }
+
+    /**
+     * What the resident wake word switch needs (roadmap D78), loaded off the main thread: [unspellable] is the first wake
+     * word the model cannot spell, [others] the apps whose resident listener is on (D75).
+     * zh-CN: 常驻唤醒开关所需的条件 (路线图 D78), 在主线程之外加载: [unspellable] 是模型无法拼写的第一个唤醒词, [others] 是常驻监听已开启的应用 (D75).
+     */
+    private data class ResidentState(
+        val availability: ResidentAvailability? = null,
+        val unspellable: String? = null,
+        val others: List<ResidentListenerApp> = emptyList(),
+    ) {
+        val ready: Boolean get() = availability == ResidentAvailability.READY && unspellable == null
     }
 
     /** What the speech rows show, loaded off the main thread. zh-CN: 语音相关行显示的内容, 在主线程之外加载. */
@@ -137,6 +168,23 @@ class SettingsActivity : StandaloneActivity() {
     private var floatingOn by mutableStateOf(false)
     private var keyEnabled by mutableStateOf(false)
     private var awaitingOverlay = false
+    private var residentOn by mutableStateOf(false)
+    private var resident by mutableStateOf(ResidentState())
+    private var residentRival by mutableStateOf<ResidentListenerApp?>(null)
+    private var awaitingResidentOverlay = false
+
+    /** Roadmap D78: the microphone for the resident wake word; granted, the switch tries again. zh-CN: 常驻唤醒的麦克风权限; 授予后重试开启. */
+    private val residentMicrophone = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            setResident(true)
+        } else {
+            pendingMessage = getString(R.string.settings_resident_microphone)
+            if (!shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) openAppSettings()
+        }
+    }
+
+    /** Roadmap D78: asked once; the switch turns on whatever the answer. zh-CN: 只问一次; 无论结果都继续开启. */
+    private val residentNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { askResidentOverlay() }
 
     private val outcomes: (OperationTracker.Outcome) -> Unit = { outcome ->
         val kind = outcome.operation.kind
@@ -170,6 +218,136 @@ class SettingsActivity : StandaloneActivity() {
         resumeFloating()
         // Back from the accessibility settings: the key trigger may have been turned on there (roadmap D64).
         keyEnabled = KeyTriggerService.isEnabled(this)
+        resumeResident()
+    }
+
+    /**
+     * Roadmap D74 / D76 / D77: a visible settings screen resumes an enabled resident wake word (or turns it off when its
+     * listening time ran out); back from the overlay permission page the switch turns on whatever the answer (D78).
+     * zh-CN: 路线图 D74 / D76 / D77: 可见的设置页恢复开着的常驻唤醒 (监听时长已到则关闭); 从悬浮窗权限页返回时无论结果都开启开关 (D78).
+     */
+    private fun resumeResident() {
+        if (awaitingResidentOverlay) {
+            awaitingResidentOverlay = false
+            turnResidentOn()
+        } else {
+            ResidentWake.resume(this)
+        }
+        residentOn = ResidentWake.enabled(this)
+        loadResident()
+    }
+
+    private fun loadResident() {
+        val app = applicationContext
+        val keywords = ResidentPreferences(this).read().keywords
+        io.execute {
+            val availability = runCatching { ResidentWake.availability(app) }.getOrDefault(ResidentAvailability.NO_WAKE_MODEL)
+            val unspellable = if (availability == ResidentAvailability.READY) ResidentWake.unspellable(app, keywords) else null
+            val state = ResidentState(availability, unspellable, ResidentWake.others(app))
+            main.post { if (!isDestroyed) resident = state }
+        }
+    }
+
+    /**
+     * Roadmap D78: off turns the service off; on checks the other resident listener apps (D75) and what the switch needs,
+     * then asks for the notification permission once (API 33+) and for the overlay permission (D71) before it turns on.
+     * zh-CN: 路线图 D78: 关闭即停止服务; 开启时检查其他常驻监听应用 (D75) 与开关所需的条件, 然后申请一次通知权限 (API 33+) 与悬浮窗权限 (D71), 再开启.
+     */
+    private fun setResident(on: Boolean) {
+        if (!on) {
+            ResidentWake.turnOff(this)
+            residentOn = false
+            return
+        }
+        val app = applicationContext
+        val keywords = ResidentPreferences(this).read().keywords
+        io.execute {
+            val availability = runCatching { ResidentWake.availability(app) }.getOrDefault(ResidentAvailability.NO_WAKE_MODEL)
+            val unspellable = if (availability == ResidentAvailability.READY) ResidentWake.unspellable(app, keywords) else null
+            val state = ResidentState(availability, unspellable, ResidentWake.others(app))
+            main.post {
+                if (isDestroyed) return@post
+                resident = state
+                val rival = state.others.firstOrNull()
+                when {
+                    rival != null -> {
+                        residentRival = rival
+                        dialog = Dialog.RESIDENT_CONFLICT
+                    }
+                    state.availability == ResidentAvailability.MICROPHONE ->
+                        runCatching { residentMicrophone.launch(Manifest.permission.RECORD_AUDIO) }.onFailure { openAppSettings() }
+                    !state.ready -> pendingMessage = residentBlocker(state)
+                    else -> askResidentNotifications()
+                }
+            }
+        }
+    }
+
+    private fun askResidentNotifications() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !preferences.notificationsAsked &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            preferences.notificationsAsked = true
+            if (runCatching { residentNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) }.isSuccess) return
+        }
+        askResidentOverlay()
+    }
+
+    private fun askResidentOverlay() {
+        if (HitRoute.askOverlay(MacawVoiceInteractionService.isActive(this), Settings.canDrawOverlays(this), Build.VERSION.SDK_INT)) {
+            dialog = Dialog.RESIDENT_OVERLAY
+        } else {
+            turnResidentOn()
+        }
+    }
+
+    private fun openResidentOverlay() {
+        awaitingResidentOverlay = true
+        val page = "package:$packageName".toUri()
+        val opened = listOf(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, page), Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+            .any { intent -> runCatching { startActivity(intent) }.isSuccess }
+        if (!opened) {
+            awaitingResidentOverlay = false
+            turnResidentOn()
+        }
+    }
+
+    private fun turnResidentOn() {
+        residentOn = ResidentWake.turnOn(this) && ResidentWake.enabled(this)
+        if (!residentOn) ResidentWake.turnOff(this)
+        revision++
+    }
+
+    /** The first thing the switch misses (D78), or null when it can turn on. zh-CN: 开关缺少的第一项 (D78); 可开启时为 null. */
+    private fun residentBlocker(state: ResidentState): String? = when {
+        state.availability == ResidentAvailability.MICROPHONE -> getString(R.string.settings_resident_microphone)
+        state.availability == ResidentAvailability.NO_WAKE_MODEL -> getString(R.string.settings_resident_no_wake_model)
+        state.availability == ResidentAvailability.NO_RECOGNITION_MODEL -> getString(R.string.settings_resident_no_recognition_model)
+        state.unspellable != null -> getString(R.string.settings_resident_keywords_unspellable, state.unspellable)
+        else -> null
+    }
+
+    /** D78: a tap on the row that names the missing piece grants it or opens where it is set. zh-CN: 点按写明缺项的行即去授权或打开对应位置. */
+    private fun fixResident() {
+        when {
+            resident.availability == ResidentAvailability.MICROPHONE ->
+                runCatching { residentMicrophone.launch(Manifest.permission.RECORD_AUDIO) }.onFailure { openAppSettings() }
+            resident.availability == ResidentAvailability.NO_WAKE_MODEL || resident.availability == ResidentAvailability.NO_RECOGNITION_MODEL ->
+                startActivity(HomeActivity.intent(this))
+            resident.unspellable != null -> dialog = Dialog.RESIDENT_KEYWORDS
+        }
+    }
+
+    private fun openAppSettings() {
+        runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))) }
+    }
+
+    /** Saves the resident preferences; [restart] reopens the wake session, else the service follows the rules. zh-CN: 保存常驻偏好. */
+    private fun saveResident(restart: Boolean, transform: (ResidentSettings) -> ResidentSettings) {
+        ResidentPreferences(this).update(transform)
+        if (restart) ResidentWake.restart(this) else ResidentWake.refresh(this)
+        saved()
+        if (restart) loadResident()
     }
 
     /**
@@ -271,17 +449,26 @@ class SettingsActivity : StandaloneActivity() {
             }
         }
         // The recognition entry of the assistant and the recognition service first, then the trigger entry of the tile and
-        // the key service (roadmap P7.1), then the TTS engine's (ACTION_MAIN).
-        val fromRecognition = intent?.component?.className?.endsWith(RECOGNITION_ALIAS) == true
-        val fromTriggers = !fromRecognition && intent?.component?.className?.endsWith(TRIGGER_ALIAS) == true
-        val fromSystem = !fromRecognition && !fromTriggers && intent?.action == Intent.ACTION_MAIN
+        // the key service (roadmap P7.1), then the resident entry (P7.4), then the TTS engine's (ACTION_MAIN).
+        val alias = intent?.component?.className
+        val fromRecognition = alias?.endsWith(RECOGNITION_ALIAS) == true
+        val fromTriggers = !fromRecognition && alias?.endsWith(TRIGGER_ALIAS) == true
+        val fromResident = !fromRecognition && !fromTriggers && alias?.endsWith(ResidentNotifications.RESIDENT_SETTINGS) == true
+        val fromSystem = !fromRecognition && !fromTriggers && !fromResident && intent?.action == Intent.ACTION_MAIN
         val scroll = rememberScrollState()
         var synthesisTop by remember { mutableIntStateOf(-1) }
         var recognitionTop by remember { mutableIntStateOf(-1) }
         var triggersTop by remember { mutableIntStateOf(-1) }
+        var residentTop by remember { mutableIntStateOf(-1) }
         var scrolled by rememberSaveable { mutableStateOf(false) }
-        LaunchedEffect(synthesisTop, recognitionTop, triggersTop) {
-            val target = if (fromRecognition) recognitionTop else if (fromTriggers) triggersTop else if (fromSystem) synthesisTop else -1
+        LaunchedEffect(synthesisTop, recognitionTop, triggersTop, residentTop) {
+            val target = when {
+                fromRecognition -> recognitionTop
+                fromTriggers -> triggersTop
+                fromResident -> residentTop
+                fromSystem -> synthesisTop
+                else -> -1
+            }
             if (!scrolled && target >= 0) {
                 scroll.scrollTo(target)
                 scrolled = true
@@ -359,6 +546,40 @@ class SettingsActivity : StandaloneActivity() {
                     modifier = Modifier.testTag("macaw.settings.widget"))
                 Text(
                     stringResource(R.string.settings_triggers_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 64.dp, end = 24.dp, top = 4.dp),
+                )
+
+                // Roadmap P7.4 (D66 - D80): the resident wake word; the switch is the component state of its service (D75).
+                SectionHeader(stringResource(R.string.settings_resident_group), Modifier.onGloballyPositioned { residentTop = it.positionInParent().y.toInt() })
+                val residentSettings = remember { ResidentPreferences(this@SettingsActivity).read() }
+                SwitchRow(stringResource(R.string.settings_resident), residentOn, ::setResident, summary = residentSummary(residentSettings),
+                    icon = R.drawable.ic_record_voice_over_24, enabled = residentOn || resident.availability != null && (resident.ready || resident.availability == ResidentAvailability.MICROPHONE),
+                    modifier = Modifier.testTag("macaw.settings.resident"))
+                val blocker = if (residentOn || resident.availability == null) null else residentBlocker(resident)
+                if (blocker != null) {
+                    SettingsRow(blocker, icon = R.drawable.ic_warning_24, onClick = ::fixResident, modifier = Modifier.testTag("macaw.settings.residentMissing"))
+                }
+                Hairline()
+                SettingsRow(stringResource(R.string.settings_resident_keywords), summary = residentSettings.keywords.joinToString(", "), icon = R.drawable.ic_tune_24,
+                    onClick = { dialog = Dialog.RESIDENT_KEYWORDS }, modifier = Modifier.testTag("macaw.settings.residentKeywords"))
+                Hairline()
+                SettingsRow(stringResource(R.string.settings_resident_sensitivity), summary = stringResource(sensitivityLabel(residentSettings.sensitivity)),
+                    icon = R.drawable.ic_tune_24, onClick = { dialog = Dialog.RESIDENT_SENSITIVITY }, modifier = Modifier.testTag("macaw.settings.residentSensitivity"))
+                Hairline()
+                SettingsRow(stringResource(R.string.settings_resident_duration), summary = stringResource(durationLabel(residentSettings.duration)),
+                    icon = R.drawable.ic_timer_24, onClick = { dialog = Dialog.RESIDENT_DURATION }, modifier = Modifier.testTag("macaw.settings.residentDuration"))
+                Hairline()
+                SwitchRow(stringResource(R.string.settings_resident_charging), residentSettings.chargingOnly,
+                    { on -> saveResident(restart = false) { it.copy(chargingOnly = on) } },
+                    summary = stringResource(R.string.settings_resident_charging_note), icon = R.drawable.ic_pause_24, modifier = Modifier.testTag("macaw.settings.residentCharging"))
+                Hairline()
+                SwitchRow(stringResource(R.string.settings_resident_read_aloud), residentSettings.readAloud,
+                    { on -> saveResident(restart = false) { it.copy(readAloud = on) } },
+                    summary = stringResource(R.string.settings_resident_read_aloud_summary), icon = R.drawable.ic_volume_up_24, modifier = Modifier.testTag("macaw.settings.residentReadAloud"))
+                Text(
+                    stringResource(R.string.settings_resident_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 64.dp, end = 24.dp, top = 4.dp),
@@ -613,6 +834,60 @@ class SettingsActivity : StandaloneActivity() {
                     tag = "macaw.dialog.keyGesture",
                 )
             }
+            Dialog.RESIDENT_KEYWORDS -> KeywordsDialog()
+            Dialog.RESIDENT_SENSITIVITY -> {
+                val current = ResidentPreferences(this).read()
+                ChoiceDialog(
+                    title = stringResource(R.string.settings_resident_sensitivity),
+                    options = WakeSensitivity.entries.map { Choice(stringResource(sensitivityLabel(it))) },
+                    selectedIndex = current.sensitivity.ordinal,
+                    onDismissRequest = close,
+                    onConfirm = { index -> close(); saveResident(restart = true) { it.copy(sensitivity = WakeSensitivity.entries[index]) } },
+                    tag = "macaw.dialog.residentSensitivity",
+                )
+            }
+            Dialog.RESIDENT_DURATION -> {
+                val current = ResidentPreferences(this).read()
+                ChoiceDialog(
+                    title = stringResource(R.string.settings_resident_duration),
+                    options = ListeningDuration.entries.map { Choice(stringResource(durationLabel(it))) },
+                    selectedIndex = current.duration.ordinal,
+                    onDismissRequest = close,
+                    onConfirm = { index ->
+                        close()
+                        // Roadmap D77: an enabled switch counts the new duration from now, a disabled one only remembers it.
+                        val enabled = ResidentWake.enabled(this)
+                        saveResident(restart = false) { it.withDuration(ListeningDuration.entries[index], enabled, System.currentTimeMillis()) }
+                    },
+                    tag = "macaw.dialog.residentDuration",
+                )
+            }
+            Dialog.RESIDENT_CONFLICT -> {
+                // Roadmap D75 (3-Stone AI D31): only one resident listener; the other app's settings turn it off there.
+                val rival = residentRival
+                if (rival == null) {
+                    close()
+                } else {
+                    MessageDialog(
+                        title = stringResource(R.string.resident_conflict_title),
+                        message = stringResource(R.string.resident_conflict_message, rival.label),
+                        onDismissRequest = close,
+                        onConfirm = { close(); ResidentWake.openSettings(this, rival) },
+                        confirmText = stringResource(R.string.resident_conflict_open, rival.label),
+                        tag = "macaw.dialog.residentConflict",
+                    )
+                }
+            }
+            Dialog.RESIDENT_OVERLAY -> MessageDialog(
+                // Roadmap D71 / D78: asked when turning on; whatever the answer, the switch turns on.
+                title = stringResource(R.string.resident_overlay_title),
+                message = stringResource(R.string.resident_overlay_message),
+                onDismissRequest = { close(); turnResidentOn() },
+                onConfirm = { close(); openResidentOverlay() },
+                confirmText = stringResource(R.string.resident_overlay_grant),
+                dismissText = stringResource(R.string.resident_overlay_skip),
+                tag = "macaw.dialog.residentOverlay",
+            )
             Dialog.IGNORED -> {
                 val store = AppUpdateStore.of(this)
                 val tags = store.ignoredTags.sorted()
@@ -679,6 +954,67 @@ class SettingsActivity : StandaloneActivity() {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+        }
+    }
+
+    /**
+     * Roadmap D70: the wake words, one per line; a list that breaks the rules cannot be saved, and a word the wake word
+     * model cannot spell (D18) is named before anything is saved.
+     * zh-CN: 路线图 D70: 唤醒词, 每行一个; 不合规则的列表不能保存, 唤醒词模型无法拼写的词 (D18) 在保存前指出.
+     */
+    @Composable
+    private fun KeywordsDialog() {
+        val current = remember { ResidentPreferences(this).read().keywords }
+        var text by rememberSaveable { mutableStateOf(current.joinToString(System.lineSeparator())) }
+        var problem by remember { mutableStateOf<String?>(null) }
+        var checking by remember { mutableStateOf(false) }
+        val parsed = ResidentKeywords.parse(text)
+        val invalid = stringResource(R.string.settings_resident_keywords_invalid)
+        MacawDialog(
+            title = stringResource(R.string.settings_resident_keywords),
+            onDismissRequest = { dialog = null },
+            confirmText = stringResource(R.string.ui_dialog_confirm),
+            onConfirm = {
+                val keywords = parsed ?: return@MacawDialog
+                checking = true
+                val app = applicationContext
+                io.execute {
+                    val unspellable = ResidentWake.unspellable(app, keywords)
+                    main.post {
+                        if (isDestroyed) return@post
+                        checking = false
+                        if (unspellable != null) {
+                            problem = getString(R.string.settings_resident_keywords_unspellable, unspellable)
+                        } else {
+                            dialog = null
+                            saveResident(restart = true) { it.copy(keywords = keywords) }
+                        }
+                    }
+                }
+            },
+            dismissText = stringResource(R.string.ui_dialog_cancel),
+            confirmEnabled = parsed != null && !checking,
+            tag = "macaw.dialog.residentKeywords",
+        ) {
+            Column(modifier = Modifier.padding(horizontal = DialogDefaults.contentPadding)) {
+                Text(
+                    stringResource(R.string.settings_resident_keywords_note, ResidentKeywords.MAX_KEYWORDS, ResidentKeywords.MAX_CHARACTERS),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val error = problem ?: invalid.takeIf { parsed == null }
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { input ->
+                        text = input.take(KEYWORDS_INPUT_LIMIT)
+                        problem = null
+                    },
+                    isError = error != null,
+                    supportingText = error?.let { message -> { Text(message) } },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp).testTag("macaw.dialog.residentKeywords.input"),
                 )
             }
         }
@@ -839,6 +1175,38 @@ class SettingsActivity : StandaloneActivity() {
         else -> R.string.settings_endpoint_standard
     }
 
+    /**
+     * Roadmap D66 / D75 / D77: what the switch does, then the app that listens instead or when the listening time ends.
+     * zh-CN: 路线图 D66 / D75 / D77: 开关的作用, 其后是正在监听的其他应用或监听时长的截止时刻.
+     */
+    @Composable
+    private fun residentSummary(settings: ResidentSettings): String {
+        val rival = resident.others.firstOrNull()
+        val deadline = settings.deadline
+        val extra = when {
+            !residentOn && rival != null -> stringResource(R.string.settings_resident_conflict, rival.label)
+            residentOn && deadline != null -> ResidentNotifications.until(this, deadline)
+            else -> null
+        }
+        val summary = stringResource(R.string.settings_resident_summary)
+        return if (extra == null) summary else summary + System.lineSeparator() + extra
+    }
+
+    @StringRes
+    private fun sensitivityLabel(sensitivity: WakeSensitivity): Int = when (sensitivity) {
+        WakeSensitivity.HIGH -> R.string.resident_sensitivity_high
+        WakeSensitivity.MEDIUM -> R.string.resident_sensitivity_medium
+        WakeSensitivity.LOW -> R.string.resident_sensitivity_low
+    }
+
+    @StringRes
+    private fun durationLabel(duration: ListeningDuration): Int = when (duration) {
+        ListeningDuration.MINUTES_10 -> R.string.resident_duration_10
+        ListeningDuration.MINUTES_30 -> R.string.resident_duration_30
+        ListeningDuration.MINUTES_60 -> R.string.resident_duration_60
+        ListeningDuration.ALWAYS -> R.string.resident_duration_always
+    }
+
     @StringRes
     private fun gestureLabel(gesture: KeyGesture): Int = when (gesture) {
         KeyGesture.LONG_VOLUME_DOWN -> R.string.key_gesture_long_volume_down
@@ -868,6 +1236,9 @@ class SettingsActivity : StandaloneActivity() {
 
         /** A blank line between two paragraphs of a dialog message. zh-CN: 对话框消息两段之间的空行. */
         val PARAGRAPH: String = System.lineSeparator().repeat(2)
+
+        /** Enough for five wake words of 32 characters. zh-CN: 足够容纳 5 个 32 字符的唤醒词. */
+        const val KEYWORDS_INPUT_LIMIT = 400
 
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawSettings").apply { isDaemon = true } }
         val main = Handler(Looper.getMainLooper())
