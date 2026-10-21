@@ -20,13 +20,15 @@ transcript or the recognized text.
                                                         D76 / D77 without instrumentation: on from a visible start with
                                                         "only while charging", home, `dumpsys battery unplug`, then
                                                         `set ac 1` from the background; prints whether the reopened
-                                                        session records live or waits for a tap
-    py .python/device_resident_run.py battery <serial> [minutes]
+                                                        session records live or waits for a tap; puts the two options it
+                                                        changes back to their defaults
+    py .python/device_resident_run.py battery <serial> [minutes] [on]
                                                         the screen-off measurement of D73 / P7.4.8: the same number of
-                                                        minutes (30 by default) with the switch off, then on (stored
-                                                        settings), on battery as batterystats sees it (`dumpsys battery
-                                                        unplug`); prints the batterystats estimate (mAh) and the plugin's
-                                                        CPU time of both periods
+                                                        minutes (30 by default) with the switch off, then on ("only
+                                                        while charging" off, no time limit), on battery as batterystats
+                                                        sees it (`dumpsys battery unplug`); prints the batterystats
+                                                        estimate (mAh), the plugin's CPU time and whether it still
+                                                        records at the end of both periods (`on`: the second period only)
 
 `background` and `battery` switch through the debug build's ResidentDebugActivity (adb only, DUMP permission), because an
 instrumented process keeps a foreground state of its own; nothing is tapped.
@@ -56,6 +58,8 @@ STOVE_RESIDENT = f"{STOVE}/.speech.ResidentListenerService"
 STOVE_SETTINGS = f"{STOVE}/.speech.ResidentListenerSettings"
 SERVICE = f"{PACKAGE}/.resident.ResidentWakeService"
 SCREENS = Path(__file__).resolve().parents[1] / ".bak" / "visual" / "1.2.0"
+# The defaults of the options that `background` and `battery` change (D77, D69).
+DEFAULT_OPTIONS = ("--ez", "chargingOnly", "false", "--ez", "readAloud", "true", "--es", "duration", "always")
 
 
 class LogTap:
@@ -253,7 +257,7 @@ def background(serial):
         live_resumed = recording(serial)
         log = resident_log(serial, since)
     finally:
-        debug_switch(serial, "--es", "resident", "off")
+        debug_switch(serial, "--es", "resident", "off", *DEFAULT_OPTIONS)
         adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
         adb(serial, "shell", "input", "keyevent", "KEYCODE_HOME", check=False)
     blocked = any("without a microphone in the background" in line for line in log)
@@ -286,9 +290,12 @@ def estimated_mah(serial):
 
 
 def battery_period(serial, minutes, resident_on):
-    """One screen-off period on battery as batterystats sees it (`dumpsys battery unplug`); answers (mAh, CPU seconds)."""
+    """
+    One screen-off period on battery as batterystats sees it (`dumpsys battery unplug`); answers (mAh, CPU seconds). On:
+    "only while charging" off, or the unplug pauses the session, and no time limit.
+    """
     if resident_on:
-        debug_switch(serial, "--es", "resident", "on")
+        debug_switch(serial, "--es", "resident", "on", "--ez", "chargingOnly", "false", "--es", "duration", "always")
         time.sleep(10)
         if service_state(serial) != (True, True):
             print(f"{label(serial)}: battery FAIL: the resident service did not start")
@@ -305,23 +312,28 @@ def battery_period(serial, minutes, resident_on):
     after = plugin_cpu_seconds(serial)
     mah = estimated_mah(serial)
     running = service_state(serial)
+    live = recording(serial)
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
     used = None if after is None else round(after - (cpu or 0), 1)
-    print(f"{label(serial)}: battery {'on ' if resident_on else 'off'} {minutes} min screen off: estimate {mah} mAh, plugin CPU {used} s, service {running}")
+    print(f"{label(serial)}: battery {'on ' if resident_on else 'off'} {minutes} min screen off: estimate {mah} mAh, plugin CPU {used} s"
+          f"{' (no process)' if after is None else ''}, service {running}, recording {live}")
+    if resident_on and live is not False:
+        print(f"{label(serial)}: battery FAIL: the resident wake word did not record to the end")
+        return None
     return mah, used
 
 
-def battery(serial, minutes):
-    """D73 / P7.4.8: off first (the baseline), then on with the stored settings; the switch goes off at the end."""
+def battery(serial, minutes, on_only=False):
+    """D73 / P7.4.8: off first (the baseline), then on; the switch goes off and the options back to their defaults at the end."""
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     try:
-        off = battery_period(serial, minutes, False)
+        off = None if on_only else battery_period(serial, minutes, False)
         on = battery_period(serial, minutes, True)
     finally:
-        debug_switch(serial, "--es", "resident", "off")
+        debug_switch(serial, "--es", "resident", "off", *DEFAULT_OPTIONS)
         adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
-    ok = off is not None and on is not None
+    ok = (on_only or off is not None) and on is not None
     print(f"{label(serial)}: battery {'PASS' if ok else 'FAIL'} (off {off}, on {on})")
     return ok
 
@@ -334,7 +346,7 @@ def main(argv):
     if not install(serial):
         return 1
     if action == "battery":
-        return 0 if battery(serial, int(argv[2]) if len(argv) > 2 else 30) else 1
+        return 0 if battery(serial, int(argv[2]) if len(argv) > 2 else 30, "on" in argv[3:]) else 1
     return 0 if {"avd": avd, "phone": phone, "stove": stove, "background": background}[action](serial) else 1
 
 

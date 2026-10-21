@@ -14,12 +14,14 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.Resi
  * a foreground state of its own. Exported to holders of DUMP only (adb, the system); a transparent window like the
  * notification trampoline, so the service starts from a visible state as it does for the user.
  *
- *     am start -n <package>/.ResidentDebugActivity --es resident on [--es keywords "a|b"] [--ez chargingOnly true]
+ *     am start -n <package>/.ResidentDebugActivity --es resident on|off [--es keywords "a|b"] [--ez chargingOnly true]
  *         [--es duration 10|30|60|always] [--ez readAloud false]
- *     am start -n <package>/.ResidentDebugActivity --es resident off
+ *
+ * The options are stored before the switch, also with `off`, so that a run can put back what it changed.
  *
  * zh-CN: 仅调试构建: 从 adb 开关常驻唤醒, 供不能用 instrumentation 的设备运行使用 (路线图 P7.4: D76 的后台重开与 D73 的熄屏耗电测量), 因为被
  * instrumentation 的进程自带前台状态. 只对持有 DUMP 的调用方导出 (adb 与系统); 与通知跳板一样是透明窗口, 因此服务与用户操作时一样从可见状态启动.
+ * 选项在开关之前保存, `off` 时也保存, 这样运行结束时能恢复它改过的选项.
  */
 class ResidentDebugActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,23 +31,24 @@ class ResidentDebugActivity : Activity() {
     }
 
     private fun apply() {
-        when (intent.getStringExtra(EXTRA_RESIDENT)) {
-            "on" -> {
-                ResidentPreferences(this).update { settings ->
-                    var next = settings
-                    intent.getStringExtra(EXTRA_KEYWORDS)?.let { ResidentKeywords.parse(it.replace('|', Char(10))) }?.let { next = next.copy(keywords = it) }
-                    if (intent.hasExtra(EXTRA_CHARGING_ONLY)) next = next.copy(chargingOnly = intent.getBooleanExtra(EXTRA_CHARGING_ONLY, false))
-                    if (intent.hasExtra(EXTRA_READ_ALOUD)) next = next.copy(readAloud = intent.getBooleanExtra(EXTRA_READ_ALOUD, true))
-                    intent.getStringExtra(EXTRA_DURATION)?.let { next = next.copy(duration = ListeningDuration.of(it)) }
-                    next
-                }
-                Log.i(TAG, "Debug switch on: started=${ResidentWake.turnOn(this)}")
-            }
-            "off" -> {
-                ResidentWake.turnOff(this)
-                Log.i(TAG, "Debug switch off")
-            }
-            else -> Log.w(TAG, "Debug switch: --es resident on|off")
+        val resident = intent.getStringExtra(EXTRA_RESIDENT)
+        if (resident != "on" && resident != "off") {
+            Log.w(TAG, "Debug switch: --es resident on|off")
+            return
+        }
+        ResidentPreferences(this).update { settings ->
+            var next = settings
+            intent.getStringExtra(EXTRA_KEYWORDS)?.let { ResidentKeywords.parse(it.replace('|', Char(10))) }?.let { next = next.copy(keywords = it) }
+            if (intent.hasExtra(EXTRA_CHARGING_ONLY)) next = next.copy(chargingOnly = intent.getBooleanExtra(EXTRA_CHARGING_ONLY, false))
+            if (intent.hasExtra(EXTRA_READ_ALOUD)) next = next.copy(readAloud = intent.getBooleanExtra(EXTRA_READ_ALOUD, true))
+            intent.getStringExtra(EXTRA_DURATION)?.let { next = next.copy(duration = ListeningDuration.of(it)) }
+            next
+        }
+        if (resident == "on") {
+            Log.i(TAG, "Debug switch on: started=${ResidentWake.turnOn(this)}")
+        } else {
+            ResidentWake.turnOff(this)
+            Log.i(TAG, "Debug switch off")
         }
     }
 
