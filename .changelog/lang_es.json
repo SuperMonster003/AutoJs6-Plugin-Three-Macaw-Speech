@@ -6,7 +6,7 @@
   "changelog_label_dependency": "Dependencia",
   "$data": {
     "v1.1.0": {
-      "released_date": "2026/10/20",
+      "released_date": "2026/10/21",
       "hint": [
         "Nuevas formas de activación: no se graba nada entretanto; tocar el icono de Ajustes rápidos, el widget, el acceso directo o el micrófono flotante, o pulsar una tecla de volumen o la tecla de voz de unos auriculares Bluetooth, abre el mismo panel de dictado que el asistente digital",
         "Nuevos permisos: mostrarse sobre otras apps (solo para el micrófono flotante, desactivado por defecto), inicio al arrancar (solo para recuperar un micrófono flotante activado tras reiniciar), un servicio en primer plano de uso especial (solo mantiene el micrófono flotante en pantalla, nunca graba) y dispositivos cercanos (desde Android 12, se pide solo cuando la tecla de voz de los auriculares abre el panel, para encargarse del reconocimiento de voz y el micrófono de los auriculares). El activador por tecla se activa en los ajustes de accesibilidad del sistema y solo filtra teclas"

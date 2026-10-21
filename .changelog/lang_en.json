@@ -6,7 +6,7 @@
   "changelog_label_dependency": "Dependency",
   "$data": {
     "v1.1.0": {
-      "released_date": "2026/10/20",
+      "released_date": "2026/10/21",
       "hint": [
         "New trigger entries: nothing records in between; a tap on the Quick Settings tile, the home screen widget, the shortcut or the floating microphone, or a press of a volume key or of a Bluetooth headset's voice key, opens the same dictation sheet as the digital assistant",
         "New permissions: display over other apps (only for the floating microphone, off by default), start at boot (only to bring back a floating microphone that is on after a restart), a special use foreground service (only keeps the floating microphone on screen, never records) and nearby devices (Android 12 and later, asked only when the headset voice key opens the sheet, to take the headset's voice recognition and microphone over). The key trigger is turned on in the system accessibility settings and only filters keys"

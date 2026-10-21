@@ -336,7 +336,7 @@ Les plans, décisions de conception et l'avancement sont suivis sous forme de li
 
 #### v1.1.0
 
-_2026/10/20_
+_2026/10/21_
 
 - `Note` Nouveaux déclencheurs: rien n'est enregistré entre-temps; un appui sur le bloc des Réglages rapides, le widget, le raccourci ou le micro flottant, ou sur une touche de volume ou la touche vocale d'un casque Bluetooth, ouvre le même panneau de dictée que l'assistant numérique
 - `Note` Nouvelles autorisations: superposition aux autres applications (uniquement pour le micro flottant, désactivé par défaut), démarrage au boot (uniquement pour rétablir un micro flottant activé après un redémarrage), service de premier plan à usage spécial (garde seulement le micro flottant affiché, sans enregistrer) et appareils à proximité (depuis Android 12, demandée seulement quand la touche vocale du casque ouvre le panneau, pour prendre en charge la reconnaissance vocale et le micro du casque). Le déclencheur par touche s'active dans les paramètres d'accessibilité du système et filtre uniquement les touches
