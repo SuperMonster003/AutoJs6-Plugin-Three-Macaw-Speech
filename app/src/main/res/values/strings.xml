@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">Recycling unreferenced files</string>
     <string name="notification_resident_alert_channel">Resident wake word alerts</string>
     <string name="notification_resident_speak_channel">Tap to speak after the wake word</string>
+    <string name="notification_tool_listen_channel">Speech requests of apps</string>
+    <string name="notification_tool_listen_text">An app is waiting for you to speak. Tap within a minute to start</string>
     <string name="plugin_description">Offline speech recognition, wake word detection, voice activity detection and neural text-to-speech, usable as the system TTS engine</string>
     <string name="release_history_title">Version history</string>
     <string name="release_history_unavailable">Unable to load the version history</string>

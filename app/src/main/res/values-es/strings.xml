@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">Limpiando archivos sin referencias</string>
     <string name="notification_resident_alert_channel">Avisos de la palabra de activación permanente</string>
     <string name="notification_resident_speak_channel">Toca para hablar tras la palabra de activación</string>
+    <string name="notification_tool_listen_channel">Solicitudes de voz de las apps</string>
+    <string name="notification_tool_listen_text">Una app espera que hables. Toca en menos de un minuto para empezar</string>
     <string name="plugin_description">Reconocimiento de voz sin conexión, detección de palabras de activación, detección de actividad de voz y síntesis de voz neuronal, utilizable como motor TTS del sistema</string>
     <string name="release_history_title">Historial de versiones</string>
     <string name="release_history_unavailable">No se pudo cargar el historial de versiones</string>

@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">正在回收未引用的文件</string>
     <string name="notification_resident_alert_channel">常驻唤醒提醒</string>
     <string name="notification_resident_speak_channel">唤醒后点此说话</string>
+    <string name="notification_tool_listen_channel">应用的语音请求</string>
+    <string name="notification_tool_listen_text">有应用在等你说话, 请在一分钟内点此开始</string>
     <string name="plugin_description">离线语音识别, 唤醒词检测, 语音活动检测与神经网络语音合成, 可注册为系统 TTS 引擎</string>
     <string name="release_history_title">版本历史</string>
     <string name="release_history_unavailable">无法加载版本历史</string>

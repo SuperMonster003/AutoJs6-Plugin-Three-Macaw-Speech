@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">Nettoyage des fichiers non référencés</string>
     <string name="notification_resident_alert_channel">Alertes du mot de réveil permanent</string>
     <string name="notification_resident_speak_channel">Appuyer pour parler après le mot de réveil</string>
+    <string name="notification_tool_listen_channel">Demandes vocales des applications</string>
+    <string name="notification_tool_listen_text">Une application attend que vous parliez. Appuyez dans la minute pour commencer</string>
     <string name="plugin_description">Reconnaissance vocale hors ligne, détection de mots de réveil, détection d\'activité vocale et synthèse vocale neuronale, utilisable comme moteur TTS du système</string>
     <string name="release_history_title">Historique des versions</string>
     <string name="release_history_unavailable">Impossible de charger l\'historique des versions</string>

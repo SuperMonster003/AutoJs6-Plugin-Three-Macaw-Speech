@@ -418,6 +418,18 @@
                 <action android:name="org.autojs.plugin.TOOL_PROVIDER" />
             </intent-filter>
         </service>
+        <!--
+            speech_listen (roadmap D89 (2) and (3)): opened from the background or by the "Tap to speak" notification, it
+            holds the plugin on top while the dictation starts MicrophoneService; internal. It does not show over the lock
+            screen, so a locked phone is unlocked before the microphone opens.
+        -->
+        <activity
+            android:name=".tool.ListenStartActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- Model operations stay internal to the plugin. -->
         <service

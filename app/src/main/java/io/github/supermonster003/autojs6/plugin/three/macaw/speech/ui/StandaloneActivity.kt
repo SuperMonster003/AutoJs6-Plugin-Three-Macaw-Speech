@@ -62,6 +62,26 @@ internal fun MacawTheme(palette: MacawPalette, content: @Composable () -> Unit) 
 }
 
 /**
+ * Whether a screen of the plugin is started (visible): the plugin is then a foreground app and records directly, which
+ * `speech_listen` uses as its first route to the microphone (roadmap D89 (1)).
+ * zh-CN: 插件是否有界面处于已启动 (可见) 状态: 此时插件是前台应用, 可以直接录音, `speech_listen` 以此作为取得麦克风的第一条途径 (路线图 D89 (1)).
+ */
+internal object PluginScreens {
+    @Volatile
+    private var count = 0
+
+    val visible: Boolean get() = count > 0
+
+    fun started() {
+        count++
+    }
+
+    fun stopped() {
+        count = maxOf(0, count - 1)
+    }
+}
+
+/**
  * Base of the plugin's own screens (roadmap P5, standalone settings specification section 7), adapted from 3-Block Compose:
  * the appearance (language, night mode, theme color) follows AutoJs6 through the official settings Provider unless the
  * plugin's settings override it. The Activity is recreated only when the effective appearance changed, and never while
@@ -101,6 +121,16 @@ abstract class StandaloneActivity : ComponentActivity() {
      * zh-CN: 覆盖在调用方界面上的弹层 (系统语音输入, 路线图 P5.6) 保持窗口透明并自行绘制遮罩; 其主题同样为半透明.
      */
     protected open val translucentWindow: Boolean get() = false
+
+    override fun onStart() {
+        super.onStart()
+        PluginScreens.started()
+    }
+
+    override fun onStop() {
+        PluginScreens.stopped()
+        super.onStop()
+    }
 
     override fun onResume() {
         super.onResume()

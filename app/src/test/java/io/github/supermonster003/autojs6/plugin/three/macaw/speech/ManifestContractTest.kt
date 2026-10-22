@@ -96,7 +96,8 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, RESIDENT_START, ".service.MicrophoneStartActivity",
+                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, RESIDENT_START, LISTEN_START,
+                ".service.MicrophoneStartActivity",
                 ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
             ),
@@ -251,6 +252,19 @@ class ManifestContractTest {
         assertEquals("org.autojs.plugin.TOOL_PROVIDER", PluginToolContract.SERVICE_ACTION)
         assertTrue(tools.children("meta-data").isEmpty())
         assertTrue("no other process anywhere", manifest.getElementsByTagName("*").let { all -> (0 until all.length).none { (all.item(it) as Element).hasAttribute("android:process") } })
+    }
+
+    @Test
+    fun `the start screen of speech_listen is internal, transparent and not over the lock screen`() {
+        // Roadmap P7.6.2 (D89 (2) and (3)): a locked phone is unlocked before the tool opens the microphone.
+        val activity = application.children("activity").single { it.android("name") == LISTEN_START }
+        assertEquals("false", activity.android("exported"))
+        assertEquals("true", activity.android("excludeFromRecents"))
+        assertEquals("true", activity.android("noHistory"))
+        assertEquals("", activity.android("taskAffinity"))
+        assertEquals("@android:style/Theme.Translucent.NoTitleBar", activity.android("theme"))
+        assertNull(activity.androidOrNull("showWhenLocked"))
+        assertTrue(activity.children("intent-filter").isEmpty())
     }
 
     @Test
@@ -586,6 +600,7 @@ class ManifestContractTest {
         /** Roadmap P7.4: the resident wake word. zh-CN: 常驻唤醒. */
         const val RESIDENT = ".resident.ResidentWakeService"
         const val RESIDENT_START = ".resident.ResidentStartActivity"
+        const val LISTEN_START = ".tool.ListenStartActivity"
         const val RESIDENT_SETTINGS = ".ui.settings.ResidentSettingsAlias"
         const val RESIDENT_LISTENER = "org.autojs.plugin.speech.action.RESIDENT_LISTENER"
 

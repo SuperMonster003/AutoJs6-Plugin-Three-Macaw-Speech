@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">جارٍ تنظيف الملفات غير المستخدمة</string>
     <string name="notification_resident_alert_channel">تنبيهات كلمة التنبيه الدائمة</string>
     <string name="notification_resident_speak_channel">انقر للتحدث بعد كلمة التنبيه</string>
+    <string name="notification_tool_listen_channel">طلبات الكلام من التطبيقات</string>
+    <string name="notification_tool_listen_text">تطبيق ينتظر أن تتحدث. انقر خلال دقيقة للبدء</string>
     <string name="plugin_description">التعرف على الكلام دون اتصال, واكتشاف كلمة التنبيه, واكتشاف النشاط الصوتي, وتحويل النص إلى كلام بالشبكات العصبية, مع إمكانية استخدامه كمحرك TTS للنظام</string>
     <string name="release_history_title">سجل الإصدارات</string>
     <string name="release_history_unavailable">تعذر تحميل سجل الإصدارات</string>

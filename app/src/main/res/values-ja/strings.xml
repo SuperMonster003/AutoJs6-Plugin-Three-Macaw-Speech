@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">参照されていないファイルを整理しています</string>
     <string name="notification_resident_alert_channel">常時ウェイクワードのお知らせ</string>
     <string name="notification_resident_speak_channel">ウェイク後にタップして話す</string>
+    <string name="notification_tool_listen_channel">アプリからの音声リクエスト</string>
+    <string name="notification_tool_listen_text">アプリが音声入力を待っています. 1 分以内にタップして開始してください</string>
     <string name="plugin_description">オフライン音声認識, ウェイクワード検出, 音声区間検出, ニューラル音声合成を提供し, システムの TTS エンジンとして登録可能</string>
     <string name="release_history_title">バージョン履歴</string>
     <string name="release_history_unavailable">バージョン履歴を読み込めませんでした</string>

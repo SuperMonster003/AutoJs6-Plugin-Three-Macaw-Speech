@@ -153,6 +153,8 @@
     <string name="notification_recycle_title">Очистка неиспользуемых файлов</string>
     <string name="notification_resident_alert_channel">Оповещения о постоянном ожидании слова активации</string>
     <string name="notification_resident_speak_channel">Нажатие для речи после слова активации</string>
+    <string name="notification_tool_listen_channel">Голосовые запросы приложений</string>
+    <string name="notification_tool_listen_text">Приложение ждёт вашей речи. Нажмите в течение минуты, чтобы начать</string>
     <string name="plugin_description">Офлайн-распознавание речи, обнаружение слов активации, определение речевой активности и нейросетевой синтез речи с регистрацией в качестве системного движка TTS</string>
     <string name="release_history_title">История версий</string>
     <string name="release_history_unavailable">Не удалось загрузить историю версий</string>
