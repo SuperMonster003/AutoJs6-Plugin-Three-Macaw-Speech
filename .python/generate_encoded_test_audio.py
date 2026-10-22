@@ -1,13 +1,15 @@
 """Generates the encoded device test recordings of roadmap P7.5 (D81 - D86) from the WAV test recordings.
 
-    py .python/generate_encoded_test_audio.py [--ffmpeg <ffmpeg.exe>]   encodes every file and rewrites the lock
+    py .python/generate_encoded_test_audio.py [--ffmpeg <ffmpeg.exe>] [--only <name> ...]
+                                                encodes every file (or only the named ones) and rewrites the lock
     py .python/generate_encoded_test_audio.py --check                   fails when a file differs from the lock
 
 The files live in app/src/androidTest/assets/encoded-audio/ (androidTest assets, never in the plugin APK) and are locked
 in locks/encoded-test-audio.lock (path, SHA-256, source recording, ffmpeg arguments), which app/build.gradle.kts checks.
 They exercise the system decoders of MediaAudioReader and the plugin's own Ogg Opus parser: MP3 (44.1 kHz stereo, so
 the reader resamples and mixes), AAC in ADTS and in MP4, Ogg Vorbis, Ogg Opus, FLAC, AMR-NB, video files with an audio
-track (MP4 with H.264 + AAC, WebM with VP8 + Opus) and an MP4 without one. The encoders are not bit-exact across
+track (MP4 with H.264 + AAC, WebM with VP8 + Opus), an MP4 without one, and AC-3 in MP4, which AOSP has no decoder
+for (the "no decoder" error of D85 where the device lacks one too). The encoders are not bit-exact across
 ffmpeg versions, so --check compares the committed bytes with the lock and never re-encodes; the recorded files were
 made with ffmpeg n5.0 (the MeGUI build of the maintainer's PC).
 """
@@ -42,6 +44,7 @@ FILES: dict[str, tuple[str | None, list[str], list[str]]] = {
     "en-video.mp4": ("en", GRAY, ["-map", "0:v", "-map", "1:a", *H264, "-c:a", "aac", "-b:a", "48k", "-shortest", "-movflags", "+faststart", "-f", "mp4"]),
     "en-video.webm": ("en", GRAY, ["-map", "0:v", "-map", "1:a", "-c:v", "libvpx", "-b:v", "50k", "-c:a", "libopus", "-b:a", "24k", "-shortest", "-f", "webm"]),
     "video-only.mp4": (None, GRAY, ["-t", "2", *H264, "-movflags", "+faststart", "-f", "mp4"]),
+    "en-ac3.mp4": ("en", [], ["-c:a", "ac3", "-b:a", "96k", "-movflags", "+faststart", "-f", "mp4"]),
     "zh.mp3": ("zh", [], ["-c:a", "libmp3lame", "-b:a", "64k"]),
     "zh.aac": ("zh", [], ["-c:a", "aac", "-b:a", "48k", "-f", "adts"]),
     "zh.m4a": ("zh", [], ["-c:a", "aac", "-b:a", "48k", "-movflags", "+faststart", "-f", "mp4"]),
@@ -55,10 +58,15 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def encode(ffmpeg: Path) -> dict[str, str]:
+def arguments(name: str) -> str:
+    source, before, after = FILES[name]
+    return " ".join(before + ([f"-i test-audio/{source}.wav"] if source else []) + after)
+
+
+def encode(ffmpeg: Path, names: list[str]) -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    lines = {}
-    for name, (source, before, after) in FILES.items():
+    for name in names:
+        source, before, after = FILES[name]
         command = [str(ffmpeg), "-hide_banner", "-loglevel", "error", "-y", *before]
         if source is not None:
             command += ["-i", str(SOURCES / f"{source}.wav")]
@@ -70,11 +78,9 @@ def encode(ffmpeg: Path) -> dict[str, str]:
             os.replace(target, OUTPUT / name)
         finally:
             target.unlink(missing_ok=True)
-        lines[name] = " ".join(before + ([f"-i test-audio/{source}.wav"] if source else []) + after)
-    return lines
 
 
-def write_lock(arguments: dict[str, str]) -> None:
+def write_lock() -> None:
     text = [
         "# Encoded device test recordings of roadmap P7.5 (androidTest assets, never in the plugin APK), checked by app/build.gradle.kts.",
         "# Made by .python/generate_encoded_test_audio.py with ffmpeg n5.0 from the WAV recordings of locks/test-audio.lock",
@@ -86,7 +92,7 @@ def write_lock(arguments: dict[str, str]) -> None:
         text += [
             f"{key}.path=app/src/androidTest/assets/encoded-audio/{name}",
             f"{key}.sha256={sha256(OUTPUT / name)}",
-            f"{key}.ffmpeg={arguments[name]}",
+            f"{key}.ffmpeg={arguments(name)}",
         ]
     LOCK.write_text("\n".join(text) + "\n", encoding="utf-8", newline="\n")
 
@@ -115,6 +121,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="compare the committed files with the lock")
     parser.add_argument("--ffmpeg", type=Path, default=Path(os.environ.get("MACAW_FFMPEG", DEFAULT_FFMPEG)))
+    parser.add_argument("--only", nargs="+", choices=sorted(FILES), help="encode only these files (the others keep their bytes)")
     args = parser.parse_args()
     if args.check:
         errors = check()
@@ -124,7 +131,8 @@ def main() -> int:
             return 1
         print(f"ENCODED_AUDIO_OK files={len(FILES)}")
         return 0
-    write_lock(encode(args.ffmpeg))
+    encode(args.ffmpeg, args.only or list(FILES))
+    write_lock()
     errors = check()
     print("\n".join(errors) if errors else f"ENCODED_AUDIO_WRITTEN files={len(FILES)}")
     return 1 if errors else 0

@@ -2,6 +2,9 @@
 # Made by .python/generate_encoded_test_audio.py with ffmpeg n5.0 from the WAV recordings of locks/test-audio.lock
 #   (same licenses: en is LibriSpeech CC-BY-4.0, zh Apache-2.0); video tracks are a generated gray frame.
 format=1
+en-ac3_mp4.path=app/src/androidTest/assets/encoded-audio/en-ac3.mp4
+en-ac3_mp4.sha256=909411ca480fb5866db57d48f2b3536cfb47ec85b3c450792d1dc43431a58df7
+en-ac3_mp4.ffmpeg=-i test-audio/en.wav -c:a ac3 -b:a 96k -movflags +faststart -f mp4
 en-video_mp4.path=app/src/androidTest/assets/encoded-audio/en-video.mp4
 en-video_mp4.sha256=51a3e9f0eaf3c3809a8216a0b918d1c32b192f01885b01e7894f2a1a6f92081c
 en-video_mp4.ffmpeg=-f lavfi -i color=c=gray:s=160x120:r=10 -i test-audio/en.wav -map 0:v -map 1:a -c:v libx264 -preset veryfast -pix_fmt yuv420p -flags:v +bitexact -c:a aac -b:a 48k -shortest -movflags +faststart -f mp4

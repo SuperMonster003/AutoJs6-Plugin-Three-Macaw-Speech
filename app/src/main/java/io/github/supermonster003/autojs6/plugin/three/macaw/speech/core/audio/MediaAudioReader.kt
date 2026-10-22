@@ -13,20 +13,23 @@ import java.io.IOException
 import java.nio.ByteBuffer
 
 /**
- * Decodes the non-WAV audio files of roadmap D81 - D85 with the system: `MediaExtractor` reads the container (or, for
- * Ogg Opus before Android 10, the plugin's own [OggOpusStream]), the first audio track is decoded by `MediaCodec` (an
- * `audio/raw` track is read as it is), and every output buffer is mixed down to mono as soon as it arrives, so memory
- * stays at a few buffers (D83). Video tracks are ignored (D82). [open] decodes until the first samples, which fixes
- * [sampleRate]; a file that yields none is refused there. Errors follow D85.
- * zh-CN: 用系统解码路线图 D81 - D85 的非 WAV 音频文件: `MediaExtractor` 读取容器 (Android 10 之前的 Ogg Opus 改用插件自带的
- * [OggOpusStream]), 第一条音轨由 `MediaCodec` 解码 (`audio/raw` 音轨直接读取), 每个输出缓冲一到即混为单声道, 内存只占几个缓冲 (D83). 视频轨
- * 被忽略 (D82). [open] 解码到出现第一批采样为止, 由此确定 [sampleRate]; 解不出任何采样的文件在此被拒. 错误按 D85.
+ * Decodes the non-WAV audio files of roadmap D81 - D85 with the system: `MediaExtractor` reads the container (an Ogg
+ * file the system extractor refuses goes to the plugin's own [OggOpusStream] instead, roadmap Q25), the first audio
+ * track is decoded by `MediaCodec` (an `audio/raw` track is read as it is), and every output buffer is mixed down to
+ * mono as soon as it arrives, so memory stays at a few buffers (D83). Video tracks are ignored (D82). [open] decodes
+ * until the first samples, which fixes [sampleRate]; a file that yields none is refused there. Errors follow D85.
+ * zh-CN: 用系统解码路线图 D81 - D85 的非 WAV 音频文件: `MediaExtractor` 读取容器 (系统提取器拒绝的 Ogg 文件改用插件自带的 [OggOpusStream],
+ * 路线图 Q25), 第一条音轨由 `MediaCodec` 解码 (`audio/raw` 音轨直接读取), 每个输出缓冲一到即混为单声道, 内存只占几个缓冲 (D83). 视频轨被忽略
+ * (D82). [open] 解码到出现第一批采样为止, 由此确定 [sampleRate]; 解不出任何采样的文件在此被拒. 错误按 D85.
  */
 class MediaAudioReader private constructor(
     private val packets: Packets,
     private val codec: MediaCodec?,
     private val container: AudioContainer,
 ) : MonoAudio {
+
+    /** Whether the plugin's own Ogg parser reads this file. zh-CN: 是否由插件自带的 Ogg 解析读取此文件. */
+    val ownOggParser: Boolean get() = packets is OggPackets
 
     private val info = MediaCodec.BufferInfo()
     private val pending = ArrayDeque<FloatArray>()
@@ -236,14 +239,40 @@ class MediaAudioReader private constructor(
 
         /**
          * Opens [descriptor] (owned by the reader from now on, closed with it or on failure) of a [length] byte file
-         * that [container] describes. [forceOwnOgg] makes Ogg Opus use the plugin's parser on any Android version
-         * (device tests).
-         * zh-CN: 打开 [length] 字节, 容器为 [container] 的文件的 [descriptor] (此后归读取器所有, 随之关闭, 失败时也关闭). [forceOwnOgg] 让 Ogg
-         * Opus 在任何 Android 版本上都用插件自带的解析 (设备测试用).
+         * that [container] describes. An Ogg file goes to the system first and, when the system refuses it with
+         * `UNSUPPORTED_FORMAT`, to the plugin's own Opus parser on a duplicate of the descriptor; if that refuses it
+         * too, the system's reason stands unless the file is an Ogg Opus one (then the parser's reason is the more
+         * precise). [forceOwnOgg] skips the system for Ogg Opus (device tests).
+         * zh-CN: 打开 [length] 字节, 容器为 [container] 的文件的 [descriptor] (此后归读取器所有, 随之关闭, 失败时也关闭). Ogg 文件先交给系统,
+         * 系统以 `UNSUPPORTED_FORMAT` 拒绝时再用描述符副本交给插件自带的 Opus 解析; 也被拒时保留系统的原因, 但 Ogg Opus 文件取解析的原因 (更具体).
+         * [forceOwnOgg] 让 Ogg Opus 跳过系统 (设备测试用).
          */
         fun open(descriptor: ParcelFileDescriptor, length: Long, container: AudioContainer, forceOwnOgg: Boolean = false): MediaAudioReader {
+            if (container == AudioContainer.OGG_OPUS && forceOwnOgg) return open(descriptor, container) { ogg(descriptor) }
+            if (container != AudioContainer.OGG_OPUS && container != AudioContainer.OGG) return open(descriptor, container) { extractor(descriptor, length, container) }
+            val spare = runCatching { descriptor.dup() }.getOrNull()
+            val refused = try {
+                return open(descriptor, container) { extractor(descriptor, length, container) }.also { spare?.close() }
+            } catch (e: SpeechException) {
+                if (spare == null || e.code != SpeechErrorCodes.UNSUPPORTED_FORMAT) {
+                    spare?.close()
+                    throw e
+                }
+                e
+            } catch (e: Throwable) {
+                spare?.close()
+                throw e
+            }
+            try {
+                return open(spare, container) { ogg(spare) }
+            } catch (e: SpeechException) {
+                throw if (container == AudioContainer.OGG_OPUS && e.code == SpeechErrorCodes.UNSUPPORTED_FORMAT) e.also { it.addSuppressed(refused) } else refused
+            }
+        }
+
+        private fun open(descriptor: ParcelFileDescriptor, container: AudioContainer, source: () -> Packets): MediaAudioReader {
             val packets = try {
-                if (AudioContainers.ownOggOpus(container, Build.VERSION.SDK_INT, forceOwnOgg)) ogg(descriptor) else extractor(descriptor, length, container)
+                source()
             } catch (e: Throwable) {
                 runCatching { descriptor.close() }
                 throw e

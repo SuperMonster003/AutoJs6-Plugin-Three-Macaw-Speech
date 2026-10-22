@@ -84,11 +84,12 @@ object OpusPackets {
 class OpusPacket(val data: ByteArray, val timeMicros: Long)
 
 /**
- * The plugin's own Ogg reader for Opus (roadmap D81: the system extractor reads Ogg Opus only from Android 10): pages
- * with their CRC (RFC 3533), packets joined across pages, the first logical stream that starts with `OpusHead`, its
- * `OpusTags` skipped. A page that fails its checksum or loses the capture pattern is damage (`UNSUPPORTED_FORMAT`);
- * a file cut short ends with the packets it completes, as a truncated WAV does. Pure JVM.
- * zh-CN: 插件自带的 Opus 用 Ogg 读取器 (路线图 D81: 系统提取器从 Android 10 起才读 Ogg Opus): 带 CRC 的页 (RFC 3533), 跨页拼接的包, 以
+ * The plugin's own Ogg reader for Opus (roadmap D81, Q25: for the Ogg files the system extractor refuses, such as a
+ * grouped file whose first logical stream is not audio): pages with their CRC (RFC 3533), packets joined across pages,
+ * the first logical stream that starts with `OpusHead`, its `OpusTags` skipped. A page that fails its checksum or
+ * loses the capture pattern is damage (`UNSUPPORTED_FORMAT`); a file cut short ends with the packets it completes, as
+ * a truncated WAV does. Pure JVM.
+ * zh-CN: 插件自带的 Opus 用 Ogg 读取器 (路线图 D81, Q25: 用于系统提取器拒绝的 Ogg 文件, 例如首个逻辑流不是音频的分组文件): 带 CRC 的页 (RFC 3533), 跨页拼接的包, 以
  * `OpusHead` 开始的第一个逻辑流, 并跳过其 `OpusTags`. 校验失败或丢失捕获标记的页视为损坏 (`UNSUPPORTED_FORMAT`); 被截断的文件以其完整的包结束,
  * 与截断的 WAV 相同. 纯 JVM.
  */

@@ -1,16 +1,14 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
 /**
- * Container sniffing of roadmap D81 / D85 (P7.5.1): every signature, heads cut short, and when the plugin parses Ogg
- * Opus itself; the encoded device recordings of `locks/encoded-test-audio.lock` must sniff as what they are.
- * zh-CN: 路线图 D81 / D85 的容器判断 (P7.5.1): 各种签名, 被截短的文件头, 以及何时由插件自行解析 Ogg Opus; `locks/encoded-test-audio.lock`
- * 的编码设备录音必须被判断为其实际容器.
+ * Container sniffing of roadmap D81 / D85 (P7.5.1): every signature and heads cut short; the encoded device recordings
+ * of `locks/encoded-test-audio.lock` must sniff as what they are.
+ * zh-CN: 路线图 D81 / D85 的容器判断 (P7.5.1): 各种签名与被截短的文件头; `locks/encoded-test-audio.lock` 的编码设备录音必须被判断为其实际
+ * 容器.
  */
 class AudioContainersTest {
 
@@ -41,16 +39,6 @@ class AudioContainersTest {
     }
 
     @Test
-    fun `the plugin parses ogg opus itself before android 10 or when forced`() {
-        assertTrue(AudioContainers.ownOggOpus(AudioContainer.OGG_OPUS, 24))
-        assertTrue(AudioContainers.ownOggOpus(AudioContainer.OGG_OPUS, 28))
-        assertFalse(AudioContainers.ownOggOpus(AudioContainer.OGG_OPUS, 29))
-        assertTrue(AudioContainers.ownOggOpus(AudioContainer.OGG_OPUS, 35, force = true))
-        assertFalse(AudioContainers.ownOggOpus(AudioContainer.OGG_VORBIS, 24))
-        assertFalse(AudioContainers.ownOggOpus(AudioContainer.MATROSKA, 24, force = true))
-    }
-
-    @Test
     fun `the encoded device recordings sniff as what they are`() {
         val expected = mapOf(
             "mp3" to AudioContainer.MP3, "aac" to AudioContainer.ADTS, "m4a" to AudioContainer.MP4, "mp4" to AudioContainer.MP4,
@@ -58,7 +46,7 @@ class AudioContainersTest {
             "webm" to AudioContainer.MATROSKA,
         )
         val files = ENCODED.listFiles().orEmpty().filter { it.isFile }
-        assertEquals(16, files.size)
+        assertEquals(17, files.size)
         files.forEach { file ->
             val head = file.inputStream().use { it.readNBytes(AudioContainers.SNIFF_BYTES) }
             assertEquals(file.name, expected.getValue(file.extension), AudioContainers.sniff(head))

@@ -1,10 +1,10 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio
 
 /**
- * What the first bytes of an audio file look like (roadmap D81, D85). WAV goes to [WavReader], Ogg Opus before
- * Android 10 to the plugin's own Ogg parser, everything else to the system extractor; the label only explains errors.
- * zh-CN: 音频文件开头字节看起来是什么 (路线图 D81, D85). WAV 交给 [WavReader], Android 10 之前的 Ogg Opus 交给插件自带的 Ogg 解析, 其他交给
- * 系统提取器; 标签只用于说明错误.
+ * What the first bytes of an audio file look like (roadmap D81, D85). WAV goes to [WavReader], everything else to the
+ * system extractor, and an Ogg file the system refuses to the plugin's own Ogg Opus parser; the label explains errors.
+ * zh-CN: 音频文件开头字节看起来是什么 (路线图 D81, D85). WAV 交给 [WavReader], 其他交给系统提取器, 系统拒绝的 Ogg 文件再交给插件自带的 Ogg
+ * Opus 解析; 标签用于说明错误.
  */
 enum class AudioContainer(val label: String) {
     WAV("WAV"),
@@ -28,9 +28,6 @@ object AudioContainers {
 
     const val SNIFF_BYTES = 64
 
-    /** The first API level whose system extractor reads Ogg Opus (Android 10). zh-CN: 系统提取器能读 Ogg Opus 的首个 API 级别 (Android 10). */
-    const val SYSTEM_OGG_OPUS_API = 29
-
     fun sniff(head: ByteArray): AudioContainer = when {
         ascii(head, 0, "RIFF") && ascii(head, 8, "WAVE") -> AudioContainer.WAV
         ascii(head, 0, "OggS") -> ogg(head)
@@ -44,14 +41,6 @@ object AudioContainers {
         head.size >= 2 && u8(head, 0) == 0xFF && (u8(head, 1) and 0xE0) == 0xE0 && (u8(head, 1) and 0x06) != 0 -> AudioContainer.MP3
         else -> AudioContainer.UNKNOWN
     }
-
-    /**
-     * Whether the plugin parses this file's Ogg pages itself (roadmap D81): Ogg Opus where the system cannot, or when
-     * a test forces it.
-     * zh-CN: 是否由插件自行解析该文件的 Ogg 页 (路线图 D81): 系统读不了的 Ogg Opus, 或测试强制时.
-     */
-    fun ownOggOpus(container: AudioContainer, sdk: Int, force: Boolean = false): Boolean =
-        container == AudioContainer.OGG_OPUS && (force || sdk < SYSTEM_OGG_OPUS_API)
 
     /** The codec of the first packet of an Ogg file's first page. zh-CN: Ogg 文件首页首包的编码. */
     private fun ogg(head: ByteArray): AudioContainer {
