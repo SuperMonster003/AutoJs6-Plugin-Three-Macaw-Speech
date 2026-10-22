@@ -1,10 +1,12 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.tool
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.HitRoute
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.voice.VoiceInputPolicy
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.autojs.plugin.speech.api.SpeechOptionKeys
+import org.autojs.plugin.tool.api.PluginToolException
 
 /**
  * The ways of `speech_listen` to the microphone (roadmap D89), tried in this order: [DIRECT] while the plugin already
@@ -124,12 +126,24 @@ internal object ListenRules {
     fun notificationWait(remainingMillis: Long, maxMillis: Long): Long =
         minOf(SpeechToolCatalog.NOTIFICATION_WAIT_SECONDS * 1000L, remainingMillis - maxMillis - LOAD_MARGIN_MILLIS).takeIf { it >= MIN_TAP_MILLIS } ?: 0L
 
+    /**
+     * The recognition model among the installed [models] (D44, D95): the model for [language], the default otherwise, the
+     * recommended model when there is no default; null without models. `speech_transcribe` chooses the same way (D97).
+     * zh-CN: 在已装的 [models] 中选识别模型 (D44, D95): 按 [language] 选, 否则取默认模型, 没有默认模型时取推荐模型; 没有模型时为 null.
+     * `speech_transcribe` 按同样方式选择 (D97).
+     */
+    fun model(models: List<ModelEntry>, language: String?): String? = VoiceInputPolicy.chooseModel(models, language)
+        ?: models.sortedWith(compareByDescending<ModelEntry> { it.recommended }.thenBy { it.id }).firstOrNull()?.id
+
     /** A warning when no installed model covers the requested language. zh-CN: 已装模型都不覆盖请求的语言时给出警告. */
-    fun languageWarning(language: String?, modelId: String, modelLanguages: List<String>): ToolWarning? {
+    fun languageWarning(language: String?, modelId: String, modelLanguages: List<String>, used: String = "listened"): ToolWarning? {
         val primary = VoiceInputPolicy.primaryLanguage(language) ?: return null
         if (modelLanguages.any { VoiceInputPolicy.primaryLanguage(it) == primary }) return null
-        return ToolWarning(SpeechErrorCodes.MODEL_MISSING, "No installed recognition model covers the language '$language'; $modelId listened instead")
+        return ToolWarning(SpeechErrorCodes.MODEL_MISSING, "No installed recognition model covers the language '$language'; $modelId $used instead")
     }
+
+    fun noModel(): PluginToolException =
+        SpeechToolErrors.of(SpeechErrorCodes.MODEL_MISSING, "No speech recognition model is installed; download one on the home screen of 3-Macaw Speech")
 
     /**
      * D89 (4): the `NOT_READY` message when no route reached the microphone: the reason of every route tried and what the

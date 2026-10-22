@@ -269,13 +269,20 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     // File calls -------------------------------------------------------------------------------------------------------
 
-    /** `recognizeFile` on the calling Binder thread (roadmap P3.3). zh-CN: 在调用方 Binder 线程上执行 `recognizeFile` (路线图 P3.3). */
-    fun recognizeFile(audio: ParcelFileDescriptor, options: RecognizeOptions): FileTranscript {
+    /**
+     * `recognizeFile` on the calling thread: a Binder thread (roadmap P3.3) or the worker of `speech_transcribe` (P7.6.7),
+     * whose [cancelled] stops the decoding early with the text so far.
+     * zh-CN: 在调用线程上执行 `recognizeFile`: Binder 线程 (路线图 P3.3) 或 `speech_transcribe` 的工作线程 (P7.6.7), 后者的 [cancelled] 让解码提前
+     * 结束并保留已有文字.
+     */
+    fun recognizeFile(audio: ParcelFileDescriptor, options: RecognizeOptions, cancelled: () -> Boolean = { false }): FileTranscript {
         val model = resolve(SpeechContract.KIND_ASR, options.model)
         val warnings = warnings(model, options.language, options.hotwords)
         return AudioFiles.open(audio).use { reader ->
             acquireAsr(model, options.language, options.hotwords.isNotEmpty()).use { lease ->
-                FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings) { sink -> fileDictation(lease.engine, options, sink) }
+                FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings, cancelled) { sink ->
+                    fileDictation(lease.engine, options, sink)
+                }
             }
         }
     }

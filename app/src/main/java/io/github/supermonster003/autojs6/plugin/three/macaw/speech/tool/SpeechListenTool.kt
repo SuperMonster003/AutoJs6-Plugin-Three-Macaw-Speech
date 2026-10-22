@@ -14,7 +14,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.StrictJson
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentNotifications
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
@@ -89,9 +88,7 @@ internal class SpeechListenTool(context: Context) {
     /** The model for the language (D44, D95), the default otherwise; the recommended model when there is no default. zh-CN: 按语言选模型. */
     private fun plan(request: ListenRequest): ListenPlan {
         val models = runtime.models.list(kind = SpeechContract.KIND_ASR, installed = true)
-        if (models.isEmpty()) throw SpeechToolErrors.of(SpeechErrorCodes.MODEL_MISSING, "No speech recognition model is installed; download one on the home screen of 3-Macaw Speech")
-        val modelId = VoiceInputPolicy.chooseModel(models, request.language)
-            ?: models.sortedWith(compareByDescending<ModelEntry> { it.recommended }.thenBy { it.id }).first().id
+        val modelId = ListenRules.model(models, request.language) ?: throw ListenRules.noModel()
         val languages = models.firstOrNull { it.id == modelId }?.languages.orEmpty()
         return ListenPlan(modelId, languages, ListenRules.options(request, modelId), listOfNotNull(ListenRules.languageWarning(request.language, modelId, languages)))
     }
