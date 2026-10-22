@@ -197,7 +197,7 @@ class ModelManagerTest {
 
     @Test
     fun `list, defaults and removal follow the store`() {
-        assertEquals(3, manager.list().size)
+        assertEquals(5, manager.list().size)
         assertEquals(listOf("tts.test.tiny"), manager.list(kind = "tts").map { it.id })
         assertEquals(emptyList<String>(), manager.list(installed = true).map { it.id })
         install("tts.test.tiny")

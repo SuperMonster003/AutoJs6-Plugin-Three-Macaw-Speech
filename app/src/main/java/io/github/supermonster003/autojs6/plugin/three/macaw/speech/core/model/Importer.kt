@@ -125,7 +125,7 @@ class Importer(
         if (!ModelStore.IMPORT_ID.matches(id) || CatalogRules.MODEL_ID.matches(id)) {
             invalid("Imported model ids use 2 to 64 of a-z, 0-9, '.', '_' and '-', and not the catalog form <kind>.<name>: $id")
         }
-        if (request.kind !in CatalogRules.KINDS) invalid("kind must be one of ${CatalogRules.KINDS}")
+        if (request.kind !in CatalogRules.CUSTOM_IMPORT_KINDS) invalid("kind must be one of ${CatalogRules.CUSTOM_IMPORT_KINDS}")
         if (request.modelType.isNullOrBlank() || !MODEL_TYPE.matches(request.modelType)) invalid("modelType is required (for example vits or zipformer)")
         if (request.name.isNullOrBlank() || request.name.length > 128) invalid("name is required (at most 128 characters)")
         if (request.languages.isEmpty() || request.languages.size > 32 || request.languages.any { !CatalogRules.LANGUAGE.matches(it) }) {

@@ -34,15 +34,21 @@ class CatalogSignatureVerifier(publicKeyDer: ByteArray, private val expectedKeyI
         }
     }
 
+    /**
+     * Verifies [envelopeBytes] over [catalogBytes]; the envelope's `catalog` must be [catalogName], the file name of the
+     * catalog's wire schema (`crypto.py` since schema 2).
+     * zh-CN: 校验 [catalogBytes] 的签名信封 [envelopeBytes]; 信封的 `catalog` 必须为 [catalogName], 即该目录传输格式的文件名 (schema 2 起的
+     * `crypto.py`).
+     */
     @Throws(CatalogSignatureException::class)
-    fun verify(catalogBytes: ByteArray, envelopeBytes: ByteArray) {
+    fun verify(catalogBytes: ByteArray, envelopeBytes: ByteArray, catalogName: String = CatalogRules.CATALOG_FILE) {
         if (envelopeBytes.size > CatalogRules.MAX_SIGNATURE_BYTES) throw CatalogSignatureException("signature envelope exceeds its size limit")
         val envelope = try {
             StrictJson.parseObject(envelopeBytes)
         } catch (e: StrictJsonException) {
             throw CatalogSignatureException("Invalid signature envelope JSON: ${e.message}", e)
         }
-        val der = signatureBytes(envelope)
+        val der = signatureBytes(envelope, catalogName)
         val valid = try {
             Signature.getInstance("SHA256withECDSA").run {
                 initVerify(publicKey)
@@ -55,8 +61,8 @@ class CatalogSignatureVerifier(publicKeyDer: ByteArray, private val expectedKeyI
         if (!valid) throw CatalogSignatureException("Catalog signature verification failed")
     }
 
-    private fun signatureBytes(envelope: Map<String, Any?>): ByteArray {
-        if (envelope.keys != FIELDS || envelope["algorithm"] != ALGORITHM || envelope["catalog"] != CatalogRules.CATALOG_FILE) {
+    private fun signatureBytes(envelope: Map<String, Any?>, catalogName: String): ByteArray {
+        if (envelope.keys != FIELDS || envelope["algorithm"] != ALGORITHM || envelope["catalog"] != catalogName) {
             throw CatalogSignatureException("signature envelope must contain the fixed algorithm/catalog and exactly four fields")
         }
         if (envelope["keyId"] != expectedKeyId) throw CatalogSignatureException("signature keyId does not match the expected key")

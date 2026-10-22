@@ -20,9 +20,12 @@ object ModelCatalogConfiguration {
     const val CATALOG_URL = "https://raw.githubusercontent.com/$REPOSITORY/main/speech-models/catalogs/${CatalogRules.CATALOG_FILE}"
     const val SIGNATURE_URL = "https://raw.githubusercontent.com/$REPOSITORY/main/speech-models/catalogs/${CatalogRules.SIGNATURE_FILE}"
 
-    /** Bundled assets (roadmap P2.4). zh-CN: 内置资产 (路线图 P2.4). */
-    const val ASSET_CATALOG = "catalog/catalog-v1.json"
-    const val ASSET_SIGNATURE = "catalog/catalog-v1.sig.json"
+    /**
+     * Bundled assets (roadmap P2.4), named by the wire schema like the refresh files (roadmap D108).
+     * zh-CN: 内置资产 (路线图 P2.4), 与刷新文件一样按传输格式命名 (路线图 D108).
+     */
+    const val ASSET_CATALOG = "catalog/${CatalogRules.CATALOG_FILE}"
+    const val ASSET_SIGNATURE = "catalog/${CatalogRules.SIGNATURE_FILE}"
     const val ASSET_PUBLIC_KEY = "catalog/catalog-signing-public.pem"
 
     /** Verifier for the bundled PEM after checking it against the pinned SPKI digest. zh-CN: 对照固定的 SPKI 摘要后创建校验器. */
@@ -35,13 +38,18 @@ object ModelCatalogConfiguration {
 
 /**
  * Which catalog the plugin uses (roadmap D24, appendix D Q12). The APK bundles a snapshot; until the maintainer signs
- * `speech-models-v1` (P2.5) the snapshot has no signature and is used as the first catalog marked [Trust.UNSIGNED_BUNDLED];
+ * it (P2.5 for v1, D108 for v2) the snapshot has no signature and is used as the first catalog marked [Trust.UNSIGNED_BUNDLED];
  * a bundled signature, when present, must verify. A refreshed catalog is used only after its signature verified; it
  * may not be older than any catalog seen before (the bundled one included), and a catalog of the same version must
  * have the same bytes, except that a signed catalog replaces an unsigned bundled snapshot of its version.
- * zh-CN: 插件使用哪一份目录 (路线图 D24, 附录 D Q12). APK 内置一份快照; 在维护者签名 `speech-models-v1` (P2.5) 之前快照没有签名, 作为首个
+ * Every catalog the plugin uses has the wire schema of [CatalogRules.CATALOG_FILE] (roadmap D106), which also keeps the
+ * schema from going back; a cache of an older file name (`catalog-v1.json` before 1.2.0) is deleted on load, and its
+ * accepted version only sets the floor for later refreshes.
+ * zh-CN: 插件使用哪一份目录 (路线图 D24, 附录 D Q12). APK 内置一份快照; 在维护者签名 (v1 为 P2.5, v2 为 D108) 之前快照没有签名, 作为首个
  * 目录使用并标注为 [Trust.UNSIGNED_BUNDLED]; 若内置签名存在则必须验签通过. 刷新得到的目录只在验签通过后使用; 它不得早于此前见过的任何目录
  * (含内置目录), 同版本目录的字节必须相同, 唯一例外是已签名目录可替换同版本的未签名内置快照.
+ * 插件使用的每份目录都是 [CatalogRules.CATALOG_FILE] 对应的传输格式 (路线图 D106), 这也保证格式不会回退; 旧文件名的缓存 (1.2.0 之前的
+ * `catalog-v1.json`) 在加载时删除, 其已接受版本只作为之后刷新的下限.
  */
 class ModelCatalogRepository(
     private val cacheDirectory: File,
@@ -91,7 +99,19 @@ class ModelCatalogRepository(
         } else {
             Trust.UNSIGNED_BUNDLED
         }
-        Snapshot(parser.parse(bundledCatalog), trust, CatalogSignatureVerifier.sha256Hex(bundledCatalog))
+        Snapshot(parse(bundledCatalog), trust, CatalogSignatureVerifier.sha256Hex(bundledCatalog))
+    }
+
+    /**
+     * Parses a catalog of [CatalogRules.CATALOG_FILE]: the schema must name that file, as the signature envelope does.
+     * zh-CN: 解析 [CatalogRules.CATALOG_FILE] 的目录: 其 schema 推出的文件名必须就是该文件, 与签名信封一致.
+     */
+    private fun parse(bytes: ByteArray): ModelCatalog {
+        val catalog = parser.parse(bytes)
+        if (CatalogRules.catalogFile(catalog.schemaVersion) != CatalogRules.CATALOG_FILE) {
+            throw CatalogException("Catalog schemaVersion ${catalog.schemaVersion} does not belong to ${CatalogRules.CATALOG_FILE}")
+        }
+        return catalog
     }
 
     /**
@@ -104,6 +124,10 @@ class ModelCatalogRepository(
     }
 
     private fun load(): Snapshot {
+        CatalogRules.SCHEMAS.filter { it != CatalogRules.SCHEMA_VERSION }.forEach { schema ->
+            File(cacheDirectory, CatalogRules.catalogFile(schema)).delete()
+            File(cacheDirectory, CatalogRules.signatureFile(schema)).delete()
+        }
         val cached = runCatching { readCache() }.getOrElse {
             cacheCatalog.delete()
             cacheSignature.delete()
@@ -121,7 +145,7 @@ class ModelCatalogRepository(
         }
         val bytes = cacheCatalog.readBytes()
         verifier.verify(bytes, cacheSignature.readBytes())
-        return Snapshot(parser.parse(bytes), Trust.SIGNED_REFRESHED, CatalogSignatureVerifier.sha256Hex(bytes))
+        return Snapshot(parse(bytes), Trust.SIGNED_REFRESHED, CatalogSignatureVerifier.sha256Hex(bytes))
     }
 
     /** Whether [candidate] may be used instead of [baseline]. zh-CN: [candidate] 是否可代替 [baseline]. */
@@ -131,18 +155,20 @@ class ModelCatalogRepository(
     }
 
     /**
-     * Downloads `catalog-v1.json` and its signature from Shared-Assets `main`, verifies the signature over the exact
-     * bytes, validates the catalog, refuses rollback and then replaces the cache atomically. On any failure the catalog
-     * in use stays as it was (roadmap D24); only explicit calls refresh (roadmap D29, no automatic network use).
-     * zh-CN: 从 Shared-Assets `main` 下载 `catalog-v1.json` 及其签名, 对原始字节验签, 校验目录, 拒绝回退, 然后原子替换缓存. 任何失败都保持
-     * 当前目录不变 (路线图 D24); 只有显式调用才会刷新 (路线图 D29, 不自动联网).
+     * Downloads [CatalogRules.CATALOG_FILE] and its signature from Shared-Assets `main`, verifies the signature over the
+     * exact bytes, validates the catalog, refuses rollback and then replaces the cache atomically. On any failure the
+     * catalog in use stays as it was (roadmap D24); only explicit calls refresh (roadmap D29 / D108, no automatic network
+     * use). Until the maintainer publishes the signed `catalog-v2.json`, the download answers 404 (`IO_FAILED`).
+     * zh-CN: 从 Shared-Assets `main` 下载 [CatalogRules.CATALOG_FILE] 及其签名, 对原始字节验签, 校验目录, 拒绝回退, 然后原子替换缓存. 任何失败
+     * 都保持当前目录不变 (路线图 D24); 只有显式调用才会刷新 (路线图 D29 / D108, 不自动联网). 维护者发布签名后的 `catalog-v2.json` 之前, 下载
+     * 返回 404 (`IO_FAILED`).
      */
     @Throws(ModelException::class)
     fun refresh(cancel: CancelToken = CancelToken()): RefreshResult {
         val catalogBytes = fetch(catalogUrl, CatalogRules.MAX_CATALOG_BYTES, cancel)
         val signatureBytes = fetch(signatureUrl, CatalogRules.MAX_SIGNATURE_BYTES, cancel)
         verifier.verify(catalogBytes, signatureBytes)
-        val catalog = parser.parse(catalogBytes)
+        val catalog = parse(catalogBytes)
         val candidate = Snapshot(catalog, Trust.SIGNED_REFRESHED, CatalogSignatureVerifier.sha256Hex(catalogBytes))
         cancel.throwIfCancelled()
         return synchronized(lock) {
@@ -174,7 +200,8 @@ class ModelCatalogRepository(
         val lines = runCatching { acceptedFile.readLines(Charsets.US_ASCII) }.getOrNull() ?: return null
         val version = lines.getOrNull(0)?.toIntOrNull() ?: return null
         val sha = lines.getOrNull(1)?.takeIf { CatalogRules.SHA256.matches(it) } ?: return null
-        val catalog = ModelCatalog(version, "speech-models-v$version", "", "", emptyList())
+        // Only the version and the digest count; the schema is not recorded. zh-CN: 只比较版本与摘要, 不记录 schema.
+        val catalog = ModelCatalog(CatalogRules.SCHEMA_VERSION, version, "speech-models-v$version", "", "", emptyList())
         return Snapshot(catalog, Trust.SIGNED_REFRESHED, sha)
     }
 

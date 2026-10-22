@@ -1,0 +1,401 @@
+{
+  "catalogVersion": 2,
+  "generatedAt": "2026-10-23T01:00:00Z",
+  "models": [
+    {
+      "displayName": {
+        "en": "Test asr.test.noncommercial",
+        "zh-CN": "测试 asr.test.noncommercial"
+      },
+      "kind": "asr",
+      "modelId": "asr.test.noncommercial",
+      "recommended": false,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "model.int8.onnx",
+              "sha256": "95fb61d00a5adcef66da754c6d2e7aeb088f3111163e6d7d1a4835408e87aa49",
+              "size": 4000
+            },
+            {
+              "path": "tokens.txt",
+              "sha256": "04f028b059ea6eb28b7896e415a93604793194d802cc3b537ae5a2788d765895",
+              "size": 504
+            }
+          ],
+          "languages": [
+            "zh",
+            "en"
+          ],
+          "license": {
+            "commercialUse": false,
+            "noticeKey": "speech_model_license_non_commercial",
+            "spdx": "LicenseRef-NonCommercial"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-asr.test.noncommercial-v1-6c8d02c0.tar",
+            "format": "tar",
+            "sha256": "6c8d02c0861d0c580c2630d1588fa99fd7cf315b87e945bb8c68e4ca87a457f6",
+            "size": 6656,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v1/autojs6-speech-asr.test.noncommercial-v1-6c8d02c0.tar"
+          },
+          "modelType": "sense-voice",
+          "releasedAt": "2026-10-16T00:00:00Z",
+          "runtime": {
+            "config": {
+              "model": "model.int8.onnx",
+              "tokens": "tokens.txt"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sampleRate": 16000,
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v1/speech-models/sources/asr.test.noncommercial/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "sherpa-onnx-noncommercial/model.int8.onnx": "model.int8.onnx",
+                "sherpa-onnx-noncommercial/tokens.txt": "tokens.txt"
+              },
+              "sha256": "82ee173930283e78ae733f12abe080788ab0cabe6106245d2d585ea23db9ce47",
+              "size": 6684,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/noncommercial.tar.bz2"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
+        "en": "Test kws.test.unknown",
+        "zh-CN": "测试 kws.test.unknown"
+      },
+      "kind": "kws",
+      "modelId": "kws.test.unknown",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "decoder.onnx",
+              "sha256": "2b60116b03453b2eeb7926ad961b8ced48165933829e5f67653d82d222c0adef",
+              "size": 1500
+            },
+            {
+              "path": "encoder.int8.onnx",
+              "sha256": "a2f18c47acb3ca95095ad0144689af6adb695b860297d50592b4d724198a879f",
+              "size": 2500
+            },
+            {
+              "path": "joiner.int8.onnx",
+              "sha256": "05844ebcf9020d106d34ba4d29ed6da1abd7dec728abfb7b42e595a5bbc17b6e",
+              "size": 800
+            },
+            {
+              "path": "tokens.txt",
+              "sha256": "a4b027f83f19c448997c1cafefa7d77cb05b0f968a276ed78cf44a69f55fd6c6",
+              "size": 377
+            }
+          ],
+          "languages": [
+            "zh",
+            "en"
+          ],
+          "license": {
+            "commercialUse": "unknown",
+            "noticeKey": "speech_model_license_unknown",
+            "spdx": "LicenseRef-NoLicenseDeclared"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-kws.test.unknown-v1-88bab9fe.tar",
+            "format": "tar",
+            "sha256": "88bab9fe641a9d533b74c2874cf381b86fcc06442f0c90d509a35505fe74888c",
+            "size": 8704,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v1/autojs6-speech-kws.test.unknown-v1-88bab9fe.tar"
+          },
+          "modelType": "kws-transducer",
+          "releasedAt": "2026-10-16T00:00:00Z",
+          "runtime": {
+            "config": {
+              "decoder": "decoder.onnx",
+              "encoder": "encoder.int8.onnx",
+              "joiner": "joiner.int8.onnx",
+              "modelType": "zipformer2",
+              "tokens": "tokens.txt"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sampleRate": 16000,
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v1/speech-models/sources/kws.test.unknown/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "sherpa-onnx-kws-test/decoder.onnx": "decoder.onnx",
+                "sherpa-onnx-kws-test/encoder.int8.onnx": "encoder.int8.onnx",
+                "sherpa-onnx-kws-test/joiner.int8.onnx": "joiner.int8.onnx",
+                "sherpa-onnx-kws-test/tokens.txt": "tokens.txt"
+              },
+              "sha256": "9a51344aa7fcb9ee3131e193bbd5071eceac9b34b904fb91d680735d10d7e693",
+              "size": 5820,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/unknown.tar.bz2"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
+        "en": "Test punct.test.ct",
+        "zh-CN": "测试 punct.test.ct"
+      },
+      "kind": "punct",
+      "modelId": "punct.test.ct",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "model.int8.onnx",
+              "sha256": "ef9af979c9cff1708e2125332f92444760ded08092047495b8374e5531625d1b",
+              "size": 2000
+            }
+          ],
+          "languages": [
+            "zh",
+            "en"
+          ],
+          "license": {
+            "commercialUse": true,
+            "noticeKey": "speech_model_license_commercial",
+            "spdx": "Apache-2.0"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-punct.test.ct-v1-3507fae2.tar",
+            "format": "tar",
+            "sha256": "3507fae2393495d8d4bf8f5f58402390b2f71eacfd2b45e549a9dbcaec3ce957",
+            "size": 3584,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v2/autojs6-speech-punct.test.ct-v1-3507fae2.tar"
+          },
+          "modelType": "ct-transformer",
+          "releasedAt": "2026-10-23T00:00:00Z",
+          "runtime": {
+            "config": {
+              "model": "model.int8.onnx"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v2/speech-models/sources/punct.test.ct/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "sherpa-onnx-punct-ct-test/model.int8.onnx": "model.int8.onnx"
+              },
+              "sha256": "bfa0437b6ad6b07946f37ab12935438da816b841f516d7f1c239584c8329b3ab",
+              "size": 2609,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/punctuation-models/punct-ct.tar.bz2"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
+        "en": "Test punct.test.en",
+        "zh-CN": "测试 punct.test.en"
+      },
+      "kind": "punct",
+      "modelId": "punct.test.en",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "bpe.vocab",
+              "sha256": "9e649f2557a9503f0d6abbf62619c62597a80e86cf2f9694e3f5ef9184da4a99",
+              "size": 376
+            },
+            {
+              "path": "model.int8.onnx",
+              "sha256": "407ea7b07aedf41136584c6ebb1efd3a1816f0f3cefa49bbe3452d77e9e04b2b",
+              "size": 1800
+            }
+          ],
+          "languages": [
+            "zh",
+            "en"
+          ],
+          "license": {
+            "commercialUse": true,
+            "noticeKey": "speech_model_license_commercial",
+            "spdx": "Apache-2.0"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-punct.test.en-v1-c478bbdb.tar",
+            "format": "tar",
+            "sha256": "c478bbdbe233a75c434e633d1cc6edaea4ee93e1e5666d0c7c91c051b75d3e23",
+            "size": 4608,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v2/autojs6-speech-punct.test.en-v1-c478bbdb.tar"
+          },
+          "modelType": "cnn-bilstm",
+          "releasedAt": "2026-10-23T00:00:00Z",
+          "runtime": {
+            "config": {
+              "bpeVocab": "bpe.vocab",
+              "model": "model.int8.onnx"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v2/speech-models/sources/punct.test.en/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "./sherpa-onnx-online-punct-test/bpe.vocab": "bpe.vocab",
+                "./sherpa-onnx-online-punct-test/model.int8.onnx": "model.int8.onnx"
+              },
+              "sha256": "92699f979d103766a9be44237c6c4492fd41d93c0ba1b4abd82b9cc9dacce94c",
+              "size": 3390,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/punctuation-models/punct-en.tar.bz2"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
+        "en": "Test tts.test.tiny",
+        "zh-CN": "测试 tts.test.tiny"
+      },
+      "kind": "tts",
+      "modelId": "tts.test.tiny",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "espeak-ng-data/phontab",
+              "sha256": "96156c624ca0eabeca6cdfad255352c606e4d1b7fa182326bb78d7df025419a9",
+              "size": 300
+            },
+            {
+              "path": "espeak-ng-data/voices/!v/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/Mr serious",
+              "sha256": "beb32249f7c5954715d191b27cbad2ab5da25c853992ddabe45b2098fa6eead5",
+              "size": 16
+            },
+            {
+              "path": "hifigan_test.onnx",
+              "sha256": "9e08c3e0d1ea38837bfd0c2b3c0be6c32411fcd8f0fa4db1a2c5aee9c9fe864f",
+              "size": 1200
+            },
+            {
+              "path": "lexicon.txt",
+              "sha256": "e80ff9612b55950c4ad6e310591b9f66335234e739dcfc7a60b8e0578075c573",
+              "size": 1022
+            },
+            {
+              "path": "model-steps-3.onnx",
+              "sha256": "c4e61fdc71a66227b229e9562eeed1b94638f24c8b134fda532afa3572894643",
+              "size": 3000
+            },
+            {
+              "path": "tokens.txt",
+              "sha256": "60df7c4db7c795fddd2500a2fe5ddea81df1ab9880f0b295b52988aed9e119e2",
+              "size": 630
+            }
+          ],
+          "languages": [
+            "zh",
+            "en"
+          ],
+          "license": {
+            "commercialUse": true,
+            "noticeKey": "speech_model_license_commercial",
+            "spdx": "MIT"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-tts.test.tiny-v1-ec288c30.tar",
+            "format": "tar",
+            "sha256": "ec288c30a36738bc4677d937d4d4b550bdec29dba05fd5fd11308e489ae2f9e1",
+            "size": 11776,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v1/autojs6-speech-tts.test.tiny-v1-ec288c30.tar"
+          },
+          "modelType": "matcha",
+          "releasedAt": "2026-10-16T00:00:00Z",
+          "runtime": {
+            "config": {
+              "acousticModel": "model-steps-3.onnx",
+              "dataDir": "espeak-ng-data",
+              "lexicon": [
+                "lexicon.txt"
+              ],
+              "tokens": "tokens.txt",
+              "vocoder": "hifigan_test.onnx"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sampleRate": 22050,
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v1/speech-models/sources/tts.test.tiny/1",
+          "speakers": 1,
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "tiny-model/espeak-ng-data/phontab": "espeak-ng-data/phontab",
+                "tiny-model/espeak-ng-data/voices/!v/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/Mr serious": "espeak-ng-data/voices/!v/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/Mr serious",
+                "tiny-model/lexicon.txt": "lexicon.txt",
+                "tiny-model/model-steps-3.onnx": "model-steps-3.onnx",
+                "tiny-model/tokens.txt": "tokens.txt"
+              },
+              "sha256": "1cefb275d4c644a9305e3603701aa36ce6cd879348600aaa0377ad69819a9aec",
+              "size": 6451,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/tiny-model.tar.bz2"
+            },
+            {
+              "format": "file",
+              "path": "hifigan_test.onnx",
+              "sha256": "9e08c3e0d1ea38837bfd0c2b3c0be6c32411fcd8f0fa4db1a2c5aee9c9fe864f",
+              "size": 1200,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/vocoder-models/hifigan_test.onnx"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    }
+  ],
+  "releaseTag": "speech-models-v2",
+  "repository": "SuperMonster003/AutoJs6-Shared-Assets",
+  "schemaVersion": 2
+}

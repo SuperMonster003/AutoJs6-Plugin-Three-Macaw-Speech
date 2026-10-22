@@ -4,11 +4,19 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model
  * Parses and validates catalog bytes with every rule of `distribution.validate_catalog` (Shared-Assets
  * `tools/speech-model-distribution`), so a catalog the maintainer's verifier refuses is refused here too: exact field
  * sets, identifiers, sorted unique models and versions, installed paths, upstream mappings covering exactly `files[]`,
- * runtime roles, content-addressed mirror names and URLs, release numbers and the recommended version. Rollback rules
- * between two catalogs live in [ModelCatalogRepository].
- * zh-CN: 以 `distribution.validate_catalog` (Shared-Assets `tools/speech-model-distribution`) 的全部规则解析并校验目录字节, 维护者校验器
- * 拒绝的目录这里同样拒绝: 精确的字段集合, 标识符, 有序且唯一的模型与版本, 安装路径, 恰好覆盖 `files[]` 的上游映射, 运行时角色, 内容寻址
- * 的镜像文件名与 URL, Release 编号与推荐版本. 两个目录之间的回退规则见 [ModelCatalogRepository].
+ * runtime roles, content-addressed mirror names and URLs, release numbers and the recommended version, for schemas 1
+ * and 2. Rollback rules between two catalogs live in [ModelCatalogRepository].
+ *
+ * Roadmap D106 makes the plugin more lenient in one respect, so later catalogs can add kinds and model types without a
+ * new file: a model of a kind this build does not know is skipped, and so is a version of a known kind whose model type
+ * it does not know (a model left without versions is skipped too). Skipped entries still take part in the order of
+ * models and versions and in the recommended version check; everything else stays strict.
+ * zh-CN: 以 `distribution.validate_catalog` (Shared-Assets `tools/speech-model-distribution`) 的全部规则解析并校验 schema 1 与 2 的目录
+ * 字节, 维护者校验器拒绝的目录这里同样拒绝: 精确的字段集合, 标识符, 有序且唯一的模型与版本, 安装路径, 恰好覆盖 `files[]` 的上游映射,
+ * 运行时角色, 内容寻址的镜像文件名与 URL, Release 编号与推荐版本. 两个目录之间的回退规则见 [ModelCatalogRepository].
+ *
+ * 路线图 D106 让插件在一点上更宽松, 以便以后的目录增加类别与模型类型时不必换文件: 本构建不认识的类别的模型被跳过, 已知类别中模型类型
+ * 不认识的版本也被跳过 (因此没有剩余版本的模型同样跳过). 被跳过的条目仍参与模型与版本的排序检查以及推荐版本检查; 其余规则照旧严格.
  */
 class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.OFFICIAL_REPOSITORY) {
 
@@ -33,7 +41,7 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
 
     private fun catalog(root: Map<String, Any?>, minimumCatalogVersion: Int): ModelCatalog {
         fields(root, listOf("schemaVersion", "catalogVersion", "releaseTag", "generatedAt", "repository", "models"), name = "catalog")
-        if (integerOrNull(root["schemaVersion"]) != 1L) fail("Unsupported catalog schemaVersion")
+        val schema = CatalogRules.SCHEMAS.firstOrNull { it.toLong() == integerOrNull(root["schemaVersion"]) } ?: fail("Unsupported catalog schemaVersion")
         if (minimumCatalogVersion < 1) fail("minimum catalog version must be at least 1")
         val version = integer(root["catalogVersion"], "catalogVersion", minimumCatalogVersion.toLong()).toInt()
         if (root["releaseTag"] != "speech-models-v$version") fail("releaseTag must match catalogVersion")
@@ -46,58 +54,107 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
         val modelValues = root["models"] as? List<*> ?: fail("models must be a bounded array")
         if (modelValues.size > CatalogRules.MAX_MODELS) fail("models must be a bounded array")
         val artifacts = HashSet<String>()
-        val models = modelValues.map { model(it, repository, version, generated, artifacts) }
-        val ids = models.map { it.modelId }
+        val ids = ArrayList<String>(modelValues.size)
+        val models = modelValues.mapNotNull { model(it, schema, repository, version, generated, artifacts, ids) }
         if (ids != ids.distinct().sorted()) fail("Models must use ascending unique modelId order")
-        return ModelCatalog(version, releaseTag, generatedAt, repository, models)
+        return ModelCatalog(schema, version, releaseTag, generatedAt, repository, models)
     }
 
-    private fun model(value: Any?, repository: String, catalogVersion: Int, generated: Timestamp, artifacts: MutableSet<String>): CatalogModel {
+    /**
+     * A model, or null when this build skips it (roadmap D106). Its id joins [ids] either way, for the order check.
+     * zh-CN: 一个模型; 本构建跳过它时为 null (路线图 D106). 无论是否跳过, 其 ID 都加入 [ids] 供排序检查.
+     */
+    private fun model(
+        value: Any?,
+        schema: Int,
+        repository: String,
+        catalogVersion: Int,
+        generated: Timestamp,
+        artifacts: MutableSet<String>,
+        ids: MutableList<String>,
+    ): CatalogModel? {
+        val kindValue = (value as? Map<*, *>)?.get("kind")
+        val idValue = (value as? Map<*, *>)?.get("modelId")
+        if (kindValue is String && kindValue !in CatalogRules.KINDS && idValue is String) {
+            // A kind of a later plugin: only its id is read, and it must still name that kind.
+            val future = CatalogRules.FUTURE_MODEL_ID.matchEntire(idValue)
+            if (future == null || future.groupValues[1] != kindValue) fail("modelId must start with its kind")
+            ids += idValue
+            return null
+        }
         val model = fields(value, listOf("modelId", "kind", "displayName", "summary", "recommended", "versions", "recommendedVersionCode"), name = "model")
         val modelId = model["modelId"] as? String
         if (modelId == null || !CatalogRules.MODEL_ID.matches(modelId)) fail("Invalid modelId")
         val kind = model["kind"] as? String
-        if (kind !in CatalogRules.KINDS || !modelId.startsWith("$kind.")) fail("modelId must start with its kind")
+        if (kind == null || kind !in CatalogRules.KINDS || !modelId.startsWith("$kind.")) fail("modelId must start with its kind")
+        requireSchema(kind, schema, "kind")
+        ids += modelId
         val displayName = languageMap(model["displayName"], "displayName", 256)
         val summary = languageMap(model["summary"], "summary", 1024)
         val recommended = boolean(model["recommended"], "recommended")
         val versionValues = model["versions"] as? List<*> ?: fail("Model versions must be a nonempty bounded array")
         if (versionValues.isEmpty() || versionValues.size > CatalogRules.MAX_VERSIONS) fail("Model versions must be a nonempty bounded array")
-        val versions = versionValues.map { item ->
-            version(item, modelId, kind!!, repository, catalogVersion, generated).also { parsed ->
-                parsed.mirror?.let { if (!artifacts.add(it.fileName)) fail("Duplicate mirror archive") }
+        val entries = versionValues.map { item ->
+            version(item, schema, modelId, kind, repository, catalogVersion, generated).also { entry ->
+                entry.parsed?.mirror?.let { if (!artifacts.add(it.fileName)) fail("Duplicate mirror archive") }
             }
         }
-        val codes = versions.map { it.versionCode }
+        val codes = entries.map { it.code }
         if (codes != codes.distinct().sorted()) fail("Versions must use ascending unique versionCode order")
         val recommendedValue = model["recommendedVersionCode"]
         val recommendedCode = if (recommendedValue == null) null else integer(recommendedValue, "recommendedVersionCode").toInt()
-        if (recommendedCode != versions.filter { it.isActive }.maxOfOrNull { it.versionCode }) {
+        if (recommendedCode != entries.filter { it.isActive }.maxOfOrNull { it.code }) {
             fail("recommendedVersionCode must be the latest active version or null")
         }
-        return CatalogModel(modelId, kind!!, displayName, summary, recommended, versions, recommendedCode)
+        val versions = entries.mapNotNull { it.parsed }
+        if (versions.isEmpty()) return null
+        // When the recommended version is skipped, new installs use the latest active version this build knows.
+        // zh-CN: 推荐版本被跳过时, 新安装使用本构建认识的最新可用版本.
+        val installable = versions.filter { it.isActive }.maxOfOrNull { it.versionCode }
+        return CatalogModel(modelId, kind, displayName, summary, recommended, versions, installable)
     }
 
-    private fun version(value: Any?, modelId: String, kind: String, repository: String, catalogVersion: Int, generated: Timestamp): CatalogModelVersion {
+    /** A version as the order and recommendation checks see it; [parsed] is null when it is skipped. zh-CN: 被跳过时 [parsed] 为 null. */
+    private class VersionEntry(val code: Int, val isActive: Boolean, val parsed: CatalogModelVersion?)
+
+    private fun version(value: Any?, schema: Int, modelId: String, kind: String, repository: String, catalogVersion: Int, generated: Timestamp): VersionEntry {
+        val type = (value as? Map<*, *>)?.get("modelType")
+        if (type is String && type !in CatalogRules.MODEL_TYPES) {
+            // A model type of a later plugin (roadmap D106): only the fields of the order and recommendation checks are read.
+            // zh-CN: 以后插件的模型类型 (路线图 D106): 只读取排序与推荐检查需要的字段.
+            if (!CatalogRules.FUTURE_MODEL_TYPE.matches(type)) fail("modelType does not belong to the model kind")
+            @Suppress("UNCHECKED_CAST")
+            val item = value as Map<String, Any?>
+            val code = integer(item["versionCode"], "versionCode").toInt()
+            return VersionEntry(code, !flag(item, "deprecated") && !flag(item, "revoked"), null)
+        }
         // `mirror` is written as null for upstream-only versions (Shared-Assets 89f04a6); a missing key is read the same
-        // way, the one place where the plugin is more lenient than the reference validator.
-        // zh-CN: 仅上游版本的 `mirror` 写为 null (Shared-Assets 89f04a6); 缺省的键按同样方式读取, 这是插件唯一比参考校验器宽松之处.
+        // way, the one place besides the skipped entries of roadmap D106 where the plugin is more lenient than the
+        // reference validator.
+        // zh-CN: 仅上游版本的 `mirror` 写为 null (Shared-Assets 89f04a6); 缺省的键按同样方式读取, 除路线图 D106 的跳过外, 这是插件唯一比参考
+        // 校验器宽松之处.
         val item = fields(
             value,
-            listOf("versionCode", "modelType", "languages", "sampleRate", "releasedAt", "license", "runtime", "sourceUrl", "upstream", "files"),
-            listOf("mirror", "speakers", "deprecated", "revoked"),
+            listOf("versionCode", "modelType", "languages", "releasedAt", "license", "runtime", "sourceUrl", "upstream", "files"),
+            listOf("mirror", "sampleRate", "speakers", "deprecated", "revoked"),
             name = "catalog version",
         )
         val code = integer(item["versionCode"], "versionCode").toInt()
         val files = files(item["files"])
         val filePaths = files.map { it.path }.toSet()
         val directories = directoriesOf(filePaths)
-        val upstream = upstream(item["upstream"], filePaths)
+        val upstream = upstream(item["upstream"], filePaths, schema)
         val modelType = item["modelType"] as? String
         val spec = CatalogRules.MODEL_TYPES[modelType]
-        if (spec == null || spec.kind != kind) fail("modelType does not belong to the model kind")
+        if (modelType == null || spec == null || spec.kind != kind) fail("modelType does not belong to the model kind")
+        requireSchema(modelType, schema, "modelType")
         val languages = languages(item["languages"])
-        val sampleRate = integer(item["sampleRate"], "sampleRate", 8000, 192000).toInt()
+        val sampleRate = if (kind == CatalogRules.KIND_PUNCT) {
+            if (item.containsKey("sampleRate")) fail("sampleRate is not valid for punct models")
+            null
+        } else {
+            integer(item["sampleRate"], "sampleRate", 8000, 192000).toInt()
+        }
         val speakers = if (kind == "tts") {
             integer(item["speakers"], "speakers", 1, 100000).toInt()
         } else {
@@ -106,10 +163,8 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
         }
         val license = license(item["license"])
         val (minSherpaOnnx, config) = runtime(item["runtime"], spec, filePaths, directories)
-        val deprecated = item["deprecated"]?.let { boolean(it, "deprecated") } ?: false
-        val revoked = item["revoked"]?.let { boolean(it, "revoked") } ?: false
-        if (item.containsKey("deprecated") && item["deprecated"] == null) fail("deprecated must be a boolean")
-        if (item.containsKey("revoked") && item["revoked"] == null) fail("revoked must be a boolean")
+        val deprecated = flag(item, "deprecated")
+        val revoked = flag(item, "revoked")
         val releasedAt = text(item["releasedAt"], "releasedAt", 64)
         if (timestamp(releasedAt, "releasedAt") > generated) fail("releasedAt cannot be later than the catalog generatedAt")
 
@@ -143,9 +198,9 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
             MirrorArchive(expectedName, mirrorSize, mirrorSha, url)
         }
 
-        return CatalogModelVersion(
+        return VersionEntry(code, !deprecated && !revoked, CatalogModelVersion(
             versionCode = code,
-            modelType = modelType!!,
+            modelType = modelType,
             languages = languages,
             sampleRate = sampleRate,
             speakers = speakers,
@@ -159,7 +214,7 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
             files = files,
             deprecated = deprecated,
             revoked = revoked,
-        )
+        ))
     }
 
     private fun files(value: Any?): List<CatalogFile> {
@@ -189,7 +244,7 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
         return result
     }
 
-    private fun upstream(value: Any?, filePaths: Set<String>): List<UpstreamPart> {
+    private fun upstream(value: Any?, filePaths: Set<String>, schema: Int): List<UpstreamPart> {
         val parts = value as? List<*> ?: fail("upstream must be an array of 1..8 release assets")
         if (parts.isEmpty() || parts.size > CatalogRules.MAX_UPSTREAM_PARTS) fail("upstream must be an array of 1..8 release assets")
         val targets = HashSet<String>()
@@ -210,7 +265,7 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
                 if (members.isEmpty() || members.size > CatalogRules.MAX_FILES) fail("upstream members must map 1..4096 archive members")
                 val mapped = LinkedHashMap<String, String>()
                 members.forEach { (member, target) ->
-                    val memberPath = installPath(member, "upstream member")
+                    val memberPath = upstreamMember(member, schema)
                     val targetPath = installPath(target, "path")
                     if (!targets.add(targetPath)) fail("Two upstream members install the same path: $targetPath")
                     mapped[memberPath] = targetPath
@@ -224,6 +279,25 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
         }
         if (targets != filePaths) fail("Upstream members must cover exactly the files array")
         return result
+    }
+
+    /**
+     * `distribution.upstream_member`: an installed path, behind one `./` from schema 2 on; the archive name is kept.
+     * zh-CN: `distribution.upstream_member`: 安装路径, 自 schema 2 起可带一个 `./` 前缀; 保留归档中的原名.
+     */
+    private fun upstreamMember(value: Any?, schema: Int): String {
+        if (value is String && value.startsWith(CatalogRules.MEMBER_PREFIX)) {
+            requireSchema(CatalogRules.MEMBER_PREFIX, schema, "Upstream member prefix")
+            installPath(value.substring(CatalogRules.MEMBER_PREFIX.length), "upstream member")
+            return value
+        }
+        return installPath(value, "upstream member")
+    }
+
+    /** `distribution._require_schema`. zh-CN: 类别, 类型或前缀所需的最早 schema. */
+    private fun requireSchema(name: String, schema: Int, what: String) {
+        val introduced = CatalogRules.SCHEMA_INTRODUCED[name] ?: 1
+        if (introduced > schema) fail("$what $name requires catalog schemaVersion $introduced or later")
     }
 
     private fun upstreamUrl(url: String): Pair<String, String> {
@@ -304,6 +378,9 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
     }
 
     private fun boolean(value: Any?, name: String): Boolean = value as? Boolean ?: fail("$name must be a boolean")
+
+    /** An optional boolean field: false when absent, a boolean when present. zh-CN: 可选布尔字段. */
+    private fun flag(item: Map<String, Any?>, name: String): Boolean = if (item.containsKey(name)) boolean(item[name], name) else false
 
     private fun text(value: Any?, name: String, maximum: Int = 1024): String {
         val string = value as? String ?: fail("Invalid bounded text: $name")

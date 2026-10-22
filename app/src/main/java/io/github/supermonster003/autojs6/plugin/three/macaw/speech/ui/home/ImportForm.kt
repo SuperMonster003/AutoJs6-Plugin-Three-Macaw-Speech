@@ -89,7 +89,7 @@ internal fun ImportFormDialog(pending: PendingImport, onDismiss: () -> Unit, onC
             modifier = Modifier.padding(horizontal = DialogDefaults.contentPadding),
         )
         Label(stringResource(R.string.import_form_kind))
-        CatalogRules.KINDS.forEach { value ->
+        CatalogRules.CUSTOM_IMPORT_KINDS.forEach { value ->
             ChoiceRow(Choice(stringResource(HomeTexts.kindTitle(value))), selected = kind == value, onSelect = {
                 kind = value
                 modelType = ImportFormPolicy.modelTypes(value).first()

@@ -97,13 +97,13 @@ internal class SpeechPluginBinder(
         val language = query?.getString(SpeechOptionKeys.LANGUAGE)
         if (language != null && (language.length > SpeechLimits.MAX_TOKEN_CHARS || !LANGUAGE.matches(language))) invalid("Invalid language tag: $language")
         val installed = if (query?.containsKey(SpeechOptionKeys.INSTALLED) == true) query.getBoolean(SpeechOptionKeys.INSTALLED) else null
-        val models = manager.list(kind, language, installed).take(SpeechLimits.MAX_MODELS)
+        val models = manager.list(kind, language, installed).filter { it.kind in SpeechContract.KINDS }.take(SpeechLimits.MAX_MODELS)
         SpeechBundles.answer { putParcelableArrayList(SpeechResultKeys.MODELS, ArrayList(models.map(SpeechBundles::model))) }
     }
 
     override fun installModel(request: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
         checkContract(request)
-        val id = modelId(request)
+        val id = scriptModelId(request)
         val name = manager.entry(id)?.name ?: id
         manager.install(
             modelId = id,
@@ -120,7 +120,7 @@ internal class SpeechPluginBinder(
 
     override fun removeModel(request: Bundle?): Bundle = answering {
         checkContract(request)
-        val id = modelId(request)
+        val id = scriptModelId(request)
         val removed = manager.remove(id)
         if (removed) runtime.engines.evict(id)
         SpeechBundles.answer { putBoolean(SpeechResultKeys.REMOVED, removed) }
@@ -271,7 +271,7 @@ internal class SpeechPluginBinder(
         checkContract(request)
         val kind = request?.getString(SpeechOptionKeys.KIND)
         if (kind != null && kind !in SpeechContract.KINDS) invalid("kind must be one of ${SpeechContract.KINDS}")
-        val entry = manager.setDefault(modelId(request), kind)
+        val entry = manager.setDefault(scriptModelId(request), kind)
         SpeechBundles.answer { putBundle(SpeechResultKeys.MODEL, SpeechBundles.model(entry)) }
     }
 
@@ -328,6 +328,19 @@ internal class SpeechPluginBinder(
     private fun modelId(request: Bundle?): String {
         val id = request?.getString(SpeechOptionKeys.MODEL) ?: invalid("model is required")
         if (id.isEmpty() || id.length > SpeechLimits.MAX_TOKEN_CHARS) invalid("Invalid model id")
+        return id
+    }
+
+    /**
+     * A model id of a kind the host contract knows: catalog kinds the host lacks (`punct` since roadmap D104) are managed on
+     * the plugin's screens only and never reach a script, so their ids answer `MODEL_MISSING` like unknown ones.
+     * zh-CN: 宿主契约认识的类别的模型 ID: 宿主没有的目录类别 (路线图 D104 起的 `punct`) 只在插件界面管理, 不会交给脚本, 因此其 ID 与未知 ID
+     * 一样返回 `MODEL_MISSING`.
+     */
+    private fun scriptModelId(request: Bundle?): String {
+        val id = modelId(request)
+        val kind = manager.entry(id)?.kind
+        if (kind != null && kind !in SpeechContract.KINDS) throw ModelException(SpeechErrorCodes.MODEL_MISSING, "Model $id is not available to scripts")
         return id
     }
 

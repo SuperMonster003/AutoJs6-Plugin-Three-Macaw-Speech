@@ -27,9 +27,16 @@ internal object Fixtures {
 
     fun bytes(name: String): ByteArray = Files.readAllBytes(file(name).toPath())
 
-    val catalogBytes: ByteArray get() = bytes("catalog-v1.json")
+    /** The schema 2 catalog the plugin fetches and bundles (`catalog-v2.json`). zh-CN: 插件刷新与内置的 schema 2 目录. */
+    val catalogBytes: ByteArray get() = bytes(CatalogRules.CATALOG_FILE)
 
     val catalog: ModelCatalog get() = ModelCatalogParser().parse(catalogBytes)
+
+    /**
+     * The schema 1 predecessor (catalogVersion 1, the three models without punctuation), as cached by 1.0.0 / 1.1.0.
+     * zh-CN: schema 1 的前一版 (catalogVersion 1, 不含标点的三个模型), 即 1.0.0 / 1.1.0 缓存的目录.
+     */
+    val catalogV1Bytes: ByteArray get() = bytes("catalog-v1.json")
 
     /** The catalog JSON as text, for mutations. zh-CN: 目录 JSON 文本, 供变异使用. */
     val catalogText: String get() = catalogBytes.toString(Charsets.UTF_8)
@@ -53,8 +60,8 @@ internal class TestSigner(val keys: KeyPair = generate()) {
     }
 
     /** `crypto.sign_catalog` output: canonical JSON (sorted keys, two-space indent, trailing newline). */
-    fun envelope(bytes: ByteArray, keyId: String = this.keyId, signature: String = Base64Strict.encode(derSignature(bytes))): ByteArray =
-        ("{\n  \"algorithm\": \"ECDSA_P256_SHA256\",\n  \"catalog\": \"catalog-v1.json\",\n  \"keyId\": \"$keyId\",\n" +
+    fun envelope(bytes: ByteArray, keyId: String = this.keyId, signature: String = Base64Strict.encode(derSignature(bytes)), catalog: String = CatalogRules.CATALOG_FILE): ByteArray =
+        ("{\n  \"algorithm\": \"ECDSA_P256_SHA256\",\n  \"catalog\": \"$catalog\",\n  \"keyId\": \"$keyId\",\n" +
             "  \"signature\": \"$signature\"\n}\n").toByteArray(Charsets.UTF_8)
 
     companion object {

@@ -40,11 +40,17 @@ class ModelCatalogRepositoryTest {
             transport = server.transport,
         )
 
-    /** The fixture catalog at another version, still valid (its mirrors stay on release v1). */
-    private fun version(version: Int, generatedAt: String = "2026-10-${16 + version}T01:00:00Z"): ByteArray = Fixtures.catalogText
+    /** The fixture catalog at another version from 2 on, still valid (its mirrors stay on releases v1 and v2). */
+    private fun version(version: Int, generatedAt: String = "2026-10-${21 + version}T01:00:00Z"): ByteArray = Fixtures.catalogText
+        .replace("\"catalogVersion\": 2", "\"catalogVersion\": $version")
+        .replace("\"releaseTag\": \"speech-models-v2\"", "\"releaseTag\": \"speech-models-v$version\"")
+        .replace("\"generatedAt\": \"2026-10-23T01:00:00Z\"", "\"generatedAt\": \"$generatedAt\"")
+        .toByteArray()
+
+    /** The schema 1 fixture at another version: valid, but not a catalog of `catalog-v2.json`. */
+    private fun schema1(version: Int): ByteArray = Fixtures.catalogV1Bytes.toString(Charsets.UTF_8)
         .replace("\"catalogVersion\": 1", "\"catalogVersion\": $version")
         .replace("\"releaseTag\": \"speech-models-v1\"", "\"releaseTag\": \"speech-models-v$version\"")
-        .replace("\"generatedAt\": \"2026-10-16T01:00:00Z\"", "\"generatedAt\": \"$generatedAt\"")
         .toByteArray()
 
     private fun publish(catalog: ByteArray, signature: ByteArray = signer.envelope(catalog)) {
@@ -56,7 +62,7 @@ class ModelCatalogRepositoryTest {
     fun `the unsigned bundled snapshot is the first catalog and is marked as unsigned`() {
         val snapshot = repository().current()
         assertEquals(ModelCatalogRepository.Trust.UNSIGNED_BUNDLED, snapshot.trust)
-        assertEquals(1, snapshot.catalog.catalogVersion)
+        assertEquals(2, snapshot.catalog.catalogVersion)
     }
 
     @Test
@@ -69,15 +75,15 @@ class ModelCatalogRepositoryTest {
 
     @Test
     fun `a newer signed catalog is verified, cached atomically and survives a restart`() {
-        publish(version(2))
+        publish(version(3))
         val result = repository().refresh()
-        assertEquals(ModelCatalogRepository.RefreshResult(2, updated = true), result)
+        assertEquals(ModelCatalogRepository.RefreshResult(3, updated = true), result)
         val restarted = repository()
-        assertEquals(2, restarted.current().catalog.catalogVersion)
+        assertEquals(3, restarted.current().catalog.catalogVersion)
         assertEquals(ModelCatalogRepository.Trust.SIGNED_REFRESHED, restarted.current().trust)
-        assertEquals(listOf("catalog-v1.json", "catalog-v1.sig.json", "catalog.accepted"), cache.list()!!.sorted())
+        assertEquals(listOf("catalog-v2.json", "catalog-v2.sig.json", "catalog.accepted"), cache.list()!!.sorted())
         // The same catalog again: nothing to update.
-        assertEquals(ModelCatalogRepository.RefreshResult(2, updated = false), restarted.refresh())
+        assertEquals(ModelCatalogRepository.RefreshResult(3, updated = false), restarted.refresh())
     }
 
     @Test
@@ -85,35 +91,37 @@ class ModelCatalogRepositoryTest {
         val same = Fixtures.catalogBytes
         publish(same)
         val repository = repository()
-        assertEquals(ModelCatalogRepository.RefreshResult(1, updated = false), repository.refresh())
+        assertEquals(ModelCatalogRepository.RefreshResult(2, updated = false), repository.refresh())
         assertEquals(ModelCatalogRepository.Trust.SIGNED_REFRESHED, repository.current().trust)
         // Appendix D: a signed catalog of the bundled version with other bytes also wins over the unsigned snapshot.
-        val other = version(1, generatedAt = "2026-10-16T02:00:00Z")
+        val other = version(2, generatedAt = "2026-10-23T02:00:00Z")
         val fresh = temporary.newFolder("fresh")
         val second = ModelCatalogRepository(fresh, Fixtures.catalogBytes, null, signer.verifier(), server.transport)
         publish(other)
-        assertEquals(ModelCatalogRepository.RefreshResult(1, updated = true), second.refresh())
+        assertEquals(ModelCatalogRepository.RefreshResult(2, updated = true), second.refresh())
     }
 
     @Test
     fun `tampering, other keys, rollback and equivocation keep the previous catalog`() {
-        publish(version(3))
+        publish(version(4))
         val repository = repository()
         repository.refresh()
         val cases = mapOf(
-            "tampered catalog" to Pair(version(4).also { it[100] = (it[100] + 1).toByte() }, signer.envelope(version(4))),
-            "tampered signature" to Pair(version(4), signer.envelope(version(5))),
-            "other key" to Pair(version(4), TestSigner().envelope(version(4), keyId = signer.keyId)),
-            "rollback" to Pair(version(2), signer.envelope(version(2))),
-            "same version, other bytes" to Pair(version(3, generatedAt = "2026-10-19T02:00:00Z"), signer.envelope(version(3, generatedAt = "2026-10-19T02:00:00Z"))),
-            "below the bundled version" to Pair(Fixtures.catalogBytes, signer.envelope(Fixtures.catalogBytes)),
+            "tampered catalog" to Pair(version(5).also { it[100] = (it[100] + 1).toByte() }, signer.envelope(version(5))),
+            "tampered signature" to Pair(version(5), signer.envelope(version(6))),
+            "other key" to Pair(version(5), TestSigner().envelope(version(5), keyId = signer.keyId)),
+            "envelope of another file" to Pair(version(5), signer.envelope(version(5), catalog = "catalog-v1.json")),
+            "schema 1 published as catalog-v2.json" to Pair(schema1(5), signer.envelope(schema1(5))),
+            "rollback" to Pair(version(3), signer.envelope(version(3))),
+            "same version, other bytes" to Pair(version(4, generatedAt = "2026-10-25T02:00:00Z"), signer.envelope(version(4, generatedAt = "2026-10-25T02:00:00Z"))),
+            "the bundled version" to Pair(Fixtures.catalogBytes, signer.envelope(Fixtures.catalogBytes)),
         )
         cases.forEach { (name, pair) ->
             publish(pair.first, pair.second)
             val error = assertThrows(name, CatalogException::class.java) { repository.refresh() }
             assertEquals(name, SpeechErrorCodes.MODEL_CHECKSUM_MISMATCH, error.code)
-            assertEquals(name, 3, repository.current().catalog.catalogVersion)
-            assertEquals(name, 3, repository().current().catalog.catalogVersion)
+            assertEquals(name, 4, repository.current().catalog.catalogVersion)
+            assertEquals(name, 4, repository().current().catalog.catalogVersion)
         }
     }
 
@@ -123,23 +131,46 @@ class ModelCatalogRepositoryTest {
         val error = assertThrows(ModelException::class.java) { repository.refresh() }
         assertEquals(SpeechErrorCodes.IO_FAILED, error.code)
         assertEquals(ModelCatalogRepository.Trust.UNSIGNED_BUNDLED, repository.current().trust)
-        server.serve(ModelCatalogConfiguration.CATALOG_URL, version(2))
+        server.serve(ModelCatalogConfiguration.CATALOG_URL, version(3))
         assertEquals(SpeechErrorCodes.IO_FAILED, assertThrows(ModelException::class.java) { repository.refresh() }.code)
-        assertFalse(File(cache, "catalog-v1.json").exists())
+        assertFalse(File(cache, "catalog-v2.json").exists())
     }
 
     @Test
     fun `a damaged cache is dropped and the accepted version still blocks rollback`() {
-        publish(version(3))
+        publish(version(4))
         repository().refresh()
-        File(cache, "catalog-v1.json").appendText(" ")
+        File(cache, "catalog-v2.json").appendText(" ")
         val restarted = repository()
-        assertEquals("the damaged cache falls back to the bundled snapshot", 1, restarted.current().catalog.catalogVersion)
-        assertFalse(File(cache, "catalog-v1.json").exists())
-        publish(version(2))
-        assertThrows(CatalogRollbackException::class.java) { restarted.refresh() }
+        assertEquals("the damaged cache falls back to the bundled snapshot", 2, restarted.current().catalog.catalogVersion)
+        assertFalse(File(cache, "catalog-v2.json").exists())
         publish(version(3))
-        assertEquals(ModelCatalogRepository.RefreshResult(3, updated = true), restarted.refresh())
-        assertTrue(File(cache, "catalog-v1.json").exists())
+        assertThrows(CatalogRollbackException::class.java) { restarted.refresh() }
+        publish(version(4))
+        assertEquals(ModelCatalogRepository.RefreshResult(4, updated = true), restarted.refresh())
+        assertTrue(File(cache, "catalog-v2.json").exists())
+    }
+
+    @Test
+    fun `the signed v1 cache of an earlier release gives way to the bundled v2 catalog`() {
+        // What 1.0.0 / 1.1.0 left after refreshing the signed speech-models-v1 (roadmap D106, D108).
+        // zh-CN: 1.0.0 / 1.1.0 刷新已签名的 speech-models-v1 后留下的缓存 (路线图 D106, D108).
+        cache = temporary.newFolder("catalog")
+        val v1 = Fixtures.catalogV1Bytes
+        File(cache, "catalog-v1.json").writeBytes(v1)
+        File(cache, "catalog-v1.sig.json").writeBytes(signer.envelope(v1, catalog = "catalog-v1.json"))
+        File(cache, "catalog.accepted").writeText("1\n${CatalogSignatureVerifier.sha256Hex(v1)}\n")
+        val repository = repository()
+        val snapshot = repository.current()
+        assertEquals(2, snapshot.catalog.schemaVersion)
+        assertEquals(2, snapshot.catalog.catalogVersion)
+        assertEquals(ModelCatalogRepository.Trust.UNSIGNED_BUNDLED, snapshot.trust)
+        assertEquals(listOf("catalog.accepted"), cache.list()!!.sorted())
+        // The signed v2 release then replaces the unsigned snapshot; the accepted v1 is only a floor.
+        // zh-CN: 之后已签名的 v2 发布替换未签名快照; 已接受的 v1 只作下限.
+        publish(Fixtures.catalogBytes)
+        assertEquals(ModelCatalogRepository.RefreshResult(2, updated = false), repository.refresh())
+        assertEquals(ModelCatalogRepository.Trust.SIGNED_REFRESHED, repository().current().trust)
+        assertEquals(listOf("catalog-v2.json", "catalog-v2.sig.json", "catalog.accepted"), cache.list()!!.sorted())
     }
 }

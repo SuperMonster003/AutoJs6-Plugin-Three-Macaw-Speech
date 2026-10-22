@@ -9,8 +9,17 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model
  */
 object CatalogRules {
 
-    const val CATALOG_FILE = "catalog-v1.json"
-    const val SIGNATURE_FILE = "catalog-v1.sig.json"
+    /**
+     * Wire schemas the plugin reads (`distribution.CATALOG_SCHEMAS`). Each schema has its own file name, and the plugin
+     * fetches the newest one: schema 2 adds the `punct` kind with its model types and upstream members behind `./`
+     * (roadmap D106), while `catalog-v1.json` stays frozen for plugins before 1.2.0.
+     * zh-CN: 插件可读的传输格式 (`distribution.CATALOG_SCHEMAS`). 每个格式有自己的文件名, 插件读取最新的一个: schema 2 增加 `punct` 类别及其
+     * 模型类型, 以及带 `./` 的上游成员 (路线图 D106); `catalog-v1.json` 冻结, 供 1.2.0 之前的插件使用.
+     */
+    val SCHEMAS = listOf(1, 2)
+    const val SCHEMA_VERSION = 2
+    const val CATALOG_FILE = "catalog-v$SCHEMA_VERSION.json"
+    const val SIGNATURE_FILE = "catalog-v$SCHEMA_VERSION.sig.json"
     const val OFFICIAL_REPOSITORY = "SuperMonster003/AutoJs6-Shared-Assets"
     const val FAMILY_DIRECTORY = "speech-models"
     const val UPSTREAM_REPOSITORY = "k2-fsa/sherpa-onnx"
@@ -31,7 +40,14 @@ object CatalogRules {
 
     val REPOSITORY = Regex("[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*")
     val RELEASE_TAG = Regex("speech-models-v([1-9][0-9]{0,9})")
-    val MODEL_ID = Regex("(asr|kws|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
+    val MODEL_ID = Regex("(asr|kws|punct|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
+
+    /**
+     * The shape of a model of a kind this build does not know (roadmap D106): such models are skipped, not refused.
+     * zh-CN: 本构建不认识的类别的模型形式 (路线图 D106): 这类模型被跳过, 而不是整份拒绝.
+     */
+    val FUTURE_MODEL_ID = Regex("([a-z][a-z0-9]{1,15})\\.[a-z0-9][a-z0-9._-]{1,59}")
+    val FUTURE_MODEL_TYPE = Regex("[a-z0-9][a-z0-9-]{0,63}")
     val SHA256 = Regex("[0-9a-f]{64}")
     val LANGUAGE = Regex("[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*")
     val MAP_LANGUAGE = Regex("[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*")
@@ -42,7 +58,13 @@ object CatalogRules {
     val UPSTREAM_TAG = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
     val UPSTREAM_ASSET = Regex("[A-Za-z0-9][A-Za-z0-9._+-]{0,254}")
 
-    val KINDS = listOf("asr", "kws", "tts")
+    val KINDS = listOf("asr", "kws", "punct", "tts")
+
+    /** Kinds a user may import as a custom model (no catalog runtime roles for punctuation). zh-CN: 可作为自定义模型导入的类别. */
+    val CUSTOM_IMPORT_KINDS = listOf("asr", "kws", "tts")
+
+    /** Punctuation models work on text and carry no `sampleRate`. zh-CN: 标点模型处理文本, 不带 `sampleRate`. */
+    const val KIND_PUNCT = "punct"
 
     /**
      * sherpa-onnx 1.13.8 configuration family of every model type, with its required and optional file roles.
@@ -58,10 +80,28 @@ object CatalogRules {
         "vits" to ModelTypeSpec("tts", listOf("model", "tokens"), TTS_OPTIONAL),
         "matcha" to ModelTypeSpec("tts", listOf("acousticModel", "vocoder", "tokens"), TTS_OPTIONAL),
         "kokoro" to ModelTypeSpec("tts", listOf("model", "voices", "tokens"), TTS_OPTIONAL),
+        // sherpa-onnx OfflinePunctuation (ctTransformer) and OnlinePunctuation (cnnBilstm with its bpeVocab).
+        "ct-transformer" to ModelTypeSpec("punct", listOf("model"), emptyList()),
+        "cnn-bilstm" to ModelTypeSpec("punct", listOf("model", "bpeVocab"), emptyList()),
     )
     val LIST_ROLES = setOf("lexicon", "ruleFsts", "ruleFars")
     val DIRECTORY_ROLES = setOf("dataDir")
     val VALUE_ROLES = mapOf("modelType" to setOf("zipformer", "zipformer2"))
+
+    /** An upstream archive member may start with this prefix from schema 2 on (archives packed from "."). zh-CN: 上游成员前缀. */
+    const val MEMBER_PREFIX = "./"
+
+    /**
+     * The first schema that may use a kind, model type or the member prefix (`distribution.SCHEMA_INTRODUCED`); everything
+     * else exists since schema 1.
+     * zh-CN: 可以使用某个类别, 模型类型或成员前缀的最早 schema (`distribution.SCHEMA_INTRODUCED`); 其余自 schema 1 起即有.
+     */
+    val SCHEMA_INTRODUCED = mapOf("punct" to 2, "ct-transformer" to 2, "cnn-bilstm" to 2, MEMBER_PREFIX to 2)
+
+    /** `distribution.catalog_file`: the catalog file of a schema, e.g. `catalog-v1.json`. zh-CN: 某个 schema 的目录文件名. */
+    fun catalogFile(schema: Int): String = "catalog-v$schema.json"
+
+    fun signatureFile(schema: Int): String = "catalog-v$schema.sig.json"
 
     /** `install_path`: bounded ASCII, at most 12 segments of the segment pattern, storable in a USTAR header. zh-CN: 安装路径规则. */
     fun isInstallPath(value: String): Boolean {

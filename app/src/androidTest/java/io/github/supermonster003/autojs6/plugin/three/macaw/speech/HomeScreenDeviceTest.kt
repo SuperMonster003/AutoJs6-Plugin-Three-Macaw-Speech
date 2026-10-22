@@ -232,7 +232,7 @@ class HomeScreenDeviceTest {
     /** A manager over the fixture catalog of the JVM tests, in a private folder. zh-CN: 基于 JVM 测试夹具目录, 位于私有文件夹的管理器. */
     private fun privateManager(): ModelManager {
         val assets = instrumentation.context.assets
-        val catalog = assets.open("model-fixtures/catalog-v1.json").use { it.readBytes() }
+        val catalog = assets.open("model-fixtures/catalog-v2.json").use { it.readBytes() }
         val publicKey = assets.open("model-fixtures/catalog-signing-public.pem").use { it.readBytes() }
         val transport = UrlConnectionTransport(userAgent = "macaw-home-screen-test")
         val store = ModelStore(File(root, "models"))

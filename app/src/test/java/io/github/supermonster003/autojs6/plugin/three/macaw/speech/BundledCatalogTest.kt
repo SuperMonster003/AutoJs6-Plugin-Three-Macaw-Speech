@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogSignatureVerifier
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelCatalogConfiguration
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelCatalogParser
@@ -13,9 +14,9 @@ import java.nio.file.Files
 /**
  * The bundled catalog of roadmap P2.4 (`assets/catalog/`, locked in `locks/speech-catalog.lock`): the exact Shared-Assets
  * bytes, a catalog the parser accepts at the version the plugin advertises, the pinned family key, and the rule of
- * appendix D Q12: once `catalog-v1.sig.json` is bundled it must verify against the bundled key, whose key id it names.
+ * appendix D Q12: once `catalog-v2.sig.json` is bundled it must verify against the bundled key, whose key id it names.
  * zh-CN: 路线图 P2.4 的内置目录 (`assets/catalog/`, 锁定于 `locks/speech-catalog.lock`): Shared-Assets 的原字节, 解析器接受且版本与插件
- * 声明一致的目录, 固定的类别公钥, 以及附录 D Q12 的规则: 一旦内置 `catalog-v1.sig.json`, 它必须能用内置公钥验签, 且所写密钥 ID 与该公钥一致.
+ * 声明一致的目录, 固定的类别公钥, 以及附录 D Q12 的规则: 一旦内置 `catalog-v2.sig.json`, 它必须能用内置公钥验签, 且所写密钥 ID 与该公钥一致.
  */
 class BundledCatalogTest {
 
@@ -24,12 +25,12 @@ class BundledCatalogTest {
 
     @Test
     fun `the bundled files are exactly the locked bytes`() {
-        assertEquals("$directory/catalog-v1.json", lock["catalog.path"])
+        assertEquals("$directory/${CatalogRules.CATALOG_FILE}", lock["catalog.path"])
         assertEquals("$directory/catalog-signing-public.pem", lock["public-key.path"])
         assertEquals(lock["catalog.sha256"], LockFiles.sha256(lock.getValue("catalog.path")))
         assertEquals(lock["public-key.sha256"], LockFiles.sha256(lock.getValue("public-key.path")))
         val bundled = Files.list(RepositoryFiles.path(directory)).use { files -> files.map { it.fileName.toString() }.toList() }.toSet()
-        assertTrue("only the catalog, its key and an optional signature: $bundled", bundled - setOf("catalog-v1.sig.json") == setOf("catalog-v1.json", "catalog-signing-public.pem"))
+        assertTrue("only the catalog, its key and an optional signature: $bundled", bundled - setOf(CatalogRules.SIGNATURE_FILE) == setOf(CatalogRules.CATALOG_FILE, "catalog-signing-public.pem"))
     }
 
     @Test
@@ -37,8 +38,9 @@ class BundledCatalogTest {
         val catalog = ModelCatalogParser().parse(Files.readAllBytes(RepositoryFiles.path(lock.getValue("catalog.path"))))
         assertEquals(lock.getValue("catalog.version").toInt(), catalog.catalogVersion)
         assertEquals(ThreeMacawSpeechContract.CATALOG_VERSION, catalog.catalogVersion)
+        assertEquals(CatalogRules.SCHEMA_VERSION, catalog.schemaVersion)
         assertTrue(catalog.models.isNotEmpty())
-        assertTrue("every kind of the contract has a model", catalog.models.map { it.kind }.toSet().containsAll(listOf("asr", "kws", "tts")))
+        assertTrue("every kind of the contract has a model", catalog.models.map { it.kind }.toSet().containsAll(listOf("asr", "kws", "punct", "tts")))
     }
 
     @Test
@@ -53,9 +55,10 @@ class BundledCatalogTest {
 
     @Test
     fun `a bundled signature must verify with the bundled key and name its key id`() {
-        val signature = RepositoryFiles.path("$directory/catalog-v1.sig.json")
+        val signature = RepositoryFiles.path("$directory/${CatalogRules.SIGNATURE_FILE}")
         if (!Files.exists(signature)) {
-            // Appendix D Q12: before roadmap P2.5 the snapshot is unsigned; the plugin marks it as such at run time.
+            // Appendix D Q12: before the maintainer signs it (roadmap P2.5, D108) the snapshot is unsigned; the plugin marks it
+            // as such at run time.
             assertTrue("an unsigned snapshot comes from the pending catalog", lock.getValue("catalog.source").contains("/pending/"))
             return
         }

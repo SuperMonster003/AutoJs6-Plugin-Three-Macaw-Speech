@@ -18,12 +18,19 @@ class CatalogSignatureVerifierTest {
     private val catalog = Fixtures.catalogBytes
 
     @Test
-    fun `the OpenSSL signature of the reference tool verifies`() {
+    fun `the OpenSSL signatures of the reference tool verify under their own file names`() {
         val der = CatalogSignatureVerifier.derFromPem(Fixtures.bytes("catalog-signing-public.pem"))
-        val envelope = StrictJson.parseObject(Fixtures.bytes("catalog-v1.sig.json"))
-        val verifier = CatalogSignatureVerifier(der, envelope["keyId"] as String)
-        verifier.verify(catalog, Fixtures.bytes("catalog-v1.sig.json"))
-        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog + " ".toByteArray(), Fixtures.bytes("catalog-v1.sig.json")) }
+        val v2 = Fixtures.bytes("catalog-v2.sig.json")
+        val v1 = Fixtures.bytes("catalog-v1.sig.json")
+        val verifier = CatalogSignatureVerifier(der, StrictJson.parseObject(v2)["keyId"] as String)
+        verifier.verify(catalog, v2)
+        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog + " ".toByteArray(), v2) }
+        verifier.verify(Fixtures.catalogV1Bytes, v1, catalogName = "catalog-v1.json")
+        // The envelope names its file (crypto.py since schema 2): a v1 envelope cannot vouch for catalog-v2.json, nor a
+        // v2 envelope for catalog-v1.json.
+        // zh-CN: 信封写明文件名 (schema 2 起的 crypto.py): v1 信封不能为 catalog-v2.json 作保, v2 信封也不能为 catalog-v1.json 作保.
+        assertThrows(CatalogSignatureException::class.java) { verifier.verify(Fixtures.catalogV1Bytes, v1) }
+        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog, v2, catalogName = "catalog-v1.json") }
     }
 
     @Test
@@ -69,10 +76,10 @@ class CatalogSignatureVerifierTest {
         val signature = Base64Strict.encode(signer.derSignature(catalog))
         val text = signer.envelope(catalog, signature = signature).toString(Charsets.UTF_8)
         val bad = listOf(
-            text.replace("\"catalog\": \"catalog-v1.json\"", "\"catalog\": \"catalog-v2.json\""),
+            text.replace("\"catalog\": \"catalog-v2.json\"", "\"catalog\": \"catalog-v1.json\""),
             text.replace("ECDSA_P256_SHA256", "ECDSA_P384_SHA384"),
             text.replaceFirst("{", "{\n  \"extra\": true,"),
-            text.replace("  \"catalog\": \"catalog-v1.json\",\n", ""),
+            text.replace("  \"catalog\": \"catalog-v2.json\",\n", ""),
             text.replace(signature, signature.dropLast(4) + "AAAA"),
             text.replace(signature, signature.trimEnd('=') ),
             text.replace(signature, " $signature"),

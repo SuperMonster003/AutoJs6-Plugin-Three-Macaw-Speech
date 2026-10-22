@@ -52,7 +52,8 @@ data class CatalogModelVersion(
     val versionCode: Int,
     val modelType: String,
     val languages: List<String>,
-    val sampleRate: Int,
+    /** Null for punctuation models, which work on text (schema 2). zh-CN: 标点模型处理文本, 为 null (schema 2). */
+    val sampleRate: Int?,
     val speakers: Int?,
     val releasedAt: String,
     val license: ModelLicense,
@@ -82,6 +83,11 @@ data class CatalogModel(
     val summary: Map<String, String>,
     val recommended: Boolean,
     val versions: List<CatalogModelVersion>,
+    /**
+     * The latest active version this build knows: the catalog's `recommendedVersionCode`, unless roadmap D106 skipped
+     * that version.
+     * zh-CN: 本构建认识的最新可用版本: 即目录的 `recommendedVersionCode`, 除非该版本被路线图 D106 跳过.
+     */
     val recommendedVersionCode: Int?,
 ) {
     /** The version new installs use, null when every version is deprecated or revoked. zh-CN: 新安装使用的版本. */
@@ -99,10 +105,12 @@ data class CatalogModel(
 }
 
 /**
- * A validated catalog (wire schema v1) and the queries of `listModels` and the default model selection.
- * zh-CN: 已校验的目录 (传输格式 v1), 以及 `listModels` 与默认模型选择所需的查询.
+ * A validated catalog (wire schema 1 or 2, [schemaVersion]) and the queries of `listModels` and the default model
+ * selection; [models] leaves out what roadmap D106 skipped.
+ * zh-CN: 已校验的目录 (传输格式 1 或 2, 见 [schemaVersion]), 以及 `listModels` 与默认模型选择所需的查询; [models] 不含按路线图 D106 跳过的条目.
  */
 data class ModelCatalog(
+    val schemaVersion: Int,
     val catalogVersion: Int,
     val releaseTag: String,
     val generatedAt: String,

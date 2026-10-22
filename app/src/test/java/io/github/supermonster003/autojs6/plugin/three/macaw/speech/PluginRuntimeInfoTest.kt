@@ -48,7 +48,7 @@ class PluginRuntimeInfoTest {
         assertEquals(1, fields.contractVersion)
         // Roadmap P2.3 / P2.4: model management, then recognition (P3), synthesis and the system TTS engine (P4).
         assertEquals(listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode"), fields.features)
-        assertEquals("the version of assets/catalog/catalog-v1.json (BundledCatalogTest)", 1, fields.catalogVersion)
+        assertEquals("the version of assets/catalog/catalog-v2.json (BundledCatalogTest)", 2, fields.catalogVersion)
     }
 
     @Test
