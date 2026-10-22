@@ -5,10 +5,16 @@ import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.KeywordSpotter
 import com.k2fsa.sherpa.onnx.KeywordSpotterConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
+import com.k2fsa.sherpa.onnx.OfflinePunctuation
+import com.k2fsa.sherpa.onnx.OfflinePunctuationConfig
+import com.k2fsa.sherpa.onnx.OfflinePunctuationModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
 import com.k2fsa.sherpa.onnx.OnlineModelConfig
+import com.k2fsa.sherpa.onnx.OnlinePunctuation
+import com.k2fsa.sherpa.onnx.OnlinePunctuationConfig
+import com.k2fsa.sherpa.onnx.OnlinePunctuationModelConfig
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineStream
@@ -19,6 +25,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.Au
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.kws.KeywordTokenizer
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.KeywordStream
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.PunctuationRules
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Punctuator
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.RecognizedText
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SegmentRecognizer
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.StreamingStream
@@ -66,6 +74,24 @@ class KeywordEngine(val spotter: KeywordSpotter, val modelId: String, val tokens
     override fun close() = spotter.release()
 
     fun stream(buffer: String, count: Int): KeywordStream = KeywordEngineStream(this, buffer, count)
+}
+
+/**
+ * A loaded punctuation model (roadmap D107): `OfflinePunctuation` for ct-transformer, `OnlinePunctuation` for
+ * cnn-bilstm; both work on whole texts, one call at a time per instance.
+ * zh-CN: 已加载的标点模型 (路线图 D107): ct-transformer 用 `OfflinePunctuation`, cnn-bilstm 用 `OnlinePunctuation`; 两者都处理整段文本, 每个实例
+ * 一次一个调用.
+ */
+class PunctuationEngine(
+    val modelId: String,
+    val modelType: String,
+    val languages: List<String>,
+    private val add: (String) -> String,
+    private val release: () -> Unit,
+) : Closeable, Punctuator {
+    override fun punctuate(text: String): String = synchronized(this) { add(text) }
+
+    override fun close() = release()
 }
 
 private class OnlineEngineStream(private val engine: OnlineEngine, hotwords: List<String>) : StreamingStream {
@@ -217,6 +243,28 @@ object SherpaEngines {
         val spotter = load(model) { KeywordSpotter(null, config) }
         requireNative(spotter, model.modelId)
         return KeywordEngine(spotter, model.modelId, tokens, roles.files(model, "lexicon").map(::File))
+    }
+
+    /** A punctuation model of roadmap D107 (one onnxruntime thread). zh-CN: 路线图 D107 的标点模型 (onnxruntime 单线程). */
+    fun punctuation(model: InstalledModel): PunctuationEngine {
+        val roles = RuntimeRoles.of(model)
+        return when (model.modelType) {
+            PunctuationRules.CT_TRANSFORMER -> {
+                val config = OfflinePunctuationConfig(OfflinePunctuationModelConfig(ctTransformer = roles.file(model, "model"), numThreads = 1))
+                val punctuation = load(model) { OfflinePunctuation(null, config) }
+                requireNative(punctuation, model.modelId)
+                PunctuationEngine(model.modelId, model.modelType, model.languages, punctuation::addPunctuation, punctuation::release)
+            }
+            PunctuationRules.CNN_BILSTM -> {
+                val config = OnlinePunctuationConfig(
+                    OnlinePunctuationModelConfig(cnnBilstm = roles.file(model, "model"), bpeVocab = roles.file(model, "bpeVocab"), numThreads = 1),
+                )
+                val punctuation = load(model) { OnlinePunctuation(null, config) }
+                requireNative(punctuation, model.modelId)
+                PunctuationEngine(model.modelId, model.modelType, model.languages, punctuation::addPunctuation, punctuation::release)
+            }
+            else -> throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "${model.modelId} is not a punctuation model this build can load (${model.modelType})")
+        }
     }
 
     fun vad(assets: AssetManager, settings: SherpaRuntime.VadSettings): SileroVoiceDetector = SileroVoiceDetector(SherpaRuntime.createVad(assets, settings))

@@ -367,9 +367,10 @@ internal class DictationBinder(
         val recordEarly = !external && !foreground
         // Queued after a yielding wake session stops its recording (D57): both run on the ASR thread.
         if (recordEarly) onAsr { startRecording() }
-        loadThen({ listOf(runtime.acquireAsr(model, options.language, options.hotwords.isNotEmpty())) }) {
+        loadThen({ runtime.acquireRecognition(model, options.language, options.hotwords.isNotEmpty(), options.punctuation) }) {
             val engine = leases.first().engine
-            session.start(model.modelId) { sink -> runtime.dictation(engine, options, sink) }
+            val punctuator = runtime.punctuator(model, leases)
+            session.start(model.modelId) { sink -> runtime.dictation(engine, options, sink, punctuator) }
             warnings.forEach { session.warning(it.code, it.message) }
             if (external || session.isEnded) return@loadThen
             if (recording) early.drain { if (!session.isEnded) session.accept(it) } else startMicrophone()
@@ -449,7 +450,9 @@ internal class WakeBinder(
             val acquired = ArrayList<EngineCache.Lease<out Closeable>>()
             try {
                 acquired += runtime.acquireKeywords(keywordModel)
-                if (listen != null && listenModel != null) acquired += runtime.acquireAsr(listenModel, listen.language, listen.hotwords.isNotEmpty())
+                if (listen != null && listenModel != null) {
+                    acquired += runtime.acquireRecognition(listenModel, listen.language, listen.hotwords.isNotEmpty(), listen.punctuation)
+                }
             } catch (t: Throwable) {
                 acquired.forEach { runCatching { it.close() } }
                 throw t
@@ -459,11 +462,12 @@ internal class WakeBinder(
             val spotter = leases.first().engine as KeywordEngine
             val stream = spotter.stream(buffer, session.options.keywords.size)
             val asr = leases.getOrNull(1)?.engine
+            val punctuator = listenModel?.let { runtime.punctuator(it, leases) }
             session.start(
                 keywordModel.modelId,
                 stream,
                 listenModel?.modelId,
-                if (listen != null && asr != null) { sink -> runtime.dictation(asr, listen, sink) } else null,
+                if (listen != null && asr != null) { sink -> runtime.dictation(asr, listen, sink, punctuator) } else null,
             )
             // A takeover that came while the models loaded keeps the microphone until it is released (D57).
             if (!session.isEnded && !session.suspended) startMicrophone()

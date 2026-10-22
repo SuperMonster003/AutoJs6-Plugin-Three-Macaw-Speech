@@ -41,6 +41,10 @@ interface Dictation : Closeable {
     fun flush(emitFinal: Boolean)
 }
 
+/** A final's text after the [punctuator] of roadmap D107, when `punctuation` is on. zh-CN: `punctuation` 开启时经 [punctuator] 处理后的 `final` 文本. */
+internal fun punctuate(text: String, punctuation: Boolean, punctuator: Punctuator?): String =
+    if (punctuation && punctuator != null) punctuator.punctuate(text) else text
+
 /** Splits arbitrary chunks into VAD windows. zh-CN: 把任意长度的块切成 VAD 窗口. */
 internal class WindowSplitter(private val size: Int) {
     private val pending = FloatArray(size)
@@ -71,11 +75,13 @@ internal class WindowSplitter(private val size: Int) {
  * stream starts over. With [gate] (`vad: true`, the default) only speech reaches the recognizer: up to
  * [PREROLL_MILLIS] before the VAD fired, then everything until the utterance closes; without it every sample is
  * decoded. sherpa-onnx's own endpoint rules are off: the session's `silenceEndMillis` cannot change a shared
- * recognizer's configuration.
+ * recognizer's configuration. With `punctuation` on, [punctuator] (roadmap D107) punctuates each final, never a
+ * partial.
  * zh-CN: 流式听写 (路线图 D17): `OnlineRecognizer` 流随音频到达而解码, 逐词报告 `partial`; silero VAD 在 [silenceEndMillis] 静音后 (或
  * [MAX_UTTERANCE_MILLIS] 后) 结束一个语句, 以一段静音冲刷流, 有文本的语句成为 `final` + `endpoint`, 然后流重新开始. 启用 [gate] 时
  * (`vad: true`, 默认) 只有语音进入识别器: VAD 触发前至多 [PREROLL_MILLIS] 的音频, 之后直到语句结束的全部音频; 不启用时每个采样都被解码.
- * sherpa-onnx 自身的端点规则关闭: 会话的 `silenceEndMillis` 无法改变共享识别器的配置.
+ * sherpa-onnx 自身的端点规则关闭: 会话的 `silenceEndMillis` 无法改变共享识别器的配置. `punctuation` 开启时, [punctuator] (路线图 D107)
+ * 给每句 `final` 加标点, 从不处理 `partial`.
  */
 class StreamingDictation(
     private val stream: StreamingStream,
@@ -85,6 +91,7 @@ class StreamingDictation(
     private val reportVad: Boolean,
     silenceEndMillis: Long,
     private val punctuation: Boolean,
+    private val punctuator: Punctuator? = null,
     private val onClose: () -> Unit = {},
 ) : Dictation {
 
@@ -187,9 +194,10 @@ class StreamingDictation(
     private fun closeUtterance(emitFinal: Boolean) {
         stream.accept(FloatArray(TAIL_PADDING_SAMPLES))
         stream.decode()
-        val text = SpeechText.clean(stream.text(), punctuation)
+        val recognized = SpeechText.clean(stream.text(), punctuation)
         stream.reset()
-        if (emitFinal && text.isNotEmpty()) {
+        if (emitFinal && recognized.isNotEmpty()) {
+            val text = punctuate(recognized, punctuation, punctuator)
             val end = if (lastSpeech > utteranceStart) lastSpeech else position
             sink.final(Utterance(text, segmentIndex, AudioInput.millis(utteranceStart), AudioInput.millis(end)))
             sink.endpoint()
@@ -226,10 +234,11 @@ class StreamingDictation(
  * Dictation with an offline model (SenseVoice, roadmap D17): the silero VAD cuts speech segments (at most
  * [MAX_SEGMENT_MILLIS] each), every segment is recognized as soon as it ends and the utterance so far is reported as
  * `partial` (segment level, not word level); [silenceEndMillis] of silence after the last segment turns the utterance
- * into `final` + `endpoint`. The `language`, `emotion` and `event` of a final come from its last segment.
+ * into `final` + `endpoint`. The `language`, `emotion` and `event` of a final come from its last segment. A
+ * [punctuator] (roadmap D107, none for SenseVoice, which punctuates itself) works on finals as in [StreamingDictation].
  * zh-CN: 离线模型听写 (SenseVoice, 路线图 D17): silero VAD 切出语音段 (每段至多 [MAX_SEGMENT_MILLIS]), 每段一结束即识别, 当前语句以
  * `partial` 报告 (段级而非词级); 最后一段之后静音 [silenceEndMillis] 时语句成为 `final` + `endpoint`. `final` 的 `language`, `emotion` 与
- * `event` 取自其最后一段.
+ * `event` 取自其最后一段. [punctuator] (路线图 D107, SenseVoice 自带标点因此没有) 与 [StreamingDictation] 一样只处理 `final`.
  */
 class OfflineDictation(
     private val recognizer: SegmentRecognizer,
@@ -238,6 +247,7 @@ class OfflineDictation(
     private val reportVad: Boolean,
     silenceEndMillis: Long,
     private val punctuation: Boolean,
+    private val punctuator: Punctuator? = null,
     private val onClose: () -> Unit = {},
 ) : Dictation {
 
@@ -292,8 +302,9 @@ class OfflineDictation(
     }
 
     private fun closeUtterance(emitFinal: Boolean) {
-        val text = SpeechText.join(parts.map { it.second.text })
-        if (emitFinal && text.isNotEmpty()) {
+        val recognized = SpeechText.join(parts.map { it.second.text })
+        if (emitFinal && recognized.isNotEmpty()) {
+            val text = punctuate(recognized, punctuation, punctuator)
             val tags = parts.last().second
             sink.final(
                 Utterance(

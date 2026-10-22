@@ -10,6 +10,7 @@ import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioFiles
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.kws.KeywordTokenizer
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelManager
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
@@ -18,6 +19,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.KeywordEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.OfflineEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.OnlineEngine
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.PunctuationEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.RuntimeRoles
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaRuntime
@@ -29,10 +31,14 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Keyword
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.ListenOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.OfflineDictation
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.PunctuationModel
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.PunctuationRules
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Punctuator
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.RecognizeOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechWarning
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.StreamingDictation
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.UtterancePunctuation
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VadOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeOptions
@@ -177,6 +183,65 @@ internal class SpeechRuntime private constructor(val context: Context) {
         engines.acquire(EngineKey(model.modelId, model.versionCode, if (withHotwords) "hotwords" else "greedy"), model.installedBytes) { SherpaEngines.online(model, withHotwords) }
     }
 
+    /**
+     * The recognizer lease of [model] followed by its punctuation leases ([acquirePunctuation]); loads on the calling
+     * thread. zh-CN: [model] 的识别器租约, 其后是其标点租约 ([acquirePunctuation]); 在调用线程上加载.
+     */
+    fun acquireRecognition(model: InstalledModel, language: String?, hotwords: Boolean, punctuation: Boolean): List<EngineCache.Lease<out Closeable>> {
+        val asr = acquireAsr(model, language, hotwords)
+        return try {
+            listOf(asr) + acquirePunctuation(model, punctuation)
+        } catch (t: Throwable) {
+            runCatching { asr.close() }
+            throw t
+        }
+    }
+
+    /**
+     * Leases of the punctuation models [recognizer] uses (roadmap D107): none when [punctuation] is off, the recognizer
+     * punctuates itself or no installed punctuation model covers its languages. A model that fails to load is skipped,
+     * so its finals stay as recognized. Loads on the calling thread.
+     * zh-CN: [recognizer] 所用标点模型的租约 (路线图 D107): [punctuation] 关闭, 识别器自带标点或没有覆盖其语言的已安装标点模型时为空. 加载失败的模型
+     * 被跳过, 其最终结果保持识别原样. 在调用线程上加载.
+     */
+    fun acquirePunctuation(recognizer: InstalledModel, punctuation: Boolean): List<EngineCache.Lease<PunctuationEngine>> {
+        if (!punctuation || recognizer.modelType in PunctuationRules.SELF_PUNCTUATING_TYPES) return emptyList()
+        val installed = models.store.installed().filter { it.kind == CatalogRules.KIND_PUNCT && models.store.isIntact(it) }
+        if (installed.isEmpty()) return emptyList()
+        val default = runCatching { models.defaultModel(CatalogRules.KIND_PUNCT)?.modelId }.getOrNull()
+        val byId = installed.associateBy { it.modelId }
+        val candidates = PunctuationRules.candidates(
+            recognizer.modelType, recognizer.languages, installed.map { PunctuationModel(it.modelId, it.modelType, it.languages, it.modelId == default) },
+        )
+        val acquired = ArrayList<EngineCache.Lease<PunctuationEngine>>()
+        try {
+            candidates.forEach { candidate ->
+                val model = byId.getValue(candidate.modelId)
+                try {
+                    acquired += engines.acquire(EngineKey(model.modelId, model.versionCode, "punct"), model.installedBytes) { SherpaEngines.punctuation(model) }
+                } catch (e: RuntimeException) {
+                    Log.w(TAG, "Loading the punctuation model ${model.modelId} failed: ${e.message ?: e.javaClass.simpleName}")
+                }
+            }
+        } catch (t: Throwable) {
+            acquired.forEach { runCatching { it.close() } }
+            throw t
+        }
+        return acquired
+    }
+
+    /**
+     * The punctuation of the finals of [recognizer] with the punctuation engines among [leases] (roadmap D107), or null
+     * when there are none. zh-CN: 用 [leases] 中的标点引擎给 [recognizer] 的最终结果加标点 (路线图 D107), 没有标点引擎时为 null.
+     */
+    fun punctuator(recognizer: InstalledModel, leases: List<EngineCache.Lease<out Closeable>>): Punctuator? {
+        val punctuation = leases.mapNotNull { it.engine as? PunctuationEngine }
+        if (punctuation.isEmpty()) return null
+        return UtterancePunctuation(recognizer.languages, punctuation.map { PunctuationModel(it.modelId, it.modelType, it.languages) to it }) { model, e ->
+            Log.w(TAG, "Punctuation with ${model.modelId} failed: ${e.message ?: e.javaClass.simpleName}")
+        }
+    }
+
     fun acquireKeywords(model: InstalledModel): EngineCache.Lease<KeywordEngine> =
         engines.acquire(EngineKey(model.modelId, model.versionCode, "kws"), model.installedBytes) { SherpaEngines.keywords(model, emptyKeywords) }
 
@@ -227,21 +292,23 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     /**
      * A dictation on [engine] for a session or a wake round (roadmap D17): streaming models gate with the VAD when
-     * `vad` is on; offline models always cut with the VAD. Built on the ASR thread.
-     * zh-CN: 在 [engine] 上为会话或唤醒轮次构建听写 (路线图 D17): 流式模型在 `vad` 开启时以 VAD 门控; 离线模型总是以 VAD 切段. 在 ASR 线程上构建.
+     * `vad` is on; offline models always cut with the VAD; [punctuator] punctuates the finals (roadmap D107). Built on the
+     * ASR thread.
+     * zh-CN: 在 [engine] 上为会话或唤醒轮次构建听写 (路线图 D17): 流式模型在 `vad` 开启时以 VAD 门控; 离线模型总是以 VAD 切段; [punctuator] 给最终
+     * 结果加标点 (路线图 D107). 在 ASR 线程上构建.
      */
-    fun dictation(engine: Closeable, options: ListenOptions, sink: DictationSink): Dictation = when (engine) {
+    fun dictation(engine: Closeable, options: ListenOptions, sink: DictationSink, punctuator: Punctuator? = null): Dictation = when (engine) {
         is OnlineEngine -> {
             val vad = SherpaEngines.vad(context.assets, SESSION_VAD)
             val stream = engine.stream(options.hotwords)
-            StreamingDictation(stream, vad, sink, gate = options.vad, reportVad = options.vad, options.silenceEndMillis, options.punctuation) {
+            StreamingDictation(stream, vad, sink, gate = options.vad, reportVad = options.vad, options.silenceEndMillis, options.punctuation, punctuator) {
                 runCatching { stream.close() }
                 runCatching { vad.close() }
             }
         }
         is OfflineEngine -> {
             val vad = SherpaEngines.vad(context.assets, SESSION_VAD)
-            OfflineDictation(engine, vad, sink, reportVad = options.vad, options.silenceEndMillis, options.punctuation) { runCatching { vad.close() } }
+            OfflineDictation(engine, vad, sink, reportVad = options.vad, options.silenceEndMillis, options.punctuation, punctuator) { runCatching { vad.close() } }
         }
         else -> throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "Not a recognizer: ${engine.javaClass.simpleName}")
     }
@@ -279,10 +346,14 @@ internal class SpeechRuntime private constructor(val context: Context) {
         val model = resolve(SpeechContract.KIND_ASR, options.model)
         val warnings = warnings(model, options.language, options.hotwords)
         return AudioFiles.open(audio).use { reader ->
-            acquireAsr(model, options.language, options.hotwords.isNotEmpty()).use { lease ->
+            val leases = acquireRecognition(model, options.language, options.hotwords.isNotEmpty(), options.punctuation)
+            try {
+                val punctuator = punctuator(model, leases)
                 FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings, cancelled) { sink ->
-                    fileDictation(lease.engine, options, sink)
+                    fileDictation(leases.first().engine, options, sink, punctuator)
                 }
+            } finally {
+                leases.forEach { runCatching { it.close() } }
             }
         }
     }
@@ -306,18 +377,18 @@ internal class SpeechRuntime private constructor(val context: Context) {
         return AudioFiles.open(audio).use { reader -> SherpaEngines.vad(context.assets, settings).use { vad -> FileRecognition.detectVoice(reader, vad) } }
     }
 
-    private fun fileDictation(engine: Closeable, options: RecognizeOptions, sink: DictationSink): Dictation = when (engine) {
+    private fun fileDictation(engine: Closeable, options: RecognizeOptions, sink: DictationSink, punctuator: Punctuator?): Dictation = when (engine) {
         is OnlineEngine -> {
             val vad = SherpaEngines.vad(context.assets, SESSION_VAD)
             val stream = engine.stream(options.hotwords)
-            StreamingDictation(stream, vad, sink, gate = options.vad, reportVad = false, FILE_SILENCE_END_MILLIS, options.punctuation) {
+            StreamingDictation(stream, vad, sink, gate = options.vad, reportVad = false, FILE_SILENCE_END_MILLIS, options.punctuation, punctuator) {
                 runCatching { stream.close() }
                 runCatching { vad.close() }
             }
         }
         is OfflineEngine -> {
             val detector = if (options.vad) SherpaEngines.vad(context.assets, SESSION_VAD) else FixedSegments()
-            OfflineDictation(engine, detector, sink, reportVad = false, 0L, options.punctuation) { runCatching { detector.close() } }
+            OfflineDictation(engine, detector, sink, reportVad = false, 0L, options.punctuation, punctuator) { runCatching { detector.close() } }
         }
         else -> throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "Not a recognizer: ${engine.javaClass.simpleName}")
     }
