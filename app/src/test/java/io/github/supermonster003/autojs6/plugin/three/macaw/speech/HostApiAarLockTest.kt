@@ -10,9 +10,11 @@ import java.util.zip.ZipFile
 /**
  * The host API lock, the staged AARs and the human-readable records describe the same bytes (roadmap 5.5, P0.1).
  * Gradle enforces the lock during configuration; this test keeps `libs/README.md` and `THIRD_PARTY_NOTICES.md` honest
- * and pins the artifact set: `common-plugin-api` (P0.1) and the speech contract `speech-api` (P1.1).
+ * and pins the artifact set: `common-plugin-api` (P0.1), the speech contract `speech-api` (P1.1) and the plugin tool
+ * contract `plugin-tool-api` (P7.6.1, D99).
  * zh-CN: 宿主 API 锁文件, 暂存的 AAR 与人读记录描述同一份字节 (路线图 5.5, P0.1). Gradle 在配置阶段强制锁文件; 本测试
- * 保证 `libs/README.md` 与 `THIRD_PARTY_NOTICES.md` 如实记录, 并固定产物集合: `common-plugin-api` (P0.1) 与语音契约 `speech-api` (P1.1).
+ * 保证 `libs/README.md` 与 `THIRD_PARTY_NOTICES.md` 如实记录, 并固定产物集合: `common-plugin-api` (P0.1), 语音契约 `speech-api` (P1.1) 与插件工具契约
+ * `plugin-tool-api` (P7.6.1, D99).
  */
 class HostApiAarLockTest {
 
@@ -22,7 +24,7 @@ class HostApiAarLockTest {
 
     @Test
     fun `the lock lists the staged host AARs with matching digests`() {
-        assertEquals(setOf("common-plugin-api", "speech-api"), ids)
+        assertEquals(setOf("common-plugin-api", "speech-api", "plugin-tool-api"), ids)
         assertEquals(setOf("format") + ids.flatMap { listOf("$it.file", "$it.sha256") }, lock.keys)
         ids.forEach { id ->
             val file = lock.getValue("$id.file")

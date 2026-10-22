@@ -405,6 +405,20 @@
             </intent-filter>
         </service>
 
+        <!--
+            Plugin tools of AutoJs6 (contract v1, roadmap P7.6, D87 - D99): speech_listen, speech_speak, speech_transcribe and
+            speech_synthesize for MCP Server, 3-Stove Agent and plugins.tools. It runs in the plugin's only process (D88), so
+            the tools share the microphone session table and the loaded models with the assistant and the scripts.
+        -->
+        <service
+            android:name=".tool.SpeechToolService"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN">
+            <intent-filter>
+                <action android:name="org.autojs.plugin.TOOL_PROVIDER" />
+            </intent-filter>
+        </service>
+
         <!-- Model operations stay internal to the plugin. -->
         <service
             android:name=".service.ModelOperationService"

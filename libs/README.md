@@ -14,6 +14,7 @@ process and needs the AIDL stubs and constants at run time.
 | --- | --- | --- | --- |
 | `common-plugin-api.aar` | `plugin-api/common-plugin-api` | `PluginInfo`, `IPluginInfoProvider`, `PluginActions`, `PluginCapabilityKeys`, `AutoJs6HostSettingsContract` | `ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a` |
 | `speech-api.aar` | `plugin-api/speech-api` | `ISpeechPlugin`, `ISpeechSession`, the session, wake and progress callbacks, `SpeechPluginActions`, `SpeechPluginIds`, `SpeechContract`, `SpeechCapabilityKeys`, `SpeechLimits`, `SpeechOptionKeys`, `SpeechResultKeys`, `SpeechModelKeys`, `SpeechErrorCodes` | `18d98c5dd386de30a02c34cd80d44ef822abc5729b6570209ba55119c2990e1f` |
+| `plugin-tool-api.aar` | `plugin-api/plugin-tool-api` | `IPluginToolProvider`, the call and output tree callbacks, `PluginToolProviderService`, `PluginToolCall`, `PluginToolResult`, `PluginToolContract`, `PluginToolLimits`, `PluginToolNames`, `PluginToolValues`, `PluginToolErrorCodes` and the key objects | `c0e31a199d67710a9ea00cb82c5403b4bca1f45b67f6968158c7530309ce2875` |
 
 Provenance (2026-10-16): `common-plugin-api.aar` was assembled with `:plugin-api:common-plugin-api:assembleRelease`
 on the host snapshot `6c151c900e` (6.8.0, versionCode 5352). The module last changed at host commit `aa8ebaf72e`
@@ -50,3 +51,7 @@ To update: download the new release asset, record its tag commit, size and SHA-2
 ## Packaged speech entry (2026-10-20)
 
 The current speech-api.aar is rebuilt from host commit be1b3eee0ab9817fff5ebbdffcada282330e9313 using :plugin-api:speech-api:assembleRelease. SpeechPluginActions adds the separate packaged service action and normal permission; the original signed service, AIDL transaction order, contract version 1 and minimum host build 5456 remain unchanged. This replaces the earlier 0b1d9a0d26dcd68c7f59c403e88c70b4491fd64d7ec38a2edcc14ea9e6a62cb3 artifact.
+
+## Plugin tool provider (2026-10-22)
+
+plugin-tool-api.aar (roadmap P7.6.1, D99) was assembled with :plugin-api:plugin-tool-api:assembleRelease from host commit b6b1468d41a5815e1c9d6d4b3eb55302d4c5fa88. The module last changed at 179a25dd95 (Java 17 and Kotlin 2.2 build of the published contract libraries); its base class PluginToolProviderService exists since b4ae5535e. The AAR keeps org.autojs.plugin.tool.api through its consumer rules and needs the staged common-plugin-api.aar for PluginInfo. It is the same contract the host publishes as io.github.supermonster003:autojs6-plugin-tool-api.

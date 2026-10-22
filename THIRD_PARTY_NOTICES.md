@@ -99,6 +99,7 @@ APK carries the same bytes as `assets/legal/COPYING.UCD` (`third_party/licenses/
 | --- | --- | --- |
 | `libs/common-plugin-api.aar` | AutoJs6 host module `plugin-api/common-plugin-api` (https://github.com/SuperMonster003/AutoJs6) | MPL-2.0 |
 | `libs/speech-api.aar` | AutoJs6 host module `plugin-api/speech-api` (https://github.com/SuperMonster003/AutoJs6) | MPL-2.0 |
+| `libs/plugin-tool-api.aar` | AutoJs6 host module `plugin-api/plugin-tool-api` (https://github.com/SuperMonster003/AutoJs6) | MPL-2.0 |
 
 Provenance and SHA-256 digests are recorded in `locks/host-api-aars.lock` and `libs/README.md`.
 

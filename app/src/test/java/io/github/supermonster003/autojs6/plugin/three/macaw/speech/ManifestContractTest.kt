@@ -9,6 +9,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.Resi
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.speech.api.SpeechPluginActions
+import org.autojs.plugin.tool.api.PluginToolContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -216,7 +217,7 @@ class ManifestContractTest {
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
             listOf(
-                RESIDENT, ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", PACKAGED, ".service.ModelOperationService", ".service.MicrophoneService",
+                RESIDENT, ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", PACKAGED, TOOLS, ".service.ModelOperationService", ".service.MicrophoneService",
                 ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, KEY, TILE,
             ),
             application.children("service").map { it.android("name") },
@@ -236,6 +237,20 @@ class ManifestContractTest {
             assertNull("services run in the plugin's default process", service.androidOrNull("process"))
             assertNull("no foreground service type in the skeleton", service.androidOrNull("foregroundServiceType"))
         }
+    }
+
+    @Test
+    fun `the plugin tool provider is protected, in the plugin's process and found by the tool action`() {
+        // Roadmap P7.6.1 (D88, D99): AutoJs6 finds providers by the action alone, with no category or meta-data.
+        val tools = service(TOOLS)
+        assertEquals("true", tools.android("exported"))
+        assertEquals(PLUGIN_PERMISSION, tools.android("permission"))
+        assertNull("D88: the tools share the plugin's only process", tools.androidOrNull("process"))
+        assertNull(tools.androidOrNull("foregroundServiceType"))
+        assertFilter(tools, action = PluginToolContract.SERVICE_ACTION, category = null)
+        assertEquals("org.autojs.plugin.TOOL_PROVIDER", PluginToolContract.SERVICE_ACTION)
+        assertTrue(tools.children("meta-data").isEmpty())
+        assertTrue("no other process anywhere", manifest.getElementsByTagName("*").let { all -> (0 until all.length).none { (all.item(it) as Element).hasAttribute("android:process") } })
     }
 
     @Test
@@ -535,6 +550,7 @@ class ManifestContractTest {
 
     private companion object {
         const val PACKAGED = ".service.ThreeMacawSpeechPackagedService"
+        const val TOOLS = ".tool.SpeechToolService"
         const val PLUGIN_PERMISSION = "org.autojs.permission.PLUGIN"
         const val DEFAULT_CATEGORY = "android.intent.category.DEFAULT"
 
