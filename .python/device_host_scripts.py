@@ -5,6 +5,7 @@
     py .python/device_host_scripts.py late <serial>         a microphone session opened while AutoJs6 is already in the background
     py .python/device_host_scripts.py wake <serial>         wake word with thenListen, the keyword and a command played aloud
     py .python/device_host_scripts.py kill <serial>         the host process dies during a microphone session
+    py .python/device_host_scripts.py tools <serial>        the four plugin tools through `plugins.tools` (roadmap P7.6.4), TTS at 70 %
 
 Scripts start through AutoJs6's RunIntentActivity (no instrumentation, so every process keeps its real state) and write
 a JSON result next to themselves in shared storage, which AutoJs6 reads and writes with all-files access. Audio for the
@@ -32,6 +33,11 @@ AUDIO = ROOT / "app" / "src" / "androidTest" / "assets" / "test-audio"
 STREAMING = "asr.zipformer-streaming.zh-en.2023-02-20.int8"
 SENSE_VOICE = "asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8"
 PHASE_SECONDS = 10
+EN_REFERENCE = "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
+TOOLS_SYNTHESIS_TEXT = "The quick brown fox jumps over the lazy dog near the river bank"
+TOOLS_NAMES = "speech_listen,speech_speak,speech_synthesize,speech_transcribe"
+MAX_CER = 0.15
+MAX_ROUND_TRIP_CER = 0.25
 
 COMMON = """
 var out = "%(out)s";
@@ -122,6 +128,66 @@ try {
     w.on("end", function (e) { media.stopMusic(); r.reason = e.reason; done(); });
     setTimeout(function () { if (w.isActive()) w.stop(); }, 40000);
 } catch (e) { fail(e); }
+""",
+    "tools": COMMON + """
+function step(key, body) {
+    var t = Date.now();
+    try { r[key] = body(); } catch (e) { r[key] = { error: String(e.message || e).slice(0, 240) }; }
+    r[key].ms = Date.now() - t;
+}
+function refusal(name, args) {
+    try { plugins.tools.call(name, args); return "accepted"; } catch (e) { return String(e.message || e).slice(0, 240); }
+}
+function fileBytes(path) { var f = new java.io.File(path); return f.exists() ? f.length() : -1; }
+step("list", function () {
+    var names = plugins.tools.list().map(function (t) { return t.name; }).filter(function (n) { return n.indexOf("speech_") === 0; });
+    names.sort();
+    return { names: names.join(",") };
+});
+step("transcribe", function () {
+    var c = plugins.tools.call("speech_transcribe", { file: dir + "/en.wav", language: "en" });
+    return { text: c.result.text, modelId: c.result.modelId, durationMillis: c.result.durationMillis, segments: (c.result.segments || []).length, callMs: c.durationMs };
+});
+step("synthesize", function () {
+    var path = dir + "/synth.m4a";
+    var c = plugins.tools.call("speech_synthesize", { text: "%(sentence)s", language: "en", format: "m4a" }, { outputs: { audio: path }, overwrite: true });
+    var o = (c.outputs || []).filter(function (x) { return x.name === "audio"; })[0] || {};
+    return { mimeType: c.result.mimeType, bytes: c.result.bytes, outputBytes: o.bytes, outputMime: o.mimeType, samePath: o.path != null && String(new java.io.File(o.path).getCanonicalPath()) === String(new java.io.File(path).getCanonicalPath()), fileBytes: fileBytes(path), durationMillis: c.result.durationMillis, modelId: c.result.modelId };
+});
+step("roundTrip", function () {
+    return { text: plugins.tools.call("speech_transcribe", { file: dir + "/synth.m4a", language: "en" }).result.text };
+});
+step("speak", function () {
+    var c = plugins.tools.call("speech_speak", { text: "%(spoken)s", language: "en" });
+    return { engine: c.result.engine, completed: c.result.completed, durationMillis: c.result.durationMillis };
+});
+step("refusals", function () {
+    return {
+        unknown: refusal("speech_whisper", {}),
+        unreadable: refusal("speech_transcribe", { file: dir + "/not-a-wav.wav" }),
+        invalid: refusal("speech_synthesize", { text: "hello", format: "mp3" })
+    };
+});
+// The dictation: the recording starts once the model has loaded, so the clip plays when AudioManager first lists a new
+// active recording (after 20 s without one it plays anyway, and the result says so).
+var audio = context.getSystemService(android.content.Context.AUDIO_SERVICE);
+function recordings() { try { return audio.getActiveRecordingConfigurations().size(); } catch (e) { return -1; } }
+r.listen = { before: recordings() };
+var started = Date.now();
+function settle() { try { media.stopMusic(); } catch (e) {} r.listen.ms = Date.now() - started; done(); }
+plugins.tools.callAsync("speech_listen", { language: "en" }, { timeoutMs: %(listenTimeout)d }).then(function (c) {
+    r.listen.text = c.result.text; r.listen.endReason = c.result.endReason; r.listen.durationMillis = c.result.durationMillis; r.listen.modelId = c.result.modelId;
+    settle();
+}, function (e) { r.listen.error = String(e.message || e).slice(0, 240); settle(); });
+var poll = setInterval(function () {
+    var now = recordings();
+    if (now > r.listen.before || Date.now() - started > 20000) {
+        clearInterval(poll);
+        r.listen.captureMs = Date.now() - started;
+        r.listen.captureSeen = now > r.listen.before;
+        setTimeout(function () { media.playMusic(dir + "/en.wav"); }, 300);
+    }
+}, 100);
 """,
 }
 
@@ -449,13 +515,98 @@ def run_kill(serial):
     return ok
 
 
+def cer(reference, hypothesis):
+    """Character error rate over upper-case letters and digits."""
+    def normalize(text):
+        return "".join(ch for ch in text.upper() if ch.isalnum())
+    r, h = normalize(reference), normalize(hypothesis or "")
+    previous = list(range(len(h) + 1))
+    for i, rc in enumerate(r, 1):
+        current = [i] + [0] * len(h)
+        for j, hc in enumerate(h, 1):
+            current[j] = min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (rc != hc))
+        previous = current
+    return previous[-1] / max(1, len(r))
+
+
+def tool_code(message):
+    """The tool's error code in a `plugins.tools` error (`... failed with CODE: ...`), else the start of the host's message."""
+    match = re.search(r"failed with ([A-Z_]+)", message or "")
+    # The host's prefix ("Failed to call method "tools.call". ") follows the device language.
+    return match.group(1) if match else re.sub(r'^[^"]*"tools\.call"[^.]*\.\s*', "", message or "").partition("\n")[0][:80]
+
+
+def run_tools(serial):
+    """The four tools through the host's `plugins.tools` (the path MCP Server and 3-Stove Agent take, roadmap P7.6.4)."""
+    prepare(serial)
+    since = device_clock(serial)
+    values = {"sentence": TOOLS_SYNTHESIS_TEXT, "spoken": "This is a short test of the speech tools.", "listenTimeout": 60_000}
+    if not start(serial, "tools", values):
+        print(f"{label(serial)}: tools: BLOCKED the script did not start (unlock the device; AutoJs6 needs all-files access)")
+        return False
+    r = result(serial, "tools", 420)
+    routes = [line.strip() for line in adb(serial, "logcat", "-d", "-v", "raw", "-T", since, "-s", "MacawTools:I", check=False).splitlines() if " route" in line]
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    if r is None:
+        print(f"{label(serial)}: tools: FAIL no result")
+        return False
+    verdicts = []
+
+    def item(name, ok, detail):
+        verdicts.append(ok)
+        print(f"    {name}: {'PASS' if ok else 'FAIL'} {detail}")
+
+    def failed(name, step):
+        if "error" not in step:
+            return False
+        item(name, False, f"{tool_code(step['error'])} ({step['ms']} ms)")
+        return True
+
+    print(f"{label(serial)}: tools")
+    item("list", r["list"].get("names") == TOOLS_NAMES, r["list"].get("names") or tool_code(r["list"].get("error")))
+    t = r["transcribe"]
+    if not failed("transcribe", t):
+        rate = cer(EN_REFERENCE, t["text"])
+        item("transcribe", rate <= MAX_CER, f"en.wav cer {rate:.3f}, {t['segments']} segments, {t['durationMillis']} ms audio, {t['modelId']}, {t['ms']} ms")
+    s = r["synthesize"]
+    if not failed("synthesize", s):
+        ok = s["mimeType"] == s["outputMime"] == "audio/mp4" and s["bytes"] == s["outputBytes"] == s["fileBytes"] > 0 and s["samePath"]
+        item("synthesize", ok, f"m4a {s['mimeType']} / output {s['outputMime']}, {s['bytes']} / {s['outputBytes']} / {s['fileBytes']} bytes (result / output / file), "
+                               f"same path {s['samePath']}, {s['durationMillis']} ms audio, {s['modelId']}, {s['ms']} ms")
+    t = r["roundTrip"]
+    if not failed("round trip", t):
+        rate = cer(TOOLS_SYNTHESIS_TEXT, t["text"])
+        item("round trip", rate <= MAX_ROUND_TRIP_CER, f"synth.m4a cer {rate:.3f}, {t['ms']} ms")
+    s = r["speak"]
+    if not failed("speak", s):
+        item("speak", s["engine"] == "plugin" and s["completed"] is True and (s.get("durationMillis") or 0) > 0,
+             f"engine {s['engine']}, completed {s['completed']}, {s.get('durationMillis')} ms spoken, {s['ms']} ms")
+    s = r["refusals"]
+    codes = {key: tool_code(s[key]) for key in ("unknown", "unreadable", "invalid")}
+    item("refusals", codes["unknown"] != "accepted" and codes["unreadable"] == "INPUT_UNREADABLE" and codes["invalid"] != "accepted",
+         f"unknown tool: {codes['unknown']}; text file: {codes['unreadable']}; format mp3: {codes['invalid']}")
+    s = r["listen"]
+    capture = f"recording {'seen' if s.get('captureSeen') else 'not seen'} after {s.get('captureMs')} ms"
+    if "error" in s:
+        item("listen", False, f"{tool_code(s['error'])}, {capture}, {s.get('ms')} ms")
+    else:
+        rate = cer(EN_REFERENCE, s.get("text"))
+        item("listen", s.get("endReason") == "endpoint" and rate <= MAX_CER,
+             f"en.wav aloud cer {rate:.3f}, end {s.get('endReason')}, {s.get('durationMillis')} ms heard, {capture}, {s.get('modelId')}, {s.get('ms')} ms")
+    for line in routes:
+        print(f"    MacawTools: {line[:300]}")
+    return all(verdicts)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__)
         return 2
     action, serial = argv
-    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill}
-    if action in ("listen", "late", "wake"):
+    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools}
+    if action == "tools":
+        os.environ.setdefault("MACAW_VOLUME_PERCENT", "70")
+    if action in ("listen", "late", "wake", "tools"):
         with Volume(serial) as volume:
             print(f"{label(serial)}: media {volume.describe()}")
             return 0 if runs[action](serial) else 1

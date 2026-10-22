@@ -8,6 +8,10 @@ summarizes the results without transcripts.
     py .python/device_speech_run.py tts-models <serial> [ids] installs the five synthesis models (about 740 MB, roadmap P4.1)
                                                             or the comma separated model ids given
     py .python/device_speech_run.py tts <serial>             every synthesis device test (SpeechSynthesisDeviceTest)
+    py .python/device_speech_run.py tools <serial> [k=v ...]  the four plugin tools through their service
+                                                            (SpeechToolServiceDeviceTest, roadmap P7.6.4) at
+                                                            MACAW_VOLUME_PERCENT (70 by default here); emulators get
+                                                            macawRoom=virtual; adds the MacawTools route lines
 
 `install` installs the debug split of the device's primary ABI and the test APK with `adb install -r` (data and models
 are kept; nothing is uninstalled afterwards, unlike connectedDebugAndroidTest). `test` runs one class through
@@ -15,6 +19,7 @@ are kept; nothing is uninstalled afterwards, unlike connectedDebugAndroidTest). 
 off. Build first: `.\\gradlew.bat :app:assembleDebug :app:assembleDebugAndroidTest`. Permission dialogs are never
 answered here: RECORD_AUDIO is granted by the maintainer in MicrophonePermissionActivity (`grant <serial>` opens it).
 """
+import os
 import re
 import subprocess
 import sys
@@ -111,6 +116,28 @@ def grant(serial):
     print(f"{label(serial)}: permission dialog {'shown' if shown else 'not on top (unlock the device and retry)'}; the maintainer answers it on the device")
 
 
+def tools(serial, arguments):
+    """SpeechToolServiceDeviceTest with the volume raised for the reading and the dictation (70 % was agreed for the
+    1.2.0 device runs), then the route each dictation of `speech_listen` took (tag MacawTools: route, end reason,
+    length and duration, never the text)."""
+    os.environ.setdefault("MACAW_VOLUME_PERCENT", "70")
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import device_host_scripts as hs
+
+    if serial.startswith("emulator-") and not any(item.startswith("macawRoom=") for item in arguments):
+        arguments = [*arguments, "macawRoom=virtual"]
+    since = device_time(serial)
+    with hs.Volume(serial) as volume:
+        print(f"{label(serial)}: {volume.describe()}")
+        ok = run_test(serial, "SpeechToolServiceDeviceTest", arguments)
+    log = adb(serial, "logcat", "-d", "-v", "raw", "-T", since, "-s", "MacawTools:I", check=False)
+    for line in log.splitlines():
+        line = line.strip()
+        if " route" in line:
+            print("    MacawTools: " + line[:300])
+    return ok
+
+
 def main(argv):
     if len(argv) < 2:
         print(__doc__)
@@ -127,6 +154,8 @@ def main(argv):
         return 0 if run_test(serial, "SpeechSynthesisDeviceTest#test0InstallsTheSynthesisModels", [f"macawTtsModels={wanted}"]) else 1
     if action == "tts":
         return 0 if run_test(serial, "SpeechSynthesisDeviceTest", rest) else 1
+    if action == "tools":
+        return 0 if tools(serial, rest) else 1
     if action == "grant":
         grant(serial)
         return 0
