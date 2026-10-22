@@ -33,7 +33,7 @@
   "p_introduction_how": "插件是独立安装的 APK, 有自己的界面, 用来下载与管理模型, 试听试说并调整设置. AutoJs6 脚本通过全局模块 `speech` 使用这些能力; 合成能力还注册为 Android 系统 TTS 引擎, 识别能力还以系统语音输入, 系统语音识别服务与数字助理的形式提供, 因此其他应用也能使用. 识别与合成模型不随 APK 提供, 按需下载, 只有语音活动检测模型随包内置.",
   "p_status_note": "在脚本中使用 `speech` 模块需要 AutoJs6 {{ required_host_version_name }} (内部版本号 {{ required_host_version_code }}) 或更高版本. 系统 TTS 引擎, 系统语音输入, 语音识别服务, 数字助理与插件自己的界面不依赖 AutoJs6, 安装插件并下载模型后即可使用.",
   "features": [
-    "语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与 WAV 文件识别, 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型.",
+    "语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与音频文件识别 (WAV, MP3, AAC, Ogg, FLAC 等, 也可以是视频文件中的声音), 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型.",
     "语音活动检测: 内置 silero VAD v5, 既可单独切分音频中的语音段, 也用于听写时的自动断句.",
     "唤醒词: 直接填写关键词原文 (例如 `小六小六` 或 `hey macaw`), 无需训练模型, 唤醒后可自动转入听写.",
     "语音合成: 多种中英文神经网络音色, 可合成到 WAV 文件, 也可以作为系统 TTS 引擎供 AutoJs6 的 `tts` 模块和其他应用使用.",
@@ -85,7 +85,7 @@
   "p_tts_setup_note": "每个模型的每个说话人都是一个语音, 名为 `<模型 ID>/<说话人编号>`, 双语模型的说话人另有 `<模型 ID>/<说话人编号>/en-US` 用于英文. AutoJs6 脚本不修改系统设置也能使用该引擎: `tts(text, { engine: \"{{ plugin_application_id }}\" })`, 或用 `speech.speak(text, { model, speaker })` 直接指定模型与说话人.",
   "p_script_api_intro": "AutoJs6 {{ required_host_version_name }} (内部版本号 {{ required_host_version_code }}) 起, 脚本通过全局模块 `speech` (也可写作 `$speech`) 使用这些能力. 下面三段示例可以分别运行: 听写 30 秒并把每句话追加到文件, 用唤醒词唤醒后听一句话, 合成到文件并朗读",
   "api_points": [
-    "`speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别 WAV 文件 (也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.",
+    "`speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别音频文件 (WAV 以外的格式需要 AutoJs6 6.8.0 及以上; 也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.",
     "`speech.wake(keywords, options)` 打开唤醒词会话, 关键词直接写原文 (至多 50 个); `thenListen` 让每次唤醒后在同一录音上转入一轮听写, 该轮的会话由 `wake` 事件的 `listen` 属性给出.",
     "`speech.synthesize(text, path, options)` 合成到 WAV 文件 (至多 8000 个字符, 可选模型, 说话人与语速); `speech.speak(text, options)` 与 `tts(text, { engine })` 经系统 TTS 引擎朗读.",
     "`speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.",

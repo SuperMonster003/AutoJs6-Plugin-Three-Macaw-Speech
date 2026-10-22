@@ -54,7 +54,7 @@
 
 ******
 
-- 语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与 WAV 文件识别, 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型.
+- 语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与音频文件识别 (WAV, MP3, AAC, Ogg, FLAC 等, 也可以是视频文件中的声音), 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型.
 - 语音活动检测: 内置 silero VAD v5, 既可单独切分音频中的语音段, 也用于听写时的自动断句.
 - 唤醒词: 直接填写关键词原文 (例如 `小六小六` 或 `hey macaw`), 无需训练模型, 唤醒后可自动转入听写.
 - 语音合成: 多种中英文神经网络音色, 可合成到 WAV 文件, 也可以作为系统 TTS 引擎供 AutoJs6 的 `tts` 模块和其他应用使用.
@@ -180,7 +180,7 @@ speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别 WAV 文件 (也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.
+- `speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别音频文件 (WAV 以外的格式需要 AutoJs6 6.8.0 及以上; 也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.
 - `speech.wake(keywords, options)` 打开唤醒词会话, 关键词直接写原文 (至多 50 个); `thenListen` 让每次唤醒后在同一录音上转入一轮听写, 该轮的会话由 `wake` 事件的 `listen` 属性给出.
 - `speech.synthesize(text, path, options)` 合成到 WAV 文件 (至多 8000 个字符, 可选模型, 说话人与语速); `speech.speak(text, options)` 与 `tts(text, { engine })` 经系统 TTS 引擎朗读.
 - `speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.
@@ -357,6 +357,7 @@ _2026/10/21_
 - `新增` 脚本, 其他应用或本插件的其他入口使用麦克风时, 常驻唤醒自动让出, 对方用完后继续监听
 - `新增` 与 3-Stone AI 和 3-Stove Agent 的常驻监听互斥, 系统同一时刻只能有一个; 对方开着时会提示先关闭, 并可直接打开对方的设置
 - `新增` 重启或更新后不会自动录音: 开关仍开着时发一条 "点此恢复常驻唤醒" 通知, 打开首页或设置页也会恢复
+- `新增` 识别音频文件 (speech.recognize, speech.detectVoice) 除 WAV 外也支持 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常见格式, 以及视频文件 (MP4, WebM 等) 中的声音; 文件上限仍为 200 MB 或 30 分钟 (需要 AutoJs6 6.8.0 及以上, 更早的版本只能传入 WAV)
 
 #### v1.1.0
 

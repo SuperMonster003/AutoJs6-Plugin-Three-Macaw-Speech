@@ -4,7 +4,7 @@
 
 ### Funciones Destacadas
 
-- Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos WAV, con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.
+- Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos de audio (WAV, MP3, AAC, Ogg, FLAC y otros, o el sonido de un archivo de vídeo), con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.
 - Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.
 - Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.
 - Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.

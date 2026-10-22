@@ -54,7 +54,7 @@
 
 ******
 
-- 音声認識: マイクからのストリーミング書き起こし (途中結果と確定結果をリアルタイムに返す) と WAV ファイルの認識. 中国語, 英語, 中英混在, 日本語, 韓国語, 広東語のオフラインモデルを提供します.
+- 音声認識: マイクからのストリーミング書き起こし (途中結果と確定結果をリアルタイムに返す) と音声ファイルの認識 (WAV, MP3, AAC, Ogg, FLAC など. 動画ファイルの音声も可). 中国語, 英語, 中英混在, 日本語, 韓国語, 広東語のオフラインモデルを提供します.
 - 音声区間検出: 内蔵の silero VAD v5 が音声を発話区間に分割し, 書き起こし時の自動的な文の区切りにも使われます.
 - ウェイクワード: キーワードをそのまま入力するだけ (例: `小六小六` や `hey macaw`) でモデルの学習は不要です. 起動後は自動的に書き起こしへ移行できます.
 - 音声合成: 複数の中国語と英語のニューラル音声. WAV ファイルへ合成できるほか, システム TTS エンジンとして AutoJs6 の `tts` モジュールや他のアプリから使えます.
@@ -180,7 +180,7 @@ speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` は書き起こしセッションを開き, `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error`, `end` イベントで結果を返します. `stop()` で早めに終了します. `speech.recognize(path)` は WAV ファイルを認識し (16 kHz の PCM も可), `speech.detectVoice(path)` はその音声区間を一覧にします.
+- `speech.listen(options)` は書き起こしセッションを開き, `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error`, `end` イベントで結果を返します. `stop()` で早めに終了します. `speech.recognize(path)` は音声ファイルを認識し (WAV 以外の形式には AutoJs6 6.8.0 以降が必要. 16 kHz の PCM も可), `speech.detectVoice(path)` はその音声区間を一覧にします.
 - `speech.wake(keywords, options)` はキーワードを平文で書いたウェイクワードセッションを開きます (最大 50 個). `thenListen` を指定すると, 起動のたびに同じ録音のまま 1 ラウンドの書き起こしに移り, そのセッションは `wake` イベントの `listen` プロパティで渡されます.
 - `speech.synthesize(text, path, options)` は WAV ファイルに合成します (最大 8000 文字, モデル, 話者, 速度を任意で指定). `speech.speak(text, options)` と `tts(text, { engine })` はシステムのテキスト読み上げエンジンで読み上げます.
 - `speech.models` はモデルの一覧, ダウンロード (`install`, 進捗あり), インポート, 削除とデフォルトモデルの設定を行います. `speech.capabilities()` はプラグインのバージョン, 対応機能, マイクの権限の有無を返します.
@@ -357,6 +357,7 @@ _2026/10/21_
 - `機能` スクリプト, 他のアプリ, このプラグインの他の起動方法がマイクを使うと, 常時ウェイクワードはいったん譲り, 終わると待ち受けを再開します
 - `機能` 3-Stone AI, 3-Stove Agent の常時待ち受けとは同時に使えません (システムで 1 つだけ). 相手がオンのときは先にオフにするよう案内し, 相手の設定を直接開けます
 - `機能` 再起動や更新の後に自動で録音は始まりません. スイッチがオンのままなら "タップして常時ウェイクワードを再開" 通知が表示され, ホーム画面や設定を開いても再開します
+- `機能` 音声ファイルの認識 (speech.recognize, speech.detectVoice) で, WAV のほか MP3, AAC (M4A を含む), Ogg (Vorbis, Opus), FLAC, AMR などの一般的な形式と, 動画ファイル (MP4, WebM など) の音声も使えるように; 上限は引き続き 200 MB または 30 分 (AutoJs6 6.8.0 以降が必要, それより前のバージョンでは WAV のみ)
 
 #### v1.1.0
 

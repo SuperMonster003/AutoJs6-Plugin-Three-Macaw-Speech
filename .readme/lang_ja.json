@@ -33,7 +33,7 @@
   "p_introduction_how": "プラグインは個別にインストールする APK で, モデルのダウンロードと管理, お試し, 設定の変更を行う独自の画面を持ちます. AutoJs6 のスクリプトはグローバルモジュール `speech` からこれらの機能を使います. 音声合成は Android システムのテキスト読み上げエンジンとしても登録され, 音声認識はシステムの音声入力, システムの音声認識サービス, デジタルアシスタントとしても提供されるため, 他のアプリからも使えます. 認識と合成のモデルは APK に含まれず必要に応じてダウンロードし, 音声区間検出モデルだけが同梱されています.",
   "p_status_note": "スクリプトで `speech` モジュールを使うには AutoJs6 {{ required_host_version_name }} (内部バージョン {{ required_host_version_code }}) 以降が必要です. システムのテキスト読み上げエンジン, システムの音声入力, 音声認識サービス, デジタルアシスタントとプラグイン自身の画面は AutoJs6 に依存せず, プラグインをインストールしてモデルをダウンロードすれば使えます.",
   "features": [
-    "音声認識: マイクからのストリーミング書き起こし (途中結果と確定結果をリアルタイムに返す) と WAV ファイルの認識. 中国語, 英語, 中英混在, 日本語, 韓国語, 広東語のオフラインモデルを提供します.",
+    "音声認識: マイクからのストリーミング書き起こし (途中結果と確定結果をリアルタイムに返す) と音声ファイルの認識 (WAV, MP3, AAC, Ogg, FLAC など. 動画ファイルの音声も可). 中国語, 英語, 中英混在, 日本語, 韓国語, 広東語のオフラインモデルを提供します.",
     "音声区間検出: 内蔵の silero VAD v5 が音声を発話区間に分割し, 書き起こし時の自動的な文の区切りにも使われます.",
     "ウェイクワード: キーワードをそのまま入力するだけ (例: `小六小六` や `hey macaw`) でモデルの学習は不要です. 起動後は自動的に書き起こしへ移行できます.",
     "音声合成: 複数の中国語と英語のニューラル音声. WAV ファイルへ合成できるほか, システム TTS エンジンとして AutoJs6 の `tts` モジュールや他のアプリから使えます.",
@@ -85,7 +85,7 @@
   "p_tts_setup_note": "各モデルの各話者が 1 つの音声で, 名前は `<モデル ID>/<話者番号>` です. 2 言語モデルの話者には英語用の `<モデル ID>/<話者番号>/en-US` もあります. AutoJs6 のスクリプトはシステムの設定を変えずにこのエンジンを使えます: `tts(text, { engine: \"{{ plugin_application_id }}\" })`, またはモデルと話者を直接指定する `speech.speak(text, { model, speaker })`.",
   "p_script_api_intro": "AutoJs6 {{ required_host_version_name }} (内部バージョン {{ required_host_version_code }}) 以降, スクリプトはグローバルモジュール `speech` (`$speech` でも可) からこれらの機能を使います. 次の 3 つの例はそれぞれ単独で実行できます: 30 秒間書き起こして各文をファイルに追記する, ウェイクワードで起動して一文を聞く, ファイルに合成してから読み上げる",
   "api_points": [
-    "`speech.listen(options)` は書き起こしセッションを開き, `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error`, `end` イベントで結果を返します. `stop()` で早めに終了します. `speech.recognize(path)` は WAV ファイルを認識し (16 kHz の PCM も可), `speech.detectVoice(path)` はその音声区間を一覧にします.",
+    "`speech.listen(options)` は書き起こしセッションを開き, `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error`, `end` イベントで結果を返します. `stop()` で早めに終了します. `speech.recognize(path)` は音声ファイルを認識し (WAV 以外の形式には AutoJs6 6.8.0 以降が必要. 16 kHz の PCM も可), `speech.detectVoice(path)` はその音声区間を一覧にします.",
     "`speech.wake(keywords, options)` はキーワードを平文で書いたウェイクワードセッションを開きます (最大 50 個). `thenListen` を指定すると, 起動のたびに同じ録音のまま 1 ラウンドの書き起こしに移り, そのセッションは `wake` イベントの `listen` プロパティで渡されます.",
     "`speech.synthesize(text, path, options)` は WAV ファイルに合成します (最大 8000 文字, モデル, 話者, 速度を任意で指定). `speech.speak(text, options)` と `tts(text, { engine })` はシステムのテキスト読み上げエンジンで読み上げます.",
     "`speech.models` はモデルの一覧, ダウンロード (`install`, 進捗あり), インポート, 削除とデフォルトモデルの設定を行います. `speech.capabilities()` はプラグインのバージョン, 対応機能, マイクの権限の有無を返します.",

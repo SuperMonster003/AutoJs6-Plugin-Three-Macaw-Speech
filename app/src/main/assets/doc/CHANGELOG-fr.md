@@ -16,6 +16,7 @@
 * `Fonctionnalité` Quand un script, une autre application ou un autre déclencheur de ce plugin utilise le micro, le mot de réveil permanent s'efface et reprend l'écoute une fois qu'ils ont terminé
 * `Fonctionnalité` Une seule écoute permanente à la fois entre 3-Stone AI, 3-Stove Agent et 3-Macaw Speech; si une autre est active, il vous est demandé de la désactiver d'abord et vous pouvez ouvrir directement ses paramètres
 * `Fonctionnalité` Aucun enregistrement ne démarre seul après un redémarrage ou une mise à jour: tant que l'interrupteur est activé, une notification "Appuyez pour reprendre le mot de réveil permanent" apparaît, et ouvrir l'écran d'accueil ou les paramètres le reprend aussi
+* `Fonctionnalité` La reconnaissance de fichiers audio (speech.recognize, speech.detectVoice) accepte, en plus du WAV, les formats courants MP3, AAC (y compris M4A), Ogg (Vorbis, Opus), FLAC et AMR, ainsi que le son des fichiers vidéo (MP4, WebM, etc.); la limite reste de 200 Mo ou 30 minutes (nécessite AutoJs6 6.8.0 ou ultérieur; les versions antérieures n'acceptent que le WAV)
 
 # v1.1.0
 

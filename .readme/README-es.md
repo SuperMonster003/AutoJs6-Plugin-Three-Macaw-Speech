@@ -54,7 +54,7 @@ El complemento es un APK que se instala por separado, con pantallas propias para
 
 ******
 
-- Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos WAV, con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.
+- Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos de audio (WAV, MP3, AAC, Ogg, FLAC y otros, o el sonido de un archivo de vídeo), con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés.
 - Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.
 - Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.
 - Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones.
@@ -180,7 +180,7 @@ speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` abre una sesión de dictado que informa mediante los eventos `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` y `end`; `stop()` la termina antes. `speech.recognize(path)` reconoce un archivo WAV (también acepta PCM de 16 kHz) y `speech.detectVoice(path)` lista sus segmentos de voz.
+- `speech.listen(options)` abre una sesión de dictado que informa mediante los eventos `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` y `end`; `stop()` la termina antes. `speech.recognize(path)` reconoce un archivo de audio (los formatos distintos de WAV requieren AutoJs6 6.8.0 o posterior; también acepta PCM de 16 kHz) y `speech.detectVoice(path)` lista sus segmentos de voz.
 - `speech.wake(keywords, options)` abre una sesión de palabra de activación con las palabras clave escritas como texto (50 como máximo); con `thenListen`, cada activación se convierte en una ronda de dictado sobre la misma grabación, cuya sesión es la propiedad `listen` del evento `wake`.
 - `speech.synthesize(text, path, options)` sintetiza a un archivo WAV (8000 caracteres como máximo, con modelo, hablante y velocidad opcionales); `speech.speak(text, options)` y `tts(text, { engine })` hablan mediante el motor de texto a voz del sistema.
 - `speech.models` lista, descarga (`install`, con progreso), importa y elimina modelos y define los modelos predeterminados; `speech.capabilities()` devuelve la versión del complemento, sus funciones y si tiene el permiso del micrófono.
@@ -357,6 +357,7 @@ _2026/10/21_
 - `Función` Cuando un script, otra app u otra forma de activación de este plugin usa el micrófono, la palabra de activación permanente se aparta y vuelve a escuchar cuando terminan
 - `Función` Solo puede haber una escucha permanente a la vez entre 3-Stone AI, 3-Stove Agent y 3-Macaw Speech; si otra está activa, se te pide desactivarla primero y puedes abrir sus ajustes directamente
 - `Función` Tras un reinicio o una actualización no se graba nada por sí solo: con el interruptor activado aparece una notificación "Toca para reanudar la palabra de activación permanente", y abrir la pantalla de inicio o los ajustes también la reanuda
+- `Función` El reconocimiento de archivos de audio (speech.recognize, speech.detectVoice) admite, además de WAV, formatos comunes como MP3, AAC (incluido M4A), Ogg (Vorbis, Opus), FLAC y AMR, así como el sonido de archivos de vídeo (MP4, WebM y otros); el límite sigue siendo 200 MB o 30 minutos (requiere AutoJs6 6.8.0 o posterior; las versiones anteriores solo aceptan WAV)
 
 #### v1.1.0
 

@@ -4,7 +4,7 @@
 
 ### Features
 
-- Speech recognition: streaming dictation from the microphone (partial and final results in real time) and WAV file recognition, with offline models for Chinese, English, mixed Chinese and English, Japanese, Korean and Cantonese.
+- Speech recognition: streaming dictation from the microphone (partial and final results in real time) and recognition of audio files (WAV, MP3, AAC, Ogg, FLAC and more, or the sound of a video file), with offline models for Chinese, English, mixed Chinese and English, Japanese, Korean and Cantonese.
 - Voice activity detection: the built-in silero VAD v5 splits audio into speech segments on its own and also ends dictation sentences automatically.
 - Wake words: type the keyword as plain text (for example `小六小六` or `hey macaw`) without training a model; after waking up, dictation can start automatically.
 - Text-to-speech: several neural Chinese and English voices, synthesized to WAV files or used as the system TTS engine by the AutoJs6 `tts` module and other apps.

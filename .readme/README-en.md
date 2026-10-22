@@ -54,7 +54,7 @@ The plugin is a separately installed APK with its own screens for downloading an
 
 ******
 
-- Speech recognition: streaming dictation from the microphone (partial and final results in real time) and WAV file recognition, with offline models for Chinese, English, mixed Chinese and English, Japanese, Korean and Cantonese.
+- Speech recognition: streaming dictation from the microphone (partial and final results in real time) and recognition of audio files (WAV, MP3, AAC, Ogg, FLAC and more, or the sound of a video file), with offline models for Chinese, English, mixed Chinese and English, Japanese, Korean and Cantonese.
 - Voice activity detection: the built-in silero VAD v5 splits audio into speech segments on its own and also ends dictation sentences automatically.
 - Wake words: type the keyword as plain text (for example `小六小六` or `hey macaw`) without training a model; after waking up, dictation can start automatically.
 - Text-to-speech: several neural Chinese and English voices, synthesized to WAV files or used as the system TTS engine by the AutoJs6 `tts` module and other apps.
@@ -180,7 +180,7 @@ speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` opens a dictation session that reports through the events `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` and `end`; `stop()` ends it early. `speech.recognize(path)` recognizes a WAV file (16 kHz PCM is accepted too) and `speech.detectVoice(path)` lists its speech segments.
+- `speech.listen(options)` opens a dictation session that reports through the events `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` and `end`; `stop()` ends it early. `speech.recognize(path)` recognizes an audio file (formats other than WAV need AutoJs6 6.8.0 or later; 16 kHz PCM is accepted too) and `speech.detectVoice(path)` lists its speech segments.
 - `speech.wake(keywords, options)` opens a wake word session with the keywords written as plain text (at most 50); with `thenListen` every wake up turns into one round of dictation on the same recording, whose session is the `listen` property of the `wake` event.
 - `speech.synthesize(text, path, options)` synthesizes to a WAV file (at most 8000 characters, with an optional model, speaker and speed); `speech.speak(text, options)` and `tts(text, { engine })` speak through the system TTS engine.
 - `speech.models` lists, downloads (`install`, with progress), imports and removes models and sets the default models; `speech.capabilities()` answers the plugin version, its features and whether it holds the microphone permission.
@@ -357,6 +357,7 @@ _2026/10/21_
 - `Feature` When a script, another app or another entry of this plugin uses the microphone, the resident wake word steps aside and listens again once they finish
 - `Feature` Only one resident listener can run at a time among 3-Stone AI, 3-Stove Agent and 3-Macaw Speech; while another one is on, you are asked to turn it off first and can open its settings directly
 - `Feature` No recording starts by itself after a restart or an update: while the switch is on, a "Tap to resume the resident wake word" notification appears, and opening the home screen or the settings resumes it as well
+- `Feature` Recognizing audio files (speech.recognize, speech.detectVoice) accepts common formats besides WAV, such as MP3, AAC (including M4A), Ogg (Vorbis, Opus), FLAC and AMR, as well as the sound of video files (MP4, WebM and others); the limit stays at 200 MB or 30 minutes (needs AutoJs6 6.8.0 or later; earlier versions accept WAV only)
 
 #### v1.1.0
 

@@ -54,7 +54,7 @@
 
 ******
 
-- 語音識別: 咪高峰串流聽寫 (即時返回部分結果與整句結果) 與 WAV 檔案識別, 提供中文, 英文, 中英混合以及日語, 韓語, 粵語的離線模型.
+- 語音識別: 咪高峰串流聽寫 (即時返回部分結果與整句結果) 與音訊檔案識別 (WAV, MP3, AAC, Ogg, FLAC 等, 亦可以是影片檔案中的聲音), 提供中文, 英文, 中英混合以及日語, 韓語, 粵語的離線模型.
 - 語音活動偵測: 內置 silero VAD v5, 既可單獨切分音訊中的語音段, 亦用於聽寫時的自動斷句.
 - 喚醒詞: 直接填寫關鍵詞原文 (例如 `小六小六` 或 `hey macaw`), 無需訓練模型, 喚醒後可自動轉入聽寫.
 - 語音合成: 多種中英文神經網絡音色, 可合成到 WAV 檔案, 亦可作為系統 TTS 引擎供 AutoJs6 的 `tts` 模組和其他應用程式使用.
@@ -180,7 +180,7 @@ speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` 開啟聽寫工作階段, 透過 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 與 `end` 事件返回結果, `stop()` 提前結束; `speech.recognize(path)` 識別 WAV 檔案 (亦接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的語音段.
+- `speech.listen(options)` 開啟聽寫工作階段, 透過 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 與 `end` 事件返回結果, `stop()` 提前結束; `speech.recognize(path)` 識別音訊檔案 (WAV 以外的格式需要 AutoJs6 6.8.0 或以上; 亦接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的語音段.
 - `speech.wake(keywords, options)` 開啟喚醒詞工作階段, 關鍵詞直接寫原文 (至多 50 個); `thenListen` 讓每次喚醒後在同一錄音上轉入一輪聽寫, 該輪的工作階段由 `wake` 事件的 `listen` 屬性給出.
 - `speech.synthesize(text, path, options)` 合成到 WAV 檔案 (至多 8000 個字元, 可選模型, 說話人與語速); `speech.speak(text, options)` 與 `tts(text, { engine })` 經系統 TTS 引擎朗讀.
 - `speech.models` 列出, 下載 (`install`, 可報告進度), 匯入, 刪除模型與設定預設模型; `speech.capabilities()` 返回插件版本, 支援的功能與麥克風權限狀態.
@@ -357,6 +357,7 @@ _2026/10/21_
 - `新增` 指令碼, 其他應用程式或本插件的其他入口使用麥克風時, 常駐喚醒自動讓出, 對方用完後繼續監聽
 - `新增` 與 3-Stone AI 和 3-Stove Agent 的常駐監聽互斥, 系統同一時間只能有一個; 對方開著時會提示先關閉, 並可直接開啟對方的設定
 - `新增` 重新啟動或更新後不會自動錄音: 開關仍開著時發出一則 "點此恢復常駐喚醒" 通知, 開啟主頁或設定頁也會恢復
+- `新增` 識別音訊檔案 (speech.recognize, speech.detectVoice) 除 WAV 外亦支援 MP3, AAC (包括 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常見格式, 以及影片檔案 (MP4, WebM 等) 中的聲音; 檔案上限仍為 200 MB 或 30 分鐘 (需要 AutoJs6 6.8.0 或以上, 較早的版本只能傳入 WAV)
 
 #### v1.1.0
 

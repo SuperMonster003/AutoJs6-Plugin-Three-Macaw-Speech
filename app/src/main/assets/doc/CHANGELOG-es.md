@@ -16,6 +16,7 @@
 * `Función` Cuando un script, otra app u otra forma de activación de este plugin usa el micrófono, la palabra de activación permanente se aparta y vuelve a escuchar cuando terminan
 * `Función` Solo puede haber una escucha permanente a la vez entre 3-Stone AI, 3-Stove Agent y 3-Macaw Speech; si otra está activa, se te pide desactivarla primero y puedes abrir sus ajustes directamente
 * `Función` Tras un reinicio o una actualización no se graba nada por sí solo: con el interruptor activado aparece una notificación "Toca para reanudar la palabra de activación permanente", y abrir la pantalla de inicio o los ajustes también la reanuda
+* `Función` El reconocimiento de archivos de audio (speech.recognize, speech.detectVoice) admite, además de WAV, formatos comunes como MP3, AAC (incluido M4A), Ogg (Vorbis, Opus), FLAC y AMR, así como el sonido de archivos de vídeo (MP4, WebM y otros); el límite sigue siendo 200 MB o 30 minutos (requiere AutoJs6 6.8.0 o posterior; las versiones anteriores solo aceptan WAV)
 
 # v1.1.0
 

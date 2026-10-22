@@ -54,7 +54,7 @@ Le plugin est un APK installé séparément, avec ses propres écrans pour tél�
 
 ******
 
-- Reconnaissance vocale: dictée en continu depuis le microphone (résultats partiels et finaux en temps réel) et reconnaissance de fichiers WAV, avec des modèles hors ligne pour le chinois, l'anglais, le chinois et l'anglais mélangés, le japonais, le coréen et le cantonais.
+- Reconnaissance vocale: dictée en continu depuis le microphone (résultats partiels et finaux en temps réel) et reconnaissance de fichiers audio (WAV, MP3, AAC, Ogg, FLAC, etc., ou le son d'un fichier vidéo), avec des modèles hors ligne pour le chinois, l'anglais, le chinois et l'anglais mélangés, le japonais, le coréen et le cantonais.
 - Détection d'activité vocale: le silero VAD v5 intégré découpe l'audio en segments de parole et termine aussi automatiquement les phrases dictées.
 - Mots de réveil: saisissez le mot-clé en texte brut (par exemple `小六小六` ou `hey macaw`) sans entraîner de modèle; après le réveil, la dictée peut démarrer automatiquement.
 - Synthèse vocale: plusieurs voix neuronales chinoises et anglaises, synthétisées dans des fichiers WAV ou utilisées comme moteur TTS du système par le module `tts` d'AutoJs6 et d'autres applications.
@@ -180,7 +180,7 @@ speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
 ```
 
-- `speech.listen(options)` ouvre une session de dictée qui rend compte par les événements `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` et `end`; `stop()` la termine plus tôt. `speech.recognize(path)` reconnaît un fichier WAV (le PCM 16 kHz est aussi accepté) et `speech.detectVoice(path)` liste ses segments de parole.
+- `speech.listen(options)` ouvre une session de dictée qui rend compte par les événements `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` et `end`; `stop()` la termine plus tôt. `speech.recognize(path)` reconnaît un fichier audio (les formats autres que WAV nécessitent AutoJs6 6.8.0 ou ultérieur; le PCM 16 kHz est aussi accepté) et `speech.detectVoice(path)` liste ses segments de parole.
 - `speech.wake(keywords, options)` ouvre une session de mot de réveil avec les mots-clés écrits en texte brut (50 au plus); avec `thenListen`, chaque réveil devient un tour de dictée sur le même enregistrement, dont la session est la propriété `listen` de l'événement `wake`.
 - `speech.synthesize(text, path, options)` synthétise vers un fichier WAV (8000 caractères au plus, avec modèle, locuteur et vitesse en option); `speech.speak(text, options)` et `tts(text, { engine })` parlent via le moteur de synthèse vocale du système.
 - `speech.models` liste, télécharge (`install`, avec progression), importe et supprime les modèles et définit les modèles par défaut; `speech.capabilities()` renvoie la version du plugin, ses fonctions et s'il détient l'autorisation du microphone.
@@ -357,6 +357,7 @@ _2026/10/21_
 - `Fonctionnalité` Quand un script, une autre application ou un autre déclencheur de ce plugin utilise le micro, le mot de réveil permanent s'efface et reprend l'écoute une fois qu'ils ont terminé
 - `Fonctionnalité` Une seule écoute permanente à la fois entre 3-Stone AI, 3-Stove Agent et 3-Macaw Speech; si une autre est active, il vous est demandé de la désactiver d'abord et vous pouvez ouvrir directement ses paramètres
 - `Fonctionnalité` Aucun enregistrement ne démarre seul après un redémarrage ou une mise à jour: tant que l'interrupteur est activé, une notification "Appuyez pour reprendre le mot de réveil permanent" apparaît, et ouvrir l'écran d'accueil ou les paramètres le reprend aussi
+- `Fonctionnalité` La reconnaissance de fichiers audio (speech.recognize, speech.detectVoice) accepte, en plus du WAV, les formats courants MP3, AAC (y compris M4A), Ogg (Vorbis, Opus), FLAC et AMR, ainsi que le son des fichiers vidéo (MP4, WebM, etc.); la limite reste de 200 Mo ou 30 minutes (nécessite AutoJs6 6.8.0 ou ultérieur; les versions antérieures n'acceptent que le WAV)
 
 #### v1.1.0
 
