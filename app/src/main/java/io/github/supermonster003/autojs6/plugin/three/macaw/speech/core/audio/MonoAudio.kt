@@ -15,6 +15,13 @@ interface MonoAudio : Closeable {
     val sampleRate: Int
 
     /**
+     * The length the file declares (the WAV header, the track's `KEY_DURATION`), null when unknown; the decoded audio
+     * may differ a little (encoder padding). Only shown as progress (roadmap D112).
+     * zh-CN: 文件声明的时长 (WAV 头, 音轨的 `KEY_DURATION`), 未知时为 null; 解出的音频可能略有出入 (编码填充). 只用于显示进度 (路线图 D112).
+     */
+    val durationMillis: Long? get() = null
+
+    /**
      * Reads up to [maxFrames] mono frames; an empty array at the end of the audio.
      * zh-CN: 读取至多 [maxFrames] 帧单声道采样; 音频结束时返回空数组.
      */

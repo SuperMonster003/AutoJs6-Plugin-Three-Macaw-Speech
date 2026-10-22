@@ -46,6 +46,9 @@ class MediaAudioReader private constructor(
 
     override val sampleRate: Int get() = rate
 
+    override val durationMillis: Long? =
+        if (packets.format.containsKey(MediaFormat.KEY_DURATION)) packets.format.getLong(MediaFormat.KEY_DURATION).takeIf { it > 0 }?.div(1000) else null
+
     override fun read(maxFrames: Int): FloatArray {
         require(maxFrames > 0)
         while (pending.isEmpty() && !outputDone) step()

@@ -59,6 +59,8 @@ class WavReader(input: InputStream, streamLength: Long? = null) : MonoAudio {
 
     override val sampleRate: Int get() = format.sampleRate
 
+    override val durationMillis: Long get() = format.durationMillis
+
     /**
      * Reads up to [maxFrames] frames as mono samples; an empty array at the end of the data.
      * zh-CN: 读取至多 [maxFrames] 帧单声道采样; 数据结束时返回空数组.

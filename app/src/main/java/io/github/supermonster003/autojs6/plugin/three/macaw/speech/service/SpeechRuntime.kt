@@ -26,6 +26,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Dictation
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationSink
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileRecognition
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileRecognitionListener
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscript
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FixedSegments
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Keyword
@@ -337,19 +338,25 @@ internal class SpeechRuntime private constructor(val context: Context) {
     // File calls -------------------------------------------------------------------------------------------------------
 
     /**
-     * `recognizeFile` on the calling thread: a Binder thread (roadmap P3.3) or the worker of `speech_transcribe` (P7.6.7),
-     * whose [cancelled] stops the decoding early with the text so far.
-     * zh-CN: 在调用线程上执行 `recognizeFile`: Binder 线程 (路线图 P3.3) 或 `speech_transcribe` 的工作线程 (P7.6.7), 后者的 [cancelled] 让解码提前
-     * 结束并保留已有文字.
+     * `recognizeFile` on the calling thread: a Binder thread (roadmap P3.3), the worker of `speech_transcribe` (P7.6.7)
+     * or that of the tryout screen's file tab (P7.8, with a [listener] for progress); [cancelled] stops the decoding
+     * early with the text so far.
+     * zh-CN: 在调用线程上执行 `recognizeFile`: Binder 线程 (路线图 P3.3), `speech_transcribe` 的工作线程 (P7.6.7) 或试听试说页文件标签的工作线程
+     * (P7.8, 以 [listener] 报告进度); [cancelled] 让解码提前结束并保留已有文字.
      */
-    fun recognizeFile(audio: ParcelFileDescriptor, options: RecognizeOptions, cancelled: () -> Boolean = { false }): FileTranscript {
+    fun recognizeFile(
+        audio: ParcelFileDescriptor,
+        options: RecognizeOptions,
+        listener: FileRecognitionListener = FileRecognitionListener.NONE,
+        cancelled: () -> Boolean = { false },
+    ): FileTranscript {
         val model = resolve(SpeechContract.KIND_ASR, options.model)
         val warnings = warnings(model, options.language, options.hotwords)
         return AudioFiles.open(audio).use { reader ->
             val leases = acquireRecognition(model, options.language, options.hotwords.isNotEmpty(), options.punctuation)
             try {
                 val punctuator = punctuator(model, leases)
-                FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings, cancelled) { sink ->
+                FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings, cancelled, listener) { sink ->
                     fileDictation(leases.first().engine, options, sink, punctuator)
                 }
             } finally {

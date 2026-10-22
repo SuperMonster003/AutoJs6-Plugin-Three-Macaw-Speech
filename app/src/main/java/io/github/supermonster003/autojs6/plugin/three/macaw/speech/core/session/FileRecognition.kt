@@ -16,6 +16,28 @@ data class FileTranscript(
     val warnings: List<SpeechWarning>,
 )
 
+/**
+ * Progress of [FileRecognition.recognize] for the file tab of the tryout screen (roadmap D112), called on the
+ * recognizing thread. Scripts, MCP and the system entry pass [NONE], so their results stay as they were.
+ * zh-CN: 试听试说页文件标签所用的 [FileRecognition.recognize] 进度 (路线图 D112), 在识别线程上调用. 脚本, MCP 与系统入口传 [NONE],
+ * 结果因此不变.
+ */
+interface FileRecognitionListener {
+
+    /** Decoding starts; [durationMillis] is what the file declares, null when unknown. zh-CN: 开始解码; [durationMillis] 为文件声明的时长, 未知时为 null. */
+    fun opened(durationMillis: Long?) = Unit
+
+    /** [millis] of audio have gone to the recognizer so far. zh-CN: 已送入识别的音频共 [millis] 毫秒. */
+    fun progress(millis: Long) = Unit
+
+    /** A segment is final, in the order of the result's `segments`. zh-CN: 一个语音段已最终确定, 顺序与结果的 `segments` 相同. */
+    fun segment(utterance: Utterance) = Unit
+
+    companion object {
+        val NONE = object : FileRecognitionListener {}
+    }
+}
+
 /** The answer of `detectVoice`. zh-CN: `detectVoice` 的应答. */
 data class VoiceActivity(val segments: List<Pair<Long, Long>>, val durationMillis: Long)
 
@@ -37,6 +59,7 @@ object FileRecognition {
         languageHint: String?,
         warnings: List<SpeechWarning>,
         cancelled: () -> Boolean = { false },
+        listener: FileRecognitionListener = FileRecognitionListener.NONE,
         dictation: (DictationSink) -> Dictation,
     ): FileTranscript {
         val segments = ArrayList<Utterance>()
@@ -44,12 +67,19 @@ object FileRecognition {
             override fun partial(text: String, segmentIndex: Int) = Unit
             override fun final(utterance: Utterance) {
                 segments += utterance
+                listener.segment(utterance)
             }
             override fun endpoint() = Unit
             override fun voiceActivity(active: Boolean) = Unit
         }
         val samples = dictation(sink).use { pipeline ->
-            val total = AudioInput.decode(reader, cancelled = cancelled) { chunk -> pipeline.accept(chunk) }
+            listener.opened(reader.durationMillis)
+            var fed = 0L
+            val total = AudioInput.decode(reader, cancelled = cancelled) { chunk ->
+                pipeline.accept(chunk)
+                fed += chunk.size
+                listener.progress(AudioInput.millis(fed))
+            }
             pipeline.flush(emitFinal = true)
             total
         }

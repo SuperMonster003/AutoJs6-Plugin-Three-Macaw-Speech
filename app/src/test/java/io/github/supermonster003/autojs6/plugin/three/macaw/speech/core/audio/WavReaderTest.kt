@@ -92,6 +92,13 @@ class WavReaderTest {
     }
 
     @Test
+    fun `the declared length comes from the header`() {
+        val reader = reader(wav(1, 2, 8000, 16, ByteArray(8000 * 2 * 2 * 3 / 2)))
+        assertEquals(1500L, reader.durationMillis)
+        assertEquals(1500L, (reader as MonoAudio).durationMillis)
+    }
+
+    @Test
     fun `files beyond 200 MiB or 30 minutes exceed the limit`() {
         val big = assertThrows(SpeechException::class.java) { WavReader(ByteArrayInputStream(ByteArray(0)), SpeechLimits.MAX_AUDIO_FILE_BYTES + 1) }
         assertEquals(SpeechErrorCodes.LIMIT_EXCEEDED, big.code)

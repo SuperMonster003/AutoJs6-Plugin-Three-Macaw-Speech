@@ -146,6 +146,54 @@ class WakeSessionTest {
     }
 
     @Test
+    fun `the progress listener sees the declared length, rising progress and every segment, and changes nothing`() {
+        val pcm = Audio.silence(500) + Audio.speech(1000) + Audio.silence(1000) + Audio.speech(500) + Audio.silence(800)
+        val events = ArrayList<String>()
+        val progress = ArrayList<Long>()
+        val listener = object : FileRecognitionListener {
+            override fun opened(durationMillis: Long?) {
+                events += "opened:$durationMillis"
+            }
+
+            override fun progress(millis: Long) {
+                progress += millis
+            }
+
+            override fun segment(utterance: Utterance) {
+                events += "segment:${utterance.segmentIndex}@${progress.lastOrNull()}"
+            }
+        }
+        fun dictation(sink: DictationSink) = StreamingDictation(FakeStream(), FakeVad(), sink, gate = true, reportVad = false, silenceEndMillis = 600, punctuation = true)
+        val plain = FileRecognition.recognize(wavReader(pcm), "asr.m", "zh", emptyList()) { dictation(it) }
+        val heard = FileRecognition.recognize(wavReader(pcm), "asr.m", "zh", emptyList(), listener = listener) { dictation(it) }
+        assertEquals(plain, heard)
+        assertEquals("opened:3800", events.first())
+        assertEquals(listOf("segment:0", "segment:1"), events.drop(1).map { it.substringBefore('@') })
+        assertTrue("segments arrive while decoding", events.drop(1).all { it.substringAfter('@').toLong() < 3800 })
+        assertTrue(progress.zipWithNext().all { (a, b) -> a < b })
+        assertEquals(3800L, progress.last())
+    }
+
+    @Test
+    fun `a cancelled file keeps the segments so far and the progress stops there`() {
+        val pcm = Audio.speech(1000) + Audio.silence(1000) + Audio.speech(1000) + Audio.silence(1000) + Audio.speech(1000) + Audio.silence(1000)
+        var fed = 0L
+        val listener = object : FileRecognitionListener {
+            override fun progress(millis: Long) {
+                fed = millis
+            }
+        }
+        val result = FileRecognition.recognize(wavReader(pcm), "asr.m", null, emptyList(), cancelled = { fed >= 2500 }, listener = listener) { sink ->
+            StreamingDictation(FakeStream(), FakeVad(), sink, gate = true, reportVad = false, silenceEndMillis = 600, punctuation = true)
+        }
+        // The utterance going on at the cancel is closed with what it heard.
+        assertEquals(2, result.segments.size)
+        assertTrue(result.segments.last().startMillis in 1500..fed)
+        assertEquals(fed, result.durationMillis)
+        assertTrue(fed in 2500 until 3000)
+    }
+
+    @Test
     fun `offline file recognition takes the language most segments report`() {
         val pcm = Audio.speech(1000) + Audio.silence(300) + Audio.speech(500) + Audio.silence(300)
         val result = FileRecognition.recognize(wavReader(pcm), "asr.sense", null, emptyList()) { sink ->
