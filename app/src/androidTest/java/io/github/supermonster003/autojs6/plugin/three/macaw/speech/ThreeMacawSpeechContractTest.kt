@@ -418,6 +418,8 @@ class ThreeMacawSpeechContractTest {
         val FEATURES = arrayOf(
             SpeechContract.FEATURE_MODELS, SpeechContract.FEATURE_ASR, SpeechContract.FEATURE_ASR_STREAMING, SpeechContract.FEATURE_VAD, SpeechContract.FEATURE_KWS,
             SpeechContract.FEATURE_TTS, SpeechContract.FEATURE_TTS_SYSTEM_ENGINE,
+            // Roadmap D84: appended to the host contract after the staged speech-api AAR.
+            "audioDecode",
         )
 
         /**
