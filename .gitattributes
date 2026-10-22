@@ -17,6 +17,7 @@ gradlew text eol=lf
 *.png binary
 *.onnx binary
 *.wav binary
+app/src/androidTest/assets/encoded-audio/** binary
 *.so binary
 
 # Icon Studio reproducible assets

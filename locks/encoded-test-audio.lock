@@ -1,0 +1,52 @@
+# Encoded device test recordings of roadmap P7.5 (androidTest assets, never in the plugin APK), checked by app/build.gradle.kts.
+# Made by .python/generate_encoded_test_audio.py with ffmpeg n5.0 from the WAV recordings of locks/test-audio.lock
+#   (same licenses: en is LibriSpeech CC-BY-4.0, zh Apache-2.0); video tracks are a generated gray frame.
+format=1
+en-video_mp4.path=app/src/androidTest/assets/encoded-audio/en-video.mp4
+en-video_mp4.sha256=51a3e9f0eaf3c3809a8216a0b918d1c32b192f01885b01e7894f2a1a6f92081c
+en-video_mp4.ffmpeg=-f lavfi -i color=c=gray:s=160x120:r=10 -i test-audio/en.wav -map 0:v -map 1:a -c:v libx264 -preset veryfast -pix_fmt yuv420p -flags:v +bitexact -c:a aac -b:a 48k -shortest -movflags +faststart -f mp4
+en-video_webm.path=app/src/androidTest/assets/encoded-audio/en-video.webm
+en-video_webm.sha256=d4ad8c50c7f8675a17d09b24912e5c115c6949d4393157b6bb10b74833fb4764
+en-video_webm.ffmpeg=-f lavfi -i color=c=gray:s=160x120:r=10 -i test-audio/en.wav -map 0:v -map 1:a -c:v libvpx -b:v 50k -c:a libopus -b:a 24k -shortest -f webm
+en_aac.path=app/src/androidTest/assets/encoded-audio/en.aac
+en_aac.sha256=96165a4508fa7d682e156a9a1053f67bad3f7405935a3c968220219fac071ef8
+en_aac.ffmpeg=-i test-audio/en.wav -c:a aac -b:a 48k -f adts
+en_amr.path=app/src/androidTest/assets/encoded-audio/en.amr
+en_amr.sha256=2455b01c30d089918a1f62ee8f3b5f7788f515ea401aa75176ae1b150a3b8b87
+en_amr.ffmpeg=-i test-audio/en.wav -ar 8000 -c:a libopencore_amrnb -b:a 12.2k -f amr
+en_flac.path=app/src/androidTest/assets/encoded-audio/en.flac
+en_flac.sha256=cf632ffafb33a34d4b998f172c58b44754522fb08bdd6517e7bba4bd1d536ccb
+en_flac.ffmpeg=-i test-audio/en.wav -c:a flac
+en_m4a.path=app/src/androidTest/assets/encoded-audio/en.m4a
+en_m4a.sha256=781a24f7e16608c61c90b09dfeb937499bf535159b9a7787d205ce29936d7017
+en_m4a.ffmpeg=-i test-audio/en.wav -ar 22050 -c:a aac -b:a 48k -movflags +faststart -f mp4
+en_mp3.path=app/src/androidTest/assets/encoded-audio/en.mp3
+en_mp3.sha256=8ea00d48b333485123f4ea0afddf35bc7fec66a33185258262ed07ccda2c5b68
+en_mp3.ffmpeg=-i test-audio/en.wav -ar 44100 -ac 2 -c:a libmp3lame -b:a 96k
+en_ogg.path=app/src/androidTest/assets/encoded-audio/en.ogg
+en_ogg.sha256=67649c12b754cb094cb5073c4d28b7c32f7e18d6fc1d12d7544dc4a88728a61d
+en_ogg.ffmpeg=-i test-audio/en.wav -c:a libvorbis -q:a 4
+en_opus.path=app/src/androidTest/assets/encoded-audio/en.opus
+en_opus.sha256=476c3b41c621c24e90b2866a02f233e222ea940b8fb3484797db86f0b6de17b9
+en_opus.ffmpeg=-i test-audio/en.wav -c:a libopus -b:a 24k -f opus
+video-only_mp4.path=app/src/androidTest/assets/encoded-audio/video-only.mp4
+video-only_mp4.sha256=76d1c4215424c6aff5f6f998b31e57df9f5c8aa11093b443fd0b75d27c4b494a
+video-only_mp4.ffmpeg=-f lavfi -i color=c=gray:s=160x120:r=10 -t 2 -c:v libx264 -preset veryfast -pix_fmt yuv420p -flags:v +bitexact -movflags +faststart -f mp4
+zh_aac.path=app/src/androidTest/assets/encoded-audio/zh.aac
+zh_aac.sha256=7daa631a3a1a24c5a47006aadcfed8e77ce4a60822e82fe7368bb4f03b950b7a
+zh_aac.ffmpeg=-i test-audio/zh.wav -c:a aac -b:a 48k -f adts
+zh_flac.path=app/src/androidTest/assets/encoded-audio/zh.flac
+zh_flac.sha256=2ce36d665fcbe80d2edafb109706011a79d21d8bb11eca0bae33666c8345f013
+zh_flac.ffmpeg=-i test-audio/zh.wav -c:a flac
+zh_m4a.path=app/src/androidTest/assets/encoded-audio/zh.m4a
+zh_m4a.sha256=4facb2b48a3b7aba14546924b6844f662a1c3e5be97e450bee36422d032cf845
+zh_m4a.ffmpeg=-i test-audio/zh.wav -c:a aac -b:a 48k -movflags +faststart -f mp4
+zh_mp3.path=app/src/androidTest/assets/encoded-audio/zh.mp3
+zh_mp3.sha256=e8e549929113800c5cb9c153489867d396c2138eb5b15405956a1e4a3665cf4b
+zh_mp3.ffmpeg=-i test-audio/zh.wav -c:a libmp3lame -b:a 64k
+zh_ogg.path=app/src/androidTest/assets/encoded-audio/zh.ogg
+zh_ogg.sha256=128a45febe507bd6d7d2f27247ed77ac547f8105c100e307aad2febd694876d3
+zh_ogg.ffmpeg=-i test-audio/zh.wav -c:a libvorbis -q:a 4
+zh_opus.path=app/src/androidTest/assets/encoded-audio/zh.opus
+zh_opus.sha256=599dafc2d59692bf3443900372af85da2055895b1b7453fb96642b5b8c2d1460
+zh_opus.ffmpeg=-i test-audio/zh.wav -ac 2 -c:a libopus -b:a 32k -f opus
