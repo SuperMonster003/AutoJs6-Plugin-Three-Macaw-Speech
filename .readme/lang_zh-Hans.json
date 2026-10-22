@@ -104,7 +104,7 @@
     "数字助理: 需要系统允许选择第三方数字助理应用. 唤起方式依系统而定: 长按 Home 键 (三键导航), 从屏幕底部角落斜向上滑, 或在系统设置中把长按电源键设为唤起数字助理. 实测的 ColorOS 与 HyperOS 平板 (Android 15) 把电源键与手势留给自家助理, 可以改用触发式入口.",
     "触发式入口: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), Xiaomi Pad 23046RP50C (HyperOS, Android 15), 以及 API 33 与 35 模拟器. ColorOS 与 HyperOS 在锁屏上点磁贴会先要求解锁, 解锁后打开弹层; 部分桌面接受添加小部件的请求却不显示确认, 此时按设置中的步骤手动添加. 熄屏时手机不把按键交给无障碍服务, 按键触发只在亮屏时可用. 蓝牙耳机语音键: Sony WF-1000XM4 配合 XQ-DQ72 (Android 13) 实测每次长按都打开弹层, 并用耳机麦克风收音; 其他应用 (例如 Google 应用) 也应答时系统先显示选择器. 实测 HyperOS 平板 (Xiaomi Pad 23046RP50C, Android 15) 的选择器在选中 3-Macaw Speech 后没有反应.",
     "常驻唤醒: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 页) 模拟器. 熄屏 30 分钟耗电 (Sony XQ-DQ72, Android 13; Android 按机型功耗表估算, 手机经 USB 连接, 未充电状态为模拟): 开启时 17.9 mAh, 插件 CPU 时间 454 秒 (平均约占一个 CPU 核心的四分之一), 期间一直在录音; 关闭时 0.006 mAh, 插件没有在运行. 实际耗电因机型而异.",
-    "插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9)."
+    "插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9)."
   ],
   "faq": [
     {
