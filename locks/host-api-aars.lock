@@ -12,10 +12,12 @@ common-plugin-api.sha256=ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687
 speech-api.file=speech-api.aar
 speech-api.sha256=18d98c5dd386de30a02c34cd80d44ef822abc5729b6570209ba55119c2990e1f
 plugin-tool-api.file=plugin-tool-api.aar
-plugin-tool-api.sha256=c0e31a199d67710a9ea00cb82c5403b4bca1f45b67f6968158c7530309ce2875
+plugin-tool-api.sha256=8bce82dd2c9811fa689f6b2c7b3926262cf3a756d78569ef4b19e1af21016005
 
 # Packaged speech entry: release AAR from host commit be1b3eee0ab9817fff5ebbdffcada282330e9313 (2026-10-20).
 # Original AIDL and required host version 5456 are unchanged.
 
-# Plugin tool provider (roadmap P7.6.1, D99): plugin-tool-api release AAR from host commit b6b1468d41a5815e1c9d6d4b3eb55302d4c5fa88 (2026-10-22).
-# The module last changed at 179a25dd95; the base class PluginToolProviderService exists since b4ae5535e.
+# Plugin tool provider (roadmap P7.6.1, D99): plugin-tool-api release AAR from host commit 2c55377a9a9d848d5adb149a15104e729f6963ad (2026-10-22).
+# The module last changed at 3e811b0ea after 054366be6 (results bounded by PluginToolLimits.MAX_RESULT_CHARS, refused reports become
+# LIMIT_EXCEEDED; MCP roadmap D65, appendix D Q41); the base class PluginToolProviderService exists since b4ae5535e.
+# It replaces the artifact of host commit b6b1468d4 (c0e31a199d67710a9ea00cb82c5403b4bca1f45b67f6968158c7530309ce2875).

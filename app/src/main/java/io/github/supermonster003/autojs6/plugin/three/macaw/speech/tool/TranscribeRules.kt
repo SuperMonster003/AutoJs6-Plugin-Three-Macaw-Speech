@@ -20,15 +20,6 @@ internal data class TranscribePlan(val modelId: String, val warnings: List<ToolW
  */
 internal object TranscribeRules {
 
-    /**
-     * The result also travels to the host through a oneway Binder callback, where a string takes two bytes per UTF-16
-     * unit and the asynchronous transaction space is about half a megabyte (appendix D, Q41); the transcription keeps its
-     * result within this many units besides the contract's UTF-8 ceiling.
-     * zh-CN: 结果还要经 oneway Binder 回调交给宿主, 字符串在其中每个 UTF-16 单元占两个字节, 异步事务空间约半兆 (附录 D, Q41); 转写除契约的 UTF-8
-     * 上限外, 还把结果控制在这么多个单元以内.
-     */
-    const val MAX_RESULT_CHARS = 192 * 1024
-
     /** The warning of a result whose segments lost their text. zh-CN: 分段去掉文字时的警告. */
     const val TRIMMED = "The transcript is too large for a tool result with the text of every segment; the segments keep their times without text"
 
@@ -43,14 +34,17 @@ internal object TranscribeRules {
     /**
      * The result of the catalog's output schema; when it would pass [maxChars] UTF-16 units or [maxBytes] UTF-8 bytes,
      * the segments keep their times without text and a `LIMIT_EXCEEDED` warning says so (D97). A result that is still
-     * too large (the full text alone) fails with `LIMIT_EXCEEDED`.
+     * too large (the full text alone) fails with `LIMIT_EXCEEDED`. Both ceilings are the contract's: the result reaches
+     * the host in a oneway Binder callback, whose Parcel holds strings as UTF-16 (appendix D, Q41), and the base class
+     * would refuse a larger result as a whole instead of trimming it.
      * zh-CN: 符合目录输出 schema 的结果; 将超过 [maxChars] 个 UTF-16 单元或 [maxBytes] 个 UTF-8 字节时, 分段只保留时间不带文字, 并以
-     * `LIMIT_EXCEEDED` 警告说明 (D97). 仍然过大 (仅全文就超限) 时以 `LIMIT_EXCEEDED` 失败.
+     * `LIMIT_EXCEEDED` 警告说明 (D97). 仍然过大 (仅全文就超限) 时以 `LIMIT_EXCEEDED` 失败. 两道上限都取自契约: 结果经 oneway Binder 回调交给宿主,
+     * 其 Parcel 以 UTF-16 存放字符串 (附录 D, Q41), 更大的结果会被基类整体拒绝而不是裁剪.
      */
     fun result(
         transcript: FileTranscript,
         warnings: List<ToolWarning>,
-        maxChars: Int = MAX_RESULT_CHARS,
+        maxChars: Int = PluginToolLimits.MAX_RESULT_CHARS,
         maxBytes: Int = PluginToolLimits.MAX_RESULT_BYTES,
     ): String {
         val all = (warnings + transcript.warnings.map { ToolWarning(it.code, it.message) }).distinct()

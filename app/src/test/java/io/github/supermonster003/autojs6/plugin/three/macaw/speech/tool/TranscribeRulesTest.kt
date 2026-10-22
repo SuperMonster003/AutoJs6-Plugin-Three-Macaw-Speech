@@ -109,7 +109,8 @@ class TranscribeRulesTest {
         assertEquals(full, TranscribeRules.result(transcript(chinese), emptyList(), maxChars = full.length, maxBytes = bytes))
         val byBytes = TranscribeRules.result(transcript(chinese), emptyList(), maxChars = full.length, maxBytes = bytes - 1)
         assertFalse(((parse(byBytes)["segments"] as List<*>)[0] as Map<*, *>).containsKey("text"))
-        assertTrue("for ASCII text the Binder budget is the tighter ceiling", TranscribeRules.MAX_RESULT_CHARS * 2 < PluginToolLimits.MAX_RESULT_BYTES)
+        assertTrue("for ASCII text the Binder budget is the tighter ceiling", PluginToolLimits.MAX_RESULT_CHARS * 2 < PluginToolLimits.MAX_RESULT_BYTES)
+        assertEquals("the contract's ceiling of the staged plugin-tool-api.aar (appendix D, Q41)", 192 * 1024, PluginToolLimits.MAX_RESULT_CHARS)
     }
 
     @Test
