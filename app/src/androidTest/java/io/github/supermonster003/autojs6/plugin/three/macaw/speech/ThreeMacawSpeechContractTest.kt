@@ -270,6 +270,8 @@ class ThreeMacawSpeechContractTest {
             setOf(
                 "$packageName.WakeActivity", MicrophonePermissionActivity::class.java.name, ThreeMacawSpeechInfoService::class.java.name,
                 ThreeMacawSpeechService::class.java.name,
+                // Roadmap P7.6.1 (D88): the plugin tool service AutoJs6 binds.
+                "$PACKAGE.tool.SpeechToolService",
             ),
             own.map { it.first }.toSet(),
         )
