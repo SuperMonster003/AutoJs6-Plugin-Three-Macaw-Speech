@@ -66,6 +66,51 @@
       "recommended": false
     },
     {
+      "id": "asr.zipformer-streaming.fr.2023-04-14.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "fr",
+      "size": "129.0 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "asr.zipformer-streaming.ru.2025-08-16.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "ru",
+      "size": "28.6 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "asr.zipformer-streaming.ko.2024-06-16.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "ko",
+      "size": "140.9 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "punct.ct-transformer.zh-en.2024-04-12.int8",
+      "kind": "{{ text_model_kind_punct }}",
+      "languages": "zh, en",
+      "size": "75.5 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "punct.cnn-bilstm.en.2024-08-06.int8",
+      "kind": "{{ text_model_kind_punct }}",
+      "languages": "en",
+      "size": "7.6 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
       "id": "kws.zipformer.zh-en.2025-12-20",
       "kind": "{{ text_model_kind_kws }}",
       "languages": "zh, en",
@@ -115,6 +160,42 @@
       "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
       "languages": "en",
       "size": "81.1 MB",
+      "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.fr-fr-siwis-medium.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "fr",
+      "size": "36.6 MB",
+      "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.es-es-davefx-medium.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "es",
+      "size": "36.6 MB",
+      "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.de-de-thorsten-medium.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "de",
+      "size": "36.6 MB",
+      "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.ru-ru-denis-medium.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "ru",
+      "size": "36.6 MB",
       "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
       "commercial": "{{ text_model_commercial_no }}",
       "recommended": false

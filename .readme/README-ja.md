@@ -54,10 +54,11 @@
 
 ******
 
-- 音声認識: マイクからのストリーミング書き起こし (途中結果と確定結果をリアルタイムに返す) と音声ファイルの認識 (WAV, MP3, AAC, Ogg, FLAC など. 動画ファイルの音声も可). 中国語, 英語, 中英混在, 日本語, 韓国語, 広東語のオフラインモデルを提供します.
+- 音声認識: マイクからのストリーミング書き起こし (途中結果と確定結果をリアルタイムに返す) と音声ファイルの認識 (WAV, MP3, AAC, Ogg, FLAC など. 動画ファイルの音声も可). 中国語, 英語, 中英混在, 日本語, 韓国語, 広東語のオフラインモデルを提供します. フランス語, ロシア語, 韓国語には話しながら文字が出るストリーミングモデルもあります.
+- 自動句読点: 句読点モデルをインストールすると, ストリーミングモデルが認識した各文に読点, 句点, 疑問符が付き (中国語と英語), 英語は大文字も復元されます. SenseVoice は自前の句読点を付けるため変わりません. 句読点モデルはホーム画面の "句読点" グループからダウンロードします.
 - 音声区間検出: 内蔵の silero VAD v5 が音声を発話区間に分割し, 書き起こし時の自動的な文の区切りにも使われます.
 - ウェイクワード: キーワードをそのまま入力するだけ (例: `小六小六` や `hey macaw`) でモデルの学習は不要です. 起動後は自動的に書き起こしへ移行できます.
-- 音声合成: 複数の中国語と英語のニューラル音声. WAV ファイルへ合成できるほか, システム TTS エンジンとして AutoJs6 の `tts` モジュールや他のアプリから使えます.
+- 音声合成: 複数の中国語と英語のニューラル音声. WAV ファイルへ合成できるほか, システム TTS エンジンとして AutoJs6 の `tts` モジュールや他のアプリから使えます. フランス語, スペイン語, ドイツ語, ロシア語の Piper 音声もあります (非商用のみ).
 - システムの音声入力: 他のアプリ (3-Stove Agent など) のマイクボタンでオフライン認識を使えます. 画面下部のパネルで一文を話すと, 認識されたテキストがそのアプリに戻ります.
 - デジタルアシスタント: 3-Macaw Speech をデフォルトのデジタルアシスタントアプリに選ぶと, 電源ボタンまたはホームボタンの長押しで一文を話し, 必要なら認識されたテキストを編集して 3-Stove Agent や 3-Stone AI など音声コマンドを受け取るアプリに渡すか, コピーできます. システムの音声認識サービスも提供します. Android 11 以前ではアシスタントに選ぶと通常はデフォルトの音声認識サービスにもなり, Android 12 以降はシステムの音声入力設定で別途選びます (この設定がない端末もあります). アプリが直接指定することもできます.
 - 起動方法: 電源ボタンを長押ししなくても同じ音声入力パネルを開けます: クイック設定タイル (ロック画面でも使えます), ホーム画面のウィジェットとアプリアイコンのショートカット, ドラッグできるフローティングマイク (デフォルトはオフ), 音量キーの長押しまたは 2 回押しで開くキートリガー (キー操作だけを扱うユーザー補助サービス, デフォルトはオフ), Bluetooth ヘッドセットの音声キー. 普段は録音せず, マイクを使うのはパネルで話している数秒間だけです.
@@ -120,7 +121,7 @@
 
 ******
 
-認識, ウェイクワード, 合成のモデルはそれぞれ 9 MB から 410 MB あるため, APK には含まれません. プラグインは署名付きのモデルカタログを内蔵し, AutoJs6 共有アセットリポジトリの変更不可のリリースからモデルをダウンロードします. ミラーを使えない場合は sherpa-onnx の上流アドレスに切り替え, どちらの経路でもすべてのファイルが SHA-256 の検証に合格してからモデルを有効にします. 1.0.0 のカタログには次のモデルがあります (サイズはインストール後の容量です):
+認識, 句読点, ウェイクワード, 合成のモデルはそれぞれ 7 MB から 410 MB あるため, APK には含まれません. プラグインは署名付きのモデルカタログを内蔵し, AutoJs6 共有アセットリポジトリの変更不可のリリースからモデルをダウンロードします. ミラーを使えない場合は sherpa-onnx の上流アドレスに切り替え, どちらの経路でもすべてのファイルが SHA-256 の検証に合格してからモデルを有効にします. 1.2.0 のカタログには次のモデルがあります (サイズはインストール後の容量です):
 
 | モデル ID | 用途 | 言語 | サイズ | ライセンス | 商用利用 |
 | --- | --- | --- | --- | --- | --- |
@@ -128,14 +129,23 @@
 | `asr.zipformer-streaming.zh-en.2023-02-20.int8` (推奨) | 認識 (ストリーミング) | zh, en | 199.1 MB | Apache-2.0 | 可 |
 | `asr.zipformer-streaming.en.2023-06-26.int8` (推奨) | 認識 (ストリーミング) | en | 70.3 MB | Apache-2.0 | 可 |
 | `asr.zipformer-streaming.zh.2025-06-30.int8` | 認識 (ストリーミング) | zh | 167.4 MB | 宣言なし | 非商用のみ |
+| `asr.zipformer-streaming.fr.2023-04-14.int8` (推奨) | 認識 (ストリーミング) | fr | 129.0 MB | Apache-2.0 | 可 |
+| `asr.zipformer-streaming.ru.2025-08-16.int8` (推奨) | 認識 (ストリーミング) | ru | 28.6 MB | Apache-2.0 | 可 |
+| `asr.zipformer-streaming.ko.2024-06-16.int8` | 認識 (ストリーミング) | ko | 140.9 MB | Apache-2.0 | 非商用のみ |
+| `punct.ct-transformer.zh-en.2024-04-12.int8` (推奨) | 句読点 | zh, en | 75.5 MB | Apache-2.0 | 可 |
+| `punct.cnn-bilstm.en.2024-08-06.int8` (推奨) | 句読点 | en | 7.6 MB | Apache-2.0 | 可 |
 | `kws.zipformer.zh-en.2025-12-20` (推奨) | ウェイクワード | zh, en | 8.8 MB | Apache-2.0 | 可 |
 | `tts.vits.melo.zh-en` (推奨) | 合成 (話者: 1, 44.1 kHz) | zh, en | 177.4 MB | MIT | 可 |
 | `tts.vits.icefall.zh-aishell3` (推奨) | 合成 (話者: 174, 8 kHz) | zh | 32.8 MB | 宣言なし | 不明 |
 | `tts.kokoro.multi-lang.v1_1` | 合成 (話者: 103, 24 kHz) | zh, en | 405.7 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可 |
 | `tts.matcha.icefall.zh-baker` | 合成 (話者: 1, 22.05 kHz) | zh | 81.0 MB | 宣言なし, MIT (ボコーダー) | 非商用のみ |
 | `tts.vits.piper.en-us-lessac-medium` | 合成 (話者: 1, 22.05 kHz) | en | 81.1 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
+| `tts.vits.piper.fr-fr-siwis-medium.int8` | 合成 (話者: 1, 22.05 kHz) | fr | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
+| `tts.vits.piper.es-es-davefx-medium.int8` | 合成 (話者: 1, 22.05 kHz) | es | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
+| `tts.vits.piper.de-de-thorsten-medium.int8` | 合成 (話者: 1, 22.05 kHz) | de | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
+| `tts.vits.piper.ru-ru-denis-medium.int8` | 合成 (話者: 1, 22.05 kHz) | ru | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 非商用のみ |
 
-非商用に限られるモデルやライセンスが不明なモデルは, ダウンロード前にライセンスを表示します. スクリプトからダウンロードするときは `acceptLicense: true` を明示的に渡す必要があります. 中国語ストリーミング 2025 モデルは重みにライセンスの宣言がなく, 学習データに非商用限定のコーパスを含むため, sherpa-onnx の上流アドレスからのみダウンロードし, 共有アセットリポジトリにはミラーしていません. 合成モデルの Kokoro と Piper には eSpeak NG の発音データ (espeak-ng-data, GPL-3.0-or-later) が含まれます.
+非商用に限られるモデルやライセンスが不明なモデルは, ダウンロード前にライセンスを表示します. スクリプトからダウンロードするときは `acceptLicense: true` を明示的に渡す必要があります. 中国語ストリーミング 2025 モデルは重みにライセンスの宣言がなく, 学習データに非商用限定のコーパスを含むため, sherpa-onnx の上流アドレスからのみダウンロードし, 共有アセットリポジトリにはミラーしていません. 合成モデルの Kokoro と Piper には eSpeak NG の発音データ (espeak-ng-data, GPL-3.0-or-later) が含まれます. 韓国語ストリーミングモデルの学習データ (KsponSpeech) は韓国籍の人だけが利用を申請でき, 韓国外での利用には別途の契約が必要なため, 非商用として扱い, ミラーもせず上流アドレスからのみダウンロードします (ダウンロード約 418 MB, インストール後 141 MB). フランス語, スペイン語, ドイツ語, ロシア語の 4 つの Piper 音声はいずれも英語の lessac 音声から微調整されており, lessac と同じく非商用に限られます.
 
 ホーム画面のローカルモデルをインポートは, tar, tar.bz2, zip のアーカイブまたはフォルダーを受け付けます. カタログのモデルと一致するファイルはそのモデルとして登録し, それ以外のファイルは種類, モデルタイプ, 名前, 言語を入力するとカスタムモデルとしてインポートします. インポートはシステムのファイル選択画面で行い, ストレージの権限は不要です.
 
@@ -182,6 +192,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 ```
 
 - `speech.listen(options)` は書き起こしセッションを開き, `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error`, `end` イベントで結果を返します. `stop()` で早めに終了します. `speech.recognize(path)` は音声ファイルを認識し (WAV 以外の形式には AutoJs6 6.8.0 以降が必要. 16 kHz の PCM も可), `speech.detectVoice(path)` はその音声区間を一覧にします.
+- `speech.listen` と `speech.recognize` の `punctuation` オプションは既定で true です. モデル自身の句読点 (SenseVoice) はそのまま残し, ストリーミングモデルの結果にはインストール済みの句読点モデルで句読点を付けます (中国語と英語. 英語は大文字小文字も復元). その言語に対応する句読点モデルがなければそのままです. false にするとすべての句読点を取り除きます. 句読点モデルはプラグインのホーム画面でのみ管理し, `speech.models` には表示されません.
 - `speech.wake(keywords, options)` はキーワードを平文で書いたウェイクワードセッションを開きます (最大 50 個). `thenListen` を指定すると, 起動のたびに同じ録音のまま 1 ラウンドの書き起こしに移り, そのセッションは `wake` イベントの `listen` プロパティで渡されます.
 - `speech.synthesize(text, path, options)` は WAV ファイルに合成します (最大 8000 文字, モデル, 話者, 速度を任意で指定). `speech.speak(text, options)` と `tts(text, { engine })` はシステムのテキスト読み上げエンジンで読み上げます.
 - `speech.models` はモデルの一覧, ダウンロード (`install`, 進捗あり), インポート, 削除とデフォルトモデルの設定を行います. `speech.capabilities()` はプラグインのバージョン, 対応機能, マイクの権限の有無を返します.
@@ -205,6 +216,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - 起動方法: Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), Xiaomi Pad 23046RP50C (HyperOS, Android 15), API 33 と 35 のエミュレーターで検証しました. ColorOS と HyperOS ではロック画面でタイルをタップすると先にロック解除を求め, 解除後にパネルを開きます. ウィジェットの追加要求を受け付けても確認を表示しないランチャーがあるため, その場合は設定の手順で手動で追加してください. 画面オフ時はキー操作がユーザー補助サービスに渡されないため, キートリガーは画面オン時だけ使えます. Bluetooth ヘッドセットの音声キー: Sony WF-1000XM4 と XQ-DQ72 (Android 13) では長押しのたびにパネルが開き, ヘッドセットのマイクで聞き取りました. 他のアプリ (Google アプリなど) も応答する場合は, 先にシステムの選択画面が出ます. HyperOS タブレット (Xiaomi Pad 23046RP50C, Android 15) では選択画面で 3-Macaw Speech を選んでも何も起きませんでした.
 - 常時ウェイクワード: Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), API 35 (16 KB ページ) のエミュレーター で実測. 画面オフ 30 分の消費電力 (Sony XQ-DQ72, Android 13. 機種の電力プロファイルによる Android の推定値で, USB 接続のまま未充電の状態を模擬): オンでは 17.9 mAh, プラグインの CPU 時間 454 秒 (平均で CPU コア 1 つの約 4 分の 1) で, その間ずっと録音していました. オフでは 0.006 mAh で, プラグインは動いていませんでした. 実際の消費は機種によって異なります.
 - プラグインツール: Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), API 24 と 35 のエミュレーターで確認済み (API 24 ではモデル不要の部分のみ). MCP Server 経由の呼び出しは Sony G8441 (Android 9) で確認済み.
+- 句読点と 1.2.0 で追加したモデル: Sony XQ-AT72 (Android 12) で確認済み. 句読点をオンにすると中国語, 英語, 中英混在の録音に句読点が付き, 単語はオフのときと同じでした. ロシア語とフランス語の Piper 音声で合成した文を同じ言語のストリーミングモデルで認識し直した文字誤り率はそれぞれ 7.9% と 0% でした. スペイン語とドイツ語の音声は正常に合成でき, 韓国語モデルは読み込めることだけを確認しました (韓国語のテスト録音がないため).
 
 ******
 
@@ -332,10 +344,12 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 3-Macaw Speech は次のオープンソースプロジェクト, モデル, データの上に成り立っています. 作者とメンテナーの皆さんに感謝します:
 
 - [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) と [k2-fsa (次世代 Kaldi)](https://github.com/k2-fsa) チーム: 認識, ウェイクワード, 音声区間検出, 合成のランタイム, 各モデルの ONNX エクスポートと Android ライブラリ (Apache-2.0).
-- [icefall](https://github.com/k2-fsa/icefall) で学習したモデル: Zipformer ストリーミング認識モデル (中英 2 言語 pfluo, 英語 Zengwei, 中国語 2025 yuekai), オープン語彙のウェイクワードモデル (pkufool), k2-fsa による AISHELL-3 VITS と標貝 (Baker) Matcha-TTS の合成モデル.
+- [icefall](https://github.com/k2-fsa/icefall) で学習したモデル: Zipformer ストリーミング認識モデル (中英 2 言語 pfluo, 英語 Zengwei, 中国語 2025 yuekai, フランス語 shaojieli, 韓国語 johnBamma), オープン語彙のウェイクワードモデル (pkufool), k2-fsa による AISHELL-3 VITS と標貝 (Baker) Matcha-TTS の合成モデル.
+- [Vosk](https://huggingface.co/alphacep/vosk-model-small-streaming-ru) (Alpha Cephei): ロシア語の小型ストリーミング認識モデル (Apache-2.0).
 - [SenseVoice](https://github.com/FunAudioLLM/SenseVoice) (FunAudioLLM / Alibaba, FunASR モデルライセンス 1.1): 多言語のオフライン認識モデル.
-- 合成モデル [MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, 中国語の録音は LongMaoData が提供), [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT) と [HiFi-GAN](https://github.com/jik876/hifi-gan) ボコーダー (MIT).
-- 学習データ: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), [Data-Baker 中国語標準女性音声コーパス](https://www.data-baker.com/open_source.html) (非商用のみ), Lessac Technologies の Blizzard 2013 データ (研究用のみ), [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (パブリックドメイン).
+- 句読点モデル: [FunASR](https://github.com/modelscope/FunASR) (Alibaba DAMO Academy) の CT-Transformer 中英句読点モデルと, [Edge-Punct-Casing](https://github.com/frankyoujian/Edge-Punct-Casing) (frankyoujian) の英語の句読点と大文字小文字のモデル (いずれも Apache-2.0).
+- 合成モデル [MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, 中国語の録音は LongMaoData が提供), [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT) と [HiFi-GAN](https://github.com/jik876/hifi-gan) ボコーダー (MIT). フランス語 siwis, スペイン語 davefx, ドイツ語 thorsten, ロシア語 denis の音声は [piper-voices](https://huggingface.co/rhasspy/piper-voices) (MIT) のもので, いずれも英語の lessac 音声から微調整されています.
+- 学習データ: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), [Data-Baker 中国語標準女性音声コーパス](https://www.data-baker.com/open_source.html) (非商用のみ), Lessac Technologies の Blizzard 2013 データ (研究用のみ), [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (パブリックドメイン). 1.2.0 で追加したフランス語, 韓国語, Piper のモデルは, [Common Voice](https://commonvoice.mozilla.org/) 12 フランス語 (CC0), [KsponSpeech](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=123) (AI Hub, 申請は韓国籍の人のみ), [SIWIS フランス語音声合成データベース](https://datashare.is.ed.ac.uk/handle/10283/2353) (CC BY 4.0, SIWIS database, University of Edinburgh and partners), [Thorsten-Voice](https://github.com/thorstenMueller/Thorsten-Voice) (CC0), [NabuCasa voice-datasets](https://github.com/NabuCasa/voice-datasets) の davefx と denis の録音 (CC0) も使っています.
 - 推論エンジン [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT), 音声区間検出モデル [silero VAD](https://github.com/snakers4/silero-vad) (MIT), 音素変換の [eSpeak NG](https://github.com/espeak-ng/espeak-ng) (GPL-3.0-or-later) と [piper-phonemize](https://github.com/rhasspy/piper-phonemize) (MIT), 中国語ウェイクワードの読みの表 [pinyin-data](https://github.com/mozillazg/pinyin-data) (mozillazg, MIT).
 
 ******
@@ -368,6 +382,8 @@ _2026/10/21_
 - `機能` 再起動や更新の後に自動で録音は始まりません. スイッチがオンのままなら "タップして常時ウェイクワードを再開" 通知が表示され, ホーム画面や設定を開いても再開します
 - `機能` 音声ファイルの認識 (speech.recognize, speech.detectVoice) で, WAV のほか MP3, AAC (M4A を含む), Ogg (Vorbis, Opus), FLAC, AMR などの一般的な形式と, 動画ファイル (MP4, WebM など) の音声も使えるように; 上限は引き続き 200 MB または 30 分 (AutoJs6 6.8.0 以降が必要, それより前のバージョンでは WAV のみ)
 - `機能` 4 つのプラグインツール (AutoJs6 6.8.0 以降): speech_listen は一文を聞き取ってテキストを返し, speech_speak は読み上げ, speech_transcribe はスマートフォン上の音声ファイルを書き起こし, speech_synthesize はテキストを WAV または M4A ファイルに合成します. MCP Server プラグインはこれらを使ってパソコン上の AI アシスタントがスマートフォンを通じて聞いたり話したりできるようにし, スクリプトからも plugins.tools で呼び出せます. すぐに録音できないときは, まずスマートフォンに "タップして話す" 通知を出し, タップすると聞き取りを始めます
+- `機能` ダウンロードできるモデルを追加: フランス語, ロシア語, 韓国語のストリーミング認識と, フランス語, スペイン語, ドイツ語, ロシア語の Piper 音声. Piper 音声と韓国語モデルは非商用に限られ, ダウンロード前にライセンスを表示します. 韓国語モデルは上流アドレスからのみダウンロードします
+- `機能` 自動句読点: ホーム画面の新しい "句読点" グループから句読点モデルをダウンロードすると, ストリーミングモデルが認識した中国語と英語に読点, 句点, 疑問符が付き, 英語は大文字も復元されます. SenseVoice は自前の句読点を付けるため変わりません. スクリプトで punctuation: false を渡すと従来どおりすべての句読点を取り除きます
 
 #### v1.1.0
 

@@ -33,10 +33,11 @@
   "p_introduction_how": "插件是独立安装的 APK, 有自己的界面, 用来下载与管理模型, 试听试说并调整设置. AutoJs6 脚本通过全局模块 `speech` 使用这些能力; 合成能力还注册为 Android 系统 TTS 引擎, 识别能力还以系统语音输入, 系统语音识别服务与数字助理的形式提供, 因此其他应用也能使用. 识别与合成模型不随 APK 提供, 按需下载, 只有语音活动检测模型随包内置.",
   "p_status_note": "在脚本中使用 `speech` 模块需要 AutoJs6 {{ required_host_version_name }} (内部版本号 {{ required_host_version_code }}) 或更高版本. 系统 TTS 引擎, 系统语音输入, 语音识别服务, 数字助理与插件自己的界面不依赖 AutoJs6, 安装插件并下载模型后即可使用.",
   "features": [
-    "语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与音频文件识别 (WAV, MP3, AAC, Ogg, FLAC 等, 也可以是视频文件中的声音), 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型.",
+    "语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与音频文件识别 (WAV, MP3, AAC, Ogg, FLAC 等, 也可以是视频文件中的声音), 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型. 法语, 俄语与韩语也有流式模型, 可以边说边出字.",
+    "自动标点: 装上标点模型后, 流式模型听写或识别出的每句话会自动加上逗号, 句号与问号 (中文与英文), 英文还会恢复大写; SenseVoice 自带标点, 不受影响. 标点模型在首页的 \"标点\" 分组里下载.",
     "语音活动检测: 内置 silero VAD v5, 既可单独切分音频中的语音段, 也用于听写时的自动断句.",
     "唤醒词: 直接填写关键词原文 (例如 `小六小六` 或 `hey macaw`), 无需训练模型, 唤醒后可自动转入听写.",
-    "语音合成: 多种中英文神经网络音色, 可合成到 WAV 文件, 也可以作为系统 TTS 引擎供 AutoJs6 的 `tts` 模块和其他应用使用.",
+    "语音合成: 多种中英文神经网络音色, 可合成到 WAV 文件, 也可以作为系统 TTS 引擎供 AutoJs6 的 `tts` 模块和其他应用使用. 另有法语, 西班牙语, 德语与俄语的 Piper 声音 (仅限非商业用途).",
     "系统语音输入: 其他应用 (例如 3-Stove Agent) 的麦克风按钮可以使用离线识别, 在底部弹层中说一句话, 识别出的文字直接交回该应用.",
     "数字助理: 把 3-Macaw Speech 选为默认数字助理应用后, 长按电源键或 Home 键说一句话, 需要时编辑识别出的文字, 再交给 3-Stove Agent, 3-Stone AI 等接收语音指令的应用, 或复制. 它也提供系统语音识别服务: Android 11 及以下选它为助理时一般会一并设为默认识别服务; Android 12 起需在系统的语音输入设置里另行选择 (部分手机没有这项设置), 应用也可以直接指定它.",
     "触发式入口: 不必长按电源键也能打开同一个听写弹层: 快速设置磁贴 (锁屏上也能用), 桌面小部件与应用图标快捷方式, 可拖动的悬浮麦克风 (默认关闭), 长按或双击音量键的按键触发 (只过滤按键的无障碍服务, 默认关闭), 以及蓝牙耳机的语音键. 平时不录音, 只在弹层听写的几秒内使用麦克风.",
@@ -57,7 +58,7 @@
     "在其他应用中使用: 系统 TTS 引擎见下文系统 TTS 设置; 系统语音输入, 语音识别服务与数字助理见常见问题."
   ],
   "p_usage_note": "每种 ABI 各有一个安装包, 另有适用于全部设备的 `universal` 安装包. 安装包不含识别与合成模型, 模型在插件界面或脚本中按需下载, 也可以从本地文件导入.",
-  "p_models_intro": "识别, 唤醒词与合成模型的体积在 9 MB 到 410 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.0.0 的目录包含以下模型 (大小为安装后占用的空间):",
+  "p_models_intro": "识别, 标点, 唤醒词与合成模型的体积在 7 MB 到 410 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.2.0 的目录包含以下模型 (大小为安装后占用的空间):",
   "text_model_column_id": "模型 ID",
   "text_model_column_kind": "用途",
   "text_model_column_languages": "语言",
@@ -68,6 +69,7 @@
   "text_model_kind_asr_offline": "识别 (离线, 带标点)",
   "text_model_kind_kws": "唤醒词",
   "text_model_kind_tts": "合成",
+  "text_model_kind_punct": "标点",
   "text_model_speakers": "说话人",
   "text_model_commercial_yes": "可以",
   "text_model_commercial_no": "仅限非商业用途",
@@ -75,7 +77,7 @@
   "text_model_license_none": "未声明",
   "text_model_vocoder": "声码器",
   "text_model_recommended": "(推荐)",
-  "p_models_license": "仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与 Piper 两个合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later).",
+  "p_models_license": "仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与各个 Piper 合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later). 韩语流式模型的训练数据 (KsponSpeech) 只向韩国国民开放申请, 在韩国境外使用需要另签协议, 因此按仅限非商业用途标注, 也不经共享资源仓库镜像, 只从上游地址下载 (下载约 418 MB, 安装后 141 MB). 法语, 西班牙语, 德语与俄语四个 Piper 声音都由英文 lessac 声音微调而来, 与它一样仅限非商业用途.",
   "p_models_import": "首页的导入本地模型可以从 tar, tar.bz2 或 zip 归档或文件夹导入模型: 与目录模型一致的文件按该模型登记, 其他文件在填写种类, 模型类型, 名称与语言后作为自定义模型导入. 导入通过系统文件选择器完成, 不需要存储权限.",
   "tts_setup_steps": [
     "在插件首页的合成组中下载至少一个合成模型. 想先试一试时, 体积最小的 `tts.vits.icefall.zh-aishell3` (中文, 174 个说话人) 与中英混读的 `tts.vits.melo.zh-en` 都是推荐模型.",
@@ -87,6 +89,7 @@
   "p_script_api_intro": "AutoJs6 {{ required_host_version_name }} (内部版本号 {{ required_host_version_code }}) 起, 脚本通过全局模块 `speech` (也可写作 `$speech`) 使用这些能力. 下面三段示例可以分别运行: 听写 30 秒并把每句话追加到文件, 用唤醒词唤醒后听一句话, 合成到文件并朗读",
   "api_points": [
     "`speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别音频文件 (WAV 以外的格式需要 AutoJs6 6.8.0 及以上; 也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.",
+    "`speech.listen` 与 `speech.recognize` 的 `punctuation` 选项默认为 true: 模型自带标点 (SenseVoice) 时保留, 流式模型的结果由已安装的标点模型补上标点 (中文与英文, 英文同时恢复大小写), 没有覆盖该语言的标点模型时保持原样; 设为 false 去掉所有标点. 标点模型只在插件首页管理, 不出现在 `speech.models` 中.",
     "`speech.wake(keywords, options)` 打开唤醒词会话, 关键词直接写原文 (至多 50 个); `thenListen` 让每次唤醒后在同一录音上转入一轮听写, 该轮的会话由 `wake` 事件的 `listen` 属性给出.",
     "`speech.synthesize(text, path, options)` 合成到 WAV 文件 (至多 8000 个字符, 可选模型, 说话人与语速); `speech.speak(text, options)` 与 `tts(text, { engine })` 经系统 TTS 引擎朗读.",
     "`speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.",
@@ -104,7 +107,8 @@
     "数字助理: 需要系统允许选择第三方数字助理应用. 唤起方式依系统而定: 长按 Home 键 (三键导航), 从屏幕底部角落斜向上滑, 或在系统设置中把长按电源键设为唤起数字助理. 实测的 ColorOS 与 HyperOS 平板 (Android 15) 把电源键与手势留给自家助理, 可以改用触发式入口.",
     "触发式入口: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), Xiaomi Pad 23046RP50C (HyperOS, Android 15), 以及 API 33 与 35 模拟器. ColorOS 与 HyperOS 在锁屏上点磁贴会先要求解锁, 解锁后打开弹层; 部分桌面接受添加小部件的请求却不显示确认, 此时按设置中的步骤手动添加. 熄屏时手机不把按键交给无障碍服务, 按键触发只在亮屏时可用. 蓝牙耳机语音键: Sony WF-1000XM4 配合 XQ-DQ72 (Android 13) 实测每次长按都打开弹层, 并用耳机麦克风收音; 其他应用 (例如 Google 应用) 也应答时系统先显示选择器. 实测 HyperOS 平板 (Xiaomi Pad 23046RP50C, Android 15) 的选择器在选中 3-Macaw Speech 后没有反应.",
     "常驻唤醒: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 页) 模拟器. 熄屏 30 分钟耗电 (Sony XQ-DQ72, Android 13; Android 按机型功耗表估算, 手机经 USB 连接, 未充电状态为模拟): 开启时 17.9 mAh, 插件 CPU 时间 454 秒 (平均约占一个 CPU 核心的四分之一), 期间一直在录音; 关闭时 0.006 mAh, 插件没有在运行. 实际耗电因机型而异.",
-    "插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9)."
+    "插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9).",
+    "标点与 1.2.0 新增模型: 实测 Sony XQ-AT72 (Android 12). 开启标点时, 中文, 英文与中英混合录音都加上了标点, 字词与关闭时相同; 俄语与法语 Piper 声音合成的句子由同语言的流式模型识别回来, 字错率分别为 7.9% 与 0%; 西班牙语与德语声音合成正常, 韩语模型只验证了能加载 (没有韩语测试录音)."
   ],
   "faq": [
     {
@@ -195,10 +199,12 @@
   "p_acknowledgements_intro": "3-Macaw Speech 建立在以下开源项目, 模型与数据之上, 感谢它们的作者与维护者:",
   "acknowledgements": [
     "[sherpa-onnx]({{ sherpa_onnx_url }}) 与 [k2-fsa (新一代 Kaldi)](https://github.com/k2-fsa) 团队: 识别, 唤醒词, 语音活动检测与合成的运行时, 各模型的 ONNX 导出与 Android 库 (Apache-2.0).",
-    "[icefall](https://github.com/k2-fsa/icefall) 训练的模型: Zipformer 流式识别模型 (中英双语 pfluo, 英文 Zengwei, 中文 2025 yuekai), 开放词表唤醒词模型 (pkufool), 以及 k2-fsa 的 AISHELL-3 VITS 与标贝 Matcha-TTS 合成模型.",
+    "[icefall](https://github.com/k2-fsa/icefall) 训练的模型: Zipformer 流式识别模型 (中英双语 pfluo, 英文 Zengwei, 中文 2025 yuekai, 法语 shaojieli, 韩语 johnBamma), 开放词表唤醒词模型 (pkufool), 以及 k2-fsa 的 AISHELL-3 VITS 与标贝 Matcha-TTS 合成模型.",
+    "[Vosk](https://huggingface.co/alphacep/vosk-model-small-streaming-ru) (Alpha Cephei): 俄语小型流式识别模型 (Apache-2.0).",
     "[SenseVoice](https://github.com/FunAudioLLM/SenseVoice) (FunAudioLLM / 阿里巴巴, FunASR 模型许可 1.1): 多语种离线识别模型.",
-    "[MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, 中文录音由 LongMaoData 授权) 与 [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT) 合成模型, [HiFi-GAN](https://github.com/jik876/hifi-gan) 声码器 (MIT).",
-    "训练数据: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), [标贝中文标准女声音库](https://www.data-baker.com/open_source.html) (仅限非商业用途), Lessac Technologies 的 Blizzard 2013 数据 (仅限研究) 与 [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (公有领域).",
+    "标点模型: [FunASR](https://github.com/modelscope/FunASR) (阿里巴巴达摩院) 的 CT-Transformer 中英文标点模型, 以及 [Edge-Punct-Casing](https://github.com/frankyoujian/Edge-Punct-Casing) (frankyoujian) 的英文标点与大小写模型 (均为 Apache-2.0).",
+    "[MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, 中文录音由 LongMaoData 授权) 与 [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT) 合成模型, [HiFi-GAN](https://github.com/jik876/hifi-gan) 声码器 (MIT). 法语 siwis, 西班牙语 davefx, 德语 thorsten 与俄语 denis 声音来自 [piper-voices](https://huggingface.co/rhasspy/piper-voices) (MIT), 均由英文 lessac 声音微调.",
+    "训练数据: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), [标贝中文标准女声音库](https://www.data-baker.com/open_source.html) (仅限非商业用途), Lessac Technologies 的 Blizzard 2013 数据 (仅限研究) 与 [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (公有领域). 1.2.0 新增的法语, 韩语与 Piper 模型另用到 [Common Voice](https://commonvoice.mozilla.org/) 12 法语 (CC0), [KsponSpeech](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=123) (AI Hub, 只向韩国国民开放申请), [SIWIS 法语语音合成库](https://datashare.is.ed.ac.uk/handle/10283/2353) (CC BY 4.0, SIWIS database, University of Edinburgh and partners), [Thorsten-Voice](https://github.com/thorstenMueller/Thorsten-Voice) (CC0) 与 [NabuCasa voice-datasets](https://github.com/NabuCasa/voice-datasets) 的 davefx 和 denis 录音 (CC0).",
     "[ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) 推理引擎, [silero VAD](https://github.com/snakers4/silero-vad) (MIT) 语音活动检测模型, [eSpeak NG](https://github.com/espeak-ng/espeak-ng) (GPL-3.0-or-later) 与 [piper-phonemize](https://github.com/rhasspy/piper-phonemize) (MIT) 音素转换, [pinyin-data](https://github.com/mozillazg/pinyin-data) (mozillazg, MIT) 中文唤醒词读音表."
   ],
   "p_license": "插件源码使用 [Mozilla Public License 2.0]({{ license_url }}). sherpa-onnx 官方 Android 库 (Apache-2.0) 静态链接了 eSpeak NG 与 UCD Tools, 二者使用 GNU GPL 3.0 或更新版本, 因此发布的 APK 整体按 GPL-3.0-or-later 传播 (MPL-2.0 第 3.3 节允许这种组合), 不提供任何担保. 每个发行版附有对应源码 `{{ corresponding_source_file }}`: sherpa-onnx {{ sherpa_onnx_version }} 的源码与构建脚本, 以及构建时按 URL 与 SHA-256 固定的全部依赖归档; 其 SHA-256 列在发行版的 `SHA256SUMS` 中, 可以用 `.python/corresponding_source.py` 重新生成与校验. ONNX Runtime 与 silero VAD 使用 MIT 许可, 各模型的许可见上文模型表. 插件的关于页可以查看许可全文与第三方声明.",

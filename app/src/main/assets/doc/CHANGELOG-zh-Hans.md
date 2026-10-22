@@ -18,6 +18,8 @@
 * `新增` 重启或更新后不会自动录音: 开关仍开着时发一条 "点此恢复常驻唤醒" 通知, 打开首页或设置页也会恢复
 * `新增` 识别音频文件 (speech.recognize, speech.detectVoice) 除 WAV 外也支持 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常见格式, 以及视频文件 (MP4, WebM 等) 中的声音; 文件上限仍为 200 MB 或 30 分钟 (需要 AutoJs6 6.8.0 及以上, 更早的版本只能传入 WAV)
 * `新增` 4 个插件工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 听一句话并返回文字, speech_speak 朗读, speech_transcribe 识别手机上的音频文件, speech_synthesize 把文字合成为 WAV 或 M4A 文件. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 脚本也可以经 plugins.tools 调用; 不能直接录音时, 听写先在手机上发出 "点此说话" 通知, 点按后开始
+* `新增` 可下载更多模型: 法语, 俄语与韩语的流式识别, 以及法语, 西班牙语, 德语与俄语的 Piper 声音; Piper 声音与韩语模型仅限非商业用途, 下载前会提示许可, 韩语模型只从上游地址下载
+* `新增` 自动标点: 在首页新的 "标点" 分组里下载标点模型后, 流式模型识别出的中文与英文会自动加上逗号, 句号与问号, 英文还会恢复大写; SenseVoice 自带标点, 不受影响; 脚本照旧可以传入 punctuation: false 去掉所有标点
 
 # v1.1.0
 
