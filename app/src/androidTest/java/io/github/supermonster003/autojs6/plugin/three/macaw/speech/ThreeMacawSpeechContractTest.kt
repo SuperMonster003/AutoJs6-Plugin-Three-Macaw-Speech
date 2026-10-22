@@ -289,6 +289,8 @@ class ThreeMacawSpeechContractTest {
                 "android.permission.SYSTEM_ALERT_WINDOW", "android.permission.FOREGROUND_SERVICE_SPECIAL_USE", "android.permission.RECEIVE_BOOT_COMPLETED",
                 // Roadmap D68: the system drops BLUETOOTH (maxSdkVersion 30) from the request on Android 12+.
                 "android.permission.BLUETOOTH_CONNECT",
+                // Roadmap D111 (P7.8): the file recognition service and its wake lock.
+                "android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING", "android.permission.WAKE_LOCK",
             ) + (if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.R) setOf("android.permission.BLUETOOTH") else emptySet()),
             packageInfo.requestedPermissions.orEmpty().toSet() - MERGED_PLATFORM_PERMISSIONS,
         )

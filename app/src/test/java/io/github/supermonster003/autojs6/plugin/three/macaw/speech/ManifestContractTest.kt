@@ -30,7 +30,7 @@ class ManifestContractTest {
     private val application: Element get() = manifest.child("application")
 
     @Test
-    fun `the permissions are exactly the plugin permission, the roadmap D29 set, the floating microphone's and the headset's`() {
+    fun `the permissions are exactly the plugin permission, the roadmap D29 set, the floating microphone's, the headset's and the file tab's`() {
         assertEquals(
             listOf(
                 PLUGIN_PERMISSION,
@@ -50,6 +50,9 @@ class ManifestContractTest {
                 // Roadmap D68 (P7.1): the headset's voice recognition; BLUETOOTH only below Android 12.
                 "android.permission.BLUETOOTH",
                 "android.permission.BLUETOOTH_CONNECT",
+                // Roadmap D111 (P7.8): the file recognition service on Android 15+ and its wake lock (appendix D Q65 (a)).
+                "android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING",
+                "android.permission.WAKE_LOCK",
             ),
             manifest.children("uses-permission").map { it.android("name") },
         )
@@ -57,7 +60,10 @@ class ManifestContractTest {
         assertEquals("BLUETOOTH_CONNECT replaces it on Android 12+", "30", bluetooth.android("maxSdkVersion"))
         val permissions = manifest.children("uses-permission").map { it.android("name") }
         assertTrue("no scanning and no location (roadmap D68)", permissions.none { it.contains("SCAN") || it.contains("LOCATION") || it.contains("BLUETOOTH_ADMIN") })
-        assertTrue("no storage permission (roadmap D23 / D29)", permissions.none { it.contains("STORAGE") || it.contains("MEDIA") })
+        assertTrue(
+            "no storage permission (roadmap D23 / D29); the media processing service type is not one",
+            permissions.none { it.contains("STORAGE") || (it.contains("MEDIA") && it != "android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING") },
+        )
         assertEquals("one queries element: VOICE_COMMAND (roadmap D50) and RESIDENT_LISTENER (D75)", 1, manifest.children("queries").size)
         assertTrue("no uses-sdk override: SDK levels come from version.properties", manifest.children("uses-sdk").isEmpty())
         assertTrue("no feature requirements", manifest.children("uses-feature").isEmpty())
@@ -215,10 +221,20 @@ class ManifestContractTest {
     }
 
     @Test
+    fun `the file recognition service is internal, media processing on Android 15+ and data sync before (roadmap D111)`() {
+        val service = service(".service.FileRecognitionService")
+        assertEquals("false", service.android("exported"))
+        assertEquals("dataSync|mediaProcessing", service.android("foregroundServiceType"))
+        assertNull(service.androidOrNull("permission"))
+        assertTrue("started by the plugin only", service.children("intent-filter").isEmpty())
+    }
+
+    @Test
     fun `the INFO and SPEECH services match the discovery constants`() {
         assertEquals(
             listOf(
                 RESIDENT, ".service.ThreeMacawSpeechInfoService", ".service.ThreeMacawSpeechService", PACKAGED, TOOLS, ".service.ModelOperationService", ".service.MicrophoneService",
+                ".service.FileRecognitionService",
                 ".ttsengine.ThreeMacawSpeechTtsEngineService", ASSISTANT, ASSISTANT_SESSION, RECOGNITION, FLOATING, KEY, TILE,
             ),
             application.children("service").map { it.android("name") },

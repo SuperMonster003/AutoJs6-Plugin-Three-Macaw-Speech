@@ -39,6 +39,13 @@
         android:name="android.permission.BLUETOOTH"
         android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!--
+        Roadmap D111 (P7.8): the file tab of the tryout screen recognizes a picked audio file in FileRecognitionService,
+        of type mediaProcessing on Android 15+ (dataSync on Android 10 - 14), under a partial wake lock of at most
+        60 minutes, so the run goes on with the screen off (appendix D Q65 (a)).
+    -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!--
         Roadmap D50 (P5.7): the digital assistant finds the apps that take the recognized text (3-Stove Agent, 3-Stone AI)
@@ -442,6 +449,12 @@
             android:name=".service.MicrophoneService"
             android:exported="false"
             android:foregroundServiceType="microphone" />
+
+        <!-- The file recognition of the tryout screen (roadmap D111, P7.8); internal, started when a run begins. -->
+        <service
+            android:name=".service.FileRecognitionService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync|mediaProcessing" />
 
         <!-- API 34+: starts MicrophoneService while the plugin is visible for a moment (roadmap P3.1); internal. -->
         <activity

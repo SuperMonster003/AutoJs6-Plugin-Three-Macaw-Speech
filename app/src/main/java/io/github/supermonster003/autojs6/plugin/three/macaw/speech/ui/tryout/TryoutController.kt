@@ -102,6 +102,11 @@ internal class TryoutController(context: Context) {
     private val output = File(app.cacheDir, "tryout/tryout.wav")
     private val pending = File(app.cacheDir, "tryout/pending.wav")
 
+    // File (roadmap D114: its own model, language and punctuation, apart from dictation)
+    var fileModel by mutableStateOf<String?>(null)
+    var fileLanguage by mutableStateOf<String?>(null)
+    var filePunctuation by mutableStateOf(true)
+
     val endpointMillis: Long get() = preferences.endpointMillis
     val vad: Boolean get() = preferences.vad
 
@@ -114,6 +119,7 @@ internal class TryoutController(context: Context) {
                 kwsModels = models.filter { it.kind == SpeechContract.KIND_KWS }
                 ttsModels = models.filter { it.kind == SpeechContract.KIND_TTS }
                 if (asrModel !in asrModels.map { it.id }) asrModel = asrModels.firstOrNull { it.isDefault }?.id ?: asrModels.firstOrNull()?.id
+                if (fileModel !in asrModels.map { it.id }) fileModel = asrModels.firstOrNull { it.isDefault }?.id ?: asrModels.firstOrNull()?.id
                 if (ttsModel !in ttsModels.map { it.id }) selectTtsModel(ttsModels.firstOrNull { it.isDefault }?.id ?: ttsModels.firstOrNull()?.id)
             }
         }
@@ -248,6 +254,16 @@ internal class TryoutController(context: Context) {
     fun stopSynthesis() {
         synthesisId?.let { id -> runCatching { binder.cancelOperation(id) } }
         stopPlayer()
+    }
+
+    /** Writes an export of the file tab to [target] (a document the user created). zh-CN: 把文件标签的导出写入 [target]. */
+    fun writeDocument(target: Uri, bytes: ByteArray, done: (Boolean) -> Unit) {
+        io.execute {
+            val ok = runCatching {
+                app.contentResolver.openOutputStream(target, "wt")?.use { it.write(bytes) } ?: error("no stream")
+            }.isSuccess
+            main.post { done(ok) }
+        }
     }
 
     private fun key(text: String) = listOf(text, ttsModel, speaker, speed).joinToString("\u0000")

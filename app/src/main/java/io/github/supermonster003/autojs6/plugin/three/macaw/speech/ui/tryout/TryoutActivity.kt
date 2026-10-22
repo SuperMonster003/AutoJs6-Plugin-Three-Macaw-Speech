@@ -1,7 +1,13 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.tryout
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -26,7 +32,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SecondaryTabRow
+import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -53,7 +59,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.TranscriptExport
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.LocalMacawPalette
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.Choice
@@ -69,19 +78,22 @@ import java.util.Locale
 
 /**
  * Tryout (roadmap D7, P5.3): live dictation (partials in gray, finals as body text) with model and language choice, a
- * wake word trial (keywords, hits and scores) and synthesis (text, model, speaker, speed; play and save to a file).
- * Leaving the screen releases the microphone (`onStop`).
+ * wake word trial (keywords, hits and scores), synthesis (text, model, speaker, speed; play and save to a file) and,
+ * since P7.8, the recognition of a picked audio file ([FileTab]). Leaving the screen releases the microphone
+ * (`onStop`); a file run goes on in [FileTranscription].
  * zh-CN: 试听试说 (路线图 D7, P5.3): 实时听写 (中间结果为灰字, 整句为正文), 可切换模型与语言; 唤醒词试验 (关键词, 命中与分数); 合成 (文本, 模型, 说话人,
- * 语速; 播放与保存到文件). 离开界面即释放麦克风 (`onStop`).
+ * 语速; 播放与保存到文件); P7.8 起还有所选音频文件的识别 ([FileTab]). 离开界面即释放麦克风 (`onStop`); 文件识别在 [FileTranscription] 中继续.
  */
 class TryoutActivity : StandaloneActivity() {
 
     private lateinit var tryout: TryoutController
+    private lateinit var transcription: FileTranscription
     private var microphoneGranted by mutableStateOf(false)
     private var saveText: String? = null
     private val snackbar = SnackbarHostState()
     private var message by mutableStateOf<Pair<Int, String>?>(null)
     private var messages = 0
+    private var tab by mutableIntStateOf(0)
 
     private val microphone = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted -> microphoneGranted = granted }
 
@@ -90,9 +102,38 @@ class TryoutActivity : StandaloneActivity() {
         if (uri != null && text != null) tryout.save(text, uri) { ok -> show(getString(if (ok) R.string.tryout_saved else R.string.tryout_save_failed)) }
     }
 
+    // File (roadmap D110, D111, D113) ----------------------------------------------------------------------------
+
+    private val pickAudio = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) startFile(uri) }
+
+    private val saveTextDocument = registerForActivityResult(ActivityResultContracts.CreateDocument(TranscriptExport.TEXT_MIME)) { uri -> export(uri, TranscriptExport::text) }
+
+    private val saveSrtDocument = registerForActivityResult(ActivityResultContracts.CreateDocument(TranscriptExport.SRT_MIME)) { uri -> export(uri, TranscriptExport::srt) }
+
+    private val notifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         tryout = TryoutController(this)
+        transcription = FileTranscription.get(this)
+        tab = (savedInstanceState?.getInt(STATE_TAB) ?: intent.getIntExtra(EXTRA_TAB, 0)).coerceIn(0, TAB_FILE)
         super.onCreate(savedInstanceState)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (intent.hasExtra(EXTRA_TAB)) selectTab(intent.getIntExtra(EXTRA_TAB, 0).coerceIn(0, TAB_FILE))
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(STATE_TAB, tab)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        transcription.screenStarted()
+        transcription.load()
     }
 
     override fun onResume() {
@@ -103,7 +144,16 @@ class TryoutActivity : StandaloneActivity() {
 
     override fun onStop() {
         tryout.release()
+        transcription.screenStopped()
         super.onStop()
+    }
+
+    private fun selectTab(index: Int) {
+        if (tab == index) return
+        // Switching away from a microphone part ends its session. zh-CN: 离开麦克风部分即结束其会话.
+        tryout.stopDictation()
+        tryout.stopWake()
+        tab = index
     }
 
     /** A recording or a synthesis is not interrupted by an appearance change. zh-CN: 录音或合成不因外观变化而中断. */
@@ -118,26 +168,21 @@ class TryoutActivity : StandaloneActivity() {
         val problem = tryout.problem
         LaunchedEffect(problem?.serial) { problem?.let { show(getString(problemText(it.code))) } }
         LaunchedEffect(message?.first) { message?.second?.let { snackbar.showSnackbar(it) } }
-        var tab by rememberSaveable { mutableIntStateOf(0) }
         MacawScreen(title = stringResource(R.string.tryout_title), onBack = ::finish, snackbarHostState = snackbar) { padding ->
             Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-                SecondaryTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background) {
-                    listOf(R.string.tryout_tab_dictation, R.string.tryout_tab_wake, R.string.tryout_tab_synthesis).forEachIndexed { index, title ->
-                        Tab(selected = tab == index, onClick = {
-                            if (tab != index) {
-                                // Switching away from a microphone part ends its session. zh-CN: 离开麦克风部分即结束其会话.
-                                tryout.stopDictation()
-                                tryout.stopWake()
-                                tab = index
-                            }
-                        }, text = { Text(stringResource(title)) }, modifier = Modifier.testTag("macaw.tryout.tab.$index"))
+                // Scrollable: four fixed tabs break "Synthesis" in the middle of the word on a 360 dp screen.
+                // zh-CN: 可滚动: 四个固定标签在 360 dp 宽的屏幕上会把 "Synthesis" 从词中间断行.
+                SecondaryScrollableTabRow(selectedTabIndex = tab, containerColor = MaterialTheme.colorScheme.background, edgePadding = 0.dp) {
+                    listOf(R.string.tryout_tab_dictation, R.string.tryout_tab_wake, R.string.tryout_tab_synthesis, R.string.tryout_tab_file).forEachIndexed { index, title ->
+                        Tab(selected = tab == index, onClick = { selectTab(index) }, text = { Text(stringResource(title)) }, modifier = Modifier.testTag("macaw.tryout.tab.$index"))
                     }
                 }
                 Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
                     when (tab) {
                         0 -> Dictation()
                         1 -> Wake()
-                        else -> Synthesis()
+                        2 -> Synthesis()
+                        else -> Transcribe()
                     }
                 }
             }
@@ -396,6 +441,58 @@ class TryoutActivity : StandaloneActivity() {
         }
     }
 
+    // File ------------------------------------------------------------------------------------------------------
+
+    /** No microphone needed (D110); the missing model card only while there is nothing to show. zh-CN: 不需要麦克风 (D110). */
+    @Composable
+    private fun Transcribe() {
+        if (tryout.asrModels.isEmpty() && transcription.run == null && transcription.record == null) {
+            MissingModel("asr")
+            return
+        }
+        FileTab(
+            controller = tryout,
+            transcription = transcription,
+            languageLabel = { languageLabel(it) },
+            onPick = { runCatching { pickAudio.launch(AUDIO_TYPES) } },
+            onCopy = ::copy,
+            onSaveText = { saveExport(TranscriptExport.TEXT_EXTENSION, saveTextDocument::launch) },
+            onSaveSrt = { saveExport(TranscriptExport.SRT_EXTENSION, saveSrtDocument::launch) },
+        )
+    }
+
+    private fun startFile(uri: Uri) {
+        val model = tryout.fileModel ?: return
+        val options = FileRunOptions(model, tryout.fileLanguage.takeIf { tryout.isOffline(model) }, tryout.filePunctuation, tryout.vad)
+        if (transcription.start(FileSource.of(this, uri), options)) askNotificationsOnce()
+    }
+
+    /** D111: once on Android 13+, shared with the first download; a denial changes nothing. zh-CN: D111: Android 13+ 询问一次, 与首次下载共用记录. */
+    private fun askNotificationsOnce() {
+        val preferences = SpeechPreferences(this)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || preferences.notificationsAsked) return
+        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) return
+        preferences.notificationsAsked = true
+        notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+    }
+
+    private fun saveExport(extension: String, launch: (String) -> Unit) {
+        val record = transcription.record ?: return
+        runCatching { launch(TranscriptExport.fileName(record.displayName, extension)) }
+    }
+
+    private fun export(uri: Uri?, bytes: (List<Utterance>) -> ByteArray) {
+        val record = transcription.record
+        if (uri == null || record == null) return
+        tryout.writeDocument(uri, bytes(record.segments)) { ok -> show(getString(if (ok) R.string.tryout_transcribe_saved else R.string.tryout_transcribe_save_failed)) }
+    }
+
+    private fun copy(text: String) {
+        getSystemService(ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(getString(R.string.app_name), text))
+        // Android 13+ confirms a copy itself. zh-CN: Android 13+ 自行提示复制.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) show(getString(R.string.assistant_copied))
+    }
+
     // Shared ----------------------------------------------------------------------------------------------------
 
     @Composable
@@ -448,7 +545,16 @@ class TryoutActivity : StandaloneActivity() {
         else -> HomeTexts.error(code, insufficientSpace = false)
     }
 
-    private companion object {
-        const val MAX_TEXT = 500
+    companion object {
+        private const val MAX_TEXT = 500
+        private const val EXTRA_TAB = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.extra.TRYOUT_TAB"
+        private const val STATE_TAB = "tab"
+        private const val TAB_FILE = 3
+        private val AUDIO_TYPES = arrayOf("audio/*", "video/*", "application/ogg")
+
+        /** The file tab, for the notifications of [FileRecognitionService] (D111). zh-CN: 文件标签, 供 [FileRecognitionService] 的通知使用 (D111). */
+        internal fun fileIntent(context: Context): Intent = Intent(context, TryoutActivity::class.java)
+            .putExtra(EXTRA_TAB, TAB_FILE)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
 }
