@@ -8,7 +8,7 @@ import android.os.Debug
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.WavReader
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioFiles
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.kws.KeywordTokenizer
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelManager
@@ -273,7 +273,7 @@ internal class SpeechRuntime private constructor(val context: Context) {
     fun recognizeFile(audio: ParcelFileDescriptor, options: RecognizeOptions): FileTranscript {
         val model = resolve(SpeechContract.KIND_ASR, options.model)
         val warnings = warnings(model, options.language, options.hotwords)
-        return openWav(audio).use { reader ->
+        return AudioFiles.open(audio).use { reader ->
             acquireAsr(model, options.language, options.hotwords.isNotEmpty()).use { lease ->
                 FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings) { sink -> fileDictation(lease.engine, options, sink) }
             }
@@ -296,7 +296,7 @@ internal class SpeechRuntime private constructor(val context: Context) {
         } catch (e: IllegalArgumentException) {
             throw SpeechException(SpeechErrorCodes.INVALID_OPTIONS, e.message ?: "Invalid voice activity options")
         }
-        return openWav(audio).use { reader -> SherpaEngines.vad(context.assets, settings).use { vad -> FileRecognition.detectVoice(reader, vad) } }
+        return AudioFiles.open(audio).use { reader -> SherpaEngines.vad(context.assets, settings).use { vad -> FileRecognition.detectVoice(reader, vad) } }
     }
 
     private fun fileDictation(engine: Closeable, options: RecognizeOptions, sink: DictationSink): Dictation = when (engine) {
@@ -313,26 +313,6 @@ internal class SpeechRuntime private constructor(val context: Context) {
             OfflineDictation(engine, detector, sink, reportVad = false, 0L, options.punctuation) { runCatching { detector.close() } }
         }
         else -> throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "Not a recognizer: ${engine.javaClass.simpleName}")
-    }
-
-    /** A WAV reader on a duplicate of the host's read-only descriptor. zh-CN: 基于宿主只读描述符副本的 WAV 读取器. */
-    private fun openWav(audio: ParcelFileDescriptor): WavReader {
-        val copy = try {
-            audio.dup()
-        } catch (e: java.io.IOException) {
-            throw SpeechException(SpeechErrorCodes.IO_FAILED, "The audio descriptor cannot be read: ${e.message}", e)
-        }
-        val length = copy.statSize.takeIf { it >= 0 }
-        val input = ParcelFileDescriptor.AutoCloseInputStream(copy)
-        return try {
-            WavReader(input, length)
-        } catch (e: SpeechException) {
-            runCatching { input.close() }
-            throw e
-        } catch (e: java.io.IOException) {
-            runCatching { input.close() }
-            throw SpeechException(SpeechErrorCodes.IO_FAILED, "The audio could not be read: ${e.message}", e)
-        }
     }
 
     companion object {

@@ -26,14 +26,15 @@ object AudioInput {
     fun pcm16(samples: ShortArray, count: Int): FloatArray = FloatArray(count) { index -> samples[index] / 32768f }
 
     /**
-     * Decodes a whole WAV stream into 16 kHz mono chunks of about [chunkFrames] samples for [consumer], resampling
-     * when the file has another rate; [cancelled] is polled between chunks. Returns the 16 kHz sample count.
-     * zh-CN: 把整个 WAV 流解码为约 [chunkFrames] 个采样的 16 kHz 单声道块交给 [consumer], 采样率不同时重采样; 每块之间检查 [cancelled].
-     * 返回 16 kHz 采样数.
+     * Decodes a whole audio file (WAV or any container of roadmap D81) into 16 kHz mono chunks of about [chunkFrames]
+     * samples for [consumer], resampling when the file has another rate; [cancelled] is polled between chunks. Returns
+     * the 16 kHz sample count.
+     * zh-CN: 把整个音频文件 (WAV 或路线图 D81 的任意容器) 解码为约 [chunkFrames] 个采样的 16 kHz 单声道块交给 [consumer], 采样率不同时重采样;
+     * 每块之间检查 [cancelled]. 返回 16 kHz 采样数.
      */
-    fun decode(reader: WavReader, chunkFrames: Int = 8000, cancelled: () -> Boolean = { false }, consumer: (FloatArray) -> Unit): Long {
-        val resampler = Resampler(reader.format.sampleRate, SAMPLE_RATE)
-        val sourceFrames = maxOf(1, (chunkFrames.toLong() * reader.format.sampleRate / SAMPLE_RATE).toInt())
+    fun decode(reader: MonoAudio, chunkFrames: Int = 8000, cancelled: () -> Boolean = { false }, consumer: (FloatArray) -> Unit): Long {
+        val resampler = Resampler(reader.sampleRate, SAMPLE_RATE)
+        val sourceFrames = maxOf(1, (chunkFrames.toLong() * reader.sampleRate / SAMPLE_RATE).toInt())
         var total = 0L
         while (!cancelled()) {
             val chunk = reader.read(sourceFrames)

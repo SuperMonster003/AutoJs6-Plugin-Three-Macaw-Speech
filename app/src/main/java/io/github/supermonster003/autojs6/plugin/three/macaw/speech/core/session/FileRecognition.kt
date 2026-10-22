@@ -1,7 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.WavReader
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MonoAudio
 
 /** A non-fatal condition reported with a result (`warnings`). zh-CN: 随结果报告的非致命情况 (`warnings`). */
 data class SpeechWarning(val code: String, val message: String)
@@ -20,18 +20,19 @@ data class FileTranscript(
 data class VoiceActivity(val segments: List<Pair<Long, Long>>, val durationMillis: Long)
 
 /**
- * File recognition and voice activity detection (roadmap P3.3, D15): the WAV is decoded and resampled to 16 kHz in
- * chunks and streamed through a [Dictation] (streaming models consume it as a session would; offline models get VAD
- * segments), so memory stays bounded for 30 minute files. Every final becomes a segment with its start and end in
- * milliseconds; the result's language is the one most segments report (SenseVoice), else the request's hint. Pure JVM.
- * zh-CN: 文件识别与语音活动检测 (路线图 P3.3, D15): WAV 按块解码并重采样到 16 kHz, 流经一个 [Dictation] (流式模型如同会话一样消费; 离线模型得到
+ * File recognition and voice activity detection (roadmap P3.3, D15, D83): the file (WAV or a container of D81) is
+ * decoded and resampled to 16 kHz in chunks and streamed through a [Dictation] (streaming models consume it as a
+ * session would; offline models get VAD segments), so memory stays bounded for 30 minute files. Every final becomes a
+ * segment with its start and end in milliseconds; the result's language is the one most segments report (SenseVoice),
+ * else the request's hint. Pure JVM.
+ * zh-CN: 文件识别与语音活动检测 (路线图 P3.3, D15, D83): 文件 (WAV 或 D81 的容器) 按块解码并重采样到 16 kHz, 流经一个 [Dictation] (流式模型如同会话一样消费; 离线模型得到
  * VAD 语音段), 因此 30 分钟的文件内存占用也有上限. 每个 final 成为一个带起止毫秒的语音段; 结果的语言取多数语音段报告的语言 (SenseVoice), 否则取
  * 请求的提示. 纯 JVM.
  */
 object FileRecognition {
 
     fun recognize(
-        reader: WavReader,
+        reader: MonoAudio,
         modelId: String,
         languageHint: String?,
         warnings: List<SpeechWarning>,
@@ -63,7 +64,7 @@ object FileRecognition {
         )
     }
 
-    fun detectVoice(reader: WavReader, vad: VoiceDetector, cancelled: () -> Boolean = { false }): VoiceActivity {
+    fun detectVoice(reader: MonoAudio, vad: VoiceDetector, cancelled: () -> Boolean = { false }): VoiceActivity {
         val segments = ArrayList<Pair<Long, Long>>()
         val windows = WindowSplitter(vad.windowSize)
         fun drain() {

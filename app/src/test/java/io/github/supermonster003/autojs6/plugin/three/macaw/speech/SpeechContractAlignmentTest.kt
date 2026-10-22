@@ -42,7 +42,8 @@ class SpeechContractAlignmentTest {
         assertEquals(SpeechCapabilityKeys.FEATURES, ThreeMacawSpeechContract.CAPABILITY_FEATURES)
         assertEquals(SpeechCapabilityKeys.CATALOG_VERSION, ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION)
         assertEquals(PluginCapabilityKeys.REQUIRES_HOST_VERSION, SpeechCapabilityKeys.REQUIRES_HOST_VERSION)
-        assertTrue("advertised features are contract features", SpeechContract.FEATURES.containsAll(ThreeMacawSpeechContract.FEATURES))
+        // Roadmap D84: "audioDecode" was appended to the host contract after the staged speech-api AAR.
+        assertTrue("advertised features are contract features", (SpeechContract.FEATURES + "audioDecode").containsAll(ThreeMacawSpeechContract.FEATURES))
     }
 
     @Test

@@ -3,7 +3,6 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.autojs.plugin.speech.api.SpeechLimits
-import java.io.Closeable
 import java.io.EOFException
 import java.io.IOException
 import java.io.InputStream
@@ -35,12 +34,12 @@ data class WavFormat(
  * is not a supported WAV with `UNSUPPORTED_FORMAT` and inputs beyond `SpeechLimits.MAX_AUDIO_FILE_BYTES` or
  * `MAX_AUDIO_MILLIS` with `LIMIT_EXCEEDED`, then delivers the samples mixed down to mono floats in -1..1 at the
  * source rate. A data chunk cut short by the end of the stream yields the complete frames it holds. Other containers
- * (MP3, AAC, OGG) are refused rather than decoded: the plugin never uses `MediaExtractor` (roadmap section 3).
+ * (MP3, AAC, Ogg) go to the system decoders of [MediaAudioReader] instead (roadmap D81).
  * zh-CN: 路线图 D15 的流式 WAV 解码器 (纯 JVM): 解析 RIFF 头直到 data 块, 不受支持的 WAV 以外的一切报 `UNSUPPORTED_FORMAT`, 超过
  * `SpeechLimits.MAX_AUDIO_FILE_BYTES` 或 `MAX_AUDIO_MILLIS` 的输入报 `LIMIT_EXCEEDED`, 然后以源采样率交付混为单声道的 -1..1 浮点采样. 被流
- * 末尾截断的 data 块交付其中完整的帧. 其他容器 (MP3, AAC, OGG) 一律拒绝而不解码: 插件不使用 `MediaExtractor` (路线图第 3 节).
+ * 末尾截断的 data 块交付其中完整的帧. 其他容器 (MP3, AAC, Ogg) 改由 [MediaAudioReader] 的系统解码器读取 (路线图 D81).
  */
-class WavReader(input: InputStream, streamLength: Long? = null) : Closeable {
+class WavReader(input: InputStream, streamLength: Long? = null) : MonoAudio {
 
     private val input = input.buffered(BUFFER_BYTES)
     private var remaining: Long
@@ -58,11 +57,13 @@ class WavReader(input: InputStream, streamLength: Long? = null) : Closeable {
         }
     }
 
+    override val sampleRate: Int get() = format.sampleRate
+
     /**
      * Reads up to [maxFrames] frames as mono samples; an empty array at the end of the data.
      * zh-CN: 读取至多 [maxFrames] 帧单声道采样; 数据结束时返回空数组.
      */
-    fun read(maxFrames: Int): FloatArray {
+    override fun read(maxFrames: Int): FloatArray {
         require(maxFrames > 0)
         val block = format.blockAlign
         val frames = minOf(maxFrames.toLong(), remaining / block).toInt()
