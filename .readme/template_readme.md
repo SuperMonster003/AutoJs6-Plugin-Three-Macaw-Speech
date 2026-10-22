@@ -189,6 +189,7 @@ variant: {{ plugin_variant }}
 info service: {{ info_action }} (category {{ info_category }})
 capability service: {{ discovery_action }} (category {{ discovery_category }})
 wake action: {{ wake_action }}
+tool service: {{ tool_action }} (short name {{ tool_short_name }}: listen, speak, transcribe, synthesize; AutoJs6 6.8.0+)
 minimum host build: {{ required_host_version_code }}
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx {{ sherpa_onnx_version }}; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```

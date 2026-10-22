@@ -17,6 +17,7 @@
 * `新增` 与 3-Stone AI 和 3-Stove Agent 的常驻监听互斥, 系统同一时刻只能有一个; 对方开着时会提示先关闭, 并可直接打开对方的设置
 * `新增` 重启或更新后不会自动录音: 开关仍开着时发一条 "点此恢复常驻唤醒" 通知, 打开首页或设置页也会恢复
 * `新增` 识别音频文件 (speech.recognize, speech.detectVoice) 除 WAV 外也支持 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常见格式, 以及视频文件 (MP4, WebM 等) 中的声音; 文件上限仍为 200 MB 或 30 分钟 (需要 AutoJs6 6.8.0 及以上, 更早的版本只能传入 WAV)
+* `新增` 4 个插件工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 听一句话并返回文字, speech_speak 朗读, speech_transcribe 识别手机上的音频文件, speech_synthesize 把文字合成为 WAV 或 M4A 文件. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 脚本也可以经 plugins.tools 调用; 不能直接录音时, 听写先在手机上发出 "点此说话" 通知, 点按后开始
 
 # v1.1.0
 

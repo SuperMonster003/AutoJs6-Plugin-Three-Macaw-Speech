@@ -17,6 +17,7 @@
 * `新增` 與 3-Stone AI 和 3-Stove Agent 的常駐監聽互斥, 系統同一時間只能有一個; 對方開著時會提示先關閉, 並可直接開啟對方的設定
 * `新增` 重新開機或更新後不會自動錄音: 開關仍開著時發出一則 "點此恢復常駐喚醒" 通知, 開啟首頁或設定頁也會恢復
 * `新增` 辨識音訊檔案 (speech.recognize, speech.detectVoice) 除 WAV 外也支援 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常見格式, 以及影片檔案 (MP4, WebM 等) 中的聲音; 檔案上限仍為 200 MB 或 30 分鐘 (需要 AutoJs6 6.8.0 以上, 更早的版本只能傳入 WAV)
+* `新增` 4 個外掛工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 聽一句話並傳回文字, speech_speak 朗讀, speech_transcribe 辨識手機上的音訊檔案, speech_synthesize 把文字合成為 WAV 或 M4A 檔案. MCP Server 外掛用它們讓電腦上的 AI 助理透過手機聽和說, 指令碼也可以透過 plugins.tools 呼叫; 不能直接錄音時, 聽寫先在手機上發出 "點此說話" 通知, 點按後開始
 
 # v1.1.0
 

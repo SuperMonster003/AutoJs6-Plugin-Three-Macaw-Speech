@@ -18,6 +18,8 @@
   "discovery_action": "org.autojs.plugin.SPEECH",
   "discovery_category": "speech",
   "wake_action": "org.autojs.plugin.action.WAKE",
+  "tool_action": "org.autojs.plugin.TOOL_PROVIDER",
+  "tool_short_name": "speech",
   "required_host_version_code": "5456",
   "required_host_version_name": "6.8.0",
   "android_min_sdk": "24",

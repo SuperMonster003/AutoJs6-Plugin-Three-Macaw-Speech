@@ -17,6 +17,7 @@
 * `Feature` Only one resident listener can run at a time among 3-Stone AI, 3-Stove Agent and 3-Macaw Speech; while another one is on, you are asked to turn it off first and can open its settings directly
 * `Feature` No recording starts by itself after a restart or an update: while the switch is on, a "Tap to resume the resident wake word" notification appears, and opening the home screen or the settings resumes it as well
 * `Feature` Recognizing audio files (speech.recognize, speech.detectVoice) accepts common formats besides WAV, such as MP3, AAC (including M4A), Ogg (Vorbis, Opus), FLAC and AMR, as well as the sound of video files (MP4, WebM and others); the limit stays at 200 MB or 30 minutes (needs AutoJs6 6.8.0 or later; earlier versions accept WAV only)
+* `Feature` Four plugin tools (AutoJs6 6.8.0 or later): speech_listen hears one sentence and returns the text, speech_speak reads aloud, speech_transcribe transcribes an audio file on the phone, speech_synthesize synthesizes text to a WAV or M4A file. The MCP Server plugin uses them so that an AI assistant on a computer can listen and speak through the phone, and scripts can call them through plugins.tools; when the plugin cannot record right away, listening first shows a "Tap to speak" notification on the phone and starts once it is tapped
 
 # v1.1.0
 

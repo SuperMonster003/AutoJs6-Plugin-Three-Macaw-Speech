@@ -62,6 +62,7 @@
 - 數位助理: 把 3-Macaw Speech 選為預設數位助理應用程式後, 長按電源鍵或 Home 鍵說一句話, 需要時編輯辨識出的文字, 再交給 3-Stove Agent, 3-Stone AI 等接收語音指令的應用程式, 或複製. 它也提供系統語音辨識服務: Android 11 及以下版本選它為助理時一般會一併設為預設辨識服務; Android 12 起需在系統的語音輸入設定中另行選擇 (部分手機沒有這項設定), 應用程式也可以直接指定它.
 - 觸發式入口: 不必長按電源鍵也能開啟同一個聽寫面板: 快速設定圖塊 (螢幕鎖定時也能用), 主畫面小工具與應用程式圖示捷徑, 可拖曳的懸浮麥克風 (預設關閉), 長按或連按兩下音量鍵的按鍵觸發 (只過濾按鍵的無障礙服務, 預設關閉), 以及藍牙耳機的語音鍵. 平時不錄音, 只在面板聽寫的幾秒內使用麥克風.
 - 常駐喚醒 (預設關閉): 開啟後說出喚醒詞 (預設 `小鹦小鹦` 與 `Hey Macaw`, 可修改) 即開啟同一個聽寫面板, 螢幕關閉或鎖定時也會點亮螢幕, 並朗讀辨識出的文字. 監聽期間麥克風指示燈常亮, 有一則常駐通知, 也更耗電; 可設定監聽時長 (10, 30, 60 分鐘後自動關閉或一直開著) 與只在充電時監聽. 腳本, 其他應用程式或其他入口要用麥克風時自動讓出, 用完後繼續.
+- 外掛工具 (需要 AutoJs6 6.8.0 及以上): 提供 `speech_listen` (聽一句話並傳回辨識出的文字), `speech_speak` (朗讀一段文字), `speech_transcribe` (辨識手機上的音訊檔案) 與 `speech_synthesize` (把文字合成為 WAV 或 M4A 檔案) 四個工具. MCP Server 外掛用它們讓電腦上的 AI 助理透過手機聽和說, 指令碼也可以用 `plugins.tools` 呼叫.
 - 模型管理: 從已簽署的模型目錄下載, 逐一檔案驗證 SHA-256 後才啟用, 也可以匯入本機模型; 僅限非商業用途的模型在下載前會提示授權.
 - 獨立介面: 首頁顯示執行狀態並管理模型, 試聽試說頁直接試驗聽寫, 喚醒詞與合成, 設定頁調整語言, 夜間模式, 主題色, 啟動器圖示與辨識合成的預設值, 外觀預設跟隨 AutoJs6.
 
@@ -185,6 +186,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - `speech.synthesize(text, path, options)` 合成到 WAV 檔案 (最多 8000 個字元, 可選模型, 說話者與語速); `speech.speak(text, options)` 與 `tts(text, { engine })` 經系統 TTS 引擎朗讀.
 - `speech.models` 列出, 下載 (`install`, 可回報進度), 匯入, 刪除模型與設定預設模型; `speech.capabilities()` 傳回外掛版本, 支援的功能與麥克風權限狀態.
 - 整個外掛同一時間只有一個麥克風工作階段 (聽寫或喚醒); 缺少麥克風權限時呼叫以 `PERMISSION_DENIED` 失敗, 開啟外掛首頁授予即可. 辨識出的文字不會寫入 AutoJs6 的記錄.
+- AutoJs6 6.8.0 及以上, 指令碼也可以透過 `plugins.tools.call` 呼叫這四個外掛工具, 例如 `plugins.tools.call('speech_speak', { text: '你好' })`; 參數與 MCP Server 看到的相同. 日常指令碼直接用 `speech` 模組更靈活.
 - 完整的方法, 選項, 事件與錯誤碼見 [AutoJs6 文件](https://docs.autojs6.com/#/speech); AutoJs6 的示例程式碼 > 3-Macaw Speech 中有聽寫到檔案, 喚醒詞與聽寫, TTS 播報與語音指令交給 Agent 四個範例.
 
 ******
@@ -202,6 +204,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - 數位助理: 需要系統允許選擇第三方數位助理應用程式. 喚起方式依系統而定: 長按 Home 鍵 (三按鈕導覽), 從螢幕底部角落斜向上滑, 或在系統設定中把長按電源鍵設為喚起數位助理. 實測的 ColorOS 與 HyperOS 平板 (Android 15) 把電源鍵與手勢留給自家助理, 可以改用觸發式入口.
 - 觸發式入口: 實測 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), Xiaomi Pad 23046RP50C (HyperOS, Android 15), 以及 API 33 與 35 模擬器. ColorOS 與 HyperOS 在螢幕鎖定時點圖塊會先要求解鎖, 解鎖後開啟面板; 部分主畫面接受加入小工具的請求卻不顯示確認, 此時依設定中的步驟手動加入. 螢幕關閉時手機不把按鍵交給無障礙服務, 按鍵觸發只在螢幕開啟時可用. 藍牙耳機語音鍵: Sony WF-1000XM4 配合 XQ-DQ72 (Android 13) 實測每次長按都開啟面板, 並用耳機麥克風收音; 其他應用程式 (例如 Google 應用程式) 也回應時系統先顯示選擇器. 實測 HyperOS 平板 (Xiaomi Pad 23046RP50C, Android 15) 的選擇器在選中 3-Macaw Speech 後沒有反應.
 - 常駐喚醒: 實測 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 分頁) 模擬器. 螢幕關閉 30 分鐘耗電 (Sony XQ-DQ72, Android 13; Android 依機型功耗表估算, 手機經 USB 連接, 未充電狀態為模擬): 開啟時 17.9 mAh, 外掛程式 CPU 時間 454 秒 (平均約佔一個 CPU 核心的四分之一), 期間一直在錄音; 關閉時 0.006 mAh, 外掛程式沒有在執行. 實際耗電因機型而異.
+- 外掛工具: 實測 Sony G8441 (Android 9), XQ-DQ72 (Android 13), 以及 API 24 與 35 模擬器 (API 24 只測不需要模型的部分); 經 MCP Server 呼叫實測 Sony G8441 (Android 9).
 
 ******
 
@@ -244,6 +247,10 @@ Android 10 起, 背景應用程式只有在是預設數位助理, 或者取得�
 #### 為什麼開啟常駐喚醒時提示需要先關閉 3-Stove Agent?
 
 3-Macaw Speech, 3-Stone AI 與 3-Stove Agent 的常駐監聽互斥: 一支手機同一時間只能有一個應用程式常駐監聽, 否則它們會爭用麥克風. 其中一個開著時, 另一個的開關會說明是誰在監聽, 並可直接開啟對方的設定去關閉. 重新開機或更新後, 常駐喚醒不會自動開始錄音: 開關仍開著時會發出一則 "點此恢復常駐喚醒" 通知, 點按或開啟 3-Macaw Speech 的首頁, 設定頁都會恢復; 監聽時長在此期間已到則直接關閉.
+
+#### AI 助理怎樣透過 3-Macaw Speech 聽和說?
+
+需要 AutoJs6 6.8.0 及以上與 MCP Server 外掛. 3-Macaw Speech 是官方外掛, `speech_listen`, `speech_speak` 與 `speech_transcribe` 預設出現在 MCP Server 的工具清單中 (可在 MCP Server 設定的 "外掛提供的工具" 中關閉); `speech_synthesize` 會寫入檔案, 還要開啟該群組的第二個開關, 未指定位置時檔案儲存在 AutoJs6 工作目錄的 plugin-outputs/speech 下. `speech_listen` 每次聽一句話 (最長 60 秒): 能直接錄音時 (例如開著常駐喚醒, 3-Macaw Speech 是預設數位助理或已取得在其他應用程式上層顯示的權限) 立即開始, 否則手機上出現一則 "點此說話" 通知, 1 分鐘內點按後開始. 聽寫期間其他應用程式的常駐監聽暫時讓出, 聽完自動恢復; 已有聽寫在進行時傳回 BUSY, 缺少麥克風權限或辨識模型時傳回 NOT_READY (開啟外掛首頁處理即可). `speech_speak` 有該語言的 3-Macaw Speech 語音時用它朗讀, 否則用系統語音.
 
 #### 不長按電源鍵, 還有哪些方式開啟聽寫面板?
 
@@ -293,6 +300,7 @@ Android 只允許無障礙服務在系統處理之前取得實體按鍵, 所以�
 - 數位助理: 不讀取螢幕內容, 未開啟常駐喚醒時不在背景收音; 只在面板顯示時錄音, 辨識出的文字只在你點按應用程式按鈕或複製時離開面板 (鎖定畫面時需先解鎖). 語音辨識服務只為本身擁有麥克風權限的應用程式辨識.
 - 觸發式入口: 圖塊, 小工具, 捷徑, 懸浮麥克風, 按鍵觸發與耳機語音鍵本身都不錄音, 只負責開啟聽寫面板. 按鍵觸發是只過濾按鍵的無障礙服務: 不讀取螢幕內容, 不執行手勢, 只攔截所選的音量鍵 (短按照常調整音量, 螢幕關閉, 來電或通話時不攔截). 懸浮麥克風需要在其他應用程式上層顯示的權限, 以一則靜音通知保持顯示; 開機自動啟動只用於在重新啟動後恢復已開啟的懸浮麥克風. Android 12 起耳機語音鍵需要鄰近裝置權限, 只在耳機開啟的面板中詢問: 只用於讓藍牙服務把語音辨識交給面板並接通耳機麥克風, 不掃描裝置, 不讀取位置.
 - 常駐喚醒: 預設關閉, 只能在外掛介面中開啟 (重新開機或更新後需要點按通知恢復, 不會自動錄音). 喚醒詞在本機偵測, 音訊不儲存也不上傳, 辨識出的文字不寫入記錄; 開啟期間一直錄音, 麥克風指示燈常亮, 常駐通知可直接關閉. 與 3-Stone AI, 3-Stove Agent 的常駐監聽互斥, 系統同一時間只允許一個.
+- 外掛工具: 工具服務同樣受 AutoJs6 外掛權限保護, 只有 AutoJs6 能直接呼叫. `speech_listen` 每次只錄一句話, 錄音期間有通知 (Android 12 起還有麥克風指示燈); `speech_transcribe` 只讀取 AutoJs6 交來的那一個檔案, `speech_synthesize` 把音訊交回 AutoJs6 寫到指定位置. 辨識與朗讀的文字都不寫入記錄.
 
 ******
 
@@ -310,6 +318,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
+tool service: org.autojs.plugin.TOOL_PROVIDER (short name speech: listen, speak, transcribe, synthesize; AutoJs6 6.8.0+)
 minimum host build: 5456
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
@@ -358,6 +367,7 @@ _2026/10/21_
 - `新增` 與 3-Stone AI 和 3-Stove Agent 的常駐監聽互斥, 系統同一時間只能有一個; 對方開著時會提示先關閉, 並可直接開啟對方的設定
 - `新增` 重新開機或更新後不會自動錄音: 開關仍開著時發出一則 "點此恢復常駐喚醒" 通知, 開啟首頁或設定頁也會恢復
 - `新增` 辨識音訊檔案 (speech.recognize, speech.detectVoice) 除 WAV 外也支援 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常見格式, 以及影片檔案 (MP4, WebM 等) 中的聲音; 檔案上限仍為 200 MB 或 30 分鐘 (需要 AutoJs6 6.8.0 以上, 更早的版本只能傳入 WAV)
+- `新增` 4 個外掛工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 聽一句話並傳回文字, speech_speak 朗讀, speech_transcribe 辨識手機上的音訊檔案, speech_synthesize 把文字合成為 WAV 或 M4A 檔案. MCP Server 外掛用它們讓電腦上的 AI 助理透過手機聽和說, 指令碼也可以透過 plugins.tools 呼叫; 不能直接錄音時, 聽寫先在手機上發出 "點此說話" 通知, 點按後開始
 
 #### v1.1.0
 
