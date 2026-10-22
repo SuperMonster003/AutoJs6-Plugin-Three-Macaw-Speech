@@ -28,6 +28,7 @@ import org.json.JSONObject
 class SpeechToolService : PluginToolProviderService() {
 
     private val listenTool by lazy { SpeechListenTool(this) }
+    private val speakTool by lazy { SpeechSpeakTool(this) }
 
     override fun createPluginInfo(): PluginInfo = pluginRuntimeFields().toPluginInfo()
 
@@ -39,7 +40,7 @@ class SpeechToolService : PluginToolProviderService() {
         try {
             return when (call.tool) {
                 SpeechToolCatalog.TOOL_LISTEN -> listenTool.call(call, SpeechToolArguments.listen(arguments))
-                SpeechToolCatalog.TOOL_SPEAK -> unavailable(call.tool, SpeechToolArguments.speak(arguments))
+                SpeechToolCatalog.TOOL_SPEAK -> speakTool.call(call, SpeechToolArguments.speak(arguments))
                 SpeechToolCatalog.TOOL_TRANSCRIBE -> unavailable(call.tool, SpeechToolArguments.transcribe(arguments))
                 SpeechToolCatalog.TOOL_SYNTHESIZE -> unavailable(call.tool, SpeechToolArguments.synthesize(arguments))
                 else -> throw PluginToolException(PluginToolErrorCodes.UNKNOWN_TOOL, "3-Macaw Speech has no tool ${call.tool}")
@@ -49,7 +50,7 @@ class SpeechToolService : PluginToolProviderService() {
         }
     }
 
-    // Roadmap P7.6.3 and P7.6.7 replace these with the tools.
+    // Roadmap P7.6.7 replaces these with the tools.
     @Suppress("UNUSED_PARAMETER")
     private fun unavailable(tool: String, request: Any): PluginToolResult =
         throw SpeechToolErrors.notReady("speech_$tool is not available in this build of 3-Macaw Speech")
