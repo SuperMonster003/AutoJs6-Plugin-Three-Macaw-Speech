@@ -22,7 +22,7 @@ class ModelRowsTest {
     )
 
     @Test
-    fun `groups follow recognition, wake words, synthesis and VAD with the default first`() {
+    fun `groups follow recognition, punctuation, wake words, synthesis and VAD with the default first`() {
         val entries = listOf(
             entry("vad.silero.v5", "vad", installed = true, isDefault = true),
             entry("tts.a", "tts"),
@@ -30,10 +30,11 @@ class ModelRowsTest {
             entry("tts.c", "tts", installed = true, isDefault = true),
             entry("asr.a", "asr", recommended = true),
             entry("kws.a", "kws", commercialUse = CommercialUse.UNKNOWN),
+            entry("punct.a", "punct", installed = true),
             entry("my-model", "asr", installed = true, source = ModelStore.SOURCE_IMPORTED),
         )
         val groups = ModelRows.build(entries, emptyList(), setOf("vad.silero.v5")) { 0 }
-        assertEquals(listOf("asr", "kws", "tts", "vad"), groups.map { it.kind })
+        assertEquals(listOf("asr", "punct", "kws", "tts", "vad"), groups.map { it.kind })
         assertEquals(listOf("tts.c", "tts.b", "tts.a"), groups.single { it.kind == "tts" }.rows.map { it.id })
         assertEquals("installed before recommended", listOf("my-model", "asr.a"), groups.first().rows.map { it.id })
         assertTrue(groups.first().rows.first().imported)
@@ -41,7 +42,7 @@ class ModelRowsTest {
         val vad = groups.last().rows.single()
         assertTrue(vad.builtin)
         assertEquals(RowState.Installed, vad.state)
-        assertEquals("the bundled VAD is not counted", 3, ModelRows.installedCount(groups))
+        assertEquals("the bundled VAD is not counted", 4, ModelRows.installedCount(groups))
         assertEquals(2, groups.single { it.kind == "tts" }.installed)
     }
 

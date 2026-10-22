@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">Locuteurs</string>
     <string name="model_kind_asr">Reconnaissance vocale</string>
     <string name="model_kind_kws">Mots de réveil</string>
+    <string name="model_kind_punct">Ponctuation</string>
     <string name="model_kind_tts">Synthèse vocale</string>
     <string name="model_kind_vad">Détection d\'activité vocale</string>
     <string name="model_license_commercial">Usage commercial autorisé</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">%1$s est installé</string>
     <string name="model_message_removed">%1$s a été supprimé</string>
     <string name="model_progress">%1$s sur %2$s (%3$d%%)</string>
+    <string name="model_punct_about">Ajoute virgules, points et points d\'interrogation au texte des modèles de reconnaissance qui n\'en mettent pas (chinois et anglais). Le modèle anglais rétablit aussi les majuscules. SenseVoice ponctue lui-même son texte et n\'utilise pas ces modèles.</string>
     <string name="model_state_installed">Installé</string>
     <string name="model_state_paused">En pause, %1$s téléchargés</string>
     <string name="model_state_queued">En attente du téléchargement précédent</string>

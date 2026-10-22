@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">المتحدثون</string>
     <string name="model_kind_asr">التعرف على الكلام</string>
     <string name="model_kind_kws">كلمات التنبيه</string>
+    <string name="model_kind_punct">علامات الترقيم</string>
     <string name="model_kind_tts">تركيب الكلام</string>
     <string name="model_kind_vad">اكتشاف النشاط الصوتي</string>
     <string name="model_license_commercial">يُسمح بالاستخدام التجاري</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">تم تثبيت %1$s</string>
     <string name="model_message_removed">تم حذف %1$s</string>
     <string name="model_progress">%1$s من %2$s (%3$d%%)</string>
+    <string name="model_punct_about">يضيف الفواصل والنقاط وعلامات الاستفهام إلى نص نماذج التعرف التي لا تضعها (الصينية والإنجليزية). يعيد النموذج الإنجليزي أيضا الأحرف الكبيرة. يضع SenseVoice علامات الترقيم بنفسه ولا يستخدم هذه النماذج.</string>
     <string name="model_state_installed">مثبت</string>
     <string name="model_state_paused">متوقف مؤقتا, تم تنزيل %1$s</string>
     <string name="model_state_queued">في انتظار التنزيل السابق</string>

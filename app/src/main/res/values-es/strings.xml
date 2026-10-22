@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">Hablantes</string>
     <string name="model_kind_asr">Reconocimiento de voz</string>
     <string name="model_kind_kws">Palabras de activación</string>
+    <string name="model_kind_punct">Puntuación</string>
     <string name="model_kind_tts">Síntesis de voz</string>
     <string name="model_kind_vad">Detección de actividad de voz</string>
     <string name="model_license_commercial">Uso comercial permitido</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">%1$s está instalado</string>
     <string name="model_message_removed">%1$s se ha eliminado</string>
     <string name="model_progress">%1$s de %2$s (%3$d%%)</string>
+    <string name="model_punct_about">Añade comas, puntos y signos de interrogación al texto de los modelos de reconocimiento que no los ponen (chino e inglés). El modelo inglés también restaura las mayúsculas. SenseVoice puntúa su propio texto y no usa estos modelos.</string>
     <string name="model_state_installed">Instalado</string>
     <string name="model_state_paused">En pausa, %1$s descargados</string>
     <string name="model_state_queued">Esperando a la descarga anterior</string>

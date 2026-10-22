@@ -149,17 +149,18 @@ class HomeScreenDeviceTest {
 
     @Test
     fun theListRendersTheKindGroupsOnline() {
-        val backend = FakeBackend(listOf(entry("asr.a", "asr"), entry("kws.a", "kws"), entry("tts.a", "tts", installed = true), entry("vad.silero.v5", "vad", installed = true)))
+        val backend = FakeBackend(listOf(entry("asr.a", "asr"), entry("punct.a", "punct"), entry("kws.a", "kws"), entry("tts.a", "tts", installed = true), entry("vad.silero.v5", "vad", installed = true)))
         show(backend, FakeEnvironment(online = true))
         compose.onNodeWithTag("macaw.home.status").assertIsDisplayed()
         compose.onNodeWithTag("macaw.home.offline").assertDoesNotExist()
-        listOf("asr", "kws", "tts", "vad").forEach { kind -> scrollTo("macaw.home.group.$kind") }
+        listOf("asr", "punct", "kws", "tts", "vad").forEach { kind -> scrollTo("macaw.home.group.$kind") }
+        scrollTo("macaw.home.about.punct")
         scrollTo("macaw.model.asr.a")
         compose.onNodeWithTag("macaw.model.asr.a.download").assertIsEnabled()
         scrollTo("macaw.model.tts.a")
         child("macaw.model.tts.a.installed").assertIsDisplayed()
         child("macaw.model.tts.a.default").assertIsDisplayed()
-        log("home online groups=4 rows=4")
+        log("home online groups=5 rows=5")
     }
 
     @Test

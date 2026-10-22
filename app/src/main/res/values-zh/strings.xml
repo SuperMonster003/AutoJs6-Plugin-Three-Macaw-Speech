@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">说话人</string>
     <string name="model_kind_asr">语音识别</string>
     <string name="model_kind_kws">唤醒词</string>
+    <string name="model_kind_punct">标点</string>
     <string name="model_kind_tts">语音合成</string>
     <string name="model_kind_vad">语音活动检测</string>
     <string name="model_license_commercial">可商用</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">%1$s 已安装</string>
     <string name="model_message_removed">%1$s 已删除</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
+    <string name="model_punct_about">给不带标点的识别模型的结果加上逗号, 句号和问号 (中文与英文). 英文模型还会恢复大写字母. SenseVoice 自带标点, 不使用这些模型.</string>
     <string name="model_state_installed">已安装</string>
     <string name="model_state_paused">已暂停, 已下载 %1$s</string>
     <string name="model_state_queued">排队等待前一个下载</string>

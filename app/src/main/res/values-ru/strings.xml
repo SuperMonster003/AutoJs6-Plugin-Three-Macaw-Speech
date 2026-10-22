@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">Дикторы</string>
     <string name="model_kind_asr">Распознавание речи</string>
     <string name="model_kind_kws">Слова активации</string>
+    <string name="model_kind_punct">Пунктуация</string>
     <string name="model_kind_tts">Синтез речи</string>
     <string name="model_kind_vad">Определение речевой активности</string>
     <string name="model_license_commercial">Коммерческое использование разрешено</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">Модель %1$s установлена</string>
     <string name="model_message_removed">Модель %1$s удалена</string>
     <string name="model_progress">%1$s из %2$s (%3$d%%)</string>
+    <string name="model_punct_about">Добавляет запятые, точки и вопросительные знаки в текст моделей распознавания, которые их не ставят (китайский и английский). Английская модель также восстанавливает заглавные буквы. SenseVoice расставляет знаки сама и эти модели не использует.</string>
     <string name="model_state_installed">Установлена</string>
     <string name="model_state_paused">Приостановлено, загружено %1$s</string>
     <string name="model_state_queued">Ожидает завершения предыдущей загрузки</string>

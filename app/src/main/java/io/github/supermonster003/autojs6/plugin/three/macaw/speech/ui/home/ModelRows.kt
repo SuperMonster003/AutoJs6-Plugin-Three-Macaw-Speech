@@ -60,13 +60,15 @@ internal data class ModelGroup(val kind: String, val rows: List<ModelRow>) {
 }
 
 /**
- * Builds the grouped rows from `ModelManager.list()` (roadmap D26): recognition, wake words, synthesis, then the bundled
- * VAD; inside a group the default model first, then installed, recommended, catalog order. Pure Kotlin.
- * zh-CN: 由 `ModelManager.list()` 生成分组的行 (路线图 D26): 识别, 唤醒词, 合成, 最后是内置 VAD; 组内默认模型在前, 然后依次为已安装, 推荐, 目录顺序.
+ * Builds the grouped rows from `ModelManager.list()` (roadmap D26): recognition, its punctuation (D107), wake words,
+ * synthesis, then the bundled VAD; inside a group the default model first, then installed, recommended, catalog order.
+ * Pure Kotlin.
+ * zh-CN: 由 `ModelManager.list()` 生成分组的行 (路线图 D26): 识别, 识别的标点 (D107), 唤醒词, 合成, 最后是内置 VAD; 组内默认模型在前, 然后依次为
+ * 已安装, 推荐, 目录顺序.
  * 纯 Kotlin.
  */
 internal object ModelRows {
-    val KIND_ORDER = listOf("asr", "kws", "tts", "vad")
+    val KIND_ORDER = listOf("asr", "punct", "kws", "tts", "vad")
 
     fun build(
         entries: List<ModelEntry>,

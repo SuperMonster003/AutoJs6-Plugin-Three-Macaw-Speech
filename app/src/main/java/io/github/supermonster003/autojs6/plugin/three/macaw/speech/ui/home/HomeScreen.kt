@@ -123,6 +123,16 @@ internal fun HomeScreen(controller: HomeController, actions: HomeActions, scroll
                         Modifier.testTag("macaw.home.group.${group.kind}"),
                     )
                 }
+                HomeTexts.kindAbout(group.kind)?.let { about ->
+                    item(key = "about:${group.kind}") {
+                        Text(
+                            stringResource(about),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 8.dp).testTag("macaw.home.about.${group.kind}"),
+                        )
+                    }
+                }
                 items(group.rows, key = { "model:${it.id}" }) { row ->
                     ModelRowItem(
                         row = row,
@@ -450,6 +460,14 @@ private fun DetailsDialog(row: ModelRow, controller: HomeController, actions: Ho
         Column(modifier = Modifier.padding(horizontal = DialogDefaults.contentPadding)) {
             Fact(stringResource(R.string.model_detail_id), row.id)
             Fact(stringResource(R.string.model_detail_kind), stringResource(HomeTexts.kindTitle(row.kind)) + " \u00b7 " + row.modelType + " \u00b7 v" + row.version)
+            HomeTexts.kindAbout(row.kind)?.let { about ->
+                Text(
+                    stringResource(about),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp).testTag("macaw.details.about"),
+                )
+            }
             if (row.languages.isNotEmpty()) Fact(stringResource(R.string.model_detail_languages), HomeTexts.languages(context, row.languages))
             if (row.sizeBytes > 0) Fact(stringResource(R.string.model_detail_download_size), HomeTexts.size(context, row.sizeBytes))
             row.installedBytes?.takeIf { row.state == RowState.Installed }?.let { Fact(stringResource(R.string.model_detail_installed_size), HomeTexts.size(context, it)) }

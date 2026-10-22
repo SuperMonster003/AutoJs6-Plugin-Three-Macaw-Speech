@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">Speakers</string>
     <string name="model_kind_asr">Speech recognition</string>
     <string name="model_kind_kws">Wake words</string>
+    <string name="model_kind_punct">Punctuation</string>
     <string name="model_kind_tts">Speech synthesis</string>
     <string name="model_kind_vad">Voice activity detection</string>
     <string name="model_license_commercial">Commercial use allowed</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">%1$s is installed</string>
     <string name="model_message_removed">%1$s was deleted</string>
     <string name="model_progress">%1$s of %2$s (%3$d%%)</string>
+    <string name="model_punct_about">Adds commas, periods and question marks to the text of recognition models that leave them out (Chinese and English). The English model also restores capital letters. SenseVoice adds its own punctuation and does not use these models.</string>
     <string name="model_state_installed">Installed</string>
     <string name="model_state_paused">Paused, %1$s downloaded</string>
     <string name="model_state_queued">Waiting for the download before it</string>

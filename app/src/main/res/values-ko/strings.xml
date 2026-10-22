@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">화자</string>
     <string name="model_kind_asr">음성 인식</string>
     <string name="model_kind_kws">호출어</string>
+    <string name="model_kind_punct">문장 부호</string>
     <string name="model_kind_tts">음성 합성</string>
     <string name="model_kind_vad">음성 구간 감지</string>
     <string name="model_license_commercial">상업적 이용 가능</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">%1$s이(가) 설치되었습니다</string>
     <string name="model_message_removed">%1$s을(를) 삭제했습니다</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
+    <string name="model_punct_about">문장 부호를 쓰지 않는 인식 모델의 결과에 쉼표, 마침표, 물음표를 붙입니다 (중국어와 영어). 영어 모델은 대문자도 복원합니다. SenseVoice는 직접 문장 부호를 붙이므로 이 모델을 사용하지 않습니다.</string>
     <string name="model_state_installed">설치됨</string>
     <string name="model_state_paused">일시중지됨, %1$s 다운로드됨</string>
     <string name="model_state_queued">앞의 다운로드를 기다리는 중</string>

@@ -110,6 +110,7 @@
     <string name="model_detail_speakers">話者</string>
     <string name="model_kind_asr">音声認識</string>
     <string name="model_kind_kws">ウェイクワード</string>
+    <string name="model_kind_punct">句読点</string>
     <string name="model_kind_tts">音声合成</string>
     <string name="model_kind_vad">音声区間検出</string>
     <string name="model_license_commercial">商用利用可</string>
@@ -120,6 +121,7 @@
     <string name="model_message_installed">%1$s をインストールしました</string>
     <string name="model_message_removed">%1$s を削除しました</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
+    <string name="model_punct_about">句読点を出さない認識モデルの結果に, 読点, 句点, 疑問符を付けます (中国語と英語). 英語モデルは大文字も復元します. SenseVoice は自分で句読点を付けるため, これらのモデルを使いません.</string>
     <string name="model_state_installed">インストール済み</string>
     <string name="model_state_paused">一時停止中, %1$s ダウンロード済み</string>
     <string name="model_state_queued">前のダウンロードを待っています</string>

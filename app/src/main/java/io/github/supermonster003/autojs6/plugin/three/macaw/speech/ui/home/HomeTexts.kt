@@ -18,8 +18,16 @@ internal object HomeTexts {
     fun kindTitle(kind: String): Int = when (kind) {
         "asr" -> R.string.model_kind_asr
         "kws" -> R.string.model_kind_kws
+        "punct" -> R.string.model_kind_punct
         "tts" -> R.string.model_kind_tts
         else -> R.string.model_kind_vad
+    }
+
+    /** What the models of [kind] are for, when the kind name alone does not say it. zh-CN: [kind] 类模型的用途, 仅在类别名不足以说明时提供. */
+    @StringRes
+    fun kindAbout(kind: String): Int? = when (kind) {
+        "punct" -> R.string.model_punct_about
+        else -> null
     }
 
     @StringRes
