@@ -207,7 +207,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 ******
 
 - Android 7.0 (API 24) 及以上, 目标 API 37. arm64-v8a, armeabi-v7a, x86_64 与 x86 各有安装包, 另有 universal 安装包; 原生库按 16 KB 内存页对齐, 已在 16 KB 页模拟器上验证.
-- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6.
+- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6. 识别非 WAV 音频文件 (MP3, M4A 等) 与插件工具需要 AutoJs6 6.8.0 正式版或更高版本, 更早的 AutoJs6 中脚本只能识别 WAV.
 - 后台收音: 在 AutoJs6 处于前台时开始的听写或唤醒会话, AutoJs6 退到后台或熄屏后仍会继续收音 (插件以麦克风前台服务与通知保持录音). AutoJs6 已在后台时才打开的会话可能被系统静音, 此时会话收到错误码为 `PERMISSION_DENIED` 的 `warning` 事件但不会结束, AutoJs6 回到前台后恢复; 需要后台收音的脚本请在 AutoJs6 可见时开启会话.
 - 实测设备: Sony G8441 (Android 9), Sony XQ-AT72 (Android 12), Sony XQ-DQ72 (Android 13), Redmi 22120RN86C (Android 13), Xiaomi Pad 23046RP50C (Android 15), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24, 35 与 37 (16 KB 页) 模拟器.
 - 性能: 在低端的 Sony G8441 上, 流式模型加载约 1.7 秒, SenseVoice 约 2.8 秒, 听写处理速度约为实时的 3 倍; MeloTTS 与 Kokoro 在这类设备上合成慢于实时, AISHELL-3 最快. Sony XQ-DQ72 等较新设备加载约 0.5 到 1.2 秒, 合成快于实时.
@@ -217,6 +217,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - 常驻唤醒: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 页) 模拟器. 熄屏 30 分钟耗电 (Sony XQ-DQ72, Android 13; Android 按机型功耗表估算, 手机经 USB 连接, 未充电状态为模拟): 开启时 17.9 mAh, 插件 CPU 时间 454 秒 (平均约占一个 CPU 核心的四分之一), 期间一直在录音; 关闭时 0.006 mAh, 插件没有在运行. 实际耗电因机型而异.
 - 插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9).
 - 标点与 1.2.0 新增模型: 实测 Sony XQ-AT72 (Android 12). 开启标点时, 中文, 英文与中英混合录音都加上了标点, 字词与关闭时相同; 俄语与法语 Piper 声音合成的句子由同语言的流式模型识别回来, 字错率分别为 7.9% 与 0%; 西班牙语与德语声音合成正常, 韩语模型只验证了能加载 (没有韩语测试录音).
+- 试听试说页识别文件: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器. 在 OnePlus OPD2413 上, 一段 10 分 03 秒的 MP3 约 21 秒识别完 (SenseVoice, 开启自动标点); 离开页面后识别照常进行, 通知里显示进度.
 
 ******
 
@@ -373,6 +374,8 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/21_
 
 - `提示` 新增常驻唤醒, 默认关闭: 开启后一直在本机监听唤醒词, 麦克风指示灯常亮, 有一条常驻通知, 也更耗电 (熄屏 30 分钟实测见 README). 建议配合 "监听时长" 或 "只在充电时监听" 使用
+- `提示` 脚本识别非 WAV 音频与 4 个插件工具需要 AutoJs6 6.8.0 正式版或更高版本, 旧版 AutoJs6 的脚本仍只能识别 WAV; 常驻唤醒, 新模型, 自动标点与 "文件" 标签都在插件界面里使用, 不依赖 AutoJs6 的版本
+- `提示` 新增权限: 唤醒锁 (只在试听试说页识别文件时使用, 最长 60 分钟, 让熄屏后识别继续进行), 媒体处理前台服务 (Android 15 起识别文件时使用, 在通知里显示进度)
 - `新增` 常驻唤醒 (设置 > 常驻唤醒): 说出唤醒词 (默认 "小鹦小鹦" 与 "Hey Macaw", 可修改, 灵敏度分高, 中, 低三档) 即打开与数字助理相同的听写弹层; 熄屏或锁屏时也会点亮屏幕, 发送或复制前先解锁
 - `新增` 由唤醒词打开的弹层会朗读识别出的文字, 有该语言的 3-Macaw Speech 语音时用它, 否则用系统语音; 可在设置中关闭
 - `新增` 监听时长 (10, 30, 60 分钟后自动关闭, 或一直开着) 与只在充电时监听 (拔掉电源时暂停, 接上后继续), 与 3-Stove Agent 的同名选项一致
@@ -381,7 +384,7 @@ _2026/10/21_
 - `新增` 与 3-Stone AI 和 3-Stove Agent 的常驻监听互斥, 系统同一时刻只能有一个; 对方开着时会提示先关闭, 并可直接打开对方的设置
 - `新增` 重启或更新后不会自动录音: 开关仍开着时发一条 "点此恢复常驻唤醒" 通知, 打开首页或设置页也会恢复
 - `新增` 识别音频文件 (speech.recognize, speech.detectVoice) 除 WAV 外也支持 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常见格式, 以及视频文件 (MP4, WebM 等) 中的声音; 文件上限仍为 200 MB 或 30 分钟 (需要 AutoJs6 6.8.0 及以上, 更早的版本只能传入 WAV)
-- `新增` 4 个插件工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 听一句话并返回文字, speech_speak 朗读, speech_transcribe 识别手机上的音频文件, speech_synthesize 把文字合成为 WAV 或 M4A 文件. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 脚本也可以经 plugins.tools 调用; 不能直接录音时, 听写先在手机上发出 "点此说话" 通知, 点按后开始
+- `新增` 4 个插件工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 听一句话并返回文字, speech_speak 朗读, speech_transcribe 识别手机上的音频文件, speech_synthesize 把文字合成为 WAV 或 M4A 文件. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 手机上的 3-Stove Agent 可以直接调用它们, 脚本也可以经 plugins.tools 调用; 不能直接录音时, 听写先在手机上发出 "点此说话" 通知, 点按后开始
 - `新增` 可下载更多模型: 法语, 俄语与韩语的流式识别, 以及法语, 西班牙语, 德语与俄语的 Piper 声音; Piper 声音与韩语模型仅限非商业用途, 下载前会提示许可, 韩语模型只从上游地址下载
 - `新增` 自动标点: 在首页新的 "标点" 分组里下载标点模型后, 流式模型识别出的中文与英文会自动加上逗号, 句号与问号, 英文还会恢复大写; SenseVoice 自带标点, 不受影响; 脚本照旧可以传入 punctuation: false 去掉所有标点
 - `新增` 试听试说页新增 "文件" 标签: 选一个音频或视频文件 (MP3, M4A, WAV 等, 不超过 200 MB, 时长不超过 30 分钟), 不写脚本也能识别出里面说的话, 按时间分段显示, 可以复制全文或保存为文本与 SRT 字幕; 模型, 语言与自动标点在页面上选; 离开页面或熄屏后识别照常进行, 通知里显示进度并可取消; 最近一次结果下次打开仍在

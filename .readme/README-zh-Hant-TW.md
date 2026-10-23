@@ -207,7 +207,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 ******
 
 - Android 7.0 (API 24) 以上, 目標 API 37. arm64-v8a, armeabi-v7a, x86_64 與 x86 各有安裝套件, 另有 universal 安裝套件; 原生程式庫按 16 KB 記憶體分頁對齊, 已在 16 KB 分頁模擬器上驗證.
-- AutoJs6: 指令碼中的 `speech` 模組需要 6.8.0 (內部版本號 5456) 或更高版本; 外掛介面, 系統 TTS 引擎, 系統語音輸入, 語音辨識服務與數位助理不依賴 AutoJs6.
+- AutoJs6: 指令碼中的 `speech` 模組需要 6.8.0 (內部版本號 5456) 或更高版本; 外掛介面, 系統 TTS 引擎, 系統語音輸入, 語音辨識服務與數位助理不依賴 AutoJs6. 辨識非 WAV 音訊檔案 (MP3, M4A 等) 與外掛工具需要 AutoJs6 6.8.0 正式版或更新版本, 較早的 AutoJs6 中指令碼只能辨識 WAV.
 - 背景收音: 在 AutoJs6 位於前景時開始的聽寫或喚醒工作階段, AutoJs6 退到背景或螢幕關閉後仍會繼續收音 (外掛以麥克風前景服務與通知保持錄音). AutoJs6 已在背景時才開啟的工作階段可能被系統靜音, 此時工作階段收到錯誤碼為 `PERMISSION_DENIED` 的 `warning` 事件但不會結束, AutoJs6 回到前景後恢復; 需要背景收音的指令碼請在 AutoJs6 可見時開啟工作階段.
 - 實測裝置: Sony G8441 (Android 9), Sony XQ-AT72 (Android 12), Sony XQ-DQ72 (Android 13), Redmi 22120RN86C (Android 13), Xiaomi Pad 23046RP50C (Android 15), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24, 35 與 37 (16 KB 分頁) 模擬器.
 - 效能: 在低階的 Sony G8441 上, 串流模型載入約 1.7 秒, SenseVoice 約 2.8 秒, 聽寫處理速度約為即時的 3 倍; MeloTTS 與 Kokoro 在這類裝置上合成慢於即時, AISHELL-3 最快. Sony XQ-DQ72 等較新裝置載入約 0.5 到 1.2 秒, 合成快於即時.
@@ -217,6 +217,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - 常駐喚醒: 實測 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 分頁) 模擬器. 螢幕關閉 30 分鐘耗電 (Sony XQ-DQ72, Android 13; Android 依機型功耗表估算, 手機經 USB 連接, 未充電狀態為模擬): 開啟時 17.9 mAh, 外掛程式 CPU 時間 454 秒 (平均約佔一個 CPU 核心的四分之一), 期間一直在錄音; 關閉時 0.006 mAh, 外掛程式沒有在執行. 實際耗電因機型而異.
 - 外掛工具: 實測 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 與 35 模擬器 (API 24 只測不需要模型的部分); 經 MCP Server 呼叫實測 Sony G8441 (Android 9).
 - 標點與 1.2.0 新增模型: 實測 Sony XQ-AT72 (Android 12). 開啟標點時, 中文, 英文與中英混合錄音都加上了標點, 字詞與關閉時相同; 俄語與法語 Piper 聲音合成的句子由同語言的串流模型辨識回來, 字錯率分別為 7.9% 與 0%; 西班牙語與德語聲音合成正常, 韓語模型只驗證了可以載入 (沒有韓語測試錄音).
+- 試聽試說頁辨識檔案: 實測 Sony G8441 (Android 9), XQ-AT72 (Android 12), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 與 35 模擬器. 在 OnePlus OPD2413 上, 一段 10 分 03 秒的 MP3 約 21 秒辨識完 (SenseVoice, 開啟自動標點); 離開頁面後辨識照常進行, 通知中顯示進度.
 
 ******
 
@@ -373,6 +374,8 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/21_
 
 - `提示` 新增常駐喚醒, 預設關閉: 開啟後一直在本機監聽喚醒詞, 麥克風指示燈常亮, 有一則常駐通知, 也更耗電 (關閉螢幕 30 分鐘實測見 README). 建議搭配 "監聽時長" 或 "只在充電時監聽" 使用
+- `提示` 指令碼辨識非 WAV 音訊與 4 個外掛工具需要 AutoJs6 6.8.0 正式版或更新版本, 舊版 AutoJs6 的指令碼仍只能辨識 WAV; 常駐喚醒, 新模型, 自動標點與 "檔案" 分頁都在外掛介面中使用, 不依賴 AutoJs6 的版本
+- `提示` 新增權限: 喚醒鎖 (只在試聽試說頁辨識檔案時使用, 最長 60 分鐘, 讓關閉螢幕後辨識繼續進行), 媒體處理前景服務 (Android 15 起辨識檔案時使用, 在通知中顯示進度)
 - `新增` 常駐喚醒 (設定 > 常駐喚醒): 說出喚醒詞 (預設 "小鹦小鹦" 與 "Hey Macaw", 可修改, 靈敏度分高, 中, 低三段) 即開啟與數位助理相同的聽寫面板; 螢幕關閉或鎖定時也會點亮螢幕, 傳送或複製前先解鎖
 - `新增` 由喚醒詞開啟的面板會朗讀辨識出的文字, 有該語言的 3-Macaw Speech 語音時使用它, 否則使用系統語音; 可在設定中關閉
 - `新增` 監聽時長 (10, 30, 60 分鐘後自動關閉, 或一直開著) 與只在充電時監聽 (拔掉電源時暫停, 接上後繼續), 與 3-Stove Agent 的同名選項一致
@@ -381,7 +384,7 @@ _2026/10/21_
 - `新增` 與 3-Stone AI 和 3-Stove Agent 的常駐監聽互斥, 系統同一時間只能有一個; 對方開著時會提示先關閉, 並可直接開啟對方的設定
 - `新增` 重新開機或更新後不會自動錄音: 開關仍開著時發出一則 "點此恢復常駐喚醒" 通知, 開啟首頁或設定頁也會恢復
 - `新增` 辨識音訊檔案 (speech.recognize, speech.detectVoice) 除 WAV 外也支援 MP3, AAC (含 M4A), Ogg (Vorbis, Opus), FLAC, AMR 等常見格式, 以及影片檔案 (MP4, WebM 等) 中的聲音; 檔案上限仍為 200 MB 或 30 分鐘 (需要 AutoJs6 6.8.0 以上, 更早的版本只能傳入 WAV)
-- `新增` 4 個外掛工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 聽一句話並傳回文字, speech_speak 朗讀, speech_transcribe 辨識手機上的音訊檔案, speech_synthesize 把文字合成為 WAV 或 M4A 檔案. MCP Server 外掛用它們讓電腦上的 AI 助理透過手機聽和說, 指令碼也可以透過 plugins.tools 呼叫; 不能直接錄音時, 聽寫先在手機上發出 "點此說話" 通知, 點按後開始
+- `新增` 4 個外掛工具 (需要 AutoJs6 6.8.0 及以上): speech_listen 聽一句話並傳回文字, speech_speak 朗讀, speech_transcribe 辨識手機上的音訊檔案, speech_synthesize 把文字合成為 WAV 或 M4A 檔案. MCP Server 外掛用它們讓電腦上的 AI 助理透過手機聽和說, 手機上的 3-Stove Agent 可以直接呼叫它們, 指令碼也可以透過 plugins.tools 呼叫; 不能直接錄音時, 聽寫先在手機上發出 "點此說話" 通知, 點按後開始
 - `新增` 可下載更多模型: 法語, 俄語與韓語的串流辨識, 以及法語, 西班牙語, 德語與俄語的 Piper 聲音; Piper 聲音與韓語模型僅限非商業用途, 下載前會提示授權, 韓語模型只從上游位址下載
 - `新增` 自動標點: 在首頁新的 "標點" 分組中下載標點模型後, 串流模型辨識出的中文與英文會自動加上逗號, 句號與問號, 英文也會恢復大寫; SenseVoice 自帶標點, 不受影響; 指令碼照舊可以傳入 punctuation: false 去掉所有標點
 - `新增` 試聽試說頁新增 "檔案" 分頁: 選一個音訊或影片檔案 (MP3, M4A, WAV 等, 不超過 200 MB, 長度不超過 30 分鐘), 不寫指令碼也能辨識出裡面說的話, 依時間分段顯示, 可以複製全文或儲存為文字與 SRT 字幕; 模型, 語言與自動標點在頁面上選; 離開頁面或關閉螢幕後辨識照常進行, 通知中顯示進度並可取消; 最近一次結果下次開啟仍在
