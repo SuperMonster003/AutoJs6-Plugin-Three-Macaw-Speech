@@ -37,17 +37,18 @@ object ModelCatalogConfiguration {
 }
 
 /**
- * Which catalog the plugin uses (roadmap D24, appendix D Q12). The APK bundles a snapshot; until the maintainer signs
- * it (P2.5 for v1, D108 for v2) the snapshot has no signature and is used as the first catalog marked [Trust.UNSIGNED_BUNDLED];
- * a bundled signature, when present, must verify. A refreshed catalog is used only after its signature verified; it
- * may not be older than any catalog seen before (the bundled one included), and a catalog of the same version must
- * have the same bytes, except that a signed catalog replaces an unsigned bundled snapshot of its version.
+ * Which catalog the plugin uses (roadmap D24, appendix D Q12). The APK bundles a snapshot and its signature, which must
+ * verify (P2.5 for v1, D108 for v2; `BundledCatalogTest` requires the signature of a released snapshot); a development
+ * snapshot without a signature is used as the first catalog marked [Trust.UNSIGNED_BUNDLED]. A refreshed catalog is
+ * used only after its signature verified; it may not be older than any catalog seen before (the bundled one included),
+ * and a catalog of the same version must have the same bytes, except that a signed catalog replaces an unsigned
+ * bundled snapshot of its version.
  * Every catalog the plugin uses has the wire schema of [CatalogRules.CATALOG_FILE] (roadmap D106), which also keeps the
  * schema from going back; a cache of an older file name (`catalog-v1.json` before 1.2.0) is deleted on load, and its
  * accepted version only sets the floor for later refreshes.
- * zh-CN: 插件使用哪一份目录 (路线图 D24, 附录 D Q12). APK 内置一份快照; 在维护者签名 (v1 为 P2.5, v2 为 D108) 之前快照没有签名, 作为首个
- * 目录使用并标注为 [Trust.UNSIGNED_BUNDLED]; 若内置签名存在则必须验签通过. 刷新得到的目录只在验签通过后使用; 它不得早于此前见过的任何目录
- * (含内置目录), 同版本目录的字节必须相同, 唯一例外是已签名目录可替换同版本的未签名内置快照.
+ * zh-CN: 插件使用哪一份目录 (路线图 D24, 附录 D Q12). APK 内置一份快照及其签名, 签名必须验签通过 (v1 为 P2.5, v2 为 D108; 发布的快照由
+ * `BundledCatalogTest` 强制要求签名); 没有签名的开发快照作为首个目录使用并标注为 [Trust.UNSIGNED_BUNDLED]. 刷新得到的目录只在验签
+ * 通过后使用; 它不得早于此前见过的任何目录 (含内置目录), 同版本目录的字节必须相同, 唯一例外是已签名目录可替换同版本的未签名内置快照.
  * 插件使用的每份目录都是 [CatalogRules.CATALOG_FILE] 对应的传输格式 (路线图 D106), 这也保证格式不会回退; 旧文件名的缓存 (1.2.0 之前的
  * `catalog-v1.json`) 在加载时删除, 其已接受版本只作为之后刷新的下限.
  */
@@ -158,10 +159,9 @@ class ModelCatalogRepository(
      * Downloads [CatalogRules.CATALOG_FILE] and its signature from Shared-Assets `main`, verifies the signature over the
      * exact bytes, validates the catalog, refuses rollback and then replaces the cache atomically. On any failure the
      * catalog in use stays as it was (roadmap D24); only explicit calls refresh (roadmap D29 / D108, no automatic network
-     * use). Until the maintainer publishes the signed `catalog-v2.json`, the download answers 404 (`IO_FAILED`).
+     * use).
      * zh-CN: 从 Shared-Assets `main` 下载 [CatalogRules.CATALOG_FILE] 及其签名, 对原始字节验签, 校验目录, 拒绝回退, 然后原子替换缓存. 任何失败
-     * 都保持当前目录不变 (路线图 D24); 只有显式调用才会刷新 (路线图 D29 / D108, 不自动联网). 维护者发布签名后的 `catalog-v2.json` 之前, 下载
-     * 返回 404 (`IO_FAILED`).
+     * 都保持当前目录不变 (路线图 D24); 只有显式调用才会刷新 (路线图 D29 / D108, 不自动联网).
      */
     @Throws(ModelException::class)
     fun refresh(cancel: CancelToken = CancelToken()): RefreshResult {

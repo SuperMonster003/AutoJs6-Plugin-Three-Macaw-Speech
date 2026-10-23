@@ -72,17 +72,20 @@ try {
     var bytes = files.readBytes(dir + "/en.wav");
     var pcm = java.util.Arrays.copyOfRange(bytes, 44, bytes.length);
     var s = speech.listen({ source: "external", model: "%(streaming)s", timeoutMillis: 0 });
-    s.on("ready", function () { r.events.push("ready"); });
+    // Audio goes in after `ready`, as the documented example does: a stop() before `ready` ends the session unheard.
+    s.on("ready", function () {
+        r.events.push("ready");
+        for (var i = 0; i < pcm.length; i += 64000) {
+            s.feed(java.util.Arrays.copyOfRange(pcm, i, Math.min(pcm.length, i + 64000)));
+        }
+        s.stop();
+    });
     s.on("partial", function () { if (r.events[r.events.length - 1] !== "partial") r.events.push("partial"); });
     s.on("final", function (e) { r.events.push("final"); });
     s.on("endpoint", function () { r.events.push("endpoint"); });
     s.on("warning", function (e) { r.warnings.push(e.code); });
     s.on("error", function (e) { r.errors.push(e.code + " " + e.message); });
     s.on("end", function (e) { r.events.push("end:" + e.reason); r.externalChars = (e.text || "").length; done(); });
-    for (var i = 0; i < pcm.length; i += 64000) {
-        s.feed(java.util.Arrays.copyOfRange(pcm, i, Math.min(pcm.length, i + 64000)));
-    }
-    s.stop();
 } catch (e) { fail(e); }
 """,
     "listen": COMMON + """

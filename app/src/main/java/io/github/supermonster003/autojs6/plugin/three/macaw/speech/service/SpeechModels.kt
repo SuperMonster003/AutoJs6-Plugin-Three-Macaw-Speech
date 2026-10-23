@@ -54,7 +54,7 @@ internal object SpeechModels {
         val signature = try {
             assets.open(ModelCatalogConfiguration.ASSET_SIGNATURE).use { it.readBytes() }
         } catch (_: FileNotFoundException) {
-            // Appendix D Q12, roadmap D108: until the maintainer signs catalog-v2.json the bundled snapshot has no signature.
+            // Appendix D Q12, roadmap D108: released builds bundle the signature (BundledCatalogTest); a development snapshot may lack it.
             null
         }
         val publicKey = assets.open(ModelCatalogConfiguration.ASSET_PUBLIC_KEY).use { it.readBytes() }
