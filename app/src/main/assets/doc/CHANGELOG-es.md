@@ -6,7 +6,7 @@
 
 # v1.2.0
 
-###### 2026/10/21
+###### 2026/10/23
 
 * `Aviso` Nueva palabra de activación permanente, desactivada por defecto: mientras está activa escucha la palabra de activación en el dispositivo, el indicador del micrófono sigue encendido, hay una notificación fija y la batería se gasta más rápido (consulta el README para una medición de 30 minutos con la pantalla apagada). Se recomienda usarla con "Tiempo de escucha" o "Escuchar solo mientras se carga"
 * `Aviso` Reconocer audio que no sea WAV desde scripts y las cuatro herramientas del complemento requieren la versión final de AutoJs6 6.8.0 o posterior; con un AutoJs6 anterior, los scripts siguen reconociendo solo WAV. La palabra de activación permanente, los nuevos modelos, la puntuación automática y la pestaña "Archivo" se usan dentro del complemento y no dependen de la versión de AutoJs6

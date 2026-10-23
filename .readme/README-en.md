@@ -371,7 +371,7 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 #### v1.2.0
 
-_2026/10/21_
+_2026/10/23_
 
 - `Hint` New resident wake word, off by default: while on, it keeps listening for the wake word on the device, the microphone indicator stays lit, a notification stays and the battery drains faster (see the README for a 30 minute screen-off measurement). Using it with "Listening time" or "Listen only while charging" is recommended
 - `Hint` Recognizing non-WAV audio in scripts and the four plugin tools need the AutoJs6 6.8.0 release or later; with an older AutoJs6, scripts still recognize WAV only. The resident wake word, the new models, automatic punctuation and the "File" tab are used in the plugin itself and do not depend on the AutoJs6 version

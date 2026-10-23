@@ -6,7 +6,7 @@
 
 # v1.2.0
 
-###### 2026/10/21
+###### 2026/10/23
 
 * `Note` Nouveau mot de réveil permanent, désactivé par défaut: une fois activé, il écoute en continu le mot de réveil sur l'appareil, le voyant du micro reste allumé, une notification reste affichée et la batterie s'use plus vite (voir le README pour une mesure de 30 minutes écran éteint). Il est conseillé de l'utiliser avec "Durée d'écoute" ou "Écouter uniquement pendant la charge"
 * `Note` La reconnaissance d'audio autre que WAV depuis les scripts et les quatre outils du plugin demandent la version finale d'AutoJs6 6.8.0 ou ultérieure; avec un AutoJs6 plus ancien, les scripts ne reconnaissent toujours que le WAV. Le mot de réveil permanent, les nouveaux modèles, la ponctuation automatique et l'onglet "Fichier" s'utilisent dans le plugin lui-même et ne dépendent pas de la version d'AutoJs6
