@@ -20,9 +20,17 @@ import androidx.test.platform.app.InstrumentationRegistry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.AssistantDevice.capture
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.AssistantDevice.exists
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.AssistantDevice.text
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MicrophoneSource
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Keyword
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.KeywordStream
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceGatedKeywords
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ListeningDuration
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentNotifications
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPower
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentSettings
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentStartActivity
@@ -45,8 +53,11 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.Collections
+import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.math.log10
 
 /**
  * The resident wake word on a device (roadmap P7.4 E3, opt-in `-e macawResident true`): the settings switch starts the
@@ -54,13 +65,15 @@ import java.util.concurrent.TimeUnit
  * "Tap to speak" (D71, D79); every other microphone session silences it until it ends (D72, D76); the listening time turns
  * the switch off (D77); "only while charging" pauses and resumes with `dumpsys battery` (D77, D76); another resident
  * listener turns it away (D75); a reboot reminds and the trampoline resumes (D74); with `-e macawKeyguard true` a hit
- * turns the screen on (D73). The sound comes from the [VirtualRoom] (`-e macawRoom virtual`) or the speaker. The stored
- * settings, the switch and the notification question are restored afterwards; nothing on the screen is tapped outside
- * the plugin's own screens.
+ * turns the screen on (D73). The sound comes from the [VirtualRoom] (`-e macawRoom virtual`) or the speaker. Roadmap
+ * P8.1: `-e macawPower` picks a power saving variant, `-e macawHitRate` and `-e macawGateRecordings` add the hit counts and
+ * the voice gate comparison. The stored settings, the switch and the notification question are restored afterwards;
+ * nothing on the screen is tapped outside the plugin's own screens.
  * zh-CN: 设备上的常驻唤醒 (路线图 P7.4 E3, 需显式开启 `-e macawResident true`): 设置开关启动麦克风前台服务; `kws-zh-6.wav` 中的关键词 (本次运行保存的
  * 唤醒词) 打开弹层或发出 "点此说话" (D71, D79); 其他麦克风会话让它静默直到结束 (D72, D76); 监听时长到点关闭开关 (D77); "只在充电时监听" 随
  * `dumpsys battery` 暂停与恢复 (D77, D76); 其他常驻监听让它关闭 (D75); 重启后提醒, 跳板恢复 (D74); 有 `-e macawKeyguard true` 时命中点亮屏幕 (D73).
- * 声音来自 [VirtualRoom] (`-e macawRoom virtual`) 或扬声器. 之后恢复保存的设置, 开关与通知询问标记; 只点按插件自己的界面.
+ * 声音来自 [VirtualRoom] (`-e macawRoom virtual`) 或扬声器. 路线图 P8.1: `-e macawPower` 选择省电做法, `-e macawHitRate` 与 `-e macawGateRecordings`
+ * 另外统计命中数与比较语音门. 之后恢复保存的设置, 开关与通知询问标记; 只点按插件自己的界面.
  */
 @RunWith(AndroidJUnit4::class)
 class ResidentWakeDeviceTest {
@@ -79,6 +92,12 @@ class ResidentWakeDeviceTest {
 
     /** The route the run expects (`open` or `notify`, D71), any when absent. zh-CN: 本次运行预期的路线, 缺省时不限. */
     private val expectedRoute: String? get() = SpeechDevice.argument("macawRoute")
+
+    /**
+     * `-e macawPower off|gate|step|both`: a measured variant of roadmap P8.1.1; absent, the stored power saving switch
+     * (on by default, D123) decides. zh-CN: 路线图 P8.1.1 实测的做法; 缺省时由保存的省电模式开关决定 (默认开, D123).
+     */
+    private val power: String get() = SpeechDevice.argument("macawPower") ?: "setting"
     private lateinit var saved: ResidentSettings
     private var savedOn = false
     private var savedAsked = false
@@ -99,7 +118,8 @@ class ResidentWakeDeviceTest {
         val speech = SpeechPreferences(context)
         savedAsked = speech.notificationsAsked
         speech.notificationsAsked = true
-        preferences.write(ResidentSettings(keywords = listOf(KEYWORD), readAloud = true))
+        preferences.write(ResidentSettings(keywords = listOf(KEYWORD), readAloud = true, powerSaving = SpeechDevice.argument("macawPowerSaving") != "false"))
+        ResidentWake.powerOverride = ResidentPower.variant(power)
         AssistantDevice.setUpRoom()
     }
 
@@ -109,6 +129,7 @@ class ResidentWakeDeviceTest {
         closeSheets()
         ResidentWake.turnOff(context)
         awaitStopped()
+        ResidentWake.powerOverride = null
         rival(false)
         AssistantDevice.shell("dumpsys battery reset")
         AssistantDevice.tearDownRoom()
@@ -263,6 +284,134 @@ class ResidentWakeDeviceTest {
         assertTrue("listening again after the sheet", resumed)
         assertTrue("the wake word is heard again", again > 0)
         if (route == "open") assertTrue("the sheet silenced the resident word", silenced)
+    }
+
+    /**
+     * Roadmap P8.1.1 / P8.1.4 (opt-in `-e macawHitRate <plays>`): the keyword played that many times at full and at a
+     * quarter of the level (about -12 dB, the soft wake word the power saving mode may miss), [RATE_PAUSE_MILLIS] apart;
+     * counts the plays the resident service heard within [HIT_WAIT_MILLIS] of their end, and those it heard later
+     * (within [LATE_WAIT_MILLIS] more). Only the numbers are asserted elsewhere (the run script compares them).
+     * zh-CN: 路线图 P8.1.1 / P8.1.4 (需显式开启 `-e macawHitRate <次数>`): 以原音量与四分之一音量 (约 -12 dB, 省电模式可能漏掉的轻声唤醒词) 各播放关键词
+     * 若干次, 间隔 [RATE_PAUSE_MILLIS]; 统计播放结束后 [HIT_WAIT_MILLIS] 内常驻服务听到的次数, 以及更晚 (再过 [LATE_WAIT_MILLIS] 以内) 听到的次数.
+     * 只记录数字 (由运行脚本比较).
+     */
+    @Test
+    fun theWakeWordIsCountedAtTwoLevels() {
+        val plays = SpeechDevice.argument("macawHitRate")?.toIntOrNull()
+        assumeTrue("opt-in: -e macawHitRate <plays>", plays != null && plays > 0)
+        turnOn()
+        // Heard within HIT_WAIT_MILLIS of the end of the play, and heard later (within LATE_WAIT_MILLIS more).
+        fun count(gain: Float): Pair<Int, Int> {
+            var heard = 0
+            var late = 0
+            repeat(plays!!) {
+                val before = ResidentWakeService.hits
+                AssistantDevice.play(KEYWORD_AUDIO, tail = 0, gain = gain)
+                when {
+                    await(HIT_WAIT_MILLIS) { ResidentWakeService.hits > before } -> heard++
+                    await(LATE_WAIT_MILLIS) { ResidentWakeService.hits > before } -> late++
+                }
+                closeSheets()
+                manager().cancel(ResidentNotifications.SPEAK_ID)
+                // The sheet a hit opened silenced the resident word; it listens again before the next play.
+                await(15_000) { sessions.backgroundListening }
+                Thread.sleep(RATE_PAUSE_MILLIS)
+            }
+            return heard to late
+        }
+        val (full, fullLate) = count(1f)
+        val (quarter, quarterLate) = count(0.25f)
+        SpeechDevice.log("resident hit rate power=$power full=$full/$plays quarter=$quarter/$plays late=$fullLate/$quarterLate")
+        assertTrue("the wake word is heard at the full level", full > 0)
+    }
+
+    /**
+     * Roadmap P8.1.1 (opt-in `-e macawGateRecordings <plays>`): records the room and the keyword played through the speaker
+     * that many times at the full and at a quarter of the level, plus [ROOM_MILLIS] of the room alone, then spots each
+     * recording with the plain stream and with voice gate settings (the defaults, the VAD alone, the rise alone, other
+     * rises). Per recording: the levels, the plain hits and per setting `hits@onset/openings x decoded s` (onset in ms
+     * from the play's start). Only numbers are logged.
+     * zh-CN: 路线图 P8.1.1 (需显式开启 `-e macawGateRecordings <次数>`): 录下房间声, 以及经扬声器以原音量与四分之一音量各播放若干次的关键词, 外加
+     * [ROOM_MILLIS] 的纯房间声; 然后对每段录音分别用普通流与几种语音门设置检测 (默认值, 只用 VAD, 只用响度上升, 其他上升阈值). 每段输出电平, 普通流的
+     * 命中数, 以及每种设置的 `命中数@开门时刻/开门次数 x 解码秒数` (开门时刻为相对播放开始的毫秒数). 只记录数字.
+     */
+    @Test
+    fun theVoiceGateIsComparedOnRecordings() {
+        val plays = SpeechDevice.argument("macawGateRecordings")?.toIntOrNull()
+        assumeTrue("opt-in: -e macawGateRecordings <plays>", plays != null && plays > 0)
+        val runtime = SpeechRuntime.get(context)
+        val model = runtime.resolve(SpeechContract.KIND_KWS, SpeechDevice.KWS)
+        val buffer = runtime.keywordBuffer(model, listOf(Keyword(KEYWORD)))
+        // Gain 0: the room alone.
+        val recordings = (List(plays!!) { 1f } + List(plays) { 0.25f } + 0f).map { gain -> gain to record(gain) }
+        // Setting name to (VAD gain, rise dB): a VAD gain of 0 leaves the rise alone, a rise of 0 the VAD.
+        val settings = listOf(
+            "gate" to (VoiceGatedKeywords.VAD_GAIN to VoiceGatedKeywords.RISE_DB),
+            "vad" to (VoiceGatedKeywords.VAD_GAIN to 0f),
+            "rise" to (0f to VoiceGatedKeywords.RISE_DB),
+            "rise6" to (0f to 6f),
+            "rise12" to (0f to 12f),
+        )
+        runtime.acquireKeywords(model).use { lease ->
+            val engine = lease.engine
+            recordings.forEach { (gain, recording) ->
+                val (samples, start) = recording
+                val plain = spot(engine.stream(buffer, 1), samples, start)
+                val gated = settings.map { (name, setting) ->
+                    val gate = VoiceGatedKeywords(engine.stream(buffer, 1), SherpaEngines.vad(context.assets, SpeechRuntime.SESSION_VAD),
+                        vadGain = setting.first, riseDb = setting.second)
+                    val (hits, onset) = spot(gate, samples, start)
+                    "$name=$hits@${onset ?: "-"}/${gate.openings}x${AudioInput.millis(gate.passed) / 100 / 10.0}s"
+                }
+                SpeechDevice.log("gate recording gain=$gain total=${AudioInput.millis(samples.size.toLong())}ms room=${level(samples, 0, start)}dB " +
+                    "play=${level(samples, start, start + AudioInput.samples(2_000).toInt())}dB plain=${plain.first} ${gated.joinToString(" ")}")
+            }
+        }
+    }
+
+    /** 2 s of the room, then the keyword at [gain] (or [ROOM_MILLIS] of the room at 0); answers the samples and the play's start. */
+    private fun record(gain: Float): Pair<FloatArray, Int> {
+        val audio = Collections.synchronizedList(ArrayList<FloatArray>())
+        val microphone = MicrophoneSource(object : MicrophoneSource.Listener {
+            override fun onAudio(samples: FloatArray) {
+                audio += samples
+            }
+
+            override fun onSilenced(silenced: Boolean) = Unit
+            override fun onFailure(error: SpeechException) = Unit
+        })
+        microphone.start()
+        Thread.sleep(2_000)
+        val start = synchronized(audio) { audio.sumOf { it.size } }
+        if (gain == 0f) Thread.sleep(ROOM_MILLIS) else AssistantDevice.play(KEYWORD_AUDIO, tail = 2_000, gain = gain)
+        microphone.stop()
+        return synchronized(audio) { audio.flatMap { it.asList() }.toFloatArray() } to start
+    }
+
+    /** Hits of [stream] on [samples] in 20 ms steps, then 2 s of silence; and the first time it was open (ms from [start]). */
+    private fun spot(stream: KeywordStream, samples: FloatArray, start: Int): Pair<Int, Long?> {
+        var hits = 0
+        var onset: Long? = null
+        stream.use {
+            val step = MicrophoneSource.FRAME_SAMPLES
+            for (offset in samples.indices step step) {
+                it.accept(samples.copyOfRange(offset, minOf(samples.size, offset + step)))
+                if (onset == null && (it as? VoiceGatedKeywords)?.open == true) onset = AudioInput.millis((offset - start).toLong())
+                if (it.poll() != null) hits++
+            }
+            repeat(100) { _ ->
+                it.accept(FloatArray(step))
+                if (it.poll() != null) hits++
+            }
+        }
+        return hits to onset
+    }
+
+    /** The RMS level of samples[from, to) in dBFS, one decimal. zh-CN: 该段采样的 RMS 电平 (dBFS). */
+    private fun level(samples: FloatArray, from: Int, to: Int): String {
+        val part = samples.copyOfRange(from.coerceIn(0, samples.size), to.coerceIn(0, samples.size))
+        val power = part.sumOf { (it * it).toDouble() } / maxOf(1, part.size)
+        return "%.1f".format(Locale.ROOT, 10 * log10(maxOf(power, 1e-12)))
     }
 
     @Test
@@ -447,6 +596,15 @@ class ResidentWakeDeviceTest {
         const val KEYWORD_AUDIO = "test-audio/kws-zh-6.wav"
         const val HIT_WAIT_MILLIS = 3_000L
         const val MAX_PLAYS = 3
+
+        /** Silence between the plays of the hit rate, longer than the gate's hangover. zh-CN: 命中率各次播放之间的静音, 长于门控的余留时间. */
+        const val RATE_PAUSE_MILLIS = 2_000L
+
+        /** A hit this much later than [HIT_WAIT_MILLIS] counts as late, not as heard. zh-CN: 晚于 [HIT_WAIT_MILLIS] 这么久以内的命中记为迟到. */
+        const val LATE_WAIT_MILLIS = 5_000L
+
+        /** The recording of the room alone (P8.1.1). zh-CN: 纯房间声录音的时长 (P8.1.1). */
+        const val ROOM_MILLIS = 30_000L
 
         /** Time for the sheet to start reading the result aloud before it closes. zh-CN: 弹层关闭前开始朗读结果的时间. */
         const val READ_ALOUD_MILLIS = 2_500L

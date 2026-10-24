@@ -14,13 +14,16 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.Mi
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.KeywordEngine
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationEvents
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionState
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechWarning
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceGatedKeywords
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeEvents
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
 import org.autojs.plugin.speech.api.ISpeechSession
 import org.autojs.plugin.speech.api.ISpeechSessionCallback
@@ -203,6 +206,9 @@ internal abstract class SessionBinder(
     /** True while the microphone records for this session. zh-CN: 麦克风正在为本会话录音. */
     protected val recording: Boolean get() = microphone != null
 
+    /** The microphone's read step (roadmap P8.1). zh-CN: 麦克风的读取步长 (路线图 P8.1). */
+    protected open val frameSamples: Int get() = MicrophoneSource.FRAME_SAMPLES
+
     /** Starts recording into [accept] (ASR thread). zh-CN: 开始录音并交给 [accept] (ASR 线程). */
     protected fun startMicrophone() {
         val source = AudioCaptures.open(object : MicrophoneSource.Listener {
@@ -216,7 +222,7 @@ internal abstract class SessionBinder(
             }
 
             override fun onFailure(error: SpeechException) = onAsr { fail(error.code, error.message ?: error.code) }
-        }, attribution)
+        }, attribution, frameSamples)
         source.start()
         microphone = source
     }
@@ -419,10 +425,13 @@ internal class DictationBinder(
  * dictation of the plugin's own entries may take the microphone over; the session then stops recording, reports
  * nothing and records again when the takeover is released (the microphone foreground service stays held throughout).
  * The resident wake word (roadmap D76) is the same session as the background holder of the session table, without the
- * microphone foreground service of its own ([foreground] false): every microphone session silences it the same way.
+ * microphone foreground service of its own ([foreground] false): every microphone session silences it the same way. Its
+ * [power] saving mode (roadmap P8.1, D128) puts the silero VAD before the keyword spotter and reads longer microphone
+ * frames; script wake sessions keep [WakePower.OFF].
  * zh-CN: 唤醒会话 (`openWakeSession`, 路线图 P3.4): 在麦克风上检测关键词; 有 `thenListen` 时每次命中在同一音频上进行一轮听写, 使用第二个识别器租约.
  * 路线图 D57: 没有轮次进行时, 插件自己入口的听写可以接管麦克风; 此时会话停止录音, 不报告任何事件, 接管释放后重新录音 (期间一直持有麦克风前台服务).
  * 常驻唤醒 (路线图 D76) 是同一种会话, 作为会话表的后台持有者, 不另持麦克风前台服务 ([foreground] 为 false): 任何麦克风会话都以同样方式让它静默.
+ * 它的省电模式 [power] (路线图 P8.1, D128) 在唤醒词检测器之前加 silero VAD, 并以更长的帧读取麦克风; 脚本的唤醒会话保持 [WakePower.OFF].
  */
 internal class WakeBinder(
     runtime: SpeechRuntime,
@@ -430,6 +439,7 @@ internal class WakeBinder(
     callback: ISpeechWakeCallback,
     listenCallback: ISpeechSessionCallback?,
     private val foreground: Boolean = true,
+    private val power: WakePower = WakePower.OFF,
     makeSession: (WakeEvents, DictationEvents?) -> WakeSession,
 ) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())), SessionTable.Yielding {
 
@@ -438,7 +448,12 @@ internal class WakeBinder(
         listenCallback?.let { listen -> CallbackDictationEvents(listen) { binderDied() } },
     )
 
+    private var gate: VoiceGatedKeywords? = null
+    private var gateLogged = 0L
+
     override val isEnded: Boolean get() = session.isEnded
+
+    override val frameSamples: Int get() = power.frameSamples
 
     fun open(keywordModel: InstalledModel, buffer: String, listenModel: InstalledModel?) {
         link()
@@ -460,7 +475,11 @@ internal class WakeBinder(
             acquired
         }) {
             val spotter = leases.first().engine as KeywordEngine
-            val stream = spotter.stream(buffer, session.options.keywords.size)
+            val stream = spotter.stream(buffer, session.options.keywords.size).let { stream ->
+                if (!power.voiceGate) return@let stream
+                VoiceGatedKeywords(stream, SherpaEngines.vad(runtime.context.assets, SpeechRuntime.SESSION_VAD)).also { gate = it }
+            }
+            Log.i(TAG, "Wake session ${session.id}: voice gate ${if (power.voiceGate) "on" else "off"}, ${power.frameMillis} ms frames")
             val asr = leases.getOrNull(1)?.engine
             val punctuator = listenModel?.let { runtime.punctuator(it, leases) }
             session.start(
@@ -494,7 +513,15 @@ internal class WakeBinder(
         }
     }
 
-    override fun accept(samples: FloatArray) = session.accept(samples)
+    override fun accept(samples: FloatArray) {
+        session.accept(samples)
+        val current = gate ?: return
+        // Every 5 minutes of audio: how much of it the spotter decoded, for the device runs (roadmap P8.1).
+        if (current.heard - gateLogged >= GATE_LOG_SAMPLES) {
+            gateLogged = current.heard
+            Log.i(TAG, "Voice gate of ${session.id}: ${AudioInput.millis(current.passed) / 1000} s of ${AudioInput.millis(current.heard) / 1000} s decoded, ${current.openings} openings")
+        }
+    }
 
     override fun stopSession(discard: Boolean) = if (discard) session.cancel() else session.finish()
 
@@ -504,6 +531,10 @@ internal class WakeBinder(
 
     override fun feed(pcm16: ByteArray?): Unit =
         throw SpeechBundles.thrown(SpeechErrorCodes.INVALID_OPTIONS, "feed() is for sessions opened with source \"external\"")
+
+    private companion object {
+        val GATE_LOG_SAMPLES = AudioInput.samples(300_000)
+    }
 
     override fun snapshot(): Bundle = SpeechBundles.snapshot(session.id, session.state.wire, session.modelId, session.text)
 

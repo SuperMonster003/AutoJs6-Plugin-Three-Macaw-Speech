@@ -27,8 +27,19 @@ transcript or the recognized text.
                                                         minutes (30 by default) with the switch off, then on ("only
                                                         while charging" off, no time limit), on battery as batterystats
                                                         sees it (`dumpsys battery unplug`); prints the batterystats
-                                                        estimate (mAh), the plugin's CPU time and whether it still
-                                                        records at the end of both periods (`on`: the second period only)
+                                                        estimate (mAh), the plugin's CPU time, its busiest threads, the
+                                                        voice gate's share and whether it still records at the end of
+                                                        both periods (`on`: the second period only)
+    py .python/device_resident_run.py gate <serial> [plays]
+                                                        roadmap P8.1.1: records the room and the keyword through the
+                                                        speaker (3 plays at the full and at a quarter of the level by
+                                                        default, 30 s of the room alone) and compares the plain spotter
+                                                        with voice gate settings on the same recordings
+
+Power saving (roadmap P8.1): `--power off|gate|step|both` picks a measured variant of P8.1.1 for `phone` and `battery`
+(the debug switch or the instrumentation argument sets it in the plugin's process); without it the stored switch
+decides, which `--power-saving on|off` sets (on by default, D123). `phone --hit-rate <plays>` adds the hit count at the
+full and at a quarter of the level, and the late hits (ResidentWakeDeviceTest#theWakeWordIsCountedAtTwoLevels).
 
 `background` and `battery` switch through the debug build's ResidentDebugActivity (adb only, DUMP permission), because an
 instrumented process keeps a foreground state of its own; nothing is tapped.
@@ -58,8 +69,10 @@ STOVE_RESIDENT = f"{STOVE}/.speech.ResidentListenerService"
 STOVE_SETTINGS = f"{STOVE}/.speech.ResidentListenerSettings"
 SERVICE = f"{PACKAGE}/.resident.ResidentWakeService"
 SCREENS = Path(__file__).resolve().parents[1] / ".bak" / "visual" / "1.2.0"
-# The defaults of the options that `background` and `battery` change (D77, D69).
-DEFAULT_OPTIONS = ("--ez", "chargingOnly", "false", "--ez", "readAloud", "true", "--es", "duration", "always")
+# The defaults of the options that `background` and `battery` change (D77, D69, D123), and no measured variant.
+DEFAULT_OPTIONS = ("--ez", "chargingOnly", "false", "--ez", "readAloud", "true", "--es", "duration", "always", "--ez", "powerSaving", "true",
+                   "--es", "power", "setting")
+POWER_VARIANTS = ("off", "gate", "step", "both")
 
 
 class LogTap:
@@ -148,7 +161,20 @@ def avd(serial):
     return pull_screens(serial, SCREENS / serial.replace(":", "_"), ok)
 
 
-def phone(serial):
+def power_arguments(options):
+    """The instrumentation arguments of --power / --power-saving / --hit-rate (roadmap P8.1)."""
+    arguments = []
+    if options.get("power"):
+        arguments.append(f"macawPower={options['power']}")
+    if options.get("power_saving"):
+        arguments.append(f"macawPowerSaving={'true' if options['power_saving'] == 'on' else 'false'}")
+    if options.get("hit_rate"):
+        arguments.append(f"macawHitRate={options['hit_rate']}")
+    return arguments
+
+
+def phone(serial, options=None):
+    options = options or {}
     adb(serial, "shell", "rm", "-rf", f"/sdcard/Android/data/{PACKAGE}/files/screens", check=False)
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     since = adb(serial, "shell", "date", "'+%m-%d %H:%M:%S.000'")
@@ -156,12 +182,21 @@ def phone(serial):
     # maintainer agreed to a louder playback.
     try:
         with hs.Volume(serial) as volume:
-            print(f"{label(serial)}: music {volume.describe()}")
-            ok = run_test(serial, TEST, ["macawResident=true"])
+            print(f"{label(serial)}: music {volume.describe()}; power {options.get('power') or 'setting'}, power saving "
+                  f"{options.get('power_saving') or 'on (default)'}")
+            ok = run_test(serial, TEST, ["macawResident=true", *power_arguments(options)])
     finally:
         adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
     read_aloud(serial, since)
     return pull_screens(serial, SCREENS / serial.replace(":", "_"), ok)
+
+
+def gate(serial, plays):
+    """P8.1.1: the voice gate settings against the plain spotter on live recordings (one line per recording)."""
+    adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
+    with hs.Volume(serial) as volume:
+        print(f"{label(serial)}: music {volume.describe()}")
+        return run_test(serial, f"{TEST}#theVoiceGateIsComparedOnRecordings", ["macawResident=true", f"macawGateRecordings={plays}"])
 
 
 def component_enabled(serial, component):
@@ -279,6 +314,40 @@ def plugin_cpu_seconds(serial):
     return (int(fields[11]) + int(fields[12])) / 100 if len(fields) > 12 else None
 
 
+def plugin_threads(serial):
+    """{tid: (name, utime + stime in seconds)} of the plugin's threads, or {} without a process."""
+    pid = adb(serial, "shell", "pidof", PACKAGE, check=False).strip().split()
+    if not pid:
+        return {}
+    dump = adb(serial, "shell", f"for t in /proc/{pid[0]}/task/*; do cat $t/stat; done 2>/dev/null", check=False)
+    threads = {}
+    for line in dump.splitlines():
+        head, _, tail = line.rpartition(")")
+        fields = tail.split()
+        if "(" not in head or len(fields) < 13:
+            continue
+        tid, _, name = head.partition(" (")
+        threads[tid.strip()] = (name, (int(fields[11]) + int(fields[12])) / 100)
+    return threads
+
+
+def busiest(before, after, count=5):
+    """The threads that used the most CPU between two plugin_threads samples, as `name s` (threads of one name summed)."""
+    used = {}
+    for tid, (name, seconds) in after.items():
+        used[name] = used.get(name, 0) + seconds - before.get(tid, (name, 0))[1]
+    top = sorted(used.items(), key=lambda item: -item[1])[:count]
+    return ", ".join(f"{name} {seconds:.1f} s" for name, seconds in top if seconds >= 0.05)
+
+
+def power_lines(serial, since):
+    """The wake session's power line and the last voice gate line of the period (roadmap P8.1, MacawSessions)."""
+    log = adb(serial, "logcat", "-d", "-v", "raw", "-T", since, "-s", "MacawSessions:I", check=False)
+    mode = [line.split(": ", 1)[-1].strip() for line in log.splitlines() if "voice gate o" in line]
+    gate = [line.split(": ", 1)[-1].strip() for line in log.splitlines() if line.startswith("Voice gate of")]
+    return (mode[-1] if mode else "no wake session line"), (gate[-1] if gate else None)
+
+
 def estimated_mah(serial):
     """The plugin's estimated power use since the batterystats reset in mAh, or None."""
     uid = re.search(r"userId=(\d+)", adb(serial, "shell", "dumpsys", "package", PACKAGE, check=False))
@@ -289,13 +358,18 @@ def estimated_mah(serial):
     return float(match.group(1)) if match else None
 
 
-def battery_period(serial, minutes, resident_on):
+def battery_period(serial, minutes, resident_on, power=None, power_saving=None):
     """
     One screen-off period on battery as batterystats sees it (`dumpsys battery unplug`); answers (mAh, CPU seconds). On:
-    "only while charging" off, or the unplug pauses the session, and no time limit.
+    "only while charging" off, or the unplug pauses the session, and no time limit; [power] a measured variant of P8.1.1
+    or the stored switch ([power_saving] `on` / `off`, else unchanged).
     """
+    since = adb(serial, "shell", "date", "'+%m-%d %H:%M:%S.000'")
     if resident_on:
-        debug_switch(serial, "--es", "resident", "on", "--ez", "chargingOnly", "false", "--es", "duration", "always")
+        extras = ["--es", "power", power or "setting"]
+        if power_saving:
+            extras += ["--ez", "powerSaving", "true" if power_saving == "on" else "false"]
+        debug_switch(serial, "--es", "resident", "on", "--ez", "chargingOnly", "false", "--es", "duration", "always", *extras)
         time.sleep(10)
         if service_state(serial) != (True, True):
             print(f"{label(serial)}: battery FAIL: the resident service did not start")
@@ -307,9 +381,11 @@ def battery_period(serial, minutes, resident_on):
     adb(serial, "shell", "dumpsys", "batterystats", "--reset", check=False)
     adb(serial, "shell", "dumpsys", "battery", "unplug", check=False)
     cpu = plugin_cpu_seconds(serial)
+    threads = plugin_threads(serial)
     adb(serial, "shell", "input", "keyevent", "KEYCODE_SLEEP", check=False)
     time.sleep(minutes * 60)
     after = plugin_cpu_seconds(serial)
+    threads_after = plugin_threads(serial)
     mah = estimated_mah(serial)
     running = service_state(serial)
     live = recording(serial)
@@ -318,18 +394,23 @@ def battery_period(serial, minutes, resident_on):
     used = None if after is None else round(after - (cpu or 0), 1)
     print(f"{label(serial)}: battery {'on ' if resident_on else 'off'} {minutes} min screen off: estimate {mah} mAh, plugin CPU {used} s"
           f"{' (no process)' if after is None else ''}, service {running}, recording {live}")
+    if threads_after:
+        print(f"    busiest threads: {busiest(threads, threads_after)}")
+    if resident_on:
+        mode, gate = power_lines(serial, since)
+        print(f"    power {power or 'setting'}: {mode}" + (f"; {gate}" if gate else ""))
     if resident_on and live is not False:
         print(f"{label(serial)}: battery FAIL: the resident wake word did not record to the end")
         return None
     return mah, used
 
 
-def battery(serial, minutes, on_only=False):
+def battery(serial, minutes, on_only=False, power=None, power_saving=None):
     """D73 / P7.4.8: off first (the baseline), then on; the switch goes off and the options back to their defaults at the end."""
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     try:
         off = None if on_only else battery_period(serial, minutes, False)
-        on = battery_period(serial, minutes, True)
+        on = battery_period(serial, minutes, True, power, power_saving)
     finally:
         debug_switch(serial, "--es", "resident", "off", *DEFAULT_OPTIONS)
         adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
@@ -338,16 +419,37 @@ def battery(serial, minutes, on_only=False):
     return ok
 
 
+def options_of(argv):
+    """--power / --power-saving / --hit-rate (roadmap P8.1) and the remaining positional arguments, or None when invalid."""
+    options, rest = {}, []
+    names = {"--power": "power", "--power-saving": "power_saving", "--hit-rate": "hit_rate"}
+    items = iter(argv)
+    for item in items:
+        if item in names:
+            options[names[item]] = next(items, None)
+        else:
+            rest.append(item)
+    if options.get("power") not in (None, *POWER_VARIANTS) or options.get("power_saving") not in (None, "on", "off") \
+            or not (options.get("hit_rate") or "1").isdigit():
+        return None, rest
+    return options, rest
+
+
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("avd", "phone", "stove", "background", "battery"):
+    options, argv = options_of(argv)
+    if options is None or len(argv) < 2 or argv[0] not in ("avd", "phone", "stove", "background", "battery", "gate"):
         print(__doc__)
         return 2
     action, serial = argv[0], argv[1]
     if not install(serial):
         return 1
+    if action == "gate":
+        return 0 if gate(serial, int(argv[2]) if len(argv) > 2 else 3) else 1
     if action == "battery":
-        return 0 if battery(serial, int(argv[2]) if len(argv) > 2 else 30, "on" in argv[3:]) else 1
-    return 0 if {"avd": avd, "phone": phone, "stove": stove, "background": background}[action](serial) else 1
+        return 0 if battery(serial, int(argv[2]) if len(argv) > 2 else 30, "on" in argv[3:], options.get("power"), options.get("power_saving")) else 1
+    if action == "phone":
+        return 0 if phone(serial, options) else 1
+    return 0 if {"avd": avd, "stove": stove, "background": background}[action](serial) else 1
 
 
 if __name__ == "__main__":

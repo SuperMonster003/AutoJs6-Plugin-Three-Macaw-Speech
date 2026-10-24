@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">Сначала установите модель распознавания речи</string>
     <string name="settings_resident_no_wake_model">Сначала установите модель слов активации</string>
     <string name="settings_resident_note">Слово активации распознается на устройстве, ничего не сохраняется и не отправляется. Во время прослушивания микрофон остается открытым; когда он нужен скрипту или другому способу запуска, прослушивание уступает его и затем возобновляется. Более короткое время прослушивания или прослушивание только во время зарядки экономят батарею.</string>
+    <string name="settings_resident_power_saving">Режим энергосбережения</string>
+    <string name="settings_resident_power_saving_summary">Запускает модель слова активации, только когда слышит речь или другой звук, а в тишине нет, поэтому расходует меньше заряда. Очень тихо сказанное слово активации может быть пропущено</string>
     <string name="settings_resident_read_aloud">Зачитывать текст</string>
     <string name="settings_resident_read_aloud_summary">Когда панель открыта словом активации, распознанный текст зачитывается голосом 3-Macaw Speech для этого языка, а если его нет, голосом системы</string>
     <string name="settings_resident_sensitivity">Чувствительность активации</string>

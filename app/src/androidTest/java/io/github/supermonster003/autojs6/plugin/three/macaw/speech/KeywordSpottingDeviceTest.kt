@@ -5,8 +5,10 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationEvents
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Keyword
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.KeywordStream
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.ListenOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceGatedKeywords
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeEvents
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
@@ -147,6 +149,46 @@ class KeywordSpottingDeviceTest {
             }
             SpeechDevice.log("kws hitRate gain=$gain hits=$hits/$expected")
             if (gain == 1.0f) assertTrue("hit rate $hits/$expected", hits * 10 >= expected * 9)
+        }
+    }
+
+    /**
+     * Roadmap P8.1 (D128): the hit rate of [test2HitRateOfFiveRepetitions] through the voice gate of the power saving
+     * mode, fed in 20 and 200 ms steps, next to the plain stream; the silences carry low noise like a quiet room.
+     * zh-CN: 路线图 P8.1 (D128): 经省电模式的语音门控 (以 20 与 200 ms 步长送入) 的命中率, 与直接送入的流对照; 静音段带有安静房间般的低噪声.
+     */
+    @Test
+    fun test5HitRateThroughTheVoiceGate() = withSpotter { engine, buffer ->
+        val random = Random(7)
+        fun room(samples: Int) = FloatArray(samples) { (random.nextFloat() - 0.5f) * 0.002f }
+        fun feed(stream: KeywordStream, audio: FloatArray, step: Int): List<Int> {
+            val hits = ArrayList<Int>()
+            var offset = 0
+            while (offset < audio.size) {
+                val end = minOf(audio.size, offset + step)
+                stream.accept(audio.copyOfRange(offset, end))
+                stream.poll()?.let { hits += it }
+                offset = end
+            }
+            return hits
+        }
+        listOf(1.0f, 0.25f).forEach { gain ->
+            val totals = IntArray(3)
+            var expected = 0
+            recordings.forEach { name ->
+                val once = SpeechDevice.samples("test-audio/$name.wav").map { it * gain }.toFloatArray()
+                val targets = spot(engine, buffer, SpeechDevice.samples("test-audio/$name.wav")).toSet()
+                val audio = (0 until 5).fold(room(48_000)) { acc, _ -> acc + once + room(48_000) }
+                val counts = listOf(
+                    engine.stream(buffer, keywords.size).use { feed(it, audio, 320) },
+                    VoiceGatedKeywords(engine.stream(buffer, keywords.size), SherpaEngines.vad(SpeechDevice.context.assets, SpeechRuntime.SESSION_VAD)).use { feed(it, audio, 320) },
+                    VoiceGatedKeywords(engine.stream(buffer, keywords.size), SherpaEngines.vad(SpeechDevice.context.assets, SpeechRuntime.SESSION_VAD)).use { feed(it, audio, 3200) },
+                ).map { found -> targets.sumOf { target -> minOf(5, found.count { it == target }) } }
+                counts.forEachIndexed { index, count -> totals[index] += count }
+                expected += targets.size * 5
+                SpeechDevice.log("kws gate gain=$gain file=$name plain=${counts[0]} gate20=${counts[1]} gate200=${counts[2]} of ${targets.size * 5}")
+            }
+            SpeechDevice.log("kws gate hitRate gain=$gain plain=${totals[0]}/$expected gate20=${totals[1]}/$expected gate200=${totals[2]}/$expected")
         }
     }
 

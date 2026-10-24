@@ -342,9 +342,14 @@ class SettingsActivity : StandaloneActivity() {
         runCatching { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null))) }
     }
 
-    /** Saves the resident preferences; [restart] reopens the wake session, else the service follows the rules. zh-CN: 保存常驻偏好. */
-    private fun saveResident(restart: Boolean, transform: (ResidentSettings) -> ResidentSettings) {
-        ResidentPreferences(this).update(transform)
+    /**
+     * Saves the resident preferences; a change the wake session must reopen for (`ResidentSettings.reopensFor`) reopens
+     * it, else the service follows the rules. zh-CN: 保存常驻偏好; 需要重开唤醒会话的改动即重开, 否则服务按规则调整.
+     */
+    private fun saveResident(transform: (ResidentSettings) -> ResidentSettings) {
+        val preferences = ResidentPreferences(this)
+        val before = preferences.read()
+        val restart = before.reopensFor(preferences.update(transform))
         if (restart) ResidentWake.restart(this) else ResidentWake.refresh(this)
         saved()
         if (restart) loadResident()
@@ -572,11 +577,17 @@ class SettingsActivity : StandaloneActivity() {
                     icon = R.drawable.ic_timer_24, onClick = { dialog = Dialog.RESIDENT_DURATION }, modifier = Modifier.testTag("macaw.settings.residentDuration"))
                 Hairline()
                 SwitchRow(stringResource(R.string.settings_resident_charging), residentSettings.chargingOnly,
-                    { on -> saveResident(restart = false) { it.copy(chargingOnly = on) } },
+                    { on -> saveResident { it.copy(chargingOnly = on) } },
                     summary = stringResource(R.string.settings_resident_charging_note), icon = R.drawable.ic_pause_24, modifier = Modifier.testTag("macaw.settings.residentCharging"))
                 Hairline()
+                // Roadmap P8.1 (D123): on by default; a change reopens the wake session at once.
+                SwitchRow(stringResource(R.string.settings_resident_power_saving), residentSettings.powerSaving,
+                    { on -> saveResident { it.copy(powerSaving = on) } },
+                    summary = stringResource(R.string.settings_resident_power_saving_summary), icon = R.drawable.ic_battery_saver_24,
+                    modifier = Modifier.testTag("macaw.settings.residentPowerSaving"))
+                Hairline()
                 SwitchRow(stringResource(R.string.settings_resident_read_aloud), residentSettings.readAloud,
-                    { on -> saveResident(restart = false) { it.copy(readAloud = on) } },
+                    { on -> saveResident { it.copy(readAloud = on) } },
                     summary = stringResource(R.string.settings_resident_read_aloud_summary), icon = R.drawable.ic_volume_up_24, modifier = Modifier.testTag("macaw.settings.residentReadAloud"))
                 Text(
                     stringResource(R.string.settings_resident_note),
@@ -842,7 +853,7 @@ class SettingsActivity : StandaloneActivity() {
                     options = WakeSensitivity.entries.map { Choice(stringResource(sensitivityLabel(it))) },
                     selectedIndex = current.sensitivity.ordinal,
                     onDismissRequest = close,
-                    onConfirm = { index -> close(); saveResident(restart = true) { it.copy(sensitivity = WakeSensitivity.entries[index]) } },
+                    onConfirm = { index -> close(); saveResident { it.copy(sensitivity = WakeSensitivity.entries[index]) } },
                     tag = "macaw.dialog.residentSensitivity",
                 )
             }
@@ -857,7 +868,7 @@ class SettingsActivity : StandaloneActivity() {
                         close()
                         // Roadmap D77: an enabled switch counts the new duration from now, a disabled one only remembers it.
                         val enabled = ResidentWake.enabled(this)
-                        saveResident(restart = false) { it.withDuration(ListeningDuration.entries[index], enabled, System.currentTimeMillis()) }
+                        saveResident { it.withDuration(ListeningDuration.entries[index], enabled, System.currentTimeMillis()) }
                     },
                     tag = "macaw.dialog.residentDuration",
                 )
@@ -989,7 +1000,7 @@ class SettingsActivity : StandaloneActivity() {
                             problem = getString(R.string.settings_resident_keywords_unspellable, unspellable)
                         } else {
                             dialog = null
-                            saveResident(restart = true) { it.copy(keywords = keywords) }
+                            saveResident { it.copy(keywords = keywords) }
                         }
                     }
                 }

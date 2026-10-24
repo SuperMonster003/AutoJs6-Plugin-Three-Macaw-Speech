@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">先に音声認識モデルをインストールしてください</string>
     <string name="settings_resident_no_wake_model">先にウェイクワードのモデルをインストールしてください</string>
     <string name="settings_resident_note">ウェイクワードは端末上で検出し, 保存も送信もしません. 待ち受け中はマイクが開いたままです. スクリプトや他の起動方法がマイクを使うときはいったん譲り, 終わると自動で再開します. 待ち受け時間を短くするか, 充電中のみ待ち受けると電池を節約できます.</string>
+    <string name="settings_resident_power_saving">省電力モード</string>
+    <string name="settings_resident_power_saving_summary">声やほかの音が聞こえたときだけウェイクワードのモデルを動かし, 静かなときは動かさないので電池の消費が減ります. ごく小さな声のウェイクワードは聞き逃すことがあります</string>
     <string name="settings_resident_read_aloud">認識した文字を読み上げる</string>
     <string name="settings_resident_read_aloud_summary">ウェイクワードで開いたパネルが認識した文字を読み上げます. その言語の 3-Macaw Speech の音声があればそれを, なければシステムの音声を使います</string>
     <string name="settings_resident_sensitivity">ウェイク感度</string>

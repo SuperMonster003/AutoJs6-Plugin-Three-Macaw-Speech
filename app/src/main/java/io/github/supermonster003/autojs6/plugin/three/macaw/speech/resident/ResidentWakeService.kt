@@ -229,7 +229,7 @@ class ResidentWakeService : Service() {
         state = ResidentNotifications.State.LOADING
         notifyState()
         session = try {
-            binder.openResidentWakeSession(ResidentWake.options(settings), WakeEvents(gen))
+            binder.openResidentWakeSession(ResidentWake.options(settings), WakeEvents(gen), ResidentWake.power(settings))
         } catch (e: RuntimeException) {
             // The binder throws `CODE: detail` as the contract defines.
             val code = SpeechErrorCodes.decode(e.message.orEmpty())?.first

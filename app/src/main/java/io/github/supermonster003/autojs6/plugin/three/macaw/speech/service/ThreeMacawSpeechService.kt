@@ -24,6 +24,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Op
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationSession
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
@@ -196,15 +197,23 @@ internal class SpeechPluginBinder(
     /**
      * The resident wake word (roadmap P7.4, D72, D75, D76): as [openWakeSession], as the background holder of the session
      * table, which every other microphone session silences until the microphone is free again, and without the microphone
-     * foreground service (the resident service is that foreground service itself). Without `thenListen`.
+     * foreground service (the resident service is that foreground service itself). Without `thenListen`. [power] is the
+     * power saving mode of roadmap P8.1 (D123, D128).
      * zh-CN: 常驻唤醒 (路线图 P7.4, D72, D75, D76): 与 [openWakeSession] 相同, 但作为会话表的后台持有者 (其他任何麦克风会话都让它静默, 直到麦克风
-     * 再次空闲), 不持有麦克风前台服务 (常驻服务本身就是这个前台服务). 不带 `thenListen`.
+     * 再次空闲), 不持有麦克风前台服务 (常驻服务本身就是这个前台服务). 不带 `thenListen`. [power] 是路线图 P8.1 的省电模式 (D123, D128).
      */
-    fun openResidentWakeSession(options: Bundle?, callback: ISpeechWakeCallback?): ISpeechSession = throwing {
-        wake(options, callback, null, takeover = false, resident = true)
+    fun openResidentWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, power: WakePower = WakePower.OFF): ISpeechSession = throwing {
+        wake(options, callback, null, takeover = false, resident = true, power = power)
     }
 
-    private fun wake(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?, takeover: Boolean, resident: Boolean = false): ISpeechSession {
+    private fun wake(
+        options: Bundle?,
+        callback: ISpeechWakeCallback?,
+        listenCallback: ISpeechSessionCallback?,
+        takeover: Boolean,
+        resident: Boolean = false,
+        power: WakePower = WakePower.OFF,
+    ): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
@@ -217,7 +226,7 @@ internal class SpeechPluginBinder(
         val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = resident)
         try {
             val id = runtime.nextId(if (resident) "resident" else "wake")
-            return WakeBinder(runtime, slot, listener, listen, foreground = !resident) { events, listenEvents ->
+            return WakeBinder(runtime, slot, listener, listen, foreground = !resident, power = power) { events, listenEvents ->
                 WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
             }.also { it.open(keywordModel, buffer, listenModel) }
         } catch (t: Throwable) {

@@ -55,10 +55,14 @@ internal object AssistantDevice {
         if (virtual) VirtualRoom.uninstall()
     }
 
-    /** Plays an androidTest recording in the room and waits until it ended (plus [tail] ms). zh-CN: 播放测试录音并等待结束. */
-    fun play(asset: String, tail: Long = 300) {
+    /**
+     * Plays an androidTest recording in the room and waits until it ended (plus [tail] ms); [gain] scales it (0.25 is
+     * about -12 dB, roadmap P8.1).
+     * zh-CN: 播放测试录音并等待结束; [gain] 缩放音量 (0.25 约为 -12 dB, 路线图 P8.1).
+     */
+    fun play(asset: String, tail: Long = 300, gain: Float = 1f) {
         if (virtual) {
-            Thread.sleep(VirtualRoom.play(SpeechDevice.samples(asset)) + tail)
+            Thread.sleep(VirtualRoom.play(SpeechDevice.samples(asset).let { samples -> if (gain == 1f) samples else FloatArray(samples.size) { samples[it] * gain } }) + tail)
             return
         }
         val file = File(context.cacheDir, "assistant-${asset.substringAfterLast('/')}")
@@ -70,6 +74,7 @@ internal object AssistantDevice {
             player.setDataSource(file.absolutePath)
             player.setOnCompletionListener { done.countDown() }
             player.prepare()
+            if (gain != 1f) player.setVolume(gain, gain)
             player.start()
         }
         try {

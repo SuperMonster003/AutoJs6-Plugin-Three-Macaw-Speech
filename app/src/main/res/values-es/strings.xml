@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">Instala primero un modelo de reconocimiento de voz</string>
     <string name="settings_resident_no_wake_model">Instala primero un modelo de palabras de activación</string>
     <string name="settings_resident_note">La palabra de activación se detecta en el dispositivo; no se guarda ni se envía nada. Mientras escucha, el micrófono permanece abierto; cuando un script u otra forma de activación lo necesita, la escucha se aparta y se reanuda después. Un tiempo de escucha más corto, o escuchar solo mientras se carga, ahorra batería.</string>
+    <string name="settings_resident_power_saving">Modo de ahorro de energía</string>
+    <string name="settings_resident_power_saving_summary">Solo ejecuta el modelo de la palabra de activación cuando oye voz u otro sonido, no en silencio, por lo que gasta menos batería. Una palabra de activación dicha muy bajo puede pasar desapercibida</string>
     <string name="settings_resident_read_aloud">Leer el texto en voz alta</string>
     <string name="settings_resident_read_aloud_summary">Cuando la palabra de activación abre el panel, el texto reconocido se lee en voz alta con una voz de 3-Macaw Speech de ese idioma o, si no la hay, con la voz del sistema</string>
     <string name="settings_resident_sensitivity">Sensibilidad de activación</string>

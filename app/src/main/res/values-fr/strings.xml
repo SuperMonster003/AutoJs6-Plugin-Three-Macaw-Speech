@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">Installez d\'abord un modèle de reconnaissance vocale</string>
     <string name="settings_resident_no_wake_model">Installez d\'abord un modèle de mots de réveil</string>
     <string name="settings_resident_note">Le mot de réveil est détecté sur l\'appareil; rien n\'est enregistré ni envoyé. Pendant l\'écoute, le micro reste ouvert; quand un script ou un autre déclencheur en a besoin, l\'écoute s\'efface puis reprend ensuite. Une durée d\'écoute plus courte, ou l\'écoute uniquement pendant la charge, économise la batterie.</string>
+    <string name="settings_resident_power_saving">Mode économie d\'énergie</string>
+    <string name="settings_resident_power_saving_summary">N\'exécute le modèle du mot de réveil que lorsqu\'il entend une voix ou un autre son, jamais dans le silence, ce qui use moins la batterie. Un mot de réveil prononcé très bas peut être manqué</string>
     <string name="settings_resident_read_aloud">Lire le texte à voix haute</string>
     <string name="settings_resident_read_aloud_summary">Quand le mot de réveil ouvre le panneau, le texte reconnu est lu à voix haute avec une voix de 3-Macaw Speech de cette langue, sinon avec la voix du système</string>
     <string name="settings_resident_sensitivity">Sensibilité du réveil</string>

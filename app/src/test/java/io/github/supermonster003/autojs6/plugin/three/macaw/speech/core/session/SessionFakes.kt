@@ -15,6 +15,7 @@ internal object Audio {
 /** A VAD without hysteresis: a window is speech when loud; a segment ends at the first quiet window. zh-CN: 无滞后的 VAD. */
 internal class FakeVad(override val windowSize: Int = 512) : VoiceDetector {
     var closed = false
+    var resets = 0
     private var position = 0L
     private var speech = false
     private var start = 0L
@@ -41,6 +42,13 @@ internal class FakeVad(override val windowSize: Int = 512) : VoiceDetector {
     override fun flush() {
         if (speech) emit()
         speech = false
+    }
+
+    override fun reset() {
+        resets++
+        speech = false
+        current.clear()
+        ready.clear()
     }
 
     override fun close() {

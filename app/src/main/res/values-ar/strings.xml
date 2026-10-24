@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">ثبّت أولا نموذجا للتعرف على الكلام</string>
     <string name="settings_resident_no_wake_model">ثبّت أولا نموذجا لكلمات التنبيه</string>
     <string name="settings_resident_note">يتم اكتشاف كلمة التنبيه على الجهاز ولا يتم حفظ أو إرسال أي شيء. أثناء الاستماع يبقى الميكروفون مفتوحا; وعندما يحتاج إليه برنامج نصي أو طريقة تشغيل أخرى يتنحى الاستماع ثم يستأنف بعد ذلك. تقليل مدة الاستماع, أو الاستماع أثناء الشحن فقط, يوفر البطارية.</string>
+    <string name="settings_resident_power_saving">وضع توفير الطاقة</string>
+    <string name="settings_resident_power_saving_summary">لا يشغل نموذج كلمة التنبيه إلا عند سماع كلام أو صوت آخر, ولا يشغله في الهدوء, لذا يستهلك بطارية أقل. قد لا يتم التقاط كلمة التنبيه إذا قيلت بصوت خافت جدا</string>
     <string name="settings_resident_read_aloud">قراءة النص بصوت عال</string>
     <string name="settings_resident_read_aloud_summary">عندما تفتح كلمة التنبيه اللوحة تتم قراءة النص الذي تم التعرف عليه بصوت من ⁨3-Macaw Speech⁩ لتلك اللغة, وإلا بصوت النظام</string>
     <string name="settings_resident_sensitivity">حساسية التنبيه</string>

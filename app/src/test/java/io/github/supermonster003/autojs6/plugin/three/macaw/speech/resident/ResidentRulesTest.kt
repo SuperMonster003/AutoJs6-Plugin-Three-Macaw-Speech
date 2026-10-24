@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -35,6 +36,34 @@ class ResidentRulesTest {
         assertEquals(NOW + 30 * MINUTE, thirty.deadline)
         assertFalse(thirty.expired(NOW + 30 * MINUTE - 1))
         assertTrue(thirty.expired(NOW + 30 * MINUTE))
+    }
+
+    @Test
+    fun `power saving is on by default and a change of it reopens the wake session`() {
+        val defaults = ResidentSettings()
+        assertTrue("D123: on by default", defaults.powerSaving)
+        assertEquals(ResidentPower.SAVING, ResidentPower.of(true))
+        assertTrue(ResidentPower.SAVING.voiceGate)
+        assertEquals(ResidentPower.SAVING_FRAME_MILLIS, ResidentPower.SAVING.frameMillis)
+        assertEquals("off is the 1.2.0 wake session", WakePower.OFF, ResidentPower.of(false))
+        assertFalse(WakePower.OFF.voiceGate)
+        assertEquals(WakePower.DEFAULT_FRAME_MILLIS, WakePower.OFF.frameMillis)
+        // The variants of P8.1.1 for the debug switch and the device tests.
+        assertEquals(WakePower.OFF, ResidentPower.variant("off"))
+        assertEquals(WakePower(voiceGate = true, frameMillis = WakePower.DEFAULT_FRAME_MILLIS), ResidentPower.variant("gate"))
+        assertEquals(WakePower(voiceGate = false, frameMillis = ResidentPower.SAVING_FRAME_MILLIS), ResidentPower.variant("step"))
+        assertEquals(ResidentPower.SAVING, ResidentPower.variant("both"))
+        assertNull(ResidentPower.variant("setting"))
+        assertNull(ResidentPower.variant(null))
+        // Switching takes effect at once: the running wake session reopens with the other mode.
+        assertTrue(defaults.reopensFor(defaults.copy(powerSaving = false)))
+        assertTrue(defaults.copy(powerSaving = false).reopensFor(defaults))
+        assertTrue(defaults.reopensFor(defaults.copy(keywords = listOf("Hey Macaw"))))
+        assertTrue(defaults.reopensFor(defaults.copy(sensitivity = WakeSensitivity.HIGH)))
+        assertFalse(defaults.reopensFor(defaults))
+        assertFalse(defaults.reopensFor(defaults.copy(chargingOnly = true)))
+        assertFalse(defaults.reopensFor(defaults.copy(readAloud = false)))
+        assertFalse(defaults.reopensFor(defaults.withDuration(ListeningDuration.MINUTES_10, enabled = true, now = NOW)))
     }
 
     @Test

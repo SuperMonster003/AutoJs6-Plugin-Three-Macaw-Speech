@@ -22,13 +22,19 @@ import kotlin.concurrent.thread
  * listener hears [Listener.onSilenced] once per change (the system silences a process without the microphone
  * capability, roadmap D22). One instance records once; [stop] ends the capture and releases the recorder and may be
  * called from any thread. [attribution] (API 31+) is the context the recording is attributed to: the caller of the
- * system recognition service (roadmap D56), whose `AttributionSource` the context carries.
+ * system recognition service (roadmap D56), whose `AttributionSource` the context carries. [frameSamples] is the read
+ * step; the power saving mode of the resident wake word reads longer frames (roadmap P8.1, D128).
  * zh-CN: 插件自己的麦克风 (路线图 D6, D16, P3.1): `VOICE_RECOGNITION` 音源上的 `AudioRecord`, 16 kHz 单声道 PCM16, 在独立的采集线程上以 20 ms
  * 帧读取, [Listener.onAudio] 收到浮点采样. 两种方式判断被静音: 连续一秒的零采样, 或 `AudioRecordingConfiguration.isClientSilenced` (API 29+);
  * 每次变化通知一次 [Listener.onSilenced] (系统会静音没有麦克风能力的进程, 路线图 D22). 一个实例只录音一次; [stop] 结束采集并释放录音器, 可从
  * 任意线程调用. [attribution] (API 31+) 是录音所归属的 Context: 系统识别服务的调用方 (路线图 D56), 该 Context 携带其 `AttributionSource`.
+ * [frameSamples] 是读取步长; 常驻唤醒的省电模式读取更长的帧 (路线图 P8.1, D128).
  */
-class MicrophoneSource(private val listener: Listener, private val attribution: Context? = null) : AudioCapture {
+class MicrophoneSource(
+    private val listener: Listener,
+    private val attribution: Context? = null,
+    private val frameSamples: Int = FRAME_SAMPLES,
+) : AudioCapture {
 
     interface Listener {
         fun onAudio(samples: FloatArray)
@@ -59,10 +65,10 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
                     .setAudioFormat(
                         AudioFormat.Builder().setSampleRate(AudioInput.SAMPLE_RATE).setChannelMask(AudioFormat.CHANNEL_IN_MONO).setEncoding(AudioFormat.ENCODING_PCM_16BIT).build(),
                     )
-                    .setBufferSizeInBytes(maxOf(minimum, BUFFER_BYTES))
+                    .setBufferSizeInBytes(bufferBytes(minimum))
                     .build()
             } else {
-                AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, AudioInput.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, maxOf(minimum, BUFFER_BYTES))
+                AudioRecord(MediaRecorder.AudioSource.VOICE_RECOGNITION, AudioInput.SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferBytes(minimum))
             }
         } catch (e: RuntimeException) {
             throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "AudioRecord could not be created: ${e.message}", e)
@@ -89,6 +95,9 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
         worker = thread(name = "MacawMicrophone", priority = Thread.MAX_PRIORITY) { capture(recorder) }
     }
 
+    /** At least two read steps, so a long step never waits on a full buffer. zh-CN: 至少两个读取步长, 长步长也不会遇到缓冲区已满. */
+    private fun bufferBytes(minimum: Int): Int = maxOf(minimum, BUFFER_BYTES, frameSamples * 2 * 2)
+
     override fun stop() {
         running = false
         val recorder = synchronized(this) { record }
@@ -99,7 +108,7 @@ class MicrophoneSource(private val listener: Listener, private val attribution: 
 
     private fun capture(recorder: AudioRecord) {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-        val buffer = ShortArray(FRAME_SAMPLES)
+        val buffer = ShortArray(frameSamples)
         val started = SystemClock.elapsedRealtime()
         var heard = false
         var zeroSamples = 0L
@@ -185,5 +194,6 @@ object AudioCaptures {
     @Volatile
     var override: ((MicrophoneSource.Listener) -> AudioCapture)? = null
 
-    fun open(listener: MicrophoneSource.Listener, attribution: Context?): AudioCapture = override?.invoke(listener) ?: MicrophoneSource(listener, attribution)
+    fun open(listener: MicrophoneSource.Listener, attribution: Context?, frameSamples: Int = MicrophoneSource.FRAME_SAMPLES): AudioCapture =
+        override?.invoke(listener) ?: MicrophoneSource(listener, attribution, frameSamples)
 }

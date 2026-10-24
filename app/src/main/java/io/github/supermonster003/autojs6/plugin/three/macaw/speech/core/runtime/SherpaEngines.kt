@@ -156,6 +156,8 @@ class SileroVoiceDetector(private val vad: Vad) : VoiceDetector {
 
     override fun flush() = vad.flush()
 
+    override fun reset() = vad.reset()
+
     override fun close() = vad.release()
 }
 

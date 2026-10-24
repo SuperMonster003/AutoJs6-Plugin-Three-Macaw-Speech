@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import java.util.Locale
 
@@ -70,9 +71,10 @@ internal enum class ListeningDuration(val id: String, val minutes: Int?) {
 /**
  * The preferences of the resident wake word; the switch itself is the component state (roadmap D75). [deadline] (epoch
  * milliseconds, wall clock, so that it holds across a reboot) ends the current listening time: turning the switch on, or
- * choosing another [duration] while it is on, sets it; null keeps it on. [readAloud] is D69.
+ * choosing another [duration] while it is on, sets it; null keeps it on. [readAloud] is D69, [powerSaving] D123 (on by
+ * default; what it does is [ResidentPower]).
  * zh-CN: 常驻唤醒的偏好; 开关本身是组件状态 (路线图 D75). [deadline] (墙上时间毫秒, 重启后仍有效) 结束当前的监听时长: 打开开关, 或开着时改选
- * [duration] 会设置它; null 表示一直开着. [readAloud] 即 D69.
+ * [duration] 会设置它; null 表示一直开着. [readAloud] 即 D69, [powerSaving] 即 D123 (默认开; 其做法见 [ResidentPower]).
  */
 internal data class ResidentSettings(
     val keywords: List<String> = ResidentKeywords.DEFAULT,
@@ -81,6 +83,7 @@ internal data class ResidentSettings(
     val chargingOnly: Boolean = false,
     val readAloud: Boolean = true,
     val deadline: Long? = null,
+    val powerSaving: Boolean = true,
 ) {
     init {
         require(ResidentKeywords.valid(keywords))
@@ -99,6 +102,41 @@ internal data class ResidentSettings(
 
     /** The listening time of an enabled switch is over. zh-CN: 开着的开关的监听时长已到. */
     fun expired(now: Long): Boolean = deadline != null && now >= deadline
+
+    /**
+     * A running wake session must reopen to follow [next]: other wake words, sensitivity or power saving (D70, D123), which
+     * take effect at once that way; the other options are rules the service applies to the running session.
+     * zh-CN: 运行中的唤醒会话须重开才能跟随 [next]: 唤醒词, 灵敏度或省电模式改变 (D70, D123), 重开后立即生效; 其他选项由服务对运行中的会话应用规则.
+     */
+    fun reopensFor(next: ResidentSettings): Boolean = keywords != next.keywords || sensitivity != next.sensitivity || powerSaving != next.powerSaving
+}
+
+/**
+ * The power saving mode of the resident wake word (roadmap P8.1, D123, D128): on, the silero VAD keeps silence away from
+ * the keyword spotter and the microphone hands its audio over in [SAVING_FRAME_MILLIS] steps; off, the wake session runs
+ * as in 1.2.0. A change of the switch reopens the wake session at once (`ResidentWake.restart`).
+ * zh-CN: 常驻唤醒的省电模式 (路线图 P8.1, D123, D128): 开启时 silero VAD 把静音挡在唤醒词检测器之外, 麦克风以 [SAVING_FRAME_MILLIS] 的步长交出
+ * 音频; 关闭时唤醒会话与 1.2.0 相同. 切换开关会立即重开唤醒会话 (`ResidentWake.restart`).
+ */
+internal object ResidentPower {
+    const val SAVING_FRAME_MILLIS = 200
+
+    val SAVING = WakePower(voiceGate = true, frameMillis = SAVING_FRAME_MILLIS)
+
+    fun of(powerSaving: Boolean): WakePower = if (powerSaving) SAVING else WakePower.OFF
+
+    /**
+     * The measured variants of P8.1.1, by name, for the debug switch and the device tests: `off`, `gate` (a), `step` (b)
+     * and `both` (c); null for any other name.
+     * zh-CN: P8.1.1 实测的各做法, 按名字取, 供调试开关与设备测试使用: `off`, `gate` (a), `step` (b), `both` (c); 其他名字为 null.
+     */
+    fun variant(name: String?): WakePower? = when (name) {
+        "off" -> WakePower.OFF
+        "gate" -> WakePower(voiceGate = true, frameMillis = WakePower.DEFAULT_FRAME_MILLIS)
+        "step" -> WakePower(voiceGate = false, frameMillis = SAVING_FRAME_MILLIS)
+        "both" -> SAVING
+        else -> null
+    }
 }
 
 /**

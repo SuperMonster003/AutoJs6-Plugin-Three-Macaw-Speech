@@ -51,6 +51,9 @@ interface VoiceDetector : Closeable {
 
     /** Ends the input: a pending speech segment becomes available to [poll]. zh-CN: 结束输入: 未结束的语音段可由 [poll] 取出. */
     fun flush()
+
+    /** Forgets the state and any pending segment (roadmap P8.1, the wake gate). zh-CN: 丢弃状态与未取出的语音段 (路线图 P8.1, 唤醒门控). */
+    fun reset() = Unit
 }
 
 /**

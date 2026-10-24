@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">Install a speech recognition model first</string>
     <string name="settings_resident_no_wake_model">Install a wake word model first</string>
     <string name="settings_resident_note">The wake word is detected on the device; nothing is saved or sent. While listening the microphone stays open; when a script or another entry needs it, the wake word steps aside and resumes afterwards. A shorter listening time, or listening only while charging, saves battery.</string>
+    <string name="settings_resident_power_saving">Power saving mode</string>
+    <string name="settings_resident_power_saving_summary">Runs the wake word model only while it hears speech or another sound, not in a quiet room, which uses less battery. A very soft wake word may be missed</string>
     <string name="settings_resident_read_aloud">Read the text aloud</string>
     <string name="settings_resident_read_aloud_summary">When the wake word opens the sheet, the recognized text is read aloud with a 3-Macaw Speech voice of its language, else with the system voice</string>
     <string name="settings_resident_sensitivity">Wake sensitivity</string>

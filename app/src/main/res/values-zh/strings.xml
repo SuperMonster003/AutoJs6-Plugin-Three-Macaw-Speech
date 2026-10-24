@@ -276,6 +276,8 @@
     <string name="settings_resident_no_recognition_model">请先安装语音识别模型</string>
     <string name="settings_resident_no_wake_model">请先安装唤醒词模型</string>
     <string name="settings_resident_note">唤醒词在本机检测, 不保存也不上传. 监听期间麦克风一直打开; 脚本或其他入口要用麦克风时唤醒词先让出, 用完后自动恢复. 选较短的监听时长或只在充电时监听可以省电.</string>
+    <string name="settings_resident_power_saving">省电模式</string>
+    <string name="settings_resident_power_saving_summary">只在听到说话声或其他声音时运行唤醒词模型, 安静时不运行, 更省电; 声音很轻的唤醒词可能听不到</string>
     <string name="settings_resident_read_aloud">朗读识别文字</string>
     <string name="settings_resident_read_aloud_summary">由唤醒词打开的弹层识别出文字后朗读出来; 有该语言的 3-Macaw Speech 语音时用它, 否则用系统语音</string>
     <string name="settings_resident_sensitivity">唤醒灵敏度</string>

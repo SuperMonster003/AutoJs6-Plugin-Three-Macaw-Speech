@@ -16,6 +16,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Keyword
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import org.autojs.plugin.speech.api.SpeechContract
@@ -143,7 +144,18 @@ internal object ResidentWake {
         }
     }
 
-    /** Wake words or sensitivity changed: a running service reopens its wake session. zh-CN: 唤醒词或灵敏度已改: 运行中的服务重开唤醒会话. */
+    /**
+     * The power saving mode of the wake sessions opened from now on: the debug switch and the device tests set a
+     * measured variant here (roadmap P8.1.1); production code never sets it, so the setting decides.
+     * zh-CN: 此后打开的唤醒会话的省电做法: 调试开关与设备测试在此设置实测的做法 (路线图 P8.1.1); 正式代码从不设置它, 由设置决定.
+     */
+    @Volatile
+    var powerOverride: WakePower? = null
+
+    /** What the wake session of [settings] runs with. zh-CN: [settings] 的唤醒会话使用的省电做法. */
+    fun power(settings: ResidentSettings): WakePower = powerOverride ?: ResidentPower.of(settings.powerSaving)
+
+    /** Wake words, sensitivity or power saving changed: a running service reopens its wake session. zh-CN: 唤醒词, 灵敏度或省电模式已改: 运行中的服务重开唤醒会话. */
     fun restart(context: Context) {
         if (enabled(context) && ResidentWakeService.running != null) start(context, ResidentWakeService.ACTION_RESTART)
     }
@@ -188,6 +200,7 @@ internal class ResidentPreferences(context: Context) {
             chargingOnly = preferences.getBoolean(KEY_CHARGING, false),
             readAloud = preferences.getBoolean(KEY_READ_ALOUD, true),
             deadline = preferences.getLong(KEY_DEADLINE, 0L).takeIf { it > 0 },
+            powerSaving = preferences.getBoolean(KEY_POWER_SAVING, true),
         )
     }
 
@@ -199,6 +212,7 @@ internal class ResidentPreferences(context: Context) {
             putString(KEY_DURATION, value.duration.id)
             putBoolean(KEY_CHARGING, value.chargingOnly)
             putBoolean(KEY_READ_ALOUD, value.readAloud)
+            putBoolean(KEY_POWER_SAVING, value.powerSaving)
             if (value.deadline == null) remove(KEY_DEADLINE) else putLong(KEY_DEADLINE, value.deadline)
         }
     }
@@ -214,6 +228,7 @@ internal class ResidentPreferences(context: Context) {
         const val KEY_CHARGING = "chargingOnly"
         const val KEY_READ_ALOUD = "readAloud"
         const val KEY_DEADLINE = "deadline"
+        const val KEY_POWER_SAVING = "powerSaving"
         val LINE = Char(10).toString()
     }
 }
