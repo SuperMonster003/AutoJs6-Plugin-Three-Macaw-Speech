@@ -477,9 +477,11 @@ internal class WakeBinder(
             val spotter = leases.first().engine as KeywordEngine
             val stream = spotter.stream(buffer, session.options.keywords.size).let { stream ->
                 if (!power.voiceGate) return@let stream
-                VoiceGatedKeywords(stream, SherpaEngines.vad(runtime.context.assets, SpeechRuntime.SESSION_VAD)).also { gate = it }
+                val vad = if (power.silero) SherpaEngines.vad(runtime.context.assets, SpeechRuntime.SESSION_VAD) else null
+                VoiceGatedKeywords(stream, vad).also { gate = it }
             }
-            Log.i(TAG, "Wake session ${session.id}: voice gate ${if (power.voiceGate) "on" else "off"}, ${power.frameMillis} ms frames")
+            val mode = if (!power.voiceGate) "off" else if (power.silero) "on (silero)" else "on"
+            Log.i(TAG, "Wake session ${session.id}: voice gate $mode, ${power.frameMillis} ms frames")
             val asr = leases.getOrNull(1)?.engine
             val punctuator = listenModel?.let { runtime.punctuator(it, leases) }
             session.start(

@@ -36,7 +36,7 @@ transcript or the recognized text.
                                                         default, 30 s of the room alone) and compares the plain spotter
                                                         with voice gate settings on the same recordings
 
-Power saving (roadmap P8.1): `--power off|gate|step|both` picks a measured variant of P8.1.1 for `phone` and `battery`
+Power saving (roadmap P8.1): `--power off|gate|vad|step|both` picks a measured variant of P8.1.1 for `phone` and `battery`
 (the debug switch or the instrumentation argument sets it in the plugin's process); without it the stored switch
 decides, which `--power-saving on|off` sets (on by default, D123). `phone --hit-rate <plays>` adds the hit count at the
 full and at a quarter of the level, and the late hits (ResidentWakeDeviceTest#theWakeWordIsCountedAtTwoLevels).
@@ -72,7 +72,7 @@ SCREENS = Path(__file__).resolve().parents[1] / ".bak" / "visual" / "1.2.0"
 # The defaults of the options that `background` and `battery` change (D77, D69, D123), and no measured variant.
 DEFAULT_OPTIONS = ("--ez", "chargingOnly", "false", "--ez", "readAloud", "true", "--es", "duration", "always", "--ez", "powerSaving", "true",
                    "--es", "power", "setting")
-POWER_VARIANTS = ("off", "gate", "step", "both")
+POWER_VARIANTS = ("off", "gate", "vad", "step", "both")
 
 
 class LogTap:

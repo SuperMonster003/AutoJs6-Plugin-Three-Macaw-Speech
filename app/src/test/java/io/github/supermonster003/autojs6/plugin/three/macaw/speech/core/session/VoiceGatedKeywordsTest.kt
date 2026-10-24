@@ -152,12 +152,12 @@ class VoiceGatedKeywordsTest {
     }
 
     @Test
-    fun `a rise over the room opens the gate the VAD missed, and a louder room stops opening it`() {
+    fun `without a VAD a rise over the room opens the gate, and a louder room stops opening it`() {
         val random = Random(7)
         fun room(millis: Long, level: Float) = FloatArray(AudioInput.samples(millis).toInt()) { (random.nextFloat() * 2 - 1) * level }
-        // VAD gain 0: the VAD hears nothing, only the rise over the floor opens the gate.
+        // The gate of the power saving mode: no VAD, only the rise over the floor opens it.
         val spotter = TapeKeywords()
-        val gate = VoiceGatedKeywords(spotter, FakeVad(), vadGain = 0f)
+        val gate = VoiceGatedKeywords(spotter)
         feed(gate, room(5_000, 0.001f))
         feed(gate, room(1_000, 0.0013f))
         assertEquals("2 dB over the room stays shut", 0, gate.openings)
@@ -171,11 +171,17 @@ class VoiceGatedKeywordsTest {
         feed(gate, room(10_000, 0.004f))
         assertFalse(gate.open)
         assertEquals("no opening once the floor caught up", openings, gate.openings)
-        // Off: no rise opens it.
-        val off = VoiceGatedKeywords(TapeKeywords(), FakeVad(), vadGain = 0f, riseDb = 0f)
-        feed(off, room(5_000, 0.001f))
-        feed(off, room(500, 0.01f))
-        assertEquals(0, off.openings)
+        // A rise of 0 with a VAD: only the VAD opens it, which hears nothing at a VAD gain of 0.
+        val vadOnly = VoiceGatedKeywords(TapeKeywords(), FakeVad(), vadGain = 0f, riseDb = 0f)
+        feed(vadOnly, room(5_000, 0.001f))
+        feed(vadOnly, room(500, 0.01f))
+        assertEquals(0, vadOnly.openings)
+        assertThrows("neither a VAD nor a rise", IllegalArgumentException::class.java) { VoiceGatedKeywords(TapeKeywords(), riseDb = 0f) }
+        // A microphone that starts 20 dB quieter than the room: the warm-up is not measured, so it never becomes the floor.
+        val started = VoiceGatedKeywords(TapeKeywords())
+        feed(started, room(VoiceGatedKeywords.WARMUP_MILLIS - 50, 0.0001f))
+        feed(started, room(2_000, 0.001f))
+        assertEquals("the quieter warm-up is not the floor", 0, started.openings)
     }
 
     @Test
@@ -223,6 +229,7 @@ class VoiceGatedKeywordsTest {
         assertEquals(3200, WakePower(voiceGate = true, frameMillis = 200).frameSamples)
         assertThrows(IllegalArgumentException::class.java) { WakePower(voiceGate = true, frameMillis = 5) }
         assertThrows(IllegalArgumentException::class.java) { WakePower(voiceGate = true, frameMillis = 1000) }
+        assertThrows("silero belongs to the voice gate", IllegalArgumentException::class.java) { WakePower(voiceGate = false, frameMillis = 20, silero = true) }
     }
 
     private companion object {

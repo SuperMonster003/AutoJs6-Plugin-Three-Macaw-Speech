@@ -181,8 +181,8 @@ class KeywordSpottingDeviceTest {
                 val audio = (0 until 5).fold(room(48_000)) { acc, _ -> acc + once + room(48_000) }
                 val counts = listOf(
                     engine.stream(buffer, keywords.size).use { feed(it, audio, 320) },
-                    VoiceGatedKeywords(engine.stream(buffer, keywords.size), SherpaEngines.vad(SpeechDevice.context.assets, SpeechRuntime.SESSION_VAD)).use { feed(it, audio, 320) },
-                    VoiceGatedKeywords(engine.stream(buffer, keywords.size), SherpaEngines.vad(SpeechDevice.context.assets, SpeechRuntime.SESSION_VAD)).use { feed(it, audio, 3200) },
+                    VoiceGatedKeywords(engine.stream(buffer, keywords.size)).use { feed(it, audio, 320) },
+                    VoiceGatedKeywords(engine.stream(buffer, keywords.size)).use { feed(it, audio, 3200) },
                 ).map { found -> targets.sumOf { target -> minOf(5, found.count { it == target }) } }
                 counts.forEachIndexed { index, count -> totals[index] += count }
                 expected += targets.size * 5

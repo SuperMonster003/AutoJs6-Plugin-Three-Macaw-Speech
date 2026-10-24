@@ -16,11 +16,13 @@ power saving mode, and its hit counts. Measured with the debug build of P8.1 and
 - Variants (`ResidentPower.variant`, set in the plugin's process by the debug switch or the instrumentation argument
   `macawPower`):
   - `off`: the 1.2.0 wake session (the microphone hands 20 ms frames to the ASR thread, the spotter decodes everything).
-  - `gate` (a): a voice gate before the spotter (`VoiceGatedKeywords`). It opens when the bundled silero VAD
-    (threshold 0.5, 0.25 s minimum speech and silence, its input 8 times louder) hears speech or when a 32 ms window is
-    9 dB louder than the room's floor (the quietest window of the last 4 s). Closed, the audio only fills a 3 s
-    lookback; open, the lookback and every window reach the spotter, until 1 s after the last trigger; then a 0.4 s
-    tail of silence flushes the spotter's last chunk and the spotter starts over.
+  - `gate` (a): a voice gate before the spotter (`VoiceGatedKeywords`). It opens when a 32 ms window is 9 dB louder
+    than the room's floor (the quietest window of the last 4 s; the first 0.25 s after a start are not measured).
+    Closed, the audio only fills a 3 s lookback; open, the lookback and every window reach the spotter, until 1 s after
+    the last rise; then a 0.4 s tail of silence flushes the spotter's last chunk and the spotter starts over.
+  - `vad` (a, as first planned): the same gate, also opened by the bundled silero VAD (threshold 0.5, 0.25 s minimum
+    speech and silence, its input 8 times louder). Measured on the G8441 only, because the VAD running on every window
+    costs about half of what the spotter does (see the results).
   - `step` (b): 200 ms microphone frames instead of 20 ms (5 instead of 50 hand-overs and decodes per second). The
     spotter's onnxruntime already runs one thread (P3.4), the minimum; its 10 ms feature frames and 320 ms chunks are
     fixed by the model.
@@ -35,3 +37,37 @@ power saving mode, and its hit counts. Measured with the debug build of P8.1 and
   settings: hits, the time the gate opened, how often it opened and how much it decoded.
 
 ## Results
+
+### Sony G8441 (Android 9), 2026-10-24: choosing the gate
+
+Debug build of P8.1, the phone on its own speaker in the maintainer's room (room about -62 to -66 dBFS at the
+microphone, the keyword about -50 dBFS at the full level and -62 dBFS at a quarter of it). Android 9 gives no
+batterystats estimate for an app here, so only the plugin's CPU time counts; 10 minutes with the screen off instead of
+30 (`battery BH900ASK9E 10 on --power <variant>`).
+
+| Variant | Plugin CPU in 10 min | ASR thread | Microphone thread | Decoded | Hits, full / quarter |
+| --- | --- | --- | --- | --- | --- |
+| `off` (1.2.0) | 264.7 s | 242.2 s | 21.7 s | all | 10/10 / 10/10; 10/10 / 9/10; 10/10 / 10/10 |
+| silero VAD alone, 20 ms (first design) | not measured | | | | 10/10 / 2/10; 10/10 / 0/10 |
+| silero VAD or 9 dB rise, 200 ms | 145.3 s | 134.4 s | 8.6 s | 37 s of 600, 8 openings | 10/10 / 9/10 |
+| `both`: 9 dB rise, 200 ms | 25.8 s | 13.9 s | 9.8 s | 44 s of 600, 10 openings | 10/10 / 10/10 |
+
+- The silero VAD alone missed the quiet keyword: run continuously, it fired on a quarter-level keyword (2 to 3 dB over
+  the room in RMS) 2.1 to 2.3 s after the playback started or not at all, and the spotter, started over with a lookback
+  that late, missed it. An input gain of 8 and a 3 s lookback did not change that.
+- With the VAD in the gate the ASR thread still took 134 s although the spotter decoded 6 % of the audio: the VAD on
+  every 32 ms window costs about half of what the spotter does on everything. The rise over the room's floor costs one
+  pass over the samples, so the power saving mode opens the gate on the rise alone.
+- `gate` recordings (`device_resident_run.py gate`, 3 plays per level, the same recordings for every setting; hits, and
+  how often 30 s of the room alone opened the gate):
+
+| Setting | Full | Quarter | Room alone |
+| --- | --- | --- | --- |
+| plain spotter (1.2.0) | 3/3 | 2/3 | - |
+| silero VAD alone | 3/3, opened 1.3 to 1.4 s after the play started | 0/3, opened 2.1 to 2.3 s after it or never | never |
+| rise 6 dB | 3/3 | 2/3 | 8 openings, 24.9 s decoded |
+| rise 9 dB | 3/3, opened 0.8 to 1.0 s after the play started | 1/3 | 2 openings, 9.6 s decoded |
+| rise 12 dB | 3/3 | 0/3, never opened | 1 opening, 4.4 s decoded |
+
+  Three plays a level are few; the live hit counts above (10 plays a level, the gate in the running wake session)
+  decide the threshold.

@@ -112,10 +112,10 @@ internal data class ResidentSettings(
 }
 
 /**
- * The power saving mode of the resident wake word (roadmap P8.1, D123, D128): on, the silero VAD keeps silence away from
- * the keyword spotter and the microphone hands its audio over in [SAVING_FRAME_MILLIS] steps; off, the wake session runs
- * as in 1.2.0. A change of the switch reopens the wake session at once (`ResidentWake.restart`).
- * zh-CN: 常驻唤醒的省电模式 (路线图 P8.1, D123, D128): 开启时 silero VAD 把静音挡在唤醒词检测器之外, 麦克风以 [SAVING_FRAME_MILLIS] 的步长交出
+ * The power saving mode of the resident wake word (roadmap P8.1, D123, D128): on, a voice gate keeps the quiet room away
+ * from the keyword spotter and the microphone hands its audio over in [SAVING_FRAME_MILLIS] steps; off, the wake session
+ * runs as in 1.2.0. A change of the switch reopens the wake session at once (`ResidentWake.restart`).
+ * zh-CN: 常驻唤醒的省电模式 (路线图 P8.1, D123, D128): 开启时语音门把安静的房间声挡在唤醒词检测器之外, 麦克风以 [SAVING_FRAME_MILLIS] 的步长交出
  * 音频; 关闭时唤醒会话与 1.2.0 相同. 切换开关会立即重开唤醒会话 (`ResidentWake.restart`).
  */
 internal object ResidentPower {
@@ -126,13 +126,15 @@ internal object ResidentPower {
     fun of(powerSaving: Boolean): WakePower = if (powerSaving) SAVING else WakePower.OFF
 
     /**
-     * The measured variants of P8.1.1, by name, for the debug switch and the device tests: `off`, `gate` (a), `step` (b)
-     * and `both` (c); null for any other name.
-     * zh-CN: P8.1.1 实测的各做法, 按名字取, 供调试开关与设备测试使用: `off`, `gate` (a), `step` (b), `both` (c); 其他名字为 null.
+     * The measured variants of P8.1.1, by name, for the debug switch and the device tests: `off`, `gate` (a), `vad` (a
+     * with the silero VAD as well), `step` (b) and `both` (c); null for any other name.
+     * zh-CN: P8.1.1 实测的各做法, 按名字取, 供调试开关与设备测试使用: `off`, `gate` (a), `vad` (a 再加 silero VAD), `step` (b), `both` (c);
+     * 其他名字为 null.
      */
     fun variant(name: String?): WakePower? = when (name) {
         "off" -> WakePower.OFF
         "gate" -> WakePower(voiceGate = true, frameMillis = WakePower.DEFAULT_FRAME_MILLIS)
+        "vad" -> WakePower(voiceGate = true, frameMillis = WakePower.DEFAULT_FRAME_MILLIS, silero = true)
         "step" -> WakePower(voiceGate = false, frameMillis = SAVING_FRAME_MILLIS)
         "both" -> SAVING
         else -> null

@@ -16,7 +16,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.Resi
  * notification trampoline, so the service starts from a visible state as it does for the user.
  *
  *     am start -n <package>/.ResidentDebugActivity --es resident on|off [--es keywords "a|b"] [--ez chargingOnly true]
- *         [--es duration 10|30|60|always] [--ez readAloud false] [--ez powerSaving false] [--es power off|gate|step|both|setting]
+ *         [--es duration 10|30|60|always] [--ez readAloud false] [--ez powerSaving false] [--es power off|gate|vad|step|both|setting]
  *
  * The options are stored before the switch, also with `off`, so that a run can put back what it changed. `power` picks a
  * measured variant of roadmap P8.1.1 for the wake sessions of this process (`setting`: the stored `powerSaving` decides).

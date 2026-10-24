@@ -94,7 +94,7 @@ class ResidentWakeDeviceTest {
     private val expectedRoute: String? get() = SpeechDevice.argument("macawRoute")
 
     /**
-     * `-e macawPower off|gate|step|both`: a measured variant of roadmap P8.1.1; absent, the stored power saving switch
+     * `-e macawPower off|gate|vad|step|both`: a measured variant of roadmap P8.1.1; absent, the stored power saving switch
      * (on by default, D123) decides. zh-CN: 路线图 P8.1.1 实测的做法; 缺省时由保存的省电模式开关决定 (默认开, D123).
      */
     private val power: String get() = SpeechDevice.argument("macawPower") ?: "setting"
@@ -328,11 +328,11 @@ class ResidentWakeDeviceTest {
     /**
      * Roadmap P8.1.1 (opt-in `-e macawGateRecordings <plays>`): records the room and the keyword played through the speaker
      * that many times at the full and at a quarter of the level, plus [ROOM_MILLIS] of the room alone, then spots each
-     * recording with the plain stream and with voice gate settings (the defaults, the VAD alone, the rise alone, other
-     * rises). Per recording: the levels, the plain hits and per setting `hits@onset/openings x decoded s` (onset in ms
+     * recording with the plain stream and with voice gate settings (the defaults, with the silero VAD as well, the VAD
+     * alone, other rises). Per recording: the levels, the plain hits and per setting `hits@onset/openings x decoded s` (onset in ms
      * from the play's start). Only numbers are logged.
      * zh-CN: 路线图 P8.1.1 (需显式开启 `-e macawGateRecordings <次数>`): 录下房间声, 以及经扬声器以原音量与四分之一音量各播放若干次的关键词, 外加
-     * [ROOM_MILLIS] 的纯房间声; 然后对每段录音分别用普通流与几种语音门设置检测 (默认值, 只用 VAD, 只用响度上升, 其他上升阈值). 每段输出电平, 普通流的
+     * [ROOM_MILLIS] 的纯房间声; 然后对每段录音分别用普通流与几种语音门设置检测 (默认值, 另加 silero VAD, 只用 VAD, 其他上升阈值). 每段输出电平, 普通流的
      * 命中数, 以及每种设置的 `命中数@开门时刻/开门次数 x 解码秒数` (开门时刻为相对播放开始的毫秒数). 只记录数字.
      */
     @Test
@@ -344,13 +344,13 @@ class ResidentWakeDeviceTest {
         val buffer = runtime.keywordBuffer(model, listOf(Keyword(KEYWORD)))
         // Gain 0: the room alone.
         val recordings = (List(plays!!) { 1f } + List(plays) { 0.25f } + 0f).map { gain -> gain to record(gain) }
-        // Setting name to (VAD gain, rise dB): a VAD gain of 0 leaves the rise alone, a rise of 0 the VAD.
+        // Setting name to (with the silero VAD, rise dB): a rise of 0 leaves the VAD alone.
         val settings = listOf(
-            "gate" to (VoiceGatedKeywords.VAD_GAIN to VoiceGatedKeywords.RISE_DB),
-            "vad" to (VoiceGatedKeywords.VAD_GAIN to 0f),
-            "rise" to (0f to VoiceGatedKeywords.RISE_DB),
-            "rise6" to (0f to 6f),
-            "rise12" to (0f to 12f),
+            "gate" to (false to VoiceGatedKeywords.RISE_DB),
+            "vad" to (true to VoiceGatedKeywords.RISE_DB),
+            "vadOnly" to (true to 0f),
+            "rise6" to (false to 6f),
+            "rise12" to (false to 12f),
         )
         runtime.acquireKeywords(model).use { lease ->
             val engine = lease.engine
@@ -358,8 +358,8 @@ class ResidentWakeDeviceTest {
                 val (samples, start) = recording
                 val plain = spot(engine.stream(buffer, 1), samples, start)
                 val gated = settings.map { (name, setting) ->
-                    val gate = VoiceGatedKeywords(engine.stream(buffer, 1), SherpaEngines.vad(context.assets, SpeechRuntime.SESSION_VAD),
-                        vadGain = setting.first, riseDb = setting.second)
+                    val vad = if (setting.first) SherpaEngines.vad(context.assets, SpeechRuntime.SESSION_VAD) else null
+                    val gate = VoiceGatedKeywords(engine.stream(buffer, 1), vad, riseDb = setting.second)
                     val (hits, onset) = spot(gate, samples, start)
                     "$name=$hits@${onset ?: "-"}/${gate.openings}x${AudioInput.millis(gate.passed) / 100 / 10.0}s"
                 }
