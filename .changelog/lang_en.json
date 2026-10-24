@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Improvement",
   "changelog_label_dependency": "Dependency",
   "$data": {
+    "v1.3.0": {
+      "released_date": "2026/10/24",
+      "feature": [
+        "Power saving mode for the resident wake word (Settings > Resident wake word, on by default): the wake word model runs only while the phone hears speech or another sound, not in a quiet room, so the plugin takes half to nine tenths less CPU time (the quieter, the less). The recording itself still costs the same, so Android's battery estimate drops only a little (see the README for the measurement). A very soft wake word may be missed; then turn power saving off"
+      ]
+    },
     "v1.2.0": {
       "released_date": "2026/10/23",
       "hint": [

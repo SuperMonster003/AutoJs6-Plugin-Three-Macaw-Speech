@@ -4,6 +4,12 @@
 
 ******
 
+# v1.3.0
+
+###### 2026/10/24
+
+* `Fonctionnalité` Mode économie d'énergie pour le mot de réveil permanent (Paramètres > Mot de réveil permanent, activé par défaut): le modèle du mot de réveil ne tourne que lorsque le téléphone entend une voix ou un autre son, jamais dans le silence, si bien que le plugin utilise de deux à dix fois moins de temps CPU (moins encore dans le calme). L'enregistrement lui-même consomme autant, donc l'estimation de la batterie par Android ne baisse que peu (mesure dans le README). Un mot de réveil prononcé très bas peut être manqué; désactivez alors l'économie d'énergie
+
 # v1.2.0
 
 ###### 2026/10/23

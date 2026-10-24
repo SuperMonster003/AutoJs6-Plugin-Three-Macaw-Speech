@@ -48,9 +48,11 @@ batterystats estimate for an app here, so only the plugin's CPU time counts; 10 
 | Variant | Plugin CPU in 10 min | ASR thread | Microphone thread | Decoded | Hits, full / quarter |
 | --- | --- | --- | --- | --- | --- |
 | `off` (1.2.0) | 264.7 s | 242.2 s | 21.7 s | all | 10/10 / 10/10; 10/10 / 9/10; 10/10 / 10/10 |
+| `step` (b): 200 ms frames | 234.8 s | 226.7 s | 7.0 s | all | |
+| `gate` (a): 9 dB rise, 20 ms frames | 61.2 s | 27.2 s | 32.1 s | 65 s of 600, 16 openings | |
+| `both` (c): 9 dB rise, 200 ms frames | 25.8 s | 13.9 s | 9.8 s | 44 s of 600, 10 openings | 10/10 / 10/10 |
 | silero VAD alone, 20 ms (first design) | not measured | | | | 10/10 / 2/10; 10/10 / 0/10 |
 | silero VAD or 9 dB rise, 200 ms | 145.3 s | 134.4 s | 8.6 s | 37 s of 600, 8 openings | 10/10 / 9/10 |
-| `both`: 9 dB rise, 200 ms | 25.8 s | 13.9 s | 9.8 s | 44 s of 600, 10 openings | 10/10 / 10/10 |
 
 - The silero VAD alone missed the quiet keyword: run continuously, it fired on a quarter-level keyword (2 to 3 dB over
   the room in RMS) 2.1 to 2.3 s after the playback started or not at all, and the spotter, started over with a lookback
@@ -58,6 +60,10 @@ batterystats estimate for an app here, so only the plugin's CPU time counts; 10 
 - With the VAD in the gate the ASR thread still took 134 s although the spotter decoded 6 % of the audio: the VAD on
   every 32 ms window costs about half of what the spotter does on everything. The rise over the room's floor costs one
   pass over the samples, so the power saving mode opens the gate on the rise alone.
+- The step alone saves little (11 %): the spotter decodes the same audio. With the gate the decoding is small and the
+  20 ms hand-overs dominate (the microphone thread took 32 s), so the two together save the most (90 %). The
+  microphone thread's time at 20 ms differs between runs (21.7 s in `off`, 32.1 s in `gate`), probably because a
+  lightly loaded CPU runs at a lower clock.
 - `gate` recordings (`device_resident_run.py gate`, 3 plays per level, the same recordings for every setting; hits, and
   how often 30 s of the room alone opened the gate):
 
@@ -71,3 +77,22 @@ batterystats estimate for an app here, so only the plugin's CPU time counts; 10 
 
   Three plays a level are few; the live hit counts above (10 plays a level, the gate in the running wake session)
   decide the threshold.
+
+### Hits with the power saving mode on and off (P8.1.4), 2026-10-24
+
+`py .python/device_resident_run.py phone <serial> --power-saving on|off --hit-rate 10`, music volume at 70 %, one phone
+at a time. The P7.4.7 cases (switch and hit, yielding, time limit, power, conflict, reboot reminder) and the two-level
+count; P7.4.7 recorded `plays=1 ... again=1`, `client hits=1` and `background hit plays=1` on every phone.
+
+| Phone | Power saving | P7.4.7 cases | Full | Quarter |
+| --- | --- | --- | --- | --- |
+| G8441 (Android 9) | on | all pass (switch and conflict rerun after the maintainer unlocked the phone) | 10/10 | 9/10 |
+| G8441 (Android 9) | off | all pass (same rerun) | 10/10 | 8/10 |
+| OnePlus OPD2413 (ColorOS, Android 15) | on | all pass but the reboot reminder once (`resumed=false`); 3 reruns pass | 10/10 | 10/10 |
+| OnePlus OPD2413 (ColorOS, Android 15) | off | all pass | 10/10 | 10/10 |
+
+- The first G8441 run of the switch and conflict cases found no Compose hierarchy: the battery run before them had
+  turned the screen off and the phone locks with a PIN. The battery run now ends with `wm dismiss-keyguard`, which helps
+  only without a credential.
+- The OnePlus reboot reminder failure did not repeat (power saving on twice and off once); the wake session opened
+  normally in its log.

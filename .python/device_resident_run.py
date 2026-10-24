@@ -389,7 +389,9 @@ def battery_period(serial, minutes, resident_on, power=None, power_saving=None):
     mah = estimated_mah(serial)
     running = service_state(serial)
     live = recording(serial)
+    # Back as the run found it: the screen on and a lock screen without a credential gone (later UI cases need it).
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
+    adb(serial, "shell", "wm", "dismiss-keyguard", check=False)
     adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
     used = None if after is None else round(after - (cpu or 0), 1)
     print(f"{label(serial)}: battery {'on ' if resident_on else 'off'} {minutes} min screen off: estimate {mah} mAh, plugin CPU {used} s"

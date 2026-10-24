@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.3.0": {
+      "released_date": "2026/10/24",
+      "feature": [
+        "Modo de ahorro de energía para la palabra de activación permanente (Ajustes > Palabra de activación permanente, activado por defecto): el modelo de la palabra de activación solo se ejecuta cuando el teléfono oye voz u otro sonido, no en silencio, así que el complemento usa entre la mitad y una décima parte del tiempo de CPU (menos cuanto más silencio). La propia grabación gasta lo mismo, por lo que la estimación de batería de Android baja solo un poco (medición en el README). Una palabra de activación dicha muy bajo puede pasar desapercibida; en ese caso, desactiva el ahorro de energía"
+      ]
+    },
     "v1.2.0": {
       "released_date": "2026/10/23",
       "hint": [
