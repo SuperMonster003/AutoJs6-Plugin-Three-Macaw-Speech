@@ -1,6 +1,6 @@
 # 3-Macaw Speech Roadmap
 
-更新日期: 2026-10-21
+更新日期: 2026-10-24
 
 本文是 `AutoJs6-Plugin-Three-Macaw-Speech` (显示名 `3-Macaw Speech`; 基于 [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) 为 AutoJs6 脚本提供离线语音识别, 语音活动检测, 唤醒词检测与神经网络语音合成, 并把合成能力注册为 Android 系统 TTS 引擎; 脚本侧挂载为全局模块 `speech`, 有独立启动入口) 的可执行状态表.
 以 2026-10-16 的宿主本地代码快照 (`AutoJs6 master@33a1514b74`, `VERSION_NAME=6.8.0` 尚未发布, `VERSION_BUILD=3796` + `VERSION_CODE_OFFSET=1652`, 即 versionCode 5448; 宿主 `tts` 模块已有平台无关的 `TtsBackend` 边界与引擎查询 API), 平台版本插件 `1.9.1`, sherpa-onnx `v1.13.8` (2026-09-10, Apache-2.0), `AutoJs6-Shared-Assets main` (ace-fonts v4 已发布, codegen-models 待发布 v1) 为起点, 每个条目均可独立 Check 并落地, 后续会话按阶段逐步推进.
@@ -152,6 +152,15 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D117 | 发布门与签名快照 (Q66) | 等维护者推送 Shared-Assets `710484e`, 离线签名 pending v2 并复制为 `catalogs/catalog-v2.json`, 发布 `speech-models-v2` (8 个归档); 此前只做不依赖签名的准备 (条目, 文案, JVM, release 候选包冒烟). 签名版出现后按 D108 逐字节替换内置快照并内置签名信封, 真机刷新验签, 经镜像下载一个 v2 模型, 之后才定稿与打 tag; 不发布内置未签名快照的 1.2.0. | P7.9.1 / P7.9.2 |
 | D118 | 最低宿主 (Q67) | 保持 5456 (同 P6.4 / P7.3, 不等宿主 6.8.0 公开). 脚本识别 WAV 以外的音频 (宿主 `df14a9e80`, D84), 3-Stove Agent 直接调用插件工具 (`21117c789`, D92) 与工具结果按 Parcel 大小计上限 (`054366be6`) 需要 AutoJs6 6.8.0 正式版; changelog 提示与 README 兼容性只写 "6.8.0 正式版", 不写构建号 (宿主 `VERSION_BUILD` 不唯一对应提交: `df14a9e80` / `21117c789` 处为 4183, `054366be6` / `3e811b0ea` 与 2026-10-23 的 HEAD 为 4283, 即 5835 / 5935). 更早的宿主上自动退回: 脚本只能传入 WAV, 其余功能照常; 插件界面的功能 (常驻唤醒, 文件标签, 新模型, 自动标点) 不依赖宿主版本. | P7.9.3 |
 | D119 | (派生) 发布前复核方式 | release 候选包 (签名快照替换前) 先在 1 台真机 (Sony XQ-AT72) 与 API 35 16 KB 模拟器 (只读实例) 冒烟, 尽早发现 R8 等只在 release 包出现的问题; 替换快照后的定稿包再在同一真机冒烟并刷新目录验签与镜像下载. 冒烟脚本: `device_smoke.py` (R3), `device_host_scripts.py tools` (4 个工具, 含 m4a 读回识别) 与 `api`. 常驻唤醒与文件标签的端到端用例依赖插桩, 已在 debug 构建跑过 (P7.4 / P7.8.4), release 包不重复. | P7.9.4 |
+
+| D120 | 1.3.0 范围与顺序 (Q70, 维护者选非推荐项 "完全依次") | 四项依次进行, 每项一个子会话, 共用 checkout 不并行 (同 1.2.0): P8.1 常驻唤醒降耗 (省电模式) -> P8.2 更多语言模型 -> P8.3 宿主契约 v2 + 说话人识别 -> P8.4 说话人分离 / 语种识别 / 音频事件标签 -> P8.5 1.3.0 发布. NPU 加速 (QNN 变体) 不纳入 1.3.0, 留 P7.2 候选表. 各小节的细节 (模型选型, 方法名与形参, 阈值, 文案) 由子会话开工时用选择题请维护者定, 决策编号接 D128, 待决编号接 Q77. | 各阶段开工前 |
+| D121 | 新能力经宿主契约 v2 暴露 (Q69) | 说话人识别与 P8.4 三项都不是契约 v1 (`ISpeechPlugin` 14 个方法, KINDS asr / tts / kws / vad) 的能力: `ISpeechPlugin` 追加方法 (只在 AIDL 末尾追加, `SpeechAidlOrderTest`), 新 KINDS (`speaker`, `segment`, `langid`, `tagger`), 新 FEATURES, `speechContractVersion` 2, 新错误码与上限; 宿主脚本 API `speech.speaker.*` (P8.3), `speech.diarize` / `speech.detectLanguage` / `speech.tag` (P8.4); 协议文档加 v2 小节; d.ts, 文档站, Ace, Offline Docs 按惯例同步. 宿主只本地提交随 6.8.0 (尚未公开); `libs/speech-api.aar` 从记录的宿主提交重新打包并更新锁文件. 不走 "只经插件工具" 路线 (工具照常加, 但不是唯一入口). | P8.3.1 |
+| D122 | 最低宿主与协商 (Q75) | 1.3.0 最低宿主保持 5456 (同 D118). 新能力按 `getCapabilities` 的 `speechContractVersion` 与 FEATURES 协商: 新宿主 + 新插件有脚本 API; 新宿主 + 旧插件 (契约 v1) 宿主按 FEATURES 不调用新方法, 脚本 API 以既有的能力不可用错误码拒绝; 旧宿主 + 新插件没有这些脚本 API, 插件界面与插件工具照用. changelog 提示与 README 兼容性照 D118 只写 "需要 AutoJs6 6.8.0 正式版", 不写构建号. | P8.3.1 / P8.5.1 |
+| D123 | 常驻唤醒省电模式 (Q72, 维护者选非推荐项 "加开关") | 设置 "常驻唤醒" 组加 "省电模式" 开关, 默认开 (说明写明原理与可能漏掉轻声唤醒), 关闭时与 1.2.0 行为相同. 做法由 P8.1.1 在同一台 XQ-DQ72 上实测后选: VAD 门控 (内置 silero VAD 判静音时不把音频送入唤醒词模型, 有声后连同短回溯缓冲一起送入), KWS 推理线程 / 帧步长, 或合并. 验收: 同机同法 (`device_resident_run.py battery`, 熄屏 30 分钟) 估算耗电与插件进程 CPU 时间均不超过 1.2.0 基线 (17.9 mAh, 453.9 s) 的一半, 且 P7.4.7 声学用例 (70% 音量) 在 XQ-DQ72 / G8441 / OnePlus 的命中数不降; 达不到时停下问维护者, 不自行放宽. | P8.1.1 |
+| D124 | 模型收录门槛 (Q71 维护者选非推荐项 "放宽到 350 MiB", Q76) | 单模型安装体积 <= 350 MiB (1.2.0 为 150 MiB 量级); 权重与训练数据许可都能查到, 非商用照 D11 收录并标注; 语言优先 西 / 阿 (识别; 阿语 TTS) 与 日 / 韩 (日语流式识别; 日 / 韩 TTS); 流式优先, 没有流式收离线模型; 大于 150 MiB 的条目在 XQ-DQ72 与 G8441 (4 GB) 实测峰值内存与首句延迟, 体积与建议内存写进条目说明 (不为此改 schema; 需要新字段时并入 D127 的 schema 3). 1.2.0 不收的四项按新门槛重审: 只因体积不收的 (Kokoro int8 181 MiB) 可收, 许可问题的 (Kroko 西 / 德, 阿语 kareem, Supertonic OpenRAIL-M) 仍不收, 除非许可状况已变. 候选清单由 P8.2.1 审核后用选择题请维护者定稿. | P8.2.1 |
+| D125 | 说话人识别范围与隐私 (Q73) | 三能力: 注册 (enroll, 多段录音取平均), 验证 (verify, 返回分数与是否通过), 辨认 (identify, 在已注册说话人里找最像), 另有列出 / 删除; 插件内 "只听主人" 开关 (默认关, 需至少一个已注册说话人): 常驻唤醒命中后先验证命中片段, 未通过则忽略, 助理弹层同样受控. 声纹嵌入只存插件私有目录 (`filesDir/speakers/`, 带格式版本号), 删除插件数据即清空; 脚本与插件工具只拿名字, 分数, 是否通过与阈值, 不导出也不导入原始向量 (不做跨设备迁移). README 隐私段十语言写明. 模型以 3D-Speaker / WeSpeaker 的 16 kHz 嵌入模型为候选 (约 25-40 MiB), 由 P8.3 子会话实测后用选择题定 (D128 起). | P8.3.3 |
+| D126 | 分离 / 语种 / 事件的形态 (Q74) | 三项都做: 说话人分离 (pyannote segmentation 3.0 约 6 MiB + 复用 D125 的嵌入模型), 语种识别 (whisper tiny 或 base, 约 40-80 MiB, 实测后选), 音频事件标签 (zipformer 或 CED-tiny, 约 20-30 MiB, AudioSet 527 类). 都只收文件 / PCM 输入, 离线一次调用 (同 `recognizeFile` 的路径, 复用 P7.5 解码与 P7.8 的前台服务, 进度与取消), 不做流式, 不接入 `language: 'auto'` 自动选模型 (留候选). 新类别 `segment` / `langid` / `tagger` 进目录 schema 3 (D127). | P8.4.1 |
+| D127 | (派生) 目录版本策略 | 1.3.0 的目录改动集中为一次签名: P8.2 起在 Shared-Assets `speech-models/pending/v3` 累积条目 (P8.2 的新语言模型为已有类别, P8.3 / P8.4 的 `speaker` / `segment` / `langid` / `tagger` 为新类别), P8.5 发布前由维护者签名并发布 Release `speech-models-v3`: schema 3 的 `catalog-v3.json` (全部条目, 旧插件不读), 同时重新生成并签名 `catalog-v2.json` 只加入 P8.2 的已有类别条目 (1.2.0 及以前的插件可见新语言模型; 照 D106, 旧文件不出现新类别). 子会话用未签名的开发快照做设备测试 (运行时回退仍在), 内置签名快照在 P8.5.2 替换 (D108). | P8.2.2 |
 
 ---
 
@@ -347,7 +356,8 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P4 | 1.0.0 | TTS: 引擎核心, 系统引擎服务, Binder 合成, 宿主 `tts` 互通 | 已完成 (2026-10-16 提交 `17771c1`, 设备 API 28 / 33 / 35); 宿主缺口已修 (2026-10-16 宿主本地提交 `ba4c92d5f` / `11f75efbe`, 三台真机复核); 剩余: TalkBack / 随选朗读未试 |
 | P5 | 1.0.0 | 独立界面: 首页与模型管理, 设置, 试听试说, 发行历史, 图标, 系统语音输入入口, 系统数字助理 | P5.1-P5.7 已完成 (P5.7 数字助理, 系统识别服务与唤醒会话接管: 2026-10-18 提交 `5f63d87`, API 24 / 35 AVD 与 Sony XQ-AT72 实测; 其他插件条目 2026-10-20 勾选 (3-Stone AI 1.4.0 已实现入口并完成往返); 2026-10-16 提交 `3464346`; API 24 / 35 AVD, Sony XQ-AT72 API 31, XQ-DQ72 API 33; P5.6 系统语音输入 (D41-D47) 提交 `fed02d7`, Sony G8441 / XQ-AT72 / XQ-DQ72 与 API 24 / 36.1 AVD, 3-Stove Agent 实测通过); 剩余: 需维护者在手机上操作的 E4 项未执行 (见 P5.3), OnePlus / Xiaomi 未跑界面, 索引 `catalog-icons` 随 P6.4 |
 | P6 | 1.0.0 | 文档, 声明, 四仓库同步, 样例, 兼容矩阵, 发布与索引登记 | P6.1 / P6.2 已完成 (2026-10-20, 文档站 `2912b01` / `3fce20a`, d.ts `c1e2a23`, Ace `422f55f`, Offline Docs `2e6555d`, 四仓库均只落本地提交); P6.3 已完成 (2026-10-20, 插件 `1cbbec0` / `0360725`, 宿主样例 `014f12491`, 6 台真机 R3 冒烟); P6.4 已完成: 1.0.0 于 2026-10-20 发布 (维护者决定不等宿主 6.8.0 公开; tag `v1.0.0` = `6974369`, versionCode 56, 最低宿主 5456 (宿主 `6c08e53e2` 仅本地), 附对应源码归档 `ac68c80b`; 索引 `6d39b1f`) |
-| P7 | 1.1.0 / 1.2.0 | 1.1.0: P7.1 触发式入口 (D58-D65, D68); 1.2.0 (维护者 2026-10-21 选定四项, 2026-10-22 加第 5 项, 依次进行): P7.4 常驻唤醒 (D66 / D67, D69-D80), P7.5 非 WAV 解码 (D81-D86), P7.6 MCP 工具 (D87-D101), P7.7 目录 v2 (D102-D109), 试听试说页识别文件; 其余候选见 P7.2 | 进行中 (P7.1 插件条目已完成, 含 D65 改定, 弹层开头丢字修复与 D68; 1.1.0 已于 2026-10-21 发布 (tag `v1.1.0` = `8fdf6d8`, versionCode 81, 索引 81.json / `9848127`), 见 P7.3; 剩 P7.1 的 D67 其他插件条目; 1.2.0 第 1 项 P7.4 已完成 (2026-10-21, 推送至 `5591ac9`); 第 2 项非 WAV 解码 P7.5 已完成 (2026-10-22, 推送至 `5d93fcc`, D81-D86, Q25 已定 (a)); 第 3 项 MCP 工具 P7.6 已完成 (D87-D101); 第 4 项目录 v2 P7.7 已完成 (D102-D109); 第 5 项试听试说页识别文件 P7.8 已完成 (2026-10-23, 推送至 `0003dcf`, D110-D116); 1.2.0 已于 2026-10-23 发布 (tag `v1.2.0` = `31998a0`, versionCode 140, 索引 140.json / `e757e85`), 见 P7.9 (D117-D119)) |
+| P7 | 1.1.0 / 1.2.0 | 1.1.0: P7.1 触发式入口 (D58-D65, D68); 1.2.0 (维护者 2026-10-21 选定四项, 2026-10-22 加第 5 项, 依次进行): P7.4 常驻唤醒 (D66 / D67, D69-D80), P7.5 非 WAV 解码 (D81-D86), P7.6 MCP 工具 (D87-D101), P7.7 目录 v2 (D102-D109), 试听试说页识别文件; 其余候选见 P7.2 | 1.1.0 / 1.2.0 已发布, 剩 P7.1 的 D67 其他插件条目 (3-Stone AI P6-4 等宿主 6.8.0 公开); 其余候选 2026-10-24 转 P8 (1.3.0) 或留 P7.2 候选表 (P7.1 插件条目已完成, 含 D65 改定, 弹层开头丢字修复与 D68; 1.1.0 已于 2026-10-21 发布 (tag `v1.1.0` = `8fdf6d8`, versionCode 81, 索引 81.json / `9848127`), 见 P7.3; 剩 P7.1 的 D67 其他插件条目; 1.2.0 第 1 项 P7.4 已完成 (2026-10-21, 推送至 `5591ac9`); 第 2 项非 WAV 解码 P7.5 已完成 (2026-10-22, 推送至 `5d93fcc`, D81-D86, Q25 已定 (a)); 第 3 项 MCP 工具 P7.6 已完成 (D87-D101); 第 4 项目录 v2 P7.7 已完成 (D102-D109); 第 5 项试听试说页识别文件 P7.8 已完成 (2026-10-23, 推送至 `0003dcf`, D110-D116); 1.2.0 已于 2026-10-23 发布 (tag `v1.2.0` = `31998a0`, versionCode 140, 索引 140.json / `e757e85`), 见 P7.9 (D117-D119)) |
+| P8 | 1.3.0 | 维护者 2026-10-24 经调度会话三轮选择题选定四项, 依次进行 (D120): P8.1 常驻唤醒降耗 (省电模式, D123), P8.2 更多语言模型 (D124, D127), P8.3 宿主契约 v2 + 说话人识别 (D121, D122, D125), P8.4 说话人分离 / 语种识别 / 音频事件标签 (D126), P8.5 1.3.0 发布; NPU 加速不纳入, 留 P7.2 候选表 | 未开始 (2026-10-24 立项; 调度看板 `D:/idea-projects/.claude/boards/3-macaw.md`, 附录 D Q69 - Q76) |
 
 依赖顺序:
 
@@ -358,7 +368,8 @@ P0 (骨架 + AAR)
      -> P4 (TTS)                        依赖 P2.3; 系统引擎部分不依赖 P1
          -> P5 (界面)                   依赖 P2.3, P3, P4 的核心 (试听试说)
              -> P6 (文档, 发布)         依赖 P1-P5 全部通过与 P2.5 的 speech-models-v1 发布
-                 -> P7 (1.1.0)
+                 -> P7 (1.1.0 / 1.2.0)
+                     -> P8 (1.3.0)        P8.1 / P8.2 相互独立但按 D120 依次; P8.4 依赖 P8.3 的契约 v2 与说话人嵌入模型; P8.5 依赖 P8.1 - P8.4 与 Shared-Assets 的 v3 签名 (D127)
 ```
 
 发布门禁 (每个阶段的 "(发布)" 条目都指向本清单):
@@ -633,19 +644,19 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 
 ### P7.2 其他候选
 
-1.2.0 的范围: 维护者 2026-10-21 选定 (原话 "常驻唤醒, 非 WAV 解码, MCP 工具, 目录 v2") 四项为 1.2.0, 2026-10-22 09:41 加第 5 项 "试听试说页识别文件" (附录 D Q26), 共五项, 按此顺序依次进行, 每项一个会话; 分配方式为卡片, 由维护者点击启动 (调度见 `D:/idea-projects/.claude/boards/3-macaw.md`); 1.2.0 的发布在五项完成后另行调度. 第 1 项常驻唤醒在 P7.4 实施 (决策 D69-D80), 第 2 项非 WAV 解码在 P7.5 实施 (决策 D81-D86), 第 3 项 MCP 工具在 P7.6 实施 (决策 D87-D101), 第 4 项目录 v2 在 P7.7 实施 (决策 D102-D109). 第 5 项试听试说页识别文件在 P7.8 实施 (决策 D110-D116).
+1.2.0 的范围: 维护者 2026-10-21 选定 (原话 "常驻唤醒, 非 WAV 解码, MCP 工具, 目录 v2") 四项为 1.2.0, 2026-10-22 09:41 加第 5 项 "试听试说页识别文件" (附录 D Q26), 共五项, 按此顺序依次进行, 每项一个会话; 分配方式为卡片, 由维护者点击启动 (调度见 `D:/idea-projects/.claude/boards/3-macaw.md`); 1.2.0 的发布在五项完成后另行调度. 第 1 项常驻唤醒在 P7.4 实施 (决策 D69-D80), 第 2 项非 WAV 解码在 P7.5 实施 (决策 D81-D86), 第 3 项 MCP 工具在 P7.6 实施 (决策 D87-D101), 第 4 项目录 v2 在 P7.7 实施 (决策 D102-D109). 第 5 项试听试说页识别文件在 P7.8 实施 (决策 D110-D116). 1.3.0 的范围: 维护者 2026-10-24 经调度会话三轮选择题选定 (附录 D Q69 - Q76, 决策 D120 - D127) 四项, 在 P8 依次实施: 常驻唤醒降耗 (P8.1), 更多语言模型 (P8.2), 说话人识别 / 验证 (P8.3, 含宿主契约 v2), 说话人分离 / 语种识别 / 音频事件标签 (P8.4); NPU 加速不纳入, 留在本表.
 
 | 候选 | 说明 | 依赖 |
 | --- | --- | --- |
 | 常驻唤醒 (D8, D66, D67) | 常驻唤醒 (microphone 前台服务, 电量策略), "监听时长" 与 "只在充电时监听" (D67), 开关处写明指示灯常亮与耗电 (D66); 命中后打开 P5.7 的助理弹层, 目标仍经 D50 的 `VOICE_COMMAND` 入口; 结果 TTS 播报; 开关默认关, 与 3-Stone AI / 3-Stove Agent 的常驻监听互斥 (`RESIDENT_LISTENER` 约定, 3-Stone AI D28 / D31). 状态: 1.2.0 第 1 项, 已完成 (P7.4, D69-D80) | P7.1 完成; 真机耗电实测 |
 | 标点恢复 | sherpa-onnx `ct-transformer` 标点模型 (体积较大, 单独目录条目). 状态: 1.2.0 第 4 项, 在 P7.7 实施, 另加英文标点与大小写模型 (D104, D107) | P2 目录 v2 |
-| 说话人识别 / 验证 | 3D-Speaker 模型, `speech.speaker.*` (注册, 比对), 用于 "只听主人" | 隐私文案 |
-| 说话人分离, 语种识别, 音频事件标签 | 上游已有模型与 API | 需求验证 |
+| 说话人识别 / 验证 | 3D-Speaker 模型, `speech.speaker.*` (注册, 比对), 用于 "只听主人". 状态: 1.3.0 第 3 项, 在 P8.3 实施 (注册 / 验证 / 辨认 + 插件内 "只听主人", 声纹不导出, D125; 经宿主契约 v2, D121) | 隐私文案 |
+| 说话人分离, 语种识别, 音频事件标签 | 上游已有模型与 API. 状态: 1.3.0 第 4 项, 在 P8.4 实施 (三项都做, 只收文件 / PCM 输入, D126) | 需求验证 |
 | 非 WAV 解码 | `MediaCodec` 解码 MP3 / AAC / OGG 为 PCM. 状态: 1.2.0 第 2 项, 在 P7.5 实施 (D81-D86) | D15 推翻 (D81) |
 | MCP 工具 | 经 `plugin-tool-api` 暴露 "听一句话" / "朗读" 工具给 MCP Server 与 Agent. 状态: 1.2.0 第 3 项, 在 P7.6 实施 (D87 起; 改为四个工具, 见 D87) | 宿主 plugin-tool 发现落地 |
-| 更多语言模型 | 日 / 韩 / 粤 (SenseVoice 已含), 俄 / 法 / 西 / 阿 流式模型, 多语 TTS (piper 各语种). 状态: 1.2.0 第 4 项, 在 P7.7 实施: 俄 / 法 / 韩流式识别与法 / 西 / 德 / 俄 Piper (D102, D103); 西 / 阿流式, 阿语 TTS, Kokoro int8, Supertonic 本次不收 | 目录 v2 审核 |
-| NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型 | 上游稳定性 |
-| 常驻唤醒降耗 | P7.4.8 实测开启时插件 CPU 平均约为一个核心的 25% (XQ-DQ72 熄屏 30 分钟 453.9 s, 估算 17.9 mAh); 可评估静音时不送唤醒词模型 (VAD 门控) 或减少推理线程, 需与命中率 (P7.4.7 的声学用例) 对照. 状态: 保留候选, 1.2.0 不做, 1.3.0 再评估 (附录 D Q19) | 1.3.0 评估 |
+| 更多语言模型 | 日 / 韩 / 粤 (SenseVoice 已含), 俄 / 法 / 西 / 阿 流式模型, 多语 TTS (piper 各语种). 状态: 1.2.0 第 4 项, 在 P7.7 实施: 俄 / 法 / 韩流式识别与法 / 西 / 德 / 俄 Piper (D102, D103); 西 / 阿流式, 阿语 TTS, Kokoro int8, Supertonic 本次不收. 1.3.0 第 2 项: 在 P8.2 按新门槛继续 (单模型 <= 350 MiB, 许可可查; 优先 西 / 阿 与 日 / 韩, D124) | 目录 v2 审核 |
+| NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型. 状态: 1.3.0 不纳入 (维护者 2026-10-24 经调度会话选择题选定: 上游稳定性未验证, 只对 Qualcomm 机型有效), 留候选 | 上游稳定性 |
+| 常驻唤醒降耗 | P7.4.8 实测开启时插件 CPU 平均约为一个核心的 25% (XQ-DQ72 熄屏 30 分钟 453.9 s, 估算 17.9 mAh); 可评估静音时不送唤醒词模型 (VAD 门控) 或减少推理线程, 需与命中率 (P7.4.7 的声学用例) 对照. 状态: 保留候选, 1.2.0 不做, 1.3.0 再评估 (附录 D Q19); 1.3.0 第 1 项, 在 P8.1 实施 (省电模式开关, 耗电与 CPU 时间减半且命中不降, D123) | 1.3.0 评估 |
 | 试听试说页 "识别文件" | 在试听试说页用系统文件选择器选一个音频文件识别 (P7.5 之后不写脚本也能用非 WAV 解码); P7.5 开工时登记. 状态: 1.2.0 第 5 项, 排在目录 v2 之后 (附录 D Q26), 在 P7.8 实施 (D110-D116) | P7.5 完成 |
 
 ### P7.3 1.1.0 发布
@@ -730,6 +741,71 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 - [x] (发布) P7.9.5 R4: 定稿提交 (`chore(release): 1.2.0`, changelog 日期), 维护者确认后推送, 远端 CI 全绿, 干净工作区构建 5 个 APK, 轻量 tag `v1.2.0`, GitHub Release (5 个 APK, SHA256SUMS, 对应源码归档); 下载全部附件到新的空目录 `sha256sum -c` 通过, 正式包真机安装冒烟 (E5). 验收: tag 与 Release URL, APK SHA-256 与大小, E5 结果记入本条. 证据 (2026-10-23): 维护者在会话内确认 "现在发布" 后推送 `5f42aae..31998a0`, CI 见 P7.9.4; 轻量 tag `v1.2.0` = `31998a0099cb5a6d2840fe58fb277ce049b4aa45`; Release https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases/tag/v1.2.0 (标题 1.2.0, 非预发行, latest, 2026-10-23T11:38:14Z), 7 个附件: `autojs6-plugin-three-macaw-speech-v1.2.0-arm64-v8a-f35b0aaf.apk` (`965518230859d8fa835b55ee84dadf2590913e265dc8bef469b725aa8b294ad3`, 14920681 字节), `-armeabi-v7a-2fff1b22.apk` (`877237a6d4330e00e8ad77703af06de3b4f3e6b8c7bd2e411812af3fa52bdb49`, 14096723), `-x86_64-1ae71d33.apk` (`30055f7ab5742bb437759b79ec9d48a4dbeb03a98def0969bd000b8ba6fe07dd`, 16118524), `-x86-422cea93.apk` (`9ecad57db159ecfb434d0aedc2871b829b0bd568fc1bd2ecdae96a24c905a300`, 16347319), `-universal-8acfabf3.apk` (`7b0a8b163a54815fc2b32a45d58a8176809b857ad1400827d3e4879a551cda9a`, 46514054), `SHA256SUMS` (797 字节), 对应源码归档 `autojs6-plugin-three-macaw-speech-corresponding-source-sherpa-onnx-v1.13.8-ac68c80b.tar` (`ac68c80b...` 54332416 字节, 自 1.0.0 未变). 7 个附件下载到新的空目录, `sha256sum -c SHA256SUMS` 6 项 OK, 下载的 `SHA256SUMS` 与本地逐字节相同. E5 (Redmi 22120RN86C, API 33, 宿主 debug 5835, 下载的 arm64 包覆盖安装 1.2.0 候选包 136): `device_smoke.py` SMOKE PASS (安装 2.0 s, versionCode 140; 激活 1.2.0 (140) catalog 2, features 含 `audioDecode`; 英文流式删除后重下 140647935 字节 17.9 s, AISHELL-3 65532044 字节 8.4 s, 默认模型已还原; synthesize 3572 ms 音频; `tts` 走 melo zh-en en-US; listen CER 0.000, 首个 partial 2054 ms; wake 在 ready 后 2011 ms 命中, score 0.25); `device_catalog_mirror.py` CATALOG PASS (versionCode 140, debuggable False; 刷新验签 catalog version 2, updated False (内置快照与远端同一字节), 6536 ms; `tts.vits.piper.de-de-thorsten-medium.int8` 经镜像下载 36870656 字节 12.3 s, 安装后 36577367 字节, 无回退上游, 测后删除); `device_host_scripts.py api` PASS (recognize en 101 字, SenseVoice zh 27 字, detectVoice 4 段, 两个拒绝项, 外部 PCM 会话 ready / partial / final / endpoint / end 共 101 字); `tools` 中 list (4 个工具) / transcribe (en.wav CER 0.000) / synthesize (m4a 34859 字节) / 读回 (CER 0.118) / speak (9303 ms) / 3 个拒绝项 PASS, listen 返回 `NOT_READY`: 该机插件无悬浮窗权限, 默认助理是小爱, API 33, 按 D89 (3) 发出 "点按说话" 通知, 24 s 内无人点按 (按规则不代点), 与设计一致; 工具 listen 的声学路线已在 P7.9.4 由 XQ-AT72 (启动页路线, CER 0.000) 覆盖.
 - [x] (索引) P7.9.6 R5: 索引仓库 `release-manifests/io.github.supermonster003.autojs6.plugin.three.macaw.speech/<versionCode>.json`, `tools/generate_official_plugin_index.py`, 单元测试与 `generate_markdown.py --check`, 推送 main (按 1.1.0 `9848127` 的惯例). 验收: 索引提交 hash, 索引 CI (Plugin Index, Markdown integrity) 全绿, 只有本插件一条变化. 证据 (2026-10-23): 索引仓库 `e757e85` (`feat(index): admit 3-Macaw Speech v1.2.0`, 已推送 main, `8150e6d..e757e85`): 新增 `release-manifests/io.github.supermonster003.autojs6.plugin.three.macaw.speech/140.json` (tag `v1.2.0`, source `31998a0`, versionCode 140, 签名证书 `31a681fc...c213`, 5 个 APK 的 SHA-256 与大小同 P7.9.5, 四个 ABI); 重新生成的 `plugins.official.generated.json` 共 66 条, 只有 3-Macaw Speech 一条变化 (版本 1.2.0 / 140, 日期 2026-10-23, Release 正文, 5 个附件, 说明文档链接改到 `v1.2.0` tag), `requiresHostVersion` 仍为 5456, `nativePageAlignment` 16384 (measured). `tools` 单元测试 80 项通过, `generate_markdown.py --check` MARKDOWN_OK, `.python/tests` 通过. 索引 CI 全绿: Plugin Index 39948887467, Markdown integrity 39948887484.
 - [x] (同步) P7.9.7 四仓库与相关仓库状态 (只记录, 不代推): 文档站 changelog JSON 十语言已含 1.2.0 的 `audioDecode` 条目 (`4ce965b`, 已在 origin/master); `punctuation` 说明按 Q68; 宿主, MCP Server, d.ts, Ace, Offline Docs, 3-Stove Agent 的提交状态. 核对 (2026-10-23 18:45): 宿主 `df14a9e80` / `21117c789` / `054366be6` / `3e811b0ea` 仅本地 (宿主 master 领先 private/master 1945 笔); MCP `c778a81` / `c7d4e5d` / `41d4c29` 仅本地 (领先 70); d.ts `bd020ac` 仅本地 (领先 51); Ace `e48079c` 仅本地 (领先 50); 文档站 `4ce965b` 与 3-Stove Agent `51b4ae66` 已推送; Offline Docs 与远端一致 (HTML 生成与同步仍是看板 "需维护者动手" (2)). 验收: 发布时的状态写入本条. 发布时 (2026-10-23 19:45, 均未代推): 宿主 master 领先 private/master 1957 笔, `df14a9e80` / `21117c789` / `054366be6` / `3e811b0ea` 仍不在任何远端分支 (6.8.0 未公开, 识别非 WAV 与插件工具仍需它); MCP 领先 70, `c778a81` / `c7d4e5d` / `41d4c29` 仅本地; d.ts 领先 52, `bd020ac` 与 Q68 的 `2ba4623` 仅本地; Ace 领先 50, `e48079c` 仅本地; 文档站 `4ce965b` 已推送, Q68 的 `63e04f9` 仅本地 (领先 1); Offline Docs (`8ad6797`), 3-Stove Agent (`51b4ae66`), Shared-Assets (`2901e55`) 与远端一致. Q68 仍按 (a) 先行, 待维护者拍板.
+
+---
+
+## P8: 1.3.0
+
+范围: 维护者 2026-10-24 经调度会话 (看板 `D:/idea-projects/.claude/boards/3-macaw.md`) 三轮选择题选定 (附录 D Q69 - Q76, 决策 D120 - D127): 四项依次进行, 每项一个子会话, 共用 checkout 不并行 (D120): P8.1 常驻唤醒降耗 (省电模式) -> P8.2 更多语言模型 -> P8.3 宿主契约 v2 + 说话人识别 -> P8.4 说话人分离 / 语种识别 / 音频事件标签 -> P8.5 1.3.0 发布. NPU 加速不纳入 (留 P7.2 候选表). 新能力经宿主契约 v2 暴露给脚本 (D121), 最低宿主保持 5456 并按 FEATURES 协商 (D122), 目录改动集中为一次签名 (D127). 各小节的细节决策 (模型选型, 方法名与形参, 阈值, 文案) 由子会话开工时用选择题请维护者定, 决策编号接 D128, 待决编号接 Q77. 设备: 真机 XQ-DQ72 / XQ-AT72 / G8441 / OnePlus OPD2413 与 API 24 / 35 AVD (清单见 `D:/idea-projects/COMMON_AGENTS.md` 可用测试设备), 声学用例依次运行 (相邻手机会串音), 宿主构建与其他会话排队 (`locks.md`). 每个子会话完成一个阶段就把进度与证据写进本文, 不靠对话记住.
+
+### P8.1 常驻唤醒降耗 (1.3.0 第 1 项, D123, Q72)
+
+基线 (P7.4.8): XQ-DQ72 熄屏 30 分钟, 常驻唤醒开启时估算 17.9 mAh, 插件进程 CPU 453.9 s (约一个核心的 25%); 关闭时 0.00567 mAh. 条目编号 P8.1.1 - P8.1.6 供汇报引用.
+
+- [ ] (插件) P8.1.1 降耗做法实测 (D123): 在同一台 XQ-DQ72 上用 `device_resident_run.py battery` 分别测 (a) VAD 门控 (内置 silero VAD 判静音时不把音频送入唤醒词模型, 有声后连同短回溯缓冲一起送入), (b) KWS 推理线程 / 帧步长调整, (c) 两者合并; 每种做法同时跑 P7.4.7 声学用例 (70% 音量) 记命中数. 验收: 三组 (估算 mAh, CPU s, 命中数) 写进本条与 `docs/development/` 的基线文档, 选定做法与理由登记为 D128.
+- [ ] (插件) P8.1.2 省电模式开关 (D123): 设置 "常驻唤醒" 组加 "省电模式" (默认开; 说明写明原理与可能漏掉轻声唤醒), `ResidentPreferences` 保存, 纯 JVM 规则 (`ResidentRules`) 与唤醒会话管线接入选定做法; 关闭时与 1.2.0 行为相同; 十语言文案, ASCII 标点.
+- [ ] (测试) P8.1.3 E2: 门控 / 线程规则的 JVM 单测 (静音不送, 有声回溯, 开关切换即时生效), 现有 JVM 测试不回归; 权限或组件有变化时同步 `ManifestContractTest`.
+- [ ] (测试) P8.1.4 E3 真机: XQ-DQ72 / G8441 / OnePlus 用 `device_resident_run.py phone` (70% 音量) 在省电模式开 / 关各跑一次, 开着时的命中数不低于 P7.4.7 的记录; XQ-AT72 的跳过项同 P7.4.7.
+- [ ] (测试) P8.1.5 耗电验收 (D123): XQ-DQ72 熄屏 30 分钟 (同 P7.4.8 方法), 省电模式开: 估算耗电与 CPU 时间均不超过基线一半 (<= 8.95 mAh, <= 227 s); 达不到时停下用选择题问维护者 (收下实测降幅 / 继续调 / 撤回), 不自行放宽. 结果写进 README 的耗电说明.
+- [ ] (插件) P8.1.6 README 十语言 (常见问题 "耗电多少" 更新数字, 省电模式说明) 与 changelog 1.3.0 条目 (日期先写占位), `generate_markdown.py --check`; 推送且 CI 通过 (不打 tag, 不建 Release, 不登记索引).
+
+### P8.2 更多语言模型 (1.3.0 第 2 项, D124, D127, Q71, Q76)
+
+门槛 (D124): 单模型安装 <= 350 MiB, 权重与训练数据许可可查 (非商用照 D11 标注); 优先 西 / 阿 (识别, 阿语 TTS) 与 日 / 韩 (日语流式识别, 日 / 韩 TTS); 流式优先, 没有流式收离线; 1.2.0 不收的四项按新门槛重审, 只有许可问题的仍不收. 目录策略 D127 (pending v3 累积, P8.5 前一次签名). 条目编号 P8.2.1 - P8.2.6.
+
+- [ ] (资产) P8.2.1 候选审核: 列出 sherpa-onnx 1.13.8 能加载的候选 (上游 Release 与镜像), 每条记类型, 语言, 安装体积, 采样率, 许可表达式与 commercialUse, 大于 150 MiB 的在 XQ-DQ72 与 G8441 实测峰值内存与首句延迟; 用 AskUserQuestion 分轮请维护者定稿 (推荐项在前, 带体积与许可). 验收: 定稿清单与否决原因登记为 D129 与附录 D (Q77 起).
+- [ ] (资产) P8.2.2 Shared-Assets `speech-models`: 新条目的 sources, 镜像归档 (离线复现, 第二次运行字节一致), audits 记录, `pending/v3` 的目录文件 (D127); 只本地提交, 推送与签名由维护者; 插件侧 `generate_model_fixtures.py` 的夹具如受影响一并重生成.
+- [ ] (插件) P8.2.3 插件侧: 新模型结构如需在 `SherpaEngines` 接入并补 JVM 测试; 语言到默认模型的选择表 (`TtsVoiceTable`, 识别默认模型, 系统语音输入的 `EXTRA_LANGUAGE` 映射) 加入新语言; 设备测试用未签名开发快照 (D127), 内置签名快照留到 P8.5.2.
+- [ ] (测试) P8.2.4 E3: 每个新模型在至少一台真机安装并完成一次识别 (入库素材, 记 CER / WER) 或合成 (记时长与采样率), 大模型在 G8441 (4 GB) 记峰值内存; API 35 AVD 过一遍安装, 使用与删除.
+- [ ] (插件) P8.2.5 README 十语言 (模型目录表, 语言覆盖) 与 changelog 1.3.0 条目; 文档站 speech 页如有模型表引用同步 (只本地提交); 推送且 CI 通过.
+- [ ] (资产) P8.2.6 维护者待办登记: Shared-Assets 的推送, 签名与 Release `speech-models-v3` 的清单写进附录 D 与看板 (不代推).
+
+### P8.3 宿主契约 v2 与说话人识别 (1.3.0 第 3 项, D121, D122, D125, Q69, Q73, Q75)
+
+条目编号 P8.3.1 - P8.3.8. 宿主侧改动只本地提交, 与其他会话排队构建; 开工前先用选择题请维护者定方法名, 形参与模型 (D128 起, 若 P8.1 / P8.2 已用则顺延).
+
+- [ ] (宿主) P8.3.1 契约 v2 设计 (D121, D122): `ISpeechPlugin` 追加方法 (说话人: 注册 / 验证 / 辨认 / 列出 / 删除; 并为 P8.4 预留分离 / 语种 / 标签三个离线调用, 均以 `ParcelFileDescriptor` 音频 + `Bundle` 选项, 长任务经 `ISpeechProgressCallback`), 新 KINDS (`speaker`, `segment`, `langid`, `tagger`), 新 FEATURES, `speechContractVersion` 2, 错误码与 `SpeechLimits`; 方法只在 AIDL 末尾追加 (`SpeechAidlOrderTest`), 宿主对契约 v1 插件不调用新方法. 验收: 宿主 `plugin-api/speech-api` 单测与 `SpeechContractTest` 更新, 协议文档 `docs/dev/speech-plugin-protocol-v1.md` 加 v2 小节, 宿主 `.changelog` zh-Hans 一句; 宿主只本地提交; `libs/speech-api.aar` 从该提交重新打包并更新 `locks/host-api-aars.lock`.
+- [ ] (宿主) P8.3.2 脚本 API `speech.speaker.enroll / verify / identify / list / remove` (Promise; 结果只含名字, 分数, 是否通过与阈值, 不含向量), 旧宿主 / 契约 v1 插件时以既有的能力不可用错误码拒绝; 宿主样例 1 个 (`sample/3-Macaw Speech/`); 宿主只本地提交.
+- [ ] (插件) P8.3.3 说话人引擎 (D125): `SpeakerEmbeddingExtractor` + `SpeakerEmbeddingManager` 接入 `core/runtime` 与 `EngineCache`; 声纹库存 `filesDir/speakers/` (带格式版本号, 损坏回退, 删除插件数据即清空); 注册取多段录音平均; 验证阈值默认值按选定模型实测; 新模型类别 `speaker` 进 `pending/v3` (D127), 设备测试用开发快照.
+- [ ] (插件) P8.3.4 "只听主人" (D125): 设置 "常驻唤醒" 组加开关 (默认关, 需至少一个已注册说话人), 开着时唤醒命中后先验证命中片段, 未通过则忽略且不打开弹层; 助理弹层同样受控; 说话人管理页 (注册, 试验证, 删除) 入口在首页或设置; 十语言文案.
+- [ ] (插件) P8.3.5 插件工具: `speech_speaker_verify` / `speech_speaker_identify` (plugin-tool-api, 与 P7.6 四个工具同一注册表), 结果不含向量; MCP Server 侧如需改动只本地提交.
+- [ ] (测试) P8.3.6 E2 / E3: 声纹库读写与损坏回退, 阈值与平均的 JVM 单测; 设备测试用入库的两人录音 (androidTest assets, 维护者同意的素材) 做注册 / 验证 / 辨认与 "只听主人" 的放行 / 拒绝, 于 API 24 / 35 AVD 与真机 XQ-DQ72 / G8441 / OnePlus; `device_host_scripts.py` 新增 `speaker` 子命令跑宿主脚本往返.
+- [ ] (文档) P8.3.7 d.ts (`speech.speaker`), 文档站 speech 页与 changelog 十语言, Ace / Offline Docs 按惯例 (只本地提交); README 十语言 (功能, 隐私段: 声纹只存本机不导出, 删除方式) 与 changelog 1.3.0 条目; 插件推送且 CI 通过.
+- [ ] (同步) P8.3.8 宿主本地提交清单与最低宿主核对 (D122: 仍 5456; 列出哪些功能需要含契约 v2 的 6.8.0 正式版), 写进本条与看板维护者待办.
+
+### P8.4 说话人分离, 语种识别与音频事件标签 (1.3.0 第 4 项, D126, Q74)
+
+依赖 P8.3 的契约 v2 与说话人嵌入模型. 三项都只收文件 / PCM, 离线一次调用, 复用 P7.5 解码与 P7.8 的前台服务, 进度与取消; 不做流式, 不接入 `language: 'auto'`. 条目编号 P8.4.1 - P8.4.7.
+
+- [ ] (宿主) P8.4.1 契约 v2 的三个方法落地 (名称以 P8.3.1 定稿为准), 脚本 API `speech.diarize(file, options)` (返回 [{start, end, speaker}], 可选说话人数与阈值), `speech.detectLanguage(file)` (返回语言码与候选分数), `speech.tag(file, {topK})` (返回 [{label, score}], AudioSet 标签只提供英文); 宿主只本地提交, 样例各 1 个; d.ts 与文档站同步.
+- [ ] (插件) P8.4.2 模型与目录 (D126): pyannote segmentation 3.0 (`segment`, 约 6 MiB) + 复用 `speaker` 嵌入; 语种 whisper tiny 或 base (`langid`, 约 40-80 MiB, 实测后选); 音频标签 zipformer 或 CED-tiny (`tagger`, 约 20-30 MiB, 527 类); 许可审核同 D11; 进 `pending/v3` (D127).
+- [ ] (插件) P8.4.3 引擎接入: `OfflineSpeakerDiarization`, `SpokenLanguageIdentification`, `AudioTagging` 进 `core/runtime` 与 `EngineCache`; 长音频 (上限同 P7.8: 200 MB / 30 分钟) 的进度与取消; 结果大小受 Q41 的 Parcel 上限约束 (超限时分页或写文件).
+- [ ] (插件) P8.4.4 界面与工具: 识别文件页加 "分离说话人", "识别语种", "音频标签" 三个动作 (复用 P7.8 的选择器与结果卡片), 十语言文案; 插件工具 `speech_diarize` / `speech_detect_language` / `speech_tag`.
+- [ ] (测试) P8.4.5 E2 / E3: 结果结构与时间进位的 JVM 单测; 设备测试用入库素材 (两人对话, 多语短句, 环境声) 于 API 24 / 35 AVD 与真机 XQ-DQ72 / OnePlus, 10 分钟素材在 OnePlus 记耗时; `device_host_scripts.py` 新增子命令.
+- [ ] (文档) P8.4.6 d.ts, 文档站, Ace / Offline Docs, README 与 changelog 1.3.0 十语言 (仓库范围同 P8.3.7); 插件推送且 CI 通过.
+- [ ] (同步) P8.4.7 宿主 / MCP / 文档仓库的本地提交清单写进本条与看板.
+
+### P8.5 1.3.0 发布
+
+四项 (P8.1 - P8.4) 完成后发布. 流程与门槛同 P7.9 (R1 - R5, prepush, 远端 CI 全绿, release 候选包真机冒烟 D119, 签名快照替换 D108 / D117); 发布门: Shared-Assets `pending/v3` 由维护者签名并发布 Release `speech-models-v3` (D127), 宿主契约 v2 的本地提交已就位 (只核对不代推), 最低宿主按 D122. 打 tag 前在会话内向维护者确认一次. 条目编号 P8.5.1 - P8.5.7, 内容照 P7.9.1 - P7.9.7, 由发布子会话展开证据.
+
+- [ ] (发布门) P8.5.1 发布门核对 (D117 / D122 / D127).
+- [ ] (插件) P8.5.2 签名快照替换: 内置 `catalog-v3.json` 与签名 (D108), 与 Shared-Assets 远端逐字节相同; 真机刷新验签, 经镜像下载一个 v3 模型.
+- [ ] (插件) P8.5.3 版本与文案: `VERSION_NAME` 1.3.0, changelog / README 十语言定稿 (四项功能, 新权限与需要 6.8.0 正式版的功能, 日期为发布当日).
+- [ ] (测试) P8.5.4 发布前复核 (D119): JVM 全量, `lintRelease`, 5 个 APK 与 16 KB 对齐, release 包真机与 API 35 16 KB 模拟器冒烟.
+- [ ] (发布) P8.5.5 R4: 定稿提交, 维护者确认后推送, tag `v1.3.0`, GitHub Release (5 个 APK, SHA256SUMS, 对应源码归档), E5 正式包冒烟.
+- [ ] (索引) P8.5.6 R5: 官方索引登记 (`release-manifests/.../<versionCode>.json`, 生成与 `--check`, 推送 main).
+- [ ] (同步) P8.5.7 宿主, MCP Server, d.ts, Ace, Offline Docs, Shared-Assets 的提交状态 (只记录, 不代推).
 
 ---
 
@@ -1031,7 +1107,16 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q65 | 识别期间是否持唤醒锁 (P7.8.2, 第 5 项子会话 2026-10-23 登记; 由 Q55 (c) 派生: 前台服务不阻止熄屏后 CPU 休眠) | (a) 加 `WAKE_LOCK`, 识别期间持部分唤醒锁, 上限 60 分钟, 熄屏也继续 (推荐, 已先行); (b) 不加, 熄屏后系统可能挂起 CPU, 识别暂停到亮屏 | 已定: (a) 识别期间持部分唤醒锁, 2026-10-23 维护者选 保持现状 |
 | Q66 | 1.2.0 发布门未满足时怎么办 (P7.9.1, 发布子会话 2026-10-23 登记: Shared-Assets `710484e` 未推送, `catalog-v2` 未签名, `speech-models-v2` 未发布) | (a) 等维护者推送, 签名与发布 `speech-models-v2`, 本会话先做不依赖它的准备, 签名版出现后换快照再定稿 (推荐); (b) 不等, 内置未签名快照发布 (违反 D108 发布门, 刷新目录 404, 新模型只走上游, 签名后再发 1.2.1) | 已定: (a), 2026-10-23 维护者选, 见 D117 |
 | Q67 | 1.2.0 依赖的宿主提交都未公开 (公开最新 6.7.0), 最低宿主怎么定 (P7.9.1) | (a) 保持 5456, changelog / README 写明哪些功能需要 AutoJs6 6.8.0 正式版, 不写构建号 (推荐); (b) 等宿主 6.8.0 公开再发, 最低宿主提到 6.8.0 正式构建号 | 已定: (a), 2026-10-23 维护者选, 见 D118 |
-| Q68 | 文档站 `api/speech.md` 与 d.ts 的 `punctuation` 说明 ("是否保留模型输出的标点" / "Keep the punctuation the model emits") 在 1.2.0 后不完整: 流式模型的结果由已装的标点模型补标点 (D107) (P7.9.7, 发布子会话 2026-10-23 登记) | (a) 本会话一并改: 文档站两处 + changelog 十语言, d.ts 两处 + 补丁版本 changelog 十语言, 只本地提交; Ace / Offline Docs 随维护者的生成与同步 (推荐); (b) 另开任务; (c) 不改 (D107 原定只改插件 README 与工具说明) | 待定, 按 (a) 先行 (已实施 2026-10-23: 文档站 `63e04f9` (`api/speech.md` 两处, `api/changelog.md` 与 changelog 十语言 v6.8.0 一条), d.ts `2ba4623` (`aj6-int-speech.d.ts` 的 `RecognizeOptions.punctuation`, `ListenOptions` 随之继承; 4.81.1 changelog 十语言), 均只本地提交). 实施时发现 d.ts 的 `autojs6-bun/index.d.ts` 由 `tools/sync-runtime-declarations.mjs` 从 Bun 运行时插件 `host-client.d.mts:1957` 生成, Node 运行时插件 `docs/nodejs/types/autojs6-node/speech.d.ts:114` 也有同一句, 两者属于运行时插件仓库, 未改 (随它们下次发版改, 改后在 d.ts 跑 `sync:runtimes`). 改选 (b) / (c) 的返工: 回退两个仓库各一笔本地提交 |
+| Q68 | 文档站 `api/speech.md` 与 d.ts 的 `punctuation` 说明 ("是否保留模型输出的标点" / "Keep the punctuation the model emits") 在 1.2.0 后不完整: 流式模型的结果由已装的标点模型补标点 (D107) (P7.9.7, 发布子会话 2026-10-23 登记) | (a) 本会话一并改: 文档站两处 + changelog 十语言, d.ts 两处 + 补丁版本 changelog 十语言, 只本地提交; Ace / Offline Docs 随维护者的生成与同步 (推荐); (b) 另开任务; (c) 不改 (D107 原定只改插件 README 与工具说明) | 已定 (a) (维护者 2026-10-23 20:23 经调度会话选择题选定, 推荐项, 保持现状; 已实施 2026-10-23: 文档站 `63e04f9` (`api/speech.md` 两处, `api/changelog.md` 与 changelog 十语言 v6.8.0 一条), d.ts `2ba4623` (`aj6-int-speech.d.ts` 的 `RecognizeOptions.punctuation`, `ListenOptions` 随之继承; 4.81.1 changelog 十语言), 均只本地提交). 实施时发现 d.ts 的 `autojs6-bun/index.d.ts` 由 `tools/sync-runtime-declarations.mjs` 从 Bun 运行时插件 `host-client.d.mts:1957` 生成, Node 运行时插件 `docs/nodejs/types/autojs6-node/speech.d.ts:114` 也有同一句, 两者属于运行时插件仓库, 未改 (随它们下次发版改, 改后在 d.ts 跑 `sync:runtimes`). 改选 (b) / (c) 的返工: 回退两个仓库各一笔本地提交 |
+
+| Q69 | 1.3.0 新能力 (说话人识别; 分离 / 语种 / 事件) 怎么暴露给脚本 (2026-10-24 立项, 调度会话登记) | (a) 宿主契约 v2: AIDL 加约 4 个方法, 新 KINDS 与 FEATURES, 契约版本 +1, 脚本 API `speech.speaker.*` / `speech.diarize` / `speech.detectLanguage` / `speech.tag`, d.ts 与文档站; 宿主只本地提交随 6.8.0 (推荐); (b) 只经插件工具 (plugin-tool-api) 与插件界面, 宿主零改动; (c) 工具先行, 契约 v2 推 1.4.0 | 已定 (a) (维护者 2026-10-24 经调度会话选择题选定, 推荐项), 见 D121 |
+| Q70 | 1.3.0 四项的顺序与并行 (2026-10-24 立项) | (a) 第 1 批并行 降耗 与 更多语言模型 (不同仓库为主), 第 2 批说话人, 第 3 批分离 / 语种 / 事件 (推荐); (b) 完全依次 (同 1.2.0, 每项一个子会话, 零冲突); (c) 说话人与契约 v2 先行 | 已定 (b) (维护者 2026-10-24 经调度会话选择题选定, 非推荐项), 见 D120 |
+| Q71 | "更多语言模型" 的收录门槛 (2026-10-24 立项; 1.2.0 不收的四项各有硬原因, D102 / D103) | (a) 单模型 <= 150 MiB 且许可明确, 候选由子会话审核后报维护者 (推荐); (b) 放宽到 <= 350 MiB (可收多语大模型, 条目标注体积与最低内存); (c) 只重审 1.2.0 不收的四项 | 已定 (b) (维护者 2026-10-24 经调度会话选择题选定, 非推荐项), 见 D124 |
+| Q72 | 常驻唤醒降耗的验收目标与形态 (2026-10-24 立项; 基线 XQ-DQ72 熄屏 30 分钟 17.9 mAh, CPU 453.9 s) | (a) 耗电与 CPU 减半且声学用例命中不降, 作为默认行为不加开关 (推荐); (b) 同样目标, 做成 "省电模式" 开关 (默认开), 约 +0.5 天; (c) 任何降幅都收; (d) 只出评估报告 | 已定 (b) (维护者 2026-10-24 经调度会话选择题选定, 非推荐项), 见 D123 |
+| Q73 | 说话人识别的范围与隐私边界 (2026-10-24 立项) | (a) 注册 / 验证 / 辨认 三能力 + 插件内 "只听主人" 开关, 声纹只存私有目录不导出, 脚本只拿名字与分数 (推荐); (b) 同 (a) 但允许导出 / 导入声纹 (跨设备), 约 +0.5 天; (c) 只做脚本 API, 不做 "只听主人" | 已定 (a) (维护者 2026-10-24 经调度会话选择题选定, 推荐项), 见 D125 |
+| Q74 | 说话人分离 / 语种识别 / 音频事件标签的形态 (2026-10-24 立项) | (a) 三项都做, 只收文件 / PCM 输入, 离线一次调用, 新类别进目录 schema 3 (推荐); (b) 只做语种 + 事件, 分离留 1.4.0; (c) 三项都做且语种接入 `language: 'auto'` 自动选模型, 约 +1.5 天 | 已定 (a) (维护者 2026-10-24 经调度会话选择题选定, 推荐项), 见 D126 |
+| Q75 | 契约 v2 落在未公开的宿主 6.8.0 里, 1.3.0 的最低宿主 (2026-10-24 立项) | (a) 保持 5456, 新能力按 `speechContractVersion` / FEATURES 协商, 旧宿主上没有新脚本 API 但插件界面与工具照用 (推荐); (b) 升到含契约 v2 的宿主构建号 | 已定 (a) (维护者 2026-10-24 经调度会话选择题选定, 推荐项), 见 D122 |
+| Q76 | "更多语言模型" 在 <= 350 MiB 门槛下优先覆盖的语言 (2026-10-24 立项, 多选) | (a) 西 / 阿 (1.2.0 遗留目标; 识别与阿语 TTS) (推荐); (b) 多语一体识别模型 (如 PengChengStarling 八语 323 MiB, whisper small); (c) 日 / 韩 补齐 (日语流式识别, 日 / 韩 TTS); (d) 德 / 葡 / 意 / 荷 等欧洲语 | 已定 (a) + (c) (维护者 2026-10-24 经调度会话选择题选定), 见 D124; 候选清单由 P8.2.1 审核后再用选择题定稿 |
 
 ---
 
