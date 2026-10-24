@@ -78,6 +78,25 @@ batterystats estimate for an app here, so only the plugin's CPU time counts; 10 
   Three plays a level are few; the live hit counts above (10 plays a level, the gate in the running wake session)
   decide the threshold.
 
+### Sony XQ-DQ72 (Android 13), 2026-10-24: acceptance (P8.1.5)
+
+The phone on another machine, reached through its adb server over Tailscale (`ANDROID_ADB_SERVER_ADDRESS` /
+`ANDROID_ADB_SERVER_PORT` set for the run only); `battery QV770340J7 30 on --power-saving on`, the production setting
+(`both`), 30 minutes with the screen off.
+
+| Run | Estimate | Plugin CPU | ASR thread | Microphone thread | Gate |
+| --- | --- | --- | --- | --- | --- |
+| 1.2.0 baseline (P7.4.8, 2026-10-21) | 17.9 mAh | 453.9 s | | | none |
+| power saving on | 17.1 mAh | 234.9 s | 218.6 s | 16.3 s | 199 openings, about all of the audio decoded |
+
+- The batterystats estimate of the plugin's UID (17.4 mAh when read a few minutes later) is audio 11.4 mAh (31 minutes of
+  recording), the AudioIn wake lock that audioserver holds while it records 2.54 mAh and CPU 3.43 mAh (power profile
+  capacity 4266 mAh). The first two follow the recording time alone, so no gate brings the estimate near half while the
+  microphone records all the time.
+- That room kept the gate open (a rise every 9 s on average); the CPU time fell by half through the 200 ms reads. The
+  G8441 in a quiet room saved 90 %.
+- D123 asked for half of both (8.95 mAh, 227 s); the maintainer accepted the measured reduction (Q77, D129).
+
 ### Hits with the power saving mode on and off (P8.1.4), 2026-10-24
 
 `py .python/device_resident_run.py phone <serial> --power-saving on|off --hit-rate 10`, music volume at 70 %, one phone
@@ -90,6 +109,8 @@ count; P7.4.7 recorded `plays=1 ... again=1`, `client hits=1` and `background hi
 | G8441 (Android 9) | off | all pass (same rerun) | 10/10 | 8/10 |
 | OnePlus OPD2413 (ColorOS, Android 15) | on | all pass but the reboot reminder once (`resumed=false`); 3 reruns pass | 10/10 | 10/10 |
 | OnePlus OPD2413 (ColorOS, Android 15) | off | all pass | 10/10 | 10/10 |
+| XQ-DQ72 (Android 13, 2026-10-24) | on | all pass (3 skipped as in P7.4.7 plus the opt-in recordings case) | 9/10 | 10/10 |
+| XQ-DQ72 (Android 13, 2026-10-24) | off | all pass (same skips) | 10/10 | 9/10 |
 
 - The first G8441 run of the switch and conflict cases found no Compose hierarchy: the battery run before them had
   turned the screen off and the phone locks with a PIN. The battery run now ends with `wm dismiss-keyguard`, which helps
