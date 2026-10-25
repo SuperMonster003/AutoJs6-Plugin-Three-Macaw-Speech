@@ -97,6 +97,27 @@ The phone on another machine, reached through its adb server over Tailscale (`AN
   G8441 in a quiet room saved 90 %.
 - D123 asked for half of both (8.95 mAh, 227 s); the maintainer accepted the measured reduction (Q77, D129).
 
+### Sony XQ-DQ72 (Android 13), 2026-10-25: the variants (P8.1.1)
+
+The same phone and room as the acceptance run, `battery QV770340J7 30 on --power <variant>` one after another from
+08:27, then `phone QV770340J7 --power <variant> --hit-rate 10` for `gate` and `step` (the hits of `off` and `both` are
+the P8.1.4 runs with power saving off and on).
+
+| Variant | Estimate | Plugin CPU | ASR thread | Microphone thread | Decoded | Hits, full / quarter |
+| --- | --- | --- | --- | --- | --- | --- |
+| `off` (1.2.0) | 18.6 mAh | 453.3 s | 415.6 s | 38.4 s | all | 10/10 / 9/10 |
+| `gate` (a): 9 dB rise, 20 ms frames | 17.7 mAh | 345.4 s | 304.6 s | 41.4 s | 1431 s of 1800, 129 openings | 10/10 / 9/10 |
+| `step` (b): 200 ms frames | 17.5 mAh | 287.2 s | 268.0 s | 18.8 s | all | 10/10 / 10/10 |
+| `both` (c), the power saving mode | 17.1 mAh | 234.9 s | 218.6 s | 16.3 s | about all, 199 openings | 9/10 / 10/10 |
+
+- `off` repeats the P7.4.8 baseline (453.3 s against 453.9 s). The room was not quiet: the gate decoded most of the audio
+  in both runs, so `gate` saved 24 % and `both` 48 % of the CPU time, against 77 % and 90 % in the G8441's quiet room.
+- The 200 ms reads save more here than on the G8441 (37 % against 11 %); every variant leaves the estimate between 17.1
+  and 18.6 mAh, because the recording itself is charged the same.
+- The hit runs of `gate` and `step` came after the battery runs, which leave the phone locked; it has a credential, so the
+  switch and conflict cases found no Compose hierarchy and the reboot reminder of the `step` run did not resume
+  (`resumed=false`). The yielding, power, time limit and two-level cases passed in both.
+
 ### Hits with the power saving mode on and off (P8.1.4), 2026-10-24
 
 `py .python/device_resident_run.py phone <serial> --power-saving on|off --hit-rate 10`, music volume at 70 %, one phone
