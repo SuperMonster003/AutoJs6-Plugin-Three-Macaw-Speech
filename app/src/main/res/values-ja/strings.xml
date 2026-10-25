@@ -328,6 +328,7 @@
     <string name="speech_model_license_commercial">このモデルのライセンスは商用利用を認めています. 使用前にモデルカードとライセンスをお読みください.</string>
     <string name="speech_model_license_non_commercial">このモデルは非商用目的でのみ使用できます: ライセンスまたは学習データが商用利用を禁止しています. ダウンロードすると, この制限に同意したものとみなされます.</string>
     <string name="speech_model_license_unknown">このモデルの公開者はライセンスを示していないため, 商用利用が認められるかは不明です. 使用前にご自身でライセンスを確認してください.</string>
+    <string name="speech_model_license_unknown_data">このモデルの重みは商用利用を認めるライセンスで公開されていますが, 公開者が学習データを示していないため, 商用利用が認められるかは不明です. 使用前にご自身で確認してください.</string>
     <string name="tile_voice_label">音声コマンド</string>
     <string name="tryout_dictation_settings">エンドポイント: %1$s · VAD: %2$s (設定で変更できます)</string>
     <string name="tryout_engine_failed">音声エンジンでエラーが発生しました</string>

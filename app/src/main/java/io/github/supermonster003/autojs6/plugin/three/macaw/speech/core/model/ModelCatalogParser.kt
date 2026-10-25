@@ -331,11 +331,12 @@ class ModelCatalogParser(private val expectedRepository: String? = CatalogRules.
         val minimum = runtime["minSherpaOnnx"] as? String
         if (minimum == null || !CatalogRules.SEMVER.matches(minimum)) fail("runtime.minSherpaOnnx must be a plain semantic version")
         val config = fields(runtime["config"], spec.required, spec.optional, name = "runtime.config")
+        val values = spec.values ?: CatalogRules.VALUE_ROLES
         val result = LinkedHashMap<String, Any>()
         config.forEach { (role, item) ->
             when (role) {
-                in CatalogRules.VALUE_ROLES -> {
-                    if (item !in CatalogRules.VALUE_ROLES.getValue(role)) fail("runtime.config.$role has an unsupported value")
+                in values -> {
+                    if (item !in values.getValue(role)) fail("runtime.config.$role has an unsupported value")
                     result[role] = item as String
                 }
                 in CatalogRules.LIST_ROLES -> {

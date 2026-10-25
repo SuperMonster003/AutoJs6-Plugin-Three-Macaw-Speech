@@ -226,7 +226,7 @@ class TryoutActivity : StandaloneActivity() {
         val model = tryout.asrModels.firstOrNull { it.id == tryout.asrModel }
         SettingsRow(stringResource(R.string.tryout_model), summary = model?.name, icon = R.drawable.ic_model_24, enabled = idle,
             onClick = { choosing = "model" }, modifier = Modifier.testTag("macaw.tryout.asrModel"))
-        if (tryout.isOffline(tryout.asrModel)) {
+        if (tryout.takesLanguage(tryout.asrModel)) {
             SettingsRow(stringResource(R.string.tryout_language), summary = languageLabel(tryout.language), icon = R.drawable.ic_language_24, enabled = idle,
                 onClick = { choosing = "language" }, modifier = Modifier.testTag("macaw.tryout.language"))
         }
@@ -463,7 +463,7 @@ class TryoutActivity : StandaloneActivity() {
 
     private fun startFile(uri: Uri) {
         val model = tryout.fileModel ?: return
-        val options = FileRunOptions(model, tryout.fileLanguage.takeIf { tryout.isOffline(model) }, tryout.filePunctuation, tryout.vad)
+        val options = FileRunOptions(model, tryout.fileLanguage.takeIf { tryout.takesLanguage(model) }, tryout.filePunctuation, tryout.vad)
         if (transcription.start(FileSource.of(this, uri), options)) askNotificationsOnce()
     }
 

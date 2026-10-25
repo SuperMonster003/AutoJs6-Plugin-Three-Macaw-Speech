@@ -328,6 +328,7 @@
     <string name="speech_model_license_commercial">이 모델의 라이선스는 상업적 이용을 허용합니다. 사용하기 전에 모델 카드와 라이선스를 읽어 주세요.</string>
     <string name="speech_model_license_non_commercial">이 모델은 비상업적 용도로만 사용할 수 있습니다: 라이선스 또는 학습 데이터가 상업적 이용을 금지합니다. 다운로드하면 이 제한에 동의한 것으로 간주됩니다.</string>
     <string name="speech_model_license_unknown">이 모델의 게시자가 라이선스를 밝히지 않아 상업적 이용이 허용되는지 알 수 없습니다. 사용하기 전에 라이선스를 직접 확인하세요.</string>
+    <string name="speech_model_license_unknown_data">이 모델의 가중치는 상업적 이용을 허용하는 라이선스로 공개되었지만 게시자가 학습 데이터를 밝히지 않아 상업적 이용이 허용되는지 알 수 없습니다. 사용하기 전에 직접 확인하세요.</string>
     <string name="tile_voice_label">음성 명령</string>
     <string name="tryout_dictation_settings">엔드포인트: %1$s · VAD: %2$s (설정에서 변경 가능)</string>
     <string name="tryout_engine_failed">음성 엔진에 오류가 발생했습니다</string>

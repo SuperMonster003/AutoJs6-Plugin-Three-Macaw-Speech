@@ -102,7 +102,7 @@ class ThreeMacawSpeechTtsEngineService : TextToSpeechService() {
         }
         if (request.pitch != 100 && pitchNoticed.compareAndSet(false, true)) Log.i(TAG, "Pitch ${request.pitch} is ignored: sherpa-onnx models have no pitch control")
         try {
-            runtime.acquireTts(model).use { lease ->
+            runtime.acquireTts(model, voice.speakerId).use { lease ->
                 val engine = lease.engine
                 if (callback.start(engine.sampleRate, AudioFormat.ENCODING_PCM_16BIT, 1) != TextToSpeech.SUCCESS) return
                 val bytes = ByteArray(maxOf(2, callback.maxBufferSize) and 1.inv())
@@ -148,7 +148,7 @@ class ThreeMacawSpeechTtsEngineService : TextToSpeechService() {
     }
 
     private fun preload(voice: TtsVoice) {
-        runtime.ttsModels().firstOrNull { it.modelId == voice.modelId }?.let(runtime::preloadTts)
+        runtime.ttsModels().firstOrNull { it.modelId == voice.modelId }?.let { runtime.preloadTts(it, voice.speakerId) }
     }
 
     private fun table(): TtsVoiceTable = runtime.voiceTable()

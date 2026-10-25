@@ -11,6 +11,7 @@ import com.k2fsa.sherpa.onnx.OfflinePunctuationModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
+import com.k2fsa.sherpa.onnx.OfflineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.OnlineModelConfig
 import com.k2fsa.sherpa.onnx.OnlinePunctuation
 import com.k2fsa.sherpa.onnx.OnlinePunctuationConfig
@@ -23,6 +24,7 @@ import com.k2fsa.sherpa.onnx.Vad
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.kws.KeywordTokenizer
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.KeywordStream
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.PunctuationRules
@@ -48,7 +50,7 @@ class OnlineEngine(val recognizer: OnlineRecognizer, val modelId: String, val ho
     fun stream(hotwords: List<String>): StreamingStream = OnlineEngineStream(this, hotwords)
 }
 
-/** A loaded `OfflineRecognizer` (SenseVoice). zh-CN: 已加载的 `OfflineRecognizer` (SenseVoice). */
+/** A loaded `OfflineRecognizer` (SenseVoice, NeMo transducer). zh-CN: 已加载的 `OfflineRecognizer` (SenseVoice, NeMo transducer). */
 class OfflineEngine(val recognizer: OfflineRecognizer, val modelId: String) : Closeable, SegmentRecognizer {
     override fun close() = recognizer.release()
 
@@ -177,6 +179,9 @@ object SherpaEngines {
     /** `keywordsThreshold` default of `KeywordSpotterConfig` (the reported score when a keyword sets none). zh-CN: `KeywordSpotterConfig` 的阈值默认值. */
     const val DEFAULT_KEYWORD_THRESHOLD = 0.25f
 
+    const val SENSE_VOICE = "sense-voice"
+    const val OFFLINE_TRANSDUCER = "offline-transducer"
+
     fun online(model: InstalledModel, hotwords: Boolean): OnlineEngine {
         val roles = RuntimeRoles.of(model)
         val bpeVocab = roles.optionalFile(model, "bpeVocab")
@@ -204,16 +209,33 @@ object SherpaEngines {
         return OnlineEngine(recognizer, model.modelId, canHotword)
     }
 
+    /**
+     * An offline recognizer: SenseVoice with [language] (empty for automatic detection), or a NeMo transducer
+     * (`offline-transducer`, roadmap D131), which takes no language; an imported one without a `modelType` role is read
+     * as `nemo_transducer`, the only value the catalog allows.
+     * zh-CN: 离线识别器: 带 [language] 的 SenseVoice (空为自动识别), 或不接受语言的 NeMo transducer (`offline-transducer`, 路线图 D131); 没有
+     * `modelType` 角色的导入模型按 `nemo_transducer` 读取, 这是目录允许的唯一取值.
+     */
     fun offline(model: InstalledModel, language: String?): OfflineEngine {
         val roles = RuntimeRoles.of(model)
-        val config = OfflineRecognizerConfig(
-            featConfig = FeatureConfig(sampleRate = AudioInput.SAMPLE_RATE, featureDim = 80),
-            modelConfig = OfflineModelConfig(
+        val modelConfig = when (model.modelType) {
+            OFFLINE_TRANSDUCER -> OfflineModelConfig(
+                transducer = OfflineTransducerModelConfig(
+                    encoder = roles.file(model, "encoder"),
+                    decoder = roles.file(model, "decoder"),
+                    joiner = roles.file(model, "joiner"),
+                ),
+                tokens = roles.file(model, "tokens"),
+                numThreads = ASR_THREADS,
+                modelType = roles.value("modelType").ifEmpty { CatalogRules.NEMO_TRANSDUCER },
+            )
+            else -> OfflineModelConfig(
                 senseVoice = OfflineSenseVoiceModelConfig(model = roles.file(model, "model"), language = language.orEmpty(), useInverseTextNormalization = true),
                 tokens = roles.file(model, "tokens"),
                 numThreads = ASR_THREADS,
-            ),
-        )
+            )
+        }
+        val config = OfflineRecognizerConfig(featConfig = FeatureConfig(sampleRate = AudioInput.SAMPLE_RATE, featureDim = 80), modelConfig = modelConfig)
         val recognizer = load(model) { OfflineRecognizer(null, config) }
         requireNative(recognizer, model.modelId)
         return OfflineEngine(recognizer, model.modelId)

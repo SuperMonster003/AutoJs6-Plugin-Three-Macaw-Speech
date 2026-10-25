@@ -328,6 +328,7 @@
     <string name="speech_model_license_commercial">此模型的许可允许商业用途. 使用前请阅读模型卡与许可证.</string>
     <string name="speech_model_license_non_commercial">此模型仅限非商业用途: 其许可或训练数据禁止商业使用. 下载即表示你接受此限制.</string>
     <string name="speech_model_license_unknown">此模型的发布者未声明许可, 是否允许商业用途未知. 请在使用前自行确认许可.</string>
+    <string name="speech_model_license_unknown_data">此模型的权重以允许商用的许可发布, 但发布者未说明训练数据, 是否允许商业用途未知. 请在使用前自行确认.</string>
     <string name="tile_voice_label">语音指令</string>
     <string name="tryout_dictation_settings">端点: %1$s · VAD: %2$s (可在设置中更改)</string>
     <string name="tryout_engine_failed">语音引擎出错</string>

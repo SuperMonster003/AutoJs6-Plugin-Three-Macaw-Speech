@@ -160,6 +160,35 @@ class ModelCatalogParserTest {
     }
 
     @Test
+    fun `offline transducers take only the nemo model type and need schema 2`() {
+        // The fixture's SenseVoice version turned into a NeMo transducer (roadmap D131): the roles may share its files.
+        // zh-CN: 把夹具中的 SenseVoice 版本改成 NeMo transducer (路线图 D131): 各角色可以共用其文件.
+        fun nemo(bytes: ByteArray, modelType: String = "offline-transducer", value: String = CatalogRules.NEMO_TRANSDUCER): ByteArray {
+            val root = StrictJson.parseObject(bytes)
+            @Suppress("UNCHECKED_CAST")
+            val version = ((root["models"] as List<Map<String, Any?>>).first { it["modelId"] == "asr.test.noncommercial" }["versions"] as List<Map<String, Any?>>).single()
+            @Suppress("UNCHECKED_CAST")
+            val runtime = (version["runtime"] as Map<String, Any?>).toMutableMap()
+            runtime["config"] = mapOf("decoder" to "model.int8.onnx", "encoder" to "model.int8.onnx", "joiner" to "model.int8.onnx", "modelType" to value, "tokens" to "tokens.txt")
+            return StrictJson.write(root + ("models" to (root["models"] as List<*>).map { model ->
+                @Suppress("UNCHECKED_CAST")
+                model as Map<String, Any?>
+                if (model["modelId"] != "asr.test.noncommercial") model else model + ("versions" to listOf(version + mapOf("modelType" to modelType, "runtime" to runtime)))
+            }))
+        }
+        val version = parser.parse(nemo(Fixtures.catalogBytes)).model("asr.test.noncommercial")!!.latestVersion
+        assertEquals("offline-transducer", version.modelType)
+        assertEquals("nemo_transducer", version.runtimeConfig["modelType"])
+        assertEquals("model.int8.onnx", version.runtimeConfig["joiner"])
+        // Each type keeps its own modelType values.
+        // zh-CN: 每种类型只接受自己的 modelType 取值.
+        assertThrows(CatalogException::class.java) { parser.parse(nemo(Fixtures.catalogBytes, value = "zipformer2")) }
+        assertThrows(CatalogException::class.java) { parser.parse(nemo(Fixtures.catalogBytes, modelType = "online-transducer")) }
+        val error = assertThrows(CatalogException::class.java) { parser.parse(nemo(Fixtures.catalogV1Bytes)) }
+        assertTrue(error.message, error.message!!.contains("requires catalog schemaVersion 2"))
+    }
+
+    @Test
     fun `kinds and model types of later plugins are skipped`() {
         val root = StrictJson.parseObject(Fixtures.catalogBytes).toMutableMap()
         @Suppress("UNCHECKED_CAST")

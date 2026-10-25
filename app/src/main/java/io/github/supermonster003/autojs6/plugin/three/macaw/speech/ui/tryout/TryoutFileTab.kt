@@ -69,7 +69,7 @@ internal fun FileTab(
     val model = controller.asrModels.firstOrNull { it.id == controller.fileModel }
     SettingsRow(stringResource(R.string.tryout_model), summary = model?.name, icon = R.drawable.ic_model_24, enabled = idle,
         onClick = { choosing = "model" }, modifier = Modifier.testTag("macaw.tryout.file.model"))
-    if (controller.isOffline(controller.fileModel)) {
+    if (controller.takesLanguage(controller.fileModel)) {
         SettingsRow(stringResource(R.string.tryout_language), summary = languageLabel(controller.fileLanguage), icon = R.drawable.ic_language_24, enabled = idle,
             onClick = { choosing = "language" }, modifier = Modifier.testTag("macaw.tryout.file.language"))
     }

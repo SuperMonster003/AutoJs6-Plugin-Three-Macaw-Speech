@@ -111,10 +111,12 @@ class TtsVoicesTest {
         assertEquals(3, TtsSpeakerHints.defaultSpeaker("tts.kokoro.multi-lang.v1_1", 103))
         assertEquals(0, TtsSpeakerHints.defaultSpeaker("tts.vits.melo.zh-en", 1))
         assertEquals(0, TtsSpeakerHints.defaultSpeaker("tts.kokoro.multi-lang.v1_1", 2))
-        assertEquals(emptyList<String>(), TtsSpeakerHints.speakerLanguages("tts.vits.melo.zh-en", 1))
+        assertEquals(emptyList<List<String>>(), TtsSpeakerHints.speakerLanguages("tts.vits.melo.zh-en", 1))
         val languages = TtsSpeakerHints.speakerLanguages("tts.kokoro.multi-lang.v1_1", 103)
-        assertEquals(listOf("en", "en", "en", "zh"), languages.take(4))
+        assertEquals(listOf("en", "en", "en", "zh"), languages.take(4).map { it.first() })
         assertEquals(103, languages.size)
+        assertEquals(emptySet<Int>(), TtsSpeakerHints.unavailable("tts.kokoro.multi-lang.v1_1", 103))
+        assertEquals("", TtsSpeakerHints.engineLanguage("tts.kokoro.multi-lang.v1_1", 50))
         val kokoro = TtsModelVoices("tts.kokoro.multi-lang.v1_1", listOf("zh", "en"), 103, 24000, isDefault = true, speakerLanguages = languages, defaultSpeaker = 3)
         val table = TtsVoiceTable(listOf(kokoro), catalog)
         assertEquals(206, table.voices.size)
@@ -127,6 +129,43 @@ class TtsVoicesTest {
         assertEquals("an English speaker reads English", "tts.kokoro.multi-lang.v1_1/0", table.defaultVoice("eng", "USA")!!.name)
         assertEquals(TtsSpeakers.Choice(3, null), TtsSpeakers(103, defaultId = 3).resolve("k", null))
         assertEquals(TtsSpeakers.Choice(0, null), TtsSpeakers(103, defaultId = 3).resolve("k", "0"))
+    }
+
+    @Test
+    fun `kokoro v1_0 speakers speak their own language with the sherpa-onnx lang it needs`() {
+        val id = TtsSpeakerHints.KOKORO_V1_0
+        val languages = TtsSpeakerHints.speakerLanguages(id, 54)
+        assertEquals(54, languages.size)
+        assertEquals(listOf("en"), languages[3])
+        assertEquals(listOf("en-GB"), languages[20])
+        assertEquals(listOf("es"), languages[28])
+        assertEquals(listOf("es"), languages[53])
+        assertEquals(listOf("pt-BR"), languages[42])
+        assertEquals(listOf("zh", "en"), languages[45])
+        assertEquals(setOf(37, 38, 39, 40, 41), TtsSpeakerHints.unavailable(id, 54))
+        assertEquals(mapOf(0 to "", 20 to "", 28 to "es", 30 to "fr", 31 to "hi", 35 to "it", 42 to "pt-br", 45 to "", 53 to "es"),
+                     listOf(0, 20, 28, 30, 31, 35, 42, 45, 53).associateWith { TtsSpeakerHints.engineLanguage(id, it) })
+        assertEquals("af_heart", TtsSpeakerHints.names(id)[3])
+        assertEquals("em_santa", TtsSpeakerHints.names(id)[53])
+        assertEquals(3, TtsSpeakerHints.defaultSpeaker(id, 54))
+
+        val kokoro = TtsModelVoices(id, listOf("en", "zh", "es", "fr", "hi", "it", "pt"), 54, 24000, isDefault = true, speakerLanguages = languages, defaultSpeaker = 3)
+        val table = TtsVoiceTable(listOf(kokoro), catalog)
+        // 20 American and 8 British English speakers, 3 Spanish, 1 French, 4 Hindi, 2 Italian, 3 Portuguese and 8 Chinese
+        // speakers who also read English; no Japanese voice.
+        assertEquals(28 + 3 + 1 + 4 + 2 + 3 + 8 * 2, table.voices.size)
+        assertTrue(table.voices.none { it.speakerId in 37..41 })
+        assertEquals("$id/3", table.defaultVoice(null, null)!!.name)
+        assertEquals("$id/28", table.defaultVoice("spa", "ESP")!!.name)
+        assertEquals("$id/20", table.defaultVoice("eng", "GBR")!!.name)
+        assertEquals("hi-IN", table.voice("$id/31")!!.languageTag)
+        assertEquals("$id/45/en-US", table.voice("$id/45/en-US")!!.name)
+        assertTrue(table.voices.none { it.iso3Language == "jpn" })
+
+        val speakers = TtsSpeakers(54, TtsSpeakerHints.names(id), 3, TtsSpeakerHints.unavailable(id, 54))
+        assertEquals(TtsSpeakers.Choice(28, null), speakers.resolve(id, "ef_dora"))
+        assertEquals(SpeechErrorCodes.INVALID_OPTIONS, assertThrows(SpeechException::class.java) { speakers.resolve(id, "37") }.code)
+        assertEquals(SpeechErrorCodes.INVALID_OPTIONS, assertThrows(SpeechException::class.java) { speakers.resolve(id, "jm_kumo") }.code)
     }
 
     @Test

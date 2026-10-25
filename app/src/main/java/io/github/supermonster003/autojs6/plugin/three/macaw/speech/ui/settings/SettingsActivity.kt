@@ -47,6 +47,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationResult
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsSpeakerHints
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoice
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
@@ -734,12 +735,15 @@ class SettingsActivity : StandaloneActivity() {
                     close()
                 } else {
                     val chosen = preferences.speaker(model.id)
+                    // Speakers whose language sherpa-onnx cannot read are not offered (Kokoro v1.0 Japanese, roadmap D131).
+                    val hidden = TtsSpeakerHints.unavailable(model.id, speech.speakers.size)
+                    val offered = speech.speakers.withIndex().filter { it.index !in hidden }
                     ChoiceDialog(
                         title = stringResource(R.string.settings_speaker),
-                        options = listOf(Choice(stringResource(R.string.settings_speaker_model_default))) + speech.speakers.mapIndexed { index, name -> Choice(speakerLabel(index, name)) },
-                        selectedIndex = chosen?.let { it + 1 } ?: 0,
+                        options = listOf(Choice(stringResource(R.string.settings_speaker_model_default))) + offered.map { (index, name) -> Choice(speakerLabel(index, name)) },
+                        selectedIndex = offered.indexOfFirst { it.index == chosen } + 1,
                         onDismissRequest = close,
-                        onConfirm = { index -> close(); preferences.setSpeaker(model.id, if (index == 0) null else index - 1); saved(); loadSpeech() },
+                        onConfirm = { index -> close(); preferences.setSpeaker(model.id, if (index == 0) null else offered[index - 1].index); saved(); loadSpeech() },
                         tag = "macaw.dialog.speaker",
                     )
                 }

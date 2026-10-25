@@ -107,10 +107,11 @@ internal object VoiceInputPolicy {
 
     /**
      * D45: the recognition model for [language]: the default model when it covers the language, otherwise the
-     * installed model that covers it (recommended first, then by ID), otherwise the default model; null leaves the
-     * choice to the runtime's default. [models] are the installed recognition models.
-     * zh-CN: D45: 为 [language] 选识别模型: 默认模型覆盖该语言就用它, 否则取覆盖它的已装模型 (推荐优先, 再按 ID), 否则仍用默认模型; null 表示交给运行时的
-     * 默认模型. [models] 为已安装的识别模型.
+     * installed model that covers it (recommended first, then models of at most [WIDE_LANGUAGES] languages before wider
+     * ones (appendix D Q86), then by ID), otherwise the default model; null leaves the choice to the runtime's default.
+     * [models] are the installed recognition models.
+     * zh-CN: D45: 为 [language] 选识别模型: 默认模型覆盖该语言就用它, 否则取覆盖它的已装模型 (推荐优先, 再让覆盖语言不超过 [WIDE_LANGUAGES] 种的排在更宽的
+     * 前面 (附录 D Q86), 再按 ID), 否则仍用默认模型; null 表示交给运行时的默认模型. [models] 为已安装的识别模型.
      */
     fun chooseModel(models: List<ModelEntry>, language: String?): String? {
         val recognition = models.filter { it.kind == SpeechContract.KIND_ASR && it.installed }
@@ -118,9 +119,17 @@ internal object VoiceInputPolicy {
         val primary = primaryLanguage(language) ?: return default?.id
         if (default != null && covers(default, primary)) return default.id
         return recognition.filter { covers(it, primary) }
-            .sortedWith(compareByDescending<ModelEntry> { it.recommended }.thenBy { it.id })
+            .sortedWith(compareByDescending<ModelEntry> { it.recommended }.thenBy { it.languages.size > WIDE_LANGUAGES }.thenBy { it.id })
             .firstOrNull()?.id ?: default?.id
     }
+
+    /**
+     * Appendix D Q86 (roadmap P8.2.3): a model of more languages than SenseVoice (five), such as the eight-language
+     * PengChengStarling, answers only languages that no narrower installed model covers; by ID alone it would come
+     * before the English, Russian and Chinese-English streaming models. zh-CN: 附录 D Q86: 覆盖语言多于 SenseVoice (五种) 的模型 (例如八语
+     * PengChengStarling) 只接没有更窄的已装模型覆盖的语言; 只按 ID 排时它会排在英语, 俄语与中英流式模型前面.
+     */
+    private const val WIDE_LANGUAGES = 5
 
     private fun covers(model: ModelEntry, primary: String): Boolean = model.languages.any { primaryLanguage(it) == primary }
 

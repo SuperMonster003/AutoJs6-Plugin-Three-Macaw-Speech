@@ -328,6 +328,7 @@
     <string name="speech_model_license_commercial">يسمح ترخيص هذا النموذج بالاستخدام التجاري. اقرأ بطاقة النموذج والترخيص قبل استخدامه.</string>
     <string name="speech_model_license_non_commercial">لا يجوز استخدام هذا النموذج إلا لأغراض غير تجارية: ترخيصه أو بيانات تدريبه تحظر الاستخدام التجاري. تنزيله يعني أنك تقبل هذا القيد.</string>
     <string name="speech_model_license_unknown">لم يعلن ناشر هذا النموذج عن أي ترخيص, لذا لا يُعرف ما إذا كان الاستخدام التجاري مسموحا. تحقق من الترخيص بنفسك قبل استخدامه.</string>
+    <string name="speech_model_license_unknown_data">نُشرت أوزان هذا النموذج بترخيص يسمح بالاستخدام التجاري, لكن الناشر لم يذكر البيانات التي دُرّب عليها, لذا لا يُعرف ما إذا كان الاستخدام التجاري مسموحا. تحقق من ذلك بنفسك قبل استخدامه.</string>
     <string name="tile_voice_label">أمر صوتي</string>
     <string name="tryout_dictation_settings">نهاية الجملة: %1$s · VAD: %2$s (يمكن تغييرهما في الإعدادات)</string>
     <string name="tryout_engine_failed">فشل محرك الكلام</string>

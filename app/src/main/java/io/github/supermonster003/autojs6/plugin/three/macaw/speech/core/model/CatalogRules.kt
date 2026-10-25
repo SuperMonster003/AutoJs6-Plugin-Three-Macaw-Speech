@@ -67,15 +67,21 @@ object CatalogRules {
     const val KIND_PUNCT = "punct"
 
     /**
-     * sherpa-onnx 1.13.8 configuration family of every model type, with its required and optional file roles.
-     * zh-CN: 每种模型类型对应的 sherpa-onnx 1.13.8 配置族, 以及必需与可选的文件角色.
+     * sherpa-onnx 1.13.8 configuration family of every model type, with its required and optional file roles; [values]
+     * replaces [VALUE_ROLES] for a type whose value roles take other values (`distribution.MODEL_TYPES` "values").
+     * zh-CN: 每种模型类型对应的 sherpa-onnx 1.13.8 配置族, 以及必需与可选的文件角色; 值角色取其他值的类型以 [values] 代替 [VALUE_ROLES]
+     * (`distribution.MODEL_TYPES` 的 "values").
      */
-    class ModelTypeSpec(val kind: String, val required: List<String>, val optional: List<String>)
+    class ModelTypeSpec(val kind: String, val required: List<String>, val optional: List<String>, val values: Map<String, Set<String>>? = null)
 
     private val TTS_OPTIONAL = listOf("lexicon", "ruleFsts", "ruleFars", "dataDir")
     val MODEL_TYPES: Map<String, ModelTypeSpec> = linkedMapOf(
         "online-transducer" to ModelTypeSpec("asr", listOf("encoder", "decoder", "joiner", "tokens", "modelType"), listOf("bpeVocab")),
         "sense-voice" to ModelTypeSpec("asr", listOf("model", "tokens"), emptyList()),
+        // sherpa-onnx OfflineTransducerModelConfig; NeMo transducers since catalog v3 (roadmap D131).
+        "offline-transducer" to ModelTypeSpec(
+            "asr", listOf("encoder", "decoder", "joiner", "tokens", "modelType"), emptyList(), mapOf("modelType" to setOf(NEMO_TRANSDUCER)),
+        ),
         "kws-transducer" to ModelTypeSpec("kws", listOf("encoder", "decoder", "joiner", "tokens", "modelType"), listOf("lexicon")),
         "vits" to ModelTypeSpec("tts", listOf("model", "tokens"), TTS_OPTIONAL),
         "matcha" to ModelTypeSpec("tts", listOf("acousticModel", "vocoder", "tokens"), TTS_OPTIONAL),
@@ -88,6 +94,9 @@ object CatalogRules {
     val DIRECTORY_ROLES = setOf("dataDir")
     val VALUE_ROLES = mapOf("modelType" to setOf("zipformer", "zipformer2"))
 
+    /** The `modelType` value of `offline-transducer` and the sherpa-onnx model type it selects. zh-CN: `offline-transducer` 的 `modelType` 值. */
+    const val NEMO_TRANSDUCER = "nemo_transducer"
+
     /** An upstream archive member may start with this prefix from schema 2 on (archives packed from "."). zh-CN: 上游成员前缀. */
     const val MEMBER_PREFIX = "./"
 
@@ -96,7 +105,7 @@ object CatalogRules {
      * else exists since schema 1.
      * zh-CN: 可以使用某个类别, 模型类型或成员前缀的最早 schema (`distribution.SCHEMA_INTRODUCED`); 其余自 schema 1 起即有.
      */
-    val SCHEMA_INTRODUCED = mapOf("punct" to 2, "ct-transformer" to 2, "cnn-bilstm" to 2, MEMBER_PREFIX to 2)
+    val SCHEMA_INTRODUCED = mapOf("punct" to 2, "ct-transformer" to 2, "cnn-bilstm" to 2, "offline-transducer" to 2, MEMBER_PREFIX to 2)
 
     /** `distribution.catalog_file`: the catalog file of a schema, e.g. `catalog-v1.json`. zh-CN: 某个 schema 的目录文件名. */
     fun catalogFile(schema: Int): String = "catalog-v$schema.json"

@@ -140,6 +140,9 @@ class TtsSynthesisTest {
         assertEquals(File(kokoro.directory, "voices.bin").path, kokoroConfig.voices)
         assertEquals(File(kokoro.directory, "espeak-ng-data").path, kokoroConfig.dataDir)
         assertEquals(listOf("lexicon-us-en.txt", "lexicon-zh.txt").joinToString(",") { File(kokoro.directory, it).path }, kokoroConfig.lexicon)
+        assertEquals("", kokoroConfig.lang)
+        // Kokoro v1.0 speakers outside Chinese and English need sherpa-onnx's lang (roadmap D131).
+        assertEquals("pt-br", TtsEngineCore.config(kokoro, language = "pt-br").model.kokoro.lang)
     }
 
     @Test

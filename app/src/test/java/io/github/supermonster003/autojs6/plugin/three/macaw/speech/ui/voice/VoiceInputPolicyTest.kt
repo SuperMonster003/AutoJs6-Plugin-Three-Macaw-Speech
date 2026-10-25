@@ -52,6 +52,22 @@ class VoiceInputPolicyTest {
     }
 
     @Test
+    fun `a model of more than five languages answers only what narrower models leave uncovered`() {
+        val eight = asr("asr.zipformer-streaming.ar-en-id-ja-ru-th-vi-zh", "ar", "en", "id", "ja", "ru", "th", "vi", "zh")
+        val ru = asr("asr.zipformer-streaming.ru", "ru")
+        val english = asr("asr.zipformer-streaming.en", "en")
+        val sense = senseVoice.copy(isDefault = false, recommended = false)
+        val models = listOf(eight, ru, english, sense, asr("asr.nemo-transducer.es", "es", isDefault = true))
+        assertEquals("asr.zipformer-streaming.ru", VoiceInputPolicy.chooseModel(models, "ru-RU"))
+        assertEquals("narrow models keep their order by ID", "asr.sense-voice", VoiceInputPolicy.chooseModel(models, "en-US"))
+        assertEquals("asr.zipformer-streaming.en", VoiceInputPolicy.chooseModel(models - sense, "en-US"))
+        assertEquals("Q84: SenseVoice first for Japanese", "asr.sense-voice", VoiceInputPolicy.chooseModel(models, "ja-JP"))
+        assertEquals("only the wide model covers Arabic", eight.id, VoiceInputPolicy.chooseModel(models, "ar-SA"))
+        assertEquals("recommended still comes first", eight.id, VoiceInputPolicy.chooseModel(models.map { if (it === eight) it.copy(recommended = true) else it }, "ru"))
+        assertEquals("the default covers Spanish", "asr.nemo-transducer.es", VoiceInputPolicy.chooseModel(models, "es-MX"))
+    }
+
+    @Test
     fun `language tags are checked and underscores accepted`() {
         assertEquals("zh-CN", VoiceInputPolicy.language("zh_CN"))
         assertEquals("en-US", VoiceInputPolicy.language(" en-US "))

@@ -157,15 +157,15 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     /**
      * Non-fatal conditions of a recognition request: hotwords on a model without hotword support (roadmap D17), a
-     * language SenseVoice does not know (it falls back to automatic detection).
-     * zh-CN: 识别请求的非致命情况: 不支持热词的模型收到热词 (路线图 D17), SenseVoice 不认识的语言 (回退为自动识别).
+     * language SenseVoice does not know (it falls back to automatic detection). Other models take no language.
+     * zh-CN: 识别请求的非致命情况: 不支持热词的模型收到热词 (路线图 D17), SenseVoice 不认识的语言 (回退为自动识别). 其他模型不接受语言.
      */
     fun warnings(model: InstalledModel, language: String?, hotwords: List<String>): List<SpeechWarning> {
         val out = ArrayList<SpeechWarning>()
         if (hotwords.isNotEmpty() && !supportsHotwords(model)) {
             out += SpeechWarning(SpeechErrorCodes.INVALID_OPTIONS, "${model.modelId} does not support hotwords; ${hotwords.size} hotwords were ignored")
         }
-        if (language != null && isOffline(model) && senseVoiceLanguage(language) == null) {
+        if (language != null && model.modelType == SherpaEngines.SENSE_VOICE && senseVoiceLanguage(language) == null) {
             out += SpeechWarning(SpeechErrorCodes.INVALID_OPTIONS, "${model.modelId} does not know the language '$language'; it detects the language itself")
         }
         return out
@@ -176,9 +176,11 @@ internal class SpeechRuntime private constructor(val context: Context) {
     // Engines ----------------------------------------------------------------------------------------------------------
 
     /** A recognizer lease for [model]; loads on the calling thread. zh-CN: [model] 的识别器租约; 在调用线程上加载. */
-    fun acquireAsr(model: InstalledModel, language: String?, hotwords: Boolean): EngineCache.Lease<out Closeable> = if (isOffline(model)) {
+    fun acquireAsr(model: InstalledModel, language: String?, hotwords: Boolean): EngineCache.Lease<out Closeable> = if (model.modelType == SherpaEngines.SENSE_VOICE) {
         val code = language?.let(::senseVoiceLanguage) ?: ""
         engines.acquire(EngineKey(model.modelId, model.versionCode, "sense-voice:${code.ifEmpty { "auto" }}"), model.installedBytes) { SherpaEngines.offline(model, code) }
+    } else if (isOffline(model)) {
+        engines.acquire(EngineKey(model.modelId, model.versionCode, model.modelType), model.installedBytes) { SherpaEngines.offline(model, null) }
     } else {
         val withHotwords = hotwords && supportsHotwords(model)
         engines.acquire(EngineKey(model.modelId, model.versionCode, if (withHotwords) "hotwords" else "greedy"), model.installedBytes) { SherpaEngines.online(model, withHotwords) }
@@ -248,20 +250,29 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     // Synthesis (roadmap P4) ---------------------------------------------------------------------------------------------
 
-    /** A synthesizer lease for [model]; loads on the calling thread. zh-CN: [model] 的合成器租约; 在调用线程上加载. */
-    fun acquireTts(model: InstalledModel): EngineCache.Lease<TtsEngine> =
-        engines.acquire(EngineKey(model.modelId, model.versionCode, "tts"), TtsEngineCore.weight(model)) { TtsEngineCore.load(model) }
+    /**
+     * A synthesizer lease for [model] that can speak as [speaker] (null: the model's default speaker); loads on the
+     * calling thread. Kokoro v1.0 speakers of a language its lexicons do not cover get an instance of their own with the
+     * sherpa-onnx `lang` of that language (roadmap D131, [TtsSpeakerHints.engineLanguage]).
+     * zh-CN: 能以 [speaker] (null 为模型默认说话人) 朗读的 [model] 合成器租约; 在调用线程上加载. Kokoro v1.0 中词典不覆盖其语言的说话人使用各自的
+     * 实例, 传入该语言的 sherpa-onnx `lang` (路线图 D131, [TtsSpeakerHints.engineLanguage]).
+     */
+    fun acquireTts(model: InstalledModel, speaker: Int? = null): EngineCache.Lease<TtsEngine> {
+        val language = TtsSpeakerHints.engineLanguage(model.modelId, speaker ?: speakers(model).defaultId)
+        val variant = if (language.isEmpty()) "tts" else "tts:$language"
+        return engines.acquire(EngineKey(model.modelId, model.versionCode, variant), TtsEngineCore.weight(model)) { TtsEngineCore.load(model, language) }
+    }
 
     /** Loads [model] on the loader thread and leaves it idle in the cache, so the first sentence starts sooner. zh-CN: 预加载. */
-    fun preloadTts(model: InstalledModel) = load {
-        runCatching { acquireTts(model).close() }.onFailure { Log.w(TAG, "Preloading ${model.modelId} failed: ${it.message}") }
+    fun preloadTts(model: InstalledModel, speaker: Int? = null) = load {
+        runCatching { acquireTts(model, speaker).close() }.onFailure { Log.w(TAG, "Preloading ${model.modelId} failed: ${it.message}") }
     }
 
     /** The speakers of [model] before it is loaded (catalog count, `speakers.txt` names). zh-CN: 加载前的 [model] 说话人. */
     fun speakers(model: InstalledModel): TtsSpeakers {
         val names = speakerNames.getOrPut("${model.modelId}/${model.versionCode}") { TtsEngineCore.speakers(model).names }
         val count = maxOf(1, model.speakers ?: 1)
-        return TtsSpeakers(count, names, TtsSpeakerHints.defaultSpeaker(model.modelId, count))
+        return TtsSpeakers(count, names, TtsSpeakerHints.defaultSpeaker(model.modelId, count), TtsSpeakerHints.unavailable(model.modelId, count))
     }
 
     /** Installed and intact TTS models, the default one first. zh-CN: 已安装且完整的 TTS 模型, 默认模型在前. */
@@ -412,7 +423,11 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
         private const val FILE_MAX_SPEECH_SECONDS = 20f
 
-        val OFFLINE_TYPES = setOf("sense-voice")
+        /** Recognizer types that work on VAD segments, not streams (roadmap D17, D131). zh-CN: 按 VAD 语音段而非流工作的识别器类型. */
+        val OFFLINE_TYPES = setOf(SherpaEngines.SENSE_VOICE, SherpaEngines.OFFLINE_TRANSDUCER)
+
+        /** Recognizer types that take a request's language (SenseVoice). zh-CN: 接受请求语言的识别器类型 (SenseVoice). */
+        val LANGUAGE_TYPES = setOf(SherpaEngines.SENSE_VOICE)
 
         /** The VAD of sessions and file recognition: upstream defaults with 20 s segments. zh-CN: 会话与文件识别使用的 VAD: 上游默认值, 语音段至多 20 秒. */
         val SESSION_VAD = SherpaRuntime.VadSettings(maxSpeechSeconds = 20f)

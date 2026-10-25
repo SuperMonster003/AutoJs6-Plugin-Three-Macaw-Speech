@@ -18,6 +18,8 @@ internal object LicenseNotices {
         "speech_model_license_commercial" to R.string.speech_model_license_commercial,
         "speech_model_license_non_commercial" to R.string.speech_model_license_non_commercial,
         "speech_model_license_unknown" to R.string.speech_model_license_unknown,
+        // Catalog v3 (roadmap D131): weights with a license but training data the publisher does not name.
+        "speech_model_license_unknown_data" to R.string.speech_model_license_unknown_data,
     )
 
     @StringRes

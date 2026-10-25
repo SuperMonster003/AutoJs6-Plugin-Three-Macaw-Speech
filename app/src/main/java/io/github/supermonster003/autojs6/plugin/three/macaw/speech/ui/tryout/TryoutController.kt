@@ -127,7 +127,8 @@ internal class TryoutController(context: Context) {
 
     val busy: Boolean get() = dictationPhase != TryoutPhase.IDLE || wakePhase != TryoutPhase.IDLE || synthesisPhase != TryoutPhase.IDLE || playing
 
-    fun isOffline(modelId: String?): Boolean = asrModels.firstOrNull { it.id == modelId }?.modelType in SpeechRuntime.OFFLINE_TYPES
+    /** Whether the recognizer takes a language (SenseVoice); the others detect it or speak one. zh-CN: 识别器是否接受语言 (SenseVoice). */
+    fun takesLanguage(modelId: String?): Boolean = asrModels.firstOrNull { it.id == modelId }?.modelType in SpeechRuntime.LANGUAGE_TYPES
 
     // Dictation -----------------------------------------------------------------------------------------------------
 
@@ -138,7 +139,7 @@ internal class TryoutController(context: Context) {
         partial = ""
         val options = Bundle().apply {
             asrModel?.let { putString(SpeechOptionKeys.MODEL, it) }
-            language?.takeIf { isOffline(asrModel) }?.let { putString(SpeechOptionKeys.LANGUAGE, it) }
+            language?.takeIf { takesLanguage(asrModel) }?.let { putString(SpeechOptionKeys.LANGUAGE, it) }
             putBoolean(SpeechOptionKeys.VAD, preferences.vad)
             putLong(SpeechOptionKeys.SILENCE_END_MILLIS, preferences.endpointMillis)
             // The tryout keeps listening until stopped: no speech timeout, the longest session the protocol allows.

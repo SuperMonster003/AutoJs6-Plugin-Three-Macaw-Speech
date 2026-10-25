@@ -15,11 +15,16 @@ import java.util.MissingResourceException
  * AISHELL-3 带有该文件). 请求以编号或名字指定说话人; 只有一个说话人的模型忽略其他选择并给出警告 (路线图 P4.1), 模型没有的编号或名字为
  * `INVALID_OPTIONS`. 纯 Kotlin.
  */
-class TtsSpeakers(val count: Int, val names: List<String> = emptyList(), val defaultId: Int = 0) {
+class TtsSpeakers(val count: Int, val names: List<String> = emptyList(), val defaultId: Int = 0, val unavailable: Set<Int> = emptySet()) {
 
     data class Choice(val id: Int, val warning: SpeechWarning?)
 
-    /** [speaker] as a number or a name; [defaultId] when the request names none. zh-CN: 以编号或名字解析 [speaker]; 未指定时为 [defaultId]. */
+    /**
+     * [speaker] as a number or a name; [defaultId] when the request names none. A speaker in [unavailable] (one whose
+     * language sherpa-onnx cannot read, [TtsSpeakerHints]) is `INVALID_OPTIONS`.
+     * zh-CN: 以编号或名字解析 [speaker]; 未指定时为 [defaultId]. [unavailable] 中的说话人 (sherpa-onnx 读不了其语言, [TtsSpeakerHints]) 为
+     * `INVALID_OPTIONS`.
+     */
     fun resolve(modelId: String, speaker: String?): Choice {
         if (speaker == null) return Choice(defaultId.takeIf { it in 0 until count } ?: 0, null)
         val text = speaker.trim()
@@ -30,14 +35,19 @@ class TtsSpeakers(val count: Int, val names: List<String> = emptyList(), val def
         }
         if (number != null) {
             if (number >= count) throw SpeechException(SpeechErrorCodes.INVALID_OPTIONS, "$modelId has speakers 0 to ${count - 1}, got $number")
-            return Choice(number, null)
+            return Choice(available(modelId, number), null)
         }
         val index = names.indexOf(text)
         if (index < 0 || index >= count) {
-            val hint = if (names.isEmpty()) "it names no speakers; use a number from 0 to ${count - 1}" else "use a number from 0 to ${count - 1} or a name of its speakers.txt"
+            val hint = if (names.isEmpty()) "it names no speakers; use a number from 0 to ${count - 1}" else "use a number from 0 to ${count - 1} or a name of its speakers"
             throw SpeechException(SpeechErrorCodes.INVALID_OPTIONS, "$modelId has no speaker '$text': $hint")
         }
-        return Choice(index, null)
+        return Choice(available(modelId, index), null)
+    }
+
+    private fun available(modelId: String, id: Int): Int {
+        if (id in unavailable) throw SpeechException(SpeechErrorCodes.INVALID_OPTIONS, "Speaker $id of $modelId is not offered: sherpa-onnx cannot read its language for this model")
+        return id
     }
 
     companion object {
@@ -49,11 +59,12 @@ class TtsSpeakers(val count: Int, val names: List<String> = emptyList(), val def
 }
 
 /**
- * What the voice table needs to know about one installed TTS model; [speakerLanguages] holds the first language of each
- * speaker when the speakers do not all speak the model's first language first ([TtsSpeakerHints]), [defaultSpeaker] the
- * speaker used when none is named.
- * zh-CN: 语音表所需的单个已安装 TTS 模型信息; 说话人的首要语言并非都是模型首个语言时, [speakerLanguages] 记录每个说话人的首要语言
- * ([TtsSpeakerHints]), [defaultSpeaker] 为未指定说话人时使用的说话人.
+ * What the voice table needs to know about one installed TTS model; [speakerLanguages] holds the languages of each
+ * speaker, its first language first, when the speakers do not all speak every catalog language with the model's first
+ * language first ([TtsSpeakerHints]; an empty list offers no voice for that speaker), [defaultSpeaker] the speaker used
+ * when none is named.
+ * zh-CN: 语音表所需的单个已安装 TTS 模型信息; 说话人并非都以模型首个语言为首说目录全部语言时, [speakerLanguages] 记录每个说话人的语言, 首要语言
+ * 在前 ([TtsSpeakerHints]; 空列表表示该说话人不提供语音), [defaultSpeaker] 为未指定说话人时使用的说话人.
  */
 data class TtsModelVoices(
     val modelId: String,
@@ -62,32 +73,77 @@ data class TtsModelVoices(
     val sampleRate: Int?,
     val isDefault: Boolean,
     val speakerNames: List<String> = emptyList(),
-    val speakerLanguages: List<String> = emptyList(),
+    val speakerLanguages: List<List<String>> = emptyList(),
     val defaultSpeaker: Int = 0,
 )
 
 /**
- * Speaker facts the catalog does not carry (roadmap P4.1): the catalog lists languages per model, while Kokoro
- * multi-lang v1.1 mixes 3 English speakers (0 to 2) with 100 Chinese ones (3 to 102). A device run showed the English
- * speakers reading mixed Chinese and English text with English phonetics (SenseVoice CER 1.0 against 0.13 to 0.28 for
- * Chinese speakers), so their first language is English and the model's default speaker is 3. Models without an entry
- * keep the catalog languages for every speaker and speaker 0 as the default. Pure Kotlin.
- * zh-CN: 目录未提供的说话人信息 (路线图 P4.1): 目录按模型列出语言, 而 Kokoro multi-lang v1.1 混合了 3 个英文说话人 (0 到 2) 与 100 个中文说话人
- * (3 到 102). 设备实测英文说话人以英文发音朗读中英混合文本 (SenseVoice CER 1.0, 中文说话人为 0.13 到 0.28), 因此其首要语言为英文, 模型的默认
- * 说话人为 3. 未列入的模型对每个说话人沿用目录语言, 默认说话人为 0. 纯 Kotlin.
+ * Speaker facts the catalog does not carry (roadmap P4.1, D131): the catalog lists languages per model.
+ * - Kokoro multi-lang v1.1 mixes 3 English speakers (0 to 2) with 100 Chinese ones (3 to 102). A device run showed the
+ *   English speakers reading mixed Chinese and English text with English phonetics (SenseVoice CER 1.0 against 0.13 to
+ *   0.28 for Chinese speakers), so their first language is English and the model's default speaker is 3.
+ * - Kokoro v1.0 int8 has 54 speakers of nine languages (the names of its ONNX metadata). Only Chinese and English text
+ *   goes through the lexicons; the Spanish, French, Hindi, Italian and Brazilian Portuguese speakers need the sherpa-onnx
+ *   `lang` of their language ([engineLanguage], one engine instance per language), and each speaks only that language.
+ *   The five Japanese speakers are not offered: sherpa-onnx 1.13.8 accepts `lang` only for en, es, fr, hi, it and
+ *   pt-br. The default speaker is 3 (af_heart).
+ * Models without an entry keep the catalog languages for every speaker and speaker 0 as the default. Pure Kotlin.
+ * zh-CN: 目录未提供的说话人信息 (路线图 P4.1, D131): 目录按模型列出语言.
+ * - Kokoro multi-lang v1.1 混合了 3 个英文说话人 (0 到 2) 与 100 个中文说话人 (3 到 102). 设备实测英文说话人以英文发音朗读中英混合文本 (SenseVoice
+ *   CER 1.0, 中文说话人为 0.13 到 0.28), 因此其首要语言为英文, 模型的默认说话人为 3.
+ * - Kokoro v1.0 int8 有九种语言的 54 个说话人 (名字取自其 ONNX 元数据). 只有中文与英文文字经词典; 西班牙语, 法语, 印地语, 意大利语与巴西葡萄牙语
+ *   说话人需要传入其语言的 sherpa-onnx `lang` ([engineLanguage], 每种语言一个引擎实例), 且只说该语言. 5 个日语说话人不提供: sherpa-onnx 1.13.8
+ *   的 `lang` 只接受 en, es, fr, hi, it 与 pt-br. 默认说话人为 3 (af_heart).
+ * 未列入的模型对每个说话人沿用目录语言, 默认说话人为 0. 纯 Kotlin.
  */
 object TtsSpeakerHints {
 
-    private class Hint(val defaultSpeaker: Int, val language: (Int) -> String)
+    const val KOKORO_V1_0 = "tts.kokoro.multi-lang.v1_0.int8"
+
+    /** [languages] of a speaker (empty: not offered), the `lang` it needs (empty: none) and names. zh-CN: 说话人的语言, 所需 `lang` 与名字. */
+    private class Hint(val defaultSpeaker: Int, val languages: (Int) -> List<String>, val engineLanguage: (Int) -> String = { "" }, val names: List<String> = emptyList())
+
+    /** Kokoro v1.0 speakers by name prefix: catalog language (with region) and sherpa-onnx `lang`. zh-CN: Kokoro v1.0 说话人名字前缀. */
+    private val KOKORO_V1_0_PREFIXES = mapOf(
+        'a' to ("en" to ""), 'b' to ("en-GB" to ""), 'e' to ("es" to "es"), 'f' to ("fr" to "fr"), 'h' to ("hi" to "hi"),
+        'i' to ("it" to "it"), 'p' to ("pt-BR" to "pt-br"), 'z' to ("zh" to ""),
+    )
+
+    private val KOKORO_V1_0_NAMES = listOf(
+        "af_alloy", "af_aoede", "af_bella", "af_heart", "af_jessica", "af_kore", "af_nicole", "af_nova", "af_river", "af_sarah", "af_sky",
+        "am_adam", "am_echo", "am_eric", "am_fenrir", "am_liam", "am_michael", "am_onyx", "am_puck", "am_santa",
+        "bf_alice", "bf_emma", "bf_isabella", "bf_lily", "bm_daniel", "bm_fable", "bm_george", "bm_lewis",
+        "ef_dora", "em_alex", "ff_siwis", "hf_alpha", "hf_beta", "hm_omega", "hm_psi", "if_sara", "im_nicola",
+        "jf_alpha", "jf_gongitsune", "jf_nezumi", "jf_tebukuro", "jm_kumo", "pf_dora", "pm_alex", "pm_santa",
+        "zf_xiaobei", "zf_xiaoni", "zf_xiaoxiao", "zf_xiaoyi", "zm_yunjian", "zm_yunxi", "zm_yunxia", "zm_yunyang", "em_santa",
+    )
+
+    private fun kokoroV1(speaker: Int): Pair<String, String>? = KOKORO_V1_0_NAMES.getOrNull(speaker)?.let { KOKORO_V1_0_PREFIXES[it[0]] }
 
     private val HINTS = mapOf(
-        "tts.kokoro.multi-lang.v1_1" to Hint(defaultSpeaker = 3) { speaker -> if (speaker < 3) "en" else "zh" },
+        "tts.kokoro.multi-lang.v1_1" to Hint(defaultSpeaker = 3, languages = { speaker -> if (speaker < 3) listOf("en", "zh") else listOf("zh", "en") }),
+        // Chinese speakers also read the English words of mixed text through the US lexicon.
+        KOKORO_V1_0 to Hint(
+            defaultSpeaker = 3,
+            languages = { speaker -> kokoroV1(speaker)?.first?.let { if (it == "zh") listOf("zh", "en") else listOf(it) }.orEmpty() },
+            engineLanguage = { speaker -> kokoroV1(speaker)?.second.orEmpty() },
+            names = KOKORO_V1_0_NAMES,
+        ),
     )
 
     fun defaultSpeaker(modelId: String, count: Int): Int = HINTS[modelId]?.defaultSpeaker?.takeIf { it < count } ?: 0
 
-    /** The first language of every speaker, or empty when they all speak the model's first language first. zh-CN: 每个说话人的首要语言. */
-    fun speakerLanguages(modelId: String, count: Int): List<String> = HINTS[modelId]?.let { hint -> List(count) { hint.language(it) } }.orEmpty()
+    /** The languages of every speaker, or empty when they all speak the catalog languages. zh-CN: 每个说话人的语言. */
+    fun speakerLanguages(modelId: String, count: Int): List<List<String>> = HINTS[modelId]?.let { hint -> List(count) { hint.languages(it) } }.orEmpty()
+
+    /** Speakers of [modelId] that are not offered (no language). zh-CN: [modelId] 中不提供的说话人. */
+    fun unavailable(modelId: String, count: Int): Set<Int> = HINTS[modelId]?.let { hint -> (0 until count).filter { hint.languages(it).isEmpty() }.toSet() }.orEmpty()
+
+    /** The sherpa-onnx Kokoro `lang` [speaker] needs; empty when the lexicons read its text. zh-CN: [speaker] 所需的 Kokoro `lang`. */
+    fun engineLanguage(modelId: String, speaker: Int): String = HINTS[modelId]?.engineLanguage?.invoke(speaker).orEmpty()
+
+    /** Speaker names the model does not ship in a `speakers.txt`. zh-CN: 模型未以 `speakers.txt` 提供的说话人名字. */
+    fun names(modelId: String): List<String> = HINTS[modelId]?.names.orEmpty()
 }
 
 /**
@@ -141,9 +197,8 @@ class TtsVoiceTable(
     val voices: List<TtsVoice> = models.flatMap { model ->
         val tags = model.languages.map(::languageTag).distinct()
         (0 until maxOf(1, model.speakers)).flatMap { speaker ->
-            val first = model.speakerLanguages.getOrNull(speaker)?.let(::languageTag)?.takeIf { it in tags }
-            val ordered = if (first == null) tags else listOf(first) + (tags - first)
-            ordered.mapIndexed { index, tag -> voice(model, speaker, tag, primary = index == 0) }
+            val own = model.speakerLanguages.getOrNull(speaker)?.map(::languageTag)?.distinct()
+            (own ?: tags).mapIndexed { index, tag -> voice(model, speaker, tag, primary = index == 0) }
         }
     }
 
@@ -256,7 +311,7 @@ class TtsVoiceTable(
         /** The region a catalog language is reported with. zh-CN: 目录语言报告时附带的地区. */
         val DEFAULT_REGIONS = mapOf(
             "zh" to "CN", "en" to "US", "ja" to "JP", "ko" to "KR", "yue" to "HK", "de" to "DE", "fr" to "FR",
-            "es" to "ES", "it" to "IT", "pt" to "BR", "ru" to "RU", "ar" to "SA",
+            "es" to "ES", "it" to "IT", "pt" to "BR", "ru" to "RU", "ar" to "SA", "hi" to "IN",
         )
 
         /** Further regions listed for `CHECK_TTS_DATA`. zh-CN: `CHECK_TTS_DATA` 另外列出的地区. */

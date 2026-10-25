@@ -158,7 +158,11 @@ object TtsEngineCore {
 
     fun threads(): Int = minOf(TTS_THREADS, Runtime.getRuntime().availableProcessors().coerceAtLeast(1))
 
-    fun config(model: InstalledModel, roles: RuntimeRoles = RuntimeRoles.of(model), threads: Int = threads()): OfflineTtsConfig {
+    /**
+     * The configuration of [model]; [language] is the sherpa-onnx Kokoro `lang` ([TtsSpeakerHints.engineLanguage], empty
+     * for none), ignored by the other types. zh-CN: [model] 的配置; [language] 为 sherpa-onnx Kokoro 的 `lang` (空为不传), 其他类型忽略.
+     */
+    fun config(model: InstalledModel, roles: RuntimeRoles = RuntimeRoles.of(model), threads: Int = threads(), language: String = ""): OfflineTtsConfig {
         val lexicon = roles.files(model, "lexicon").joinToString(",")
         val dataDir = roles.optionalDirectory(model, "dataDir").orEmpty()
         val tokens = roles.file(model, "tokens")
@@ -184,6 +188,7 @@ object TtsEngineCore {
                     tokens = tokens,
                     dataDir = dataDir,
                     lexicon = lexicon,
+                    lang = language,
                 ),
                 numThreads = threads,
             )
@@ -197,18 +202,24 @@ object TtsEngineCore {
         )
     }
 
-    /** The speakers of [model] with the names of its `speakers.txt`, before the model is loaded. zh-CN: 加载前得到的 [model] 的说话人. */
+    /**
+     * The speakers of [model] with the names of its `speakers.txt` (or of [TtsSpeakerHints]), before the model is loaded.
+     * zh-CN: 加载前得到的 [model] 的说话人, 名字取自其 `speakers.txt` (或 [TtsSpeakerHints]).
+     */
     fun speakers(model: InstalledModel, count: Int = model.speakers ?: 1): TtsSpeakers {
         val names = model.files.firstOrNull { it.path == TtsSpeakers.NAMES_FILE }?.let { entry ->
             runCatching { TtsSpeakers.parseNames(model.resolve(entry.path).readText(Charsets.UTF_8)) }.getOrDefault(emptyList())
-        }.orEmpty()
+        }.orEmpty().ifEmpty { TtsSpeakerHints.names(model.modelId) }
         val speakers = maxOf(1, count)
-        return TtsSpeakers(speakers, names, TtsSpeakerHints.defaultSpeaker(model.modelId, speakers))
+        return TtsSpeakers(speakers, names, TtsSpeakerHints.defaultSpeaker(model.modelId, speakers), TtsSpeakerHints.unavailable(model.modelId, speakers))
     }
 
-    /** Loads [model] (seconds for the large models); `ENGINE_FAILED` when sherpa-onnx refuses it. zh-CN: 加载 [model]. */
-    fun load(model: InstalledModel): TtsEngine {
-        val config = config(model)
+    /**
+     * Loads [model] (seconds for the large models) with the Kokoro `lang` [language]; `ENGINE_FAILED` when sherpa-onnx
+     * refuses it. zh-CN: 以 Kokoro `lang` [language] 加载 [model].
+     */
+    fun load(model: InstalledModel, language: String = ""): TtsEngine {
+        val config = config(model, language = language)
         val tts = try {
             OfflineTts(null, config)
         } catch (e: RuntimeException) {

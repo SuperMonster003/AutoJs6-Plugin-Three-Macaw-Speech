@@ -72,7 +72,7 @@ class ModelRowsTest {
             val id = ImportFormPolicy.suggestId(name)
             assertEquals("$name -> $id", emptySet<ImportFormPolicy.Problem>(), ImportFormPolicy.problems(id, "x", "zh"))
         }
-        assertEquals(listOf("online-transducer", "sense-voice"), ImportFormPolicy.modelTypes("asr"))
+        assertEquals(listOf("online-transducer", "sense-voice", "offline-transducer"), ImportFormPolicy.modelTypes("asr"))
         assertEquals(listOf("kws-transducer"), ImportFormPolicy.modelTypes("kws"))
         assertEquals(listOf("vits", "matcha", "kokoro"), ImportFormPolicy.modelTypes("tts"))
         assertEquals(emptySet<ImportFormPolicy.Problem>(), ImportFormPolicy.problems("my-model", "My model", "zh, en"))

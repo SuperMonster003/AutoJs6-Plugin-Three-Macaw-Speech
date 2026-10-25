@@ -88,7 +88,9 @@ internal class SpeechSynthesis(private val runtime: SpeechRuntime) {
                 if (operation.cancel.isCancelled) throw cancelled()
                 runCatching { callback?.onProgress(id, 0, total) }
                 val started = SystemClock.elapsedRealtime()
-                runtime.acquireTts(model).use { lease ->
+                // The engine instance depends on the speaker's language (Kokoro v1.0); the engine resolves the speaker again below.
+                val requested = runCatching { runtime.speakers(model).resolve(model.modelId, options.speaker).id }.getOrNull()
+                runtime.acquireTts(model, requested).use { lease ->
                     val engine = lease.engine
                     val loadedAt = SystemClock.elapsedRealtime()
                     val choice = engine.speakers.resolve(model.modelId, options.speaker)

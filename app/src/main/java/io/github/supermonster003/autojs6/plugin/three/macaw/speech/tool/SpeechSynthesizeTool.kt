@@ -34,7 +34,7 @@ internal class SpeechSynthesizeTool(context: Context) {
         val model = runtime.resolve(SpeechContract.KIND_TTS, plan.voice.modelId)
         val file = File.createTempFile("synthesize-", ".${request.format}", File(app.cacheDir, CACHE_DIRECTORY).apply { mkdirs() })
         try {
-            runtime.acquireTts(model).use { lease ->
+            runtime.acquireTts(model, plan.voice.speakerId).use { lease ->
                 val engine = lease.engine
                 val loaded = now()
                 var expired = false

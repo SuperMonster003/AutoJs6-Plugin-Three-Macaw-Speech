@@ -328,6 +328,7 @@
     <string name="speech_model_license_commercial">La licence de ce modèle autorise un usage commercial. Lisez la fiche du modèle et sa licence avant toute utilisation.</string>
     <string name="speech_model_license_non_commercial">Ce modèle est réservé à un usage non commercial: sa licence ou les données utilisées pour son entraînement interdisent tout usage commercial. Le télécharger revient à accepter cette restriction.</string>
     <string name="speech_model_license_unknown">Le diffuseur de ce modèle ne déclare aucune licence: on ignore donc si un usage commercial est permis. Vérifiez vous-même la licence avant toute utilisation.</string>
+    <string name="speech_model_license_unknown_data">Les poids de ce modèle sont publiés sous une licence qui permet un usage commercial, mais le diffuseur ne précise pas sur quelles données il a été entraîné: on ignore donc si un usage commercial est permis. Vérifiez vous-même avant toute utilisation.</string>
     <string name="tile_voice_label">Commande vocale</string>
     <string name="tryout_dictation_settings">Fin de phrase: %1$s · VAD: %2$s (modifiables dans les paramètres)</string>
     <string name="tryout_engine_failed">Le moteur vocal a échoué</string>

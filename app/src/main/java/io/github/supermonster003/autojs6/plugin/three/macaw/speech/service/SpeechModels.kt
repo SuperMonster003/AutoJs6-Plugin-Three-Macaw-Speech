@@ -7,6 +7,7 @@ import android.os.storage.StorageManager
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ArchiveExtractor
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CommercialUse
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Downloader
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Importer
@@ -48,10 +49,22 @@ internal object SpeechModels {
 
     fun importDirectory(context: Context): File = File(context.applicationContext.cacheDir, "imports")
 
+    /**
+     * Debug builds only (roadmap D127): an unsigned catalog at `filesDir/dev-catalog/catalog-v2.json` (pushed with
+     * `run-as`, `.python/device_catalog_v3.py`) replaces the bundled snapshot, so device tests can install the models of
+     * a pending Shared-Assets catalog without changing the bundled one. zh-CN: 仅调试构建: 以 `run-as` 推送到该路径的未签名目录代替内置快照,
+     * 设备测试因此可以安装 Shared-Assets 待签名目录中的模型, 而不改动内置快照.
+     */
+    const val DEV_CATALOG = "dev-catalog/${CatalogRules.CATALOG_FILE}"
+
     private fun create(context: Context): ModelManager {
         val assets = context.assets
-        val catalog = assets.open(ModelCatalogConfiguration.ASSET_CATALOG).use { it.readBytes() }
-        val signature = try {
+        val development = File(context.filesDir, DEV_CATALOG).takeIf { BuildConfig.DEBUG && it.isFile }
+        val catalog = development?.readBytes() ?: assets.open(ModelCatalogConfiguration.ASSET_CATALOG).use { it.readBytes() }
+        val signature = if (development != null) {
+            Log.w(TAG, "Using the unsigned development catalog $DEV_CATALOG")
+            null
+        } else try {
             assets.open(ModelCatalogConfiguration.ASSET_SIGNATURE).use { it.readBytes() }
         } catch (_: FileNotFoundException) {
             // Appendix D Q12, roadmap D108: released builds bundle the signature (BundledCatalogTest); a development snapshot may lack it.
