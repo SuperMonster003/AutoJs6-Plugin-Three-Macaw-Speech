@@ -54,11 +54,11 @@
 
 ******
 
-- 语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与音频文件识别 (WAV, MP3, AAC, Ogg, FLAC 等, 也可以是视频文件中的声音), 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型. 法语, 俄语与韩语也有流式模型, 可以边说边出字.
+- 语音识别: 麦克风流式听写 (实时返回部分结果与整句结果) 与音频文件识别 (WAV, MP3, AAC, Ogg, FLAC 等, 也可以是视频文件中的声音), 提供中文, 英文, 中英混合以及日语, 韩语, 粤语的离线模型. 法语, 俄语与韩语也有流式模型, 可以边说边出字. 1.3.0 新增西班牙语离线模型 (带标点), 以及可自动判断语言的八语流式模型: 阿拉伯语, 印尼语, 泰语, 越南语, 日语, 俄语, 中文与英文.
 - 自动标点: 装上标点模型后, 流式模型听写或识别出的每句话会自动加上逗号, 句号与问号 (中文与英文), 英文还会恢复大写; SenseVoice 自带标点, 不受影响. 标点模型在首页的 "标点" 分组里下载.
 - 语音活动检测: 内置 silero VAD v5, 既可单独切分音频中的语音段, 也用于听写时的自动断句.
 - 唤醒词: 直接填写关键词原文 (例如 `小六小六` 或 `hey macaw`), 无需训练模型, 唤醒后可自动转入听写.
-- 语音合成: 多种中英文神经网络音色, 可合成到 WAV 文件, 也可以作为系统 TTS 引擎供 AutoJs6 的 `tts` 模块和其他应用使用. 另有法语, 西班牙语, 德语与俄语的 Piper 声音 (仅限非商业用途).
+- 语音合成: 多种中英文神经网络音色, 可合成到 WAV 文件, 也可以作为系统 TTS 引擎供 AutoJs6 的 `tts` 模块和其他应用使用. 另有法语, 西班牙语, 德语与俄语的 Piper 声音 (仅限非商业用途). 1.3.0 新增 Kokoro v1.0 多语言声音 (英语, 西班牙语, 法语, 印地语, 意大利语, 巴西葡萄牙语与中文), 以及阿拉伯语与韩语声音 (仅限非商业用途).
 - 系统语音输入: 其他应用 (例如 3-Stove Agent) 的麦克风按钮可以使用离线识别, 在底部弹层中说一句话, 识别出的文字直接交回该应用.
 - 数字助理: 把 3-Macaw Speech 选为默认数字助理应用后, 长按电源键或 Home 键说一句话, 需要时编辑识别出的文字, 再交给 3-Stove Agent, 3-Stone AI 等接收语音指令的应用, 或复制. 它也提供系统语音识别服务: Android 11 及以下选它为助理时一般会一并设为默认识别服务; Android 12 起需在系统的语音输入设置里另行选择 (部分手机没有这项设置), 应用也可以直接指定它.
 - 触发式入口: 不必长按电源键也能打开同一个听写弹层: 快速设置磁贴 (锁屏上也能用), 桌面小部件与应用图标快捷方式, 可拖动的悬浮麦克风 (默认关闭), 长按或双击音量键的按键触发 (只过滤按键的无障碍服务, 默认关闭), 以及蓝牙耳机的语音键. 平时不录音, 只在弹层听写的几秒内使用麦克风.
@@ -121,7 +121,7 @@
 
 ******
 
-识别, 标点, 唤醒词与合成模型的体积在 7 MB 到 410 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.2.0 的目录包含以下模型 (大小为安装后占用的空间):
+识别, 标点, 唤醒词与合成模型的体积在 7 MB 到 410 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.3.0 的目录包含以下模型 (大小为安装后占用的空间):
 
 | 模型 ID | 用途 | 语言 | 大小 | 许可 | 商业用途 |
 | --- | --- | --- | --- | --- | --- |
@@ -132,6 +132,8 @@
 | `asr.zipformer-streaming.fr.2023-04-14.int8` (推荐) | 识别 (流式) | fr | 129.0 MB | Apache-2.0 | 可以 |
 | `asr.zipformer-streaming.ru.2025-08-16.int8` (推荐) | 识别 (流式) | ru | 28.6 MB | Apache-2.0 | 可以 |
 | `asr.zipformer-streaming.ko.2024-06-16.int8` | 识别 (流式) | ko | 140.9 MB | Apache-2.0 | 仅限非商业用途 |
+| `asr.nemo-transducer.es.2026-05-03.int8` (推荐) | 识别 (离线, 带标点) | es | 136.5 MB | CC-BY-4.0 | 可以 |
+| `asr.zipformer-streaming.ar-en-id-ja-ru-th-vi-zh.2025-02-10.int8` | 识别 (流式) | ar, en, id, ja, ru, th, vi, zh | 338.9 MB | Apache-2.0 | 未知 |
 | `punct.ct-transformer.zh-en.2024-04-12.int8` (推荐) | 标点 | zh, en | 75.5 MB | Apache-2.0 | 可以 |
 | `punct.cnn-bilstm.en.2024-08-06.int8` (推荐) | 标点 | en | 7.6 MB | Apache-2.0 | 可以 |
 | `kws.zipformer.zh-en.2025-12-20` (推荐) | 唤醒词 | zh, en | 8.8 MB | Apache-2.0 | 可以 |
@@ -144,8 +146,12 @@
 | `tts.vits.piper.es-es-davefx-medium.int8` | 合成 (说话人: 1, 22.05 kHz) | es | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
 | `tts.vits.piper.de-de-thorsten-medium.int8` | 合成 (说话人: 1, 22.05 kHz) | de | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
 | `tts.vits.piper.ru-ru-denis-medium.int8` | 合成 (说话人: 1, 22.05 kHz) | ru | 36.6 MB | MIT, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
+| `tts.kokoro.multi-lang.v1_0.int8` | 合成 (说话人: 49, 24 kHz) | en, es, fr, hi, it, pt, zh | 168.9 MB | Apache-2.0, GPL-3.0-or-later (espeak-ng-data) | 可以 |
+| `tts.vits.piper.ar-jo-sa-dii-high.int8` | 合成 (说话人: 1, 22.05 kHz) | ar | 36.6 MB | CC-BY-NC-SA-4.0, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
+| `tts.vits.piper.ar-jo-sa-miro-v2-high.int8` | 合成 (说话人: 1, 22.05 kHz) | ar | 36.6 MB | CC-BY-NC-ND-4.0, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
+| `tts.vits.mimic3.ko-ko-kss-low` | 合成 (说话人: 1, 22.05 kHz) | ko | 80.8 MB | CC0-1.0, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
 
-仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与各个 Piper 合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later). 韩语流式模型的训练数据 (KsponSpeech) 只向韩国国民开放申请, 在韩国境外使用需要另签协议, 因此按仅限非商业用途标注, 也不经共享资源仓库镜像, 只从上游地址下载 (下载约 418 MB, 安装后 141 MB). 法语, 西班牙语, 德语与俄语四个 Piper 声音都由英文 lessac 声音微调而来, 与它一样仅限非商业用途.
+仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与各个 Piper 合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later). 韩语流式模型的训练数据 (KsponSpeech) 只向韩国国民开放申请, 在韩国境外使用需要另签协议, 因此按仅限非商业用途标注, 也不经共享资源仓库镜像, 只从上游地址下载 (下载约 418 MB, 安装后 141 MB). 法语, 西班牙语, 德语与俄语四个 Piper 声音都由英文 lessac 声音微调而来, 与它一样仅限非商业用途. 八语流式模型 (PengChengStarling) 的权重为 Apache-2.0, 但发布者没有列出训练数据, 因此商业用途标为未知. 阿拉伯语 dii 与 miro 声音都由 CC BY-NC-ND 4.0 的合成语音训练, dii 本身为 CC BY-NC-SA 4.0, miro 为 CC BY-NC-ND 4.0; miro 不允许改编, 因此只从上游地址下载, 不经共享资源仓库镜像. 韩语 KSS 声音的权重为 CC0, 但训练数据 (KSS) 为 CC BY-NC-SA 4.0, 因此按仅限非商业用途标注.
 
 首页的导入本地模型可以从 tar, tar.bz2 或 zip 归档或文件夹导入模型: 与目录模型一致的文件按该模型登记, 其他文件在填写种类, 模型类型, 名称与语言后作为自定义模型导入. 导入通过系统文件选择器完成, 不需要存储权限.
 
@@ -217,6 +223,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - 常驻唤醒: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 页) 模拟器. 熄屏 30 分钟耗电 (Sony XQ-DQ72, Android 13; Android 按机型功耗表估算, 手机经 USB 连接, 未充电状态为模拟): 开启且省电模式开 (默认) 时 17.1 mAh, 插件 CPU 时间 235 秒; 关掉省电模式时 17.9 mAh, 454 秒 (平均约占一个 CPU 核心的四分之一); 两种情况都一直在录音, 估算中约 14 mAh 算在录音本身上. 那次测试时周围一直有声音, 省电模式减少的主要是 CPU; 在安静的房间里 (Sony G8441, Android 9, 熄屏 10 分钟) 插件 CPU 时间从 265 秒降到 26 秒. 关闭常驻唤醒时 0.006 mAh, 插件没有在运行. 实际耗电因机型与周围的声音而异.
 - 插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9).
 - 标点与 1.2.0 新增模型: 实测 Sony XQ-AT72 (Android 12). 开启标点时, 中文, 英文与中英混合录音都加上了标点, 字词与关闭时相同; 俄语与法语 Piper 声音合成的句子由同语言的流式模型识别回来, 字错率分别为 7.9% 与 0%; 西班牙语与德语声音合成正常, 韩语模型只验证了能加载 (没有韩语测试录音).
+- 1.3.0 新增模型: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13) 与 API 35 模拟器 (安装, 使用与删除). 测试录音里没有西班牙语, 阿拉伯语与韩语, 因此用合成的句子由识别模型读回: Kokoro v1.0 的西班牙语声音由 NeMo 读回, 字错率 0% 到 6.5%; 两个阿拉伯语声音由八语模型读回, 均为 3.0% (模拟器上 miro 为 33%); 韩语声音由 SenseVoice 读回, 0%; 八语模型识别英文录音的字错率为 0% 到 1.1%. 八语模型加载后峰值内存约 600 MiB (G8441) 到 880 MiB (XQ-DQ72); Kokoro v1.0 在 G8441 上合成慢于实时 (约为音频时长的 4 到 6 倍), 在 XQ-DQ72 上接近实时.
 - 试听试说页识别文件: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器. 在 OnePlus OPD2413 上, 一段 10 分 03 秒的 MP3 约 21 秒识别完 (SenseVoice, 开启自动标点); 离开页面后识别照常进行, 通知里显示进度.
 
 ******
@@ -351,6 +358,7 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 - 标点模型: [FunASR](https://github.com/modelscope/FunASR) (阿里巴巴达摩院) 的 CT-Transformer 中英文标点模型, 以及 [Edge-Punct-Casing](https://github.com/frankyoujian/Edge-Punct-Casing) (frankyoujian) 的英文标点与大小写模型 (均为 Apache-2.0).
 - [MeloTTS](https://github.com/myshell-ai/MeloTTS) (MyShell.ai, MIT), [Kokoro v1.1](https://huggingface.co/hexgrad/Kokoro-82M-v1.1-zh) (hexgrad, Apache-2.0, 中文录音由 LongMaoData 授权) 与 [Piper](https://github.com/rhasspy/piper) (Michael Hansen / rhasspy, MIT) 合成模型, [HiFi-GAN](https://github.com/jik876/hifi-gan) 声码器 (MIT). 法语 siwis, 西班牙语 davefx, 德语 thorsten 与俄语 denis 声音来自 [piper-voices](https://huggingface.co/rhasspy/piper-voices) (MIT), 均由英文 lessac 声音微调.
 - 训练数据: [LibriSpeech](https://www.openslr.org/12/) (CC BY 4.0), [AISHELL-3](https://www.openslr.org/93/) (Apache-2.0), [标贝中文标准女声音库](https://www.data-baker.com/open_source.html) (仅限非商业用途), Lessac Technologies 的 Blizzard 2013 数据 (仅限研究) 与 [LJ Speech](https://keithito.com/LJ-Speech-Dataset/) (公有领域). 1.2.0 新增的法语, 韩语与 Piper 模型另用到 [Common Voice](https://commonvoice.mozilla.org/) 12 法语 (CC0), [KsponSpeech](https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=123) (AI Hub, 只向韩国国民开放申请), [SIWIS 法语语音合成库](https://datashare.is.ed.ac.uk/handle/10283/2353) (CC BY 4.0, SIWIS database, University of Edinburgh and partners), [Thorsten-Voice](https://github.com/thorstenMueller/Thorsten-Voice) (CC0) 与 [NabuCasa voice-datasets](https://github.com/NabuCasa/voice-datasets) 的 davefx 和 denis 录音 (CC0).
+- 1.3.0 新增的模型: [NVIDIA NeMo](https://huggingface.co/nvidia/stt_es_fastconformer_hybrid_large_pc) 的西班牙语 FastConformer (CC-BY-4.0; 训练数据为 Common Voice 12 (CC0), Multilingual LibriSpeech (CC BY 4.0), VoxPopuli (CC0) 与 Fisher Spanish (LDC)), 八语流式模型 [PengChengStarling](https://github.com/yangb05/PengChengStarling) (Apache-2.0), [Kokoro v1.0](https://huggingface.co/hexgrad/Kokoro-82M) (hexgrad, Apache-2.0), OpenVoiceOS 的阿拉伯语 [dii](https://huggingface.co/OpenVoiceOS/phoonnx_ar-SA_dii_espeak) 与 [miro](https://huggingface.co/OpenVoiceOS/phoonnx_ar-SA_miro_espeak_V2) 声音 (以 [phoonnx](https://github.com/TigreGotico/phoonnx) 用 TigreGotico 的合成语音数据训练), 以及 Mycroft [Mimic 3](https://github.com/MycroftAI/mimic3-voices) 的韩语 KSS 声音 (CC0; 训练数据为 [KSS 数据集](https://www.kaggle.com/datasets/bryanpark/korean-single-speaker-speech-dataset), CC BY-NC-SA 4.0).
 - [ONNX Runtime](https://github.com/microsoft/onnxruntime) (MIT) 推理引擎, [silero VAD](https://github.com/snakers4/silero-vad) (MIT) 语音活动检测模型, [eSpeak NG](https://github.com/espeak-ng/espeak-ng) (GPL-3.0-or-later) 与 [piper-phonemize](https://github.com/rhasspy/piper-phonemize) (MIT) 音素转换, [pinyin-data](https://github.com/mozillazg/pinyin-data) (mozillazg, MIT) 中文唤醒词读音表.
 
 ******
@@ -374,6 +382,7 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 _2026/10/24_
 
 - `新增` 常驻唤醒新增省电模式 (设置 > 常驻唤醒, 默认开启): 只在听到说话声或其他声音时运行唤醒词模型, 安静时不运行, 插件占用的 CPU 少一半到九成 (周围越安静越少); 录音本身的耗电不变, 所以 Android 估算的耗电只略有减少 (实测见 README). 声音很轻的唤醒词可能听不到, 这时可以关掉省电模式
+- `新增` 可下载更多模型: 西班牙语离线识别 (NeMo, 带标点); 自动判断语言的八语流式识别, 覆盖阿拉伯语, 印尼语, 泰语, 越南语, 日语, 俄语, 中文与英文 (PengChengStarling, 安装后约 339 MB); Kokoro v1.0 多语言声音 (英语, 西班牙语, 法语, 印地语, 意大利语, 巴西葡萄牙语与中文共 49 个说话人, 每个说话人读自己的语言); 两个阿拉伯语声音与一个韩语声音. 阿拉伯语与韩语声音仅限非商业用途, 八语模型的训练数据未公开, 商业用途未知, 下载前都会提示许可. 新声音也按语言出现在系统 TTS 引擎里; 系统语音输入与插件工具只在其他已装模型都不覆盖某种语言时才自动选用八语模型
 
 #### v1.2.0
 

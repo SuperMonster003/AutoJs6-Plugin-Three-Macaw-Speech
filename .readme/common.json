@@ -93,6 +93,24 @@
       "recommended": false
     },
     {
+      "id": "asr.nemo-transducer.es.2026-05-03.int8",
+      "kind": "{{ text_model_kind_asr_offline }}",
+      "languages": "es",
+      "size": "136.5 MB",
+      "license": "CC-BY-4.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
+    },
+    {
+      "id": "asr.zipformer-streaming.ar-en-id-ja-ru-th-vi-zh.2025-02-10.int8",
+      "kind": "{{ text_model_kind_asr_streaming }}",
+      "languages": "ar, en, id, ja, ru, th, vi, zh",
+      "size": "338.9 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_unknown }}",
+      "recommended": false
+    },
+    {
       "id": "punct.ct-transformer.zh-en.2024-04-12.int8",
       "kind": "{{ text_model_kind_punct }}",
       "languages": "zh, en",
@@ -197,6 +215,42 @@
       "languages": "ru",
       "size": "36.6 MB",
       "license": "MIT, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.kokoro.multi-lang.v1_0.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 49, 24 kHz)",
+      "languages": "en, es, fr, hi, it, pt, zh",
+      "size": "168.9 MB",
+      "license": "Apache-2.0, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.ar-jo-sa-dii-high.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "ar",
+      "size": "36.6 MB",
+      "license": "CC-BY-NC-SA-4.0, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.piper.ar-jo-sa-miro-v2-high.int8",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "ar",
+      "size": "36.6 MB",
+      "license": "CC-BY-NC-ND-4.0, GPL-3.0-or-later (espeak-ng-data)",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": false
+    },
+    {
+      "id": "tts.vits.mimic3.ko-ko-kss-low",
+      "kind": "{{ text_model_kind_tts }} ({{ text_model_speakers }}: 1, 22.05 kHz)",
+      "languages": "ko",
+      "size": "80.8 MB",
+      "license": "CC0-1.0, GPL-3.0-or-later (espeak-ng-data)",
       "commercial": "{{ text_model_commercial_no }}",
       "recommended": false
     }
