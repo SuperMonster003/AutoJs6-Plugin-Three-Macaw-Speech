@@ -9,6 +9,10 @@
     py .python/device_host_scripts.py speaker <serial>      speech.speaker enroll / verify / identify / list / remove and the two
                                                             speaker tools with the LibriSpeech readers of locks/speaker-test-audio.lock
                                                             (roadmap P8.3.6; needs a host with contract v2 and the speaker model)
+    py .python/device_host_scripts.py analysis <serial>     speech.diarize (identify, onProgress) / detectLanguage / tag, tagAsync and
+                                                            the three analysis tools with the recordings of locks/analysis-test-audio.lock
+                                                            (roadmap P8.4.5; needs a host with P8.4.1 and the segment, speaker, langid
+                                                            and tagger models)
 
 Scripts start through AutoJs6's RunIntentActivity (no instrumentation, so every process keeps its real state) and write
 a JSON result next to themselves in shared storage, which AutoJs6 reads and writes with all-files access. Audio for the
@@ -34,12 +38,16 @@ REMOTE = "/sdcard/Download/autojs6-macaw-run"
 ROOT = Path(__file__).resolve().parent.parent
 AUDIO = ROOT / "app" / "src" / "androidTest" / "assets" / "test-audio"
 SPEAKER_AUDIO = ROOT / "app" / "src" / "androidTest" / "assets" / "speaker-audio"
+ANALYSIS_AUDIO = ROOT / "app" / "src" / "androidTest" / "assets" / "analysis-audio"
 STREAMING = "asr.zipformer-streaming.zh-en.2023-02-20.int8"
 SENSE_VOICE = "asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8"
 PHASE_SECONDS = 10
 EN_REFERENCE = "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
 TOOLS_SYNTHESIS_TEXT = "The quick brown fox jumps over the lazy dog near the river bank"
-TOOLS_NAMES = "speech_listen,speech_speak,speech_speaker_identify,speech_speaker_verify,speech_synthesize,speech_transcribe"
+TOOLS_NAMES = ("speech_detect_language,speech_diarize,speech_listen,speech_speak,speech_speaker_identify,speech_speaker_verify,"
+               "speech_synthesize,speech_tag,speech_transcribe")
+ANALYSIS_NAME = "host-test-analysis-a"
+ANALYSIS_TAGS = {"Music": 0, "White noise": 10000, "Beep, bleep": 20000}
 SPEAKER_NAMES = ("host-test-reader-a", "host-test-reader-b")
 MAX_CER = 0.15
 MAX_ROUND_TRIP_CER = 0.25
@@ -193,6 +201,53 @@ var settled = false;
 function settle(value) { if (settled) return; settled = true; r.async = { matched: value, ms: Date.now() - asyncStarted }; try { speech.speaker.remove(A); } catch (e) {} done(); }
 speech.speaker.verifyAsync(A, clip("libri-a-trial-2")).then(function (v) { settle(v.matched); }, function (e) { settle(String(e.code || e.message || e)); });
 setTimeout(function () { settle("timeout"); }, 60000);
+""",
+    "analysis": COMMON + """
+function step(key, body) {
+    var t = Date.now();
+    try { r[key] = body(); } catch (e) { r[key] = { error: String(e.code || "") + " " + String(e.message || e).slice(0, 240) }; }
+    r[key].ms = Date.now() - t;
+}
+function clip(name) { return dir + "/" + name + ".wav"; }
+var A = "%(nameA)s";
+r.features = speech.capabilities().features.join(",");
+// A host without P8.4.1 has no speech.diarize; the run reports it instead of failing on every step.
+// zh-CN: 不含 P8.4.1 的宿主没有 speech.diarize; 直接报告, 不让每一步都失败.
+r.hasAnalysis = typeof speech.diarize === "function";
+if (!r.hasAnalysis) { done(); exit(); }
+step("diarize", function () {
+    speech.speaker.enroll(A, [1, 2, 3].map(function (i) { return clip("libri-a-enroll-" + i); }), { replace: true });
+    var reports = 0;
+    var d = speech.diarize(clip("two-speakers"), { identify: true, onProgress: function (done, total) { if (done > 0) reports++; } });
+    try { speech.speaker.remove(A); } catch (e) {}
+    return {
+        speakers: d.speakers, durationMillis: d.durationMillis, modelId: d.modelId, reports: reports,
+        turns: d.segments.map(function (s) { return [s.startMillis, s.endMillis, s.speaker]; }),
+        names: (d.names || []).map(function (n) { return [n.speaker, n.name]; }),
+    };
+});
+step("language", function () {
+    var out = {};
+    ["language-zh", "language-ru", "en"].forEach(function (n) { out[n] = speech.detectLanguage(clip(n)).language; });
+    return out;
+});
+step("tag", function () {
+    var t = speech.tag(clip("sounds"), { topK: 3, timeline: true });
+    return { labels: t.labels.map(function (l) { return [l.label, l.startMillis]; }), windows: (t.timeline || []).length };
+});
+step("tools", function () {
+    var d = plugins.tools.call("speech_diarize", { file: clip("two-speakers"), speakers: 2 });
+    var g = plugins.tools.call("speech_detect_language", { file: clip("language-ru") });
+    var t = plugins.tools.call("speech_tag", { file: clip("sounds"), topK: 1 });
+    var text = JSON.stringify(d.result) + JSON.stringify(g.result) + JSON.stringify(t.result);
+    return { speakers: d.result.speakers, language: g.result.language, top: t.result.labels[0].label, vectorFree: text.indexOf("embedding") < 0 };
+});
+// The Promise settles on this script's event loop. zh-CN: Promise 在本脚本的事件循环上兑现.
+var asyncStarted = Date.now();
+var settled = false;
+function settle(value) { if (settled) return; settled = true; r.async = { top: value, ms: Date.now() - asyncStarted }; done(); }
+speech.tagAsync(clip("sounds"), { topK: 1 }).then(function (v) { settle(v.labels[0].label); }, function (e) { settle(String(e.code || e.message || e)); });
+setTimeout(function () { settle("timeout"); }, 120000);
 """,
     "tools": COMMON + """
 function step(key, body) {
@@ -714,12 +769,80 @@ def run_speaker(serial):
     return all(verdicts)
 
 
+def turn_accuracy(turns):
+    """The share of the true speech of two-speakers.wav given to the right reader, each found speaker mapped to the
+    reader it overlaps most (as AnalysisDeviceTest)."""
+    truth = json.loads((ANALYSIS_AUDIO / "two-speakers.json").read_text(encoding="utf-8"))["turns"]
+
+    def overlap(a, b, c, d):
+        return max(0, min(b, d) - max(a, c))
+
+    mapping = {}
+    for speaker in {t[2] for t in turns}:
+        mine = [t for t in turns if t[2] == speaker]
+        mapping[speaker] = max(("a", "b"), key=lambda reader: sum(overlap(m[0], m[1], x["startMillis"], x["endMillis"]) for m in mine for x in truth if x["speaker"] == reader))
+    right = sum(overlap(m[0], m[1], x["startMillis"], x["endMillis"]) for m in turns for x in truth if mapping[m[2]] == x["speaker"])
+    return mapping, right / sum(x["endMillis"] - x["startMillis"] for x in truth)
+
+
+def run_analysis(serial):
+    """speech.diarize / detectLanguage / tag and the analysis tools through AutoJs6 (roadmap P8.4.1, P8.4.4, P8.4.5)."""
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    adb(serial, "shell", "mkdir", "-p", REMOTE)
+    for wav in sorted(ANALYSIS_AUDIO.glob("*.wav")) + sorted(SPEAKER_AUDIO.glob("libri-a-enroll-*.wav")) + [AUDIO / "en.wav"]:
+        adb(serial, "push", str(wav), f"{REMOTE}/{wav.name}")
+    if not start(serial, "analysis", {"nameA": ANALYSIS_NAME}):
+        print(f"{label(serial)}: analysis: BLOCKED the script did not start (unlock the device; AutoJs6 needs all-files access)")
+        return False
+    r = result(serial, "analysis", 900)
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    if r is None:
+        print(f"{label(serial)}: analysis: FAIL no result")
+        return False
+    if not r.get("hasAnalysis"):
+        print(f"{label(serial)}: analysis: BLOCKED this AutoJs6 build has no speech.diarize (needs a host with P8.4.1; features {r.get('features')})")
+        return False
+    print(f"{label(serial)}: analysis (features {r.get('features')})")
+    verdicts = []
+
+    def item(name, ok, detail):
+        verdicts.append(ok)
+        print(f"    {name}: {'PASS' if ok else 'FAIL'} {detail}")
+
+    for key in ("diarize", "language", "tag", "tools", "async"):
+        step = r.get(key, {"error": "not run"})
+        if "error" in step:
+            item(key, False, f"{step['error'][:160]} ({step.get('ms')} ms)")
+            continue
+        if key == "diarize":
+            mapping, accuracy = turn_accuracy(step["turns"])
+            named = {speaker: name for speaker, name in step["names"]}
+            names_ok = all(named.get(speaker) == (ANALYSIS_NAME if reader == "a" else None) for speaker, reader in mapping.items())
+            item(key, step["speakers"] == 2 and set(mapping.values()) == {"a", "b"} and accuracy >= 0.9 and names_ok and step["reports"] > 0,
+                 f"{step['speakers']} speakers, {len(step['turns'])} turns, accuracy {accuracy:.3f}, identify {names_ok}, "
+                 f"{step['reports']} progress reports, {step['ms']} ms")
+        elif key == "language":
+            expected = {"language-zh": "zh", "language-ru": "ru", "en": "en"}
+            item(key, all(step.get(k) == v for k, v in expected.items()), " ".join(f"{k}={step.get(k)}" for k in expected) + f", {step['ms']} ms")
+        elif key == "tag":
+            found = {name: start for name, start in step["labels"]}
+            item(key, found == ANALYSIS_TAGS and step["windows"] == 3, f"{step['labels']}, {step['windows']} windows, {step['ms']} ms")
+        elif key == "tools":
+            item(key, step["speakers"] == 2 and step["language"] == "ru" and step["top"] == "Music" and step["vectorFree"],
+                 f"speech_diarize {step['speakers']}, speech_detect_language {step['language']}, speech_tag {step['top']}, "
+                 f"no vectors {step['vectorFree']}, {step['ms']} ms")
+        elif key == "async":
+            item(key, step["top"] == "Music", f"tagAsync {step['top']}, {step['ms']} ms")
+    return all(verdicts)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__)
         return 2
     action, serial = argv
-    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools, "speaker": run_speaker}
+    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools, "speaker": run_speaker,
+            "analysis": run_analysis}
     if action == "tools":
         os.environ.setdefault("MACAW_VOLUME_PERCENT", "70")
     if action in ("listen", "late", "wake", "tools"):

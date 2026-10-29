@@ -159,6 +159,75 @@
     },
     {
       "displayName": {
+        "en": "Test langid.test.whisper",
+        "zh-CN": "测试 langid.test.whisper"
+      },
+      "kind": "langid",
+      "modelId": "langid.test.whisper",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "test-decoder.int8.onnx",
+              "sha256": "ace2cab28656abb1795b3af15844469f97f152bdec01799e1e16e55ecded3a19",
+              "size": 1600
+            },
+            {
+              "path": "test-encoder.int8.onnx",
+              "sha256": "37975b3e55115440f69fe69d20e460ed26eaa6c5ed91319491bef27e34a1b8e9",
+              "size": 900
+            }
+          ],
+          "languages": [
+            "mul"
+          ],
+          "license": {
+            "commercialUse": "unknown",
+            "noticeKey": "speech_model_license_unknown_data",
+            "spdx": "MIT"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-langid.test.whisper-v1-1e59be2b.tar",
+            "format": "tar",
+            "sha256": "1e59be2bec4d0b28302a15646417ba0575cac098c2c7e631df94627c2d9339eb",
+            "size": 5120,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v3/autojs6-speech-langid.test.whisper-v1-1e59be2b.tar"
+          },
+          "modelType": "whisper-langid",
+          "releasedAt": "2026-10-29T00:00:00Z",
+          "runtime": {
+            "config": {
+              "decoder": "test-decoder.int8.onnx",
+              "encoder": "test-encoder.int8.onnx"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sampleRate": 16000,
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v3/speech-models/sources/langid.test.whisper/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "sherpa-onnx-whisper-test/test-decoder.int8.onnx": "test-decoder.int8.onnx",
+                "sherpa-onnx-whisper-test/test-encoder.int8.onnx": "test-encoder.int8.onnx"
+              },
+              "sha256": "3046cc09f0e7e26676a59bf0cfbd8a68bcd8d1dc8cdba49971e8015a79a61504",
+              "size": 3643,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/whisper.tar.bz2"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
         "en": "Test punct.test.ct",
         "zh-CN": "测试 punct.test.ct"
       },
@@ -290,6 +359,68 @@
     },
     {
       "displayName": {
+        "en": "Test segment.test.pyannote",
+        "zh-CN": "测试 segment.test.pyannote"
+      },
+      "kind": "segment",
+      "modelId": "segment.test.pyannote",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "model.onnx",
+              "sha256": "f0862981695a6527c229773b9c967b15c38d07fb8c51bb6df74a1f1a6779a845",
+              "size": 1200
+            }
+          ],
+          "languages": [
+            "zxx"
+          ],
+          "license": {
+            "commercialUse": true,
+            "noticeKey": "speech_model_license_commercial",
+            "spdx": "MIT"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-segment.test.pyannote-v1-2b555cf1.tar",
+            "format": "tar",
+            "sha256": "2b555cf1a89be21c26cd719b0d6f14baea8f9c179c474330a48bc75fb903291c",
+            "size": 3072,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v3/autojs6-speech-segment.test.pyannote-v1-2b555cf1.tar"
+          },
+          "modelType": "pyannote-segmentation",
+          "releasedAt": "2026-10-29T00:00:00Z",
+          "runtime": {
+            "config": {
+              "model": "model.onnx"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sampleRate": 16000,
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v3/speech-models/sources/segment.test.pyannote/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "sherpa-onnx-pyannote-test/model.onnx": "model.onnx"
+              },
+              "sha256": "47fe4ebf32e68e3fe023774afac41646354aa756e04fb525ff8aa9ea403c2357",
+              "size": 2129,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-segmentation-models/segment.tar.bz2"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
         "en": "Test speaker.test.embedding",
         "zh-CN": "测试 speaker.test.embedding"
       },
@@ -343,6 +474,75 @@
               "sha256": "71d12210a54c54e8f5e7ba13282f040373eb6aa865779577a9ed1f75c41c4a6c",
               "size": 1500,
               "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/speaker-recongition-models/speaker_test_16k.onnx"
+            }
+          ],
+          "versionCode": 1
+        }
+      ]
+    },
+    {
+      "displayName": {
+        "en": "Test tagger.test.ced",
+        "zh-CN": "测试 tagger.test.ced"
+      },
+      "kind": "tagger",
+      "modelId": "tagger.test.ced",
+      "recommended": true,
+      "recommendedVersionCode": 1,
+      "summary": {
+        "en": "Synthetic test model.",
+        "zh-CN": "合成的测试模型."
+      },
+      "versions": [
+        {
+          "files": [
+            {
+              "path": "class_labels_indices.csv",
+              "sha256": "3199a736adddcef873ad7fed636b55540c772ccff69155aec813f69b883c7c0b",
+              "size": 83
+            },
+            {
+              "path": "model.int8.onnx",
+              "sha256": "fabb6e74b1bc031e657d7c24f9d7a4c456b2e88e4b68bbd02f57a8079cc04ffd",
+              "size": 1000
+            }
+          ],
+          "languages": [
+            "zxx"
+          ],
+          "license": {
+            "commercialUse": true,
+            "noticeKey": "speech_model_license_commercial",
+            "spdx": "CC-BY-4.0 AND CC-BY-SA-4.0"
+          },
+          "mirror": {
+            "fileName": "autojs6-speech-tagger.test.ced-v1-df884c3a.tar",
+            "format": "tar",
+            "sha256": "df884c3a4c2075e329df4b0701e9311ece42890bb5265f52dda4e2c6708536a7",
+            "size": 3584,
+            "url": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/releases/download/speech-models-v3/autojs6-speech-tagger.test.ced-v1-df884c3a.tar"
+          },
+          "modelType": "ced",
+          "releasedAt": "2026-10-29T00:00:00Z",
+          "runtime": {
+            "config": {
+              "labels": "class_labels_indices.csv",
+              "model": "model.int8.onnx"
+            },
+            "minSherpaOnnx": "1.13.8"
+          },
+          "sampleRate": 16000,
+          "sourceUrl": "https://github.com/SuperMonster003/AutoJs6-Shared-Assets/tree/speech-models-v3/speech-models/sources/tagger.test.ced/1",
+          "upstream": [
+            {
+              "format": "tar.bz2",
+              "members": {
+                "sherpa-onnx-ced-test/class_labels_indices.csv": "class_labels_indices.csv",
+                "sherpa-onnx-ced-test/model.int8.onnx": "model.int8.onnx"
+              },
+              "sha256": "2983dcaf6ff0233f84135cbf727d0df290ac929b8067bfc7ffbb4dd75da07df7",
+              "size": 2042,
+              "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/audio-tagging-models/ced.tar.bz2"
             }
           ],
           "versionCode": 1

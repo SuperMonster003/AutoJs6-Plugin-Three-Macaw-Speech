@@ -9,10 +9,12 @@ import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LocalSession
@@ -102,10 +104,21 @@ internal class TryoutController(context: Context) {
     private val output = File(app.cacheDir, "tryout/tryout.wav")
     private val pending = File(app.cacheDir, "tryout/pending.wav")
 
-    // File (roadmap D114: its own model, language and punctuation, apart from dictation)
+    // File (roadmap D114: its own model, language and punctuation, apart from dictation; D153: the action and the
+    // settings of the analyses)
     var fileModel by mutableStateOf<String?>(null)
     var fileLanguage by mutableStateOf<String?>(null)
     var filePunctuation by mutableStateOf(true)
+    var fileAction by mutableStateOf(FileAction.TRANSCRIBE)
+    var fileSpeakers by mutableIntStateOf(0)
+    var fileIdentify by mutableStateOf(false)
+    var languageModel by mutableStateOf<String?>(null)
+
+    /** Installed models of the analysis kinds (segment, speaker, langid, tagger). zh-CN: 已安装的分析类模型. */
+    var analysisModels by mutableStateOf<List<ModelEntry>>(emptyList())
+        private set
+
+    val languageModels: List<ModelEntry> get() = analysisModels.filter { it.kind == SpeechContract.KIND_LANGID }
 
     val endpointMillis: Long get() = preferences.endpointMillis
     val vad: Boolean get() = preferences.vad
@@ -121,11 +134,31 @@ internal class TryoutController(context: Context) {
                 if (asrModel !in asrModels.map { it.id }) asrModel = asrModels.firstOrNull { it.isDefault }?.id ?: asrModels.firstOrNull()?.id
                 if (fileModel !in asrModels.map { it.id }) fileModel = asrModels.firstOrNull { it.isDefault }?.id ?: asrModels.firstOrNull()?.id
                 if (ttsModel !in ttsModels.map { it.id }) selectTtsModel(ttsModels.firstOrNull { it.isDefault }?.id ?: ttsModels.firstOrNull()?.id)
+                analysisModels = models.filter { it.kind in ANALYSIS_KINDS }
+                if (languageModel !in languageModels.map { it.id }) languageModel = languageModels.firstOrNull { it.isDefault }?.id ?: languageModels.firstOrNull()?.id
             }
         }
     }
 
     val busy: Boolean get() = dictationPhase != TryoutPhase.IDLE || wakePhase != TryoutPhase.IDLE || synthesisPhase != TryoutPhase.IDLE || playing
+
+    /**
+     * The kinds [action] needs and that have no installed model, in the order of the home screen (D153).
+     * zh-CN: [action] 需要但没有已安装模型的类别, 按首页顺序 (D153).
+     */
+    fun missingKinds(action: FileAction): List<String> {
+        val needed = buildList {
+            if (action.diarizes) addAll(listOf(SpeechContract.KIND_SEGMENT, SpeechContract.KIND_SPEAKER))
+            if (action.transcribes) add(SpeechContract.KIND_ASR)
+            if (action == FileAction.LANGUAGE) add(SpeechContract.KIND_LANGID)
+            if (action == FileAction.TAG) add(SpeechContract.KIND_TAGGER)
+        }
+        val installed = (asrModels + analysisModels).map { it.kind }.toSet()
+        return needed.filter { it !in installed }
+    }
+
+    /** The name of an installed model, or its id. zh-CN: 已安装模型的名称, 没有时为其 ID. */
+    fun modelName(modelId: String): String = (asrModels + analysisModels).firstOrNull { it.id == modelId }?.name ?: modelId
 
     /** Whether the recognizer takes a language (SenseVoice); the others detect it or speak one. zh-CN: 识别器是否接受语言 (SenseVoice). */
     fun takesLanguage(modelId: String?): Boolean = asrModels.firstOrNull { it.id == modelId }?.modelType in SpeechRuntime.LANGUAGE_TYPES
@@ -365,6 +398,7 @@ internal class TryoutController(context: Context) {
     }
 
     private companion object {
+        val ANALYSIS_KINDS = setOf(SpeechContract.KIND_SEGMENT, SpeechContract.KIND_SPEAKER, SpeechContract.KIND_LANGID, SpeechContract.KIND_TAGGER)
         const val TAG = "MacawTryout"
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawTryout").apply { isDaemon = true } }
     }

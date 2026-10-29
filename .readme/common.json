@@ -262,6 +262,42 @@
       "license": "Apache-2.0",
       "commercial": "{{ text_model_commercial_yes }}",
       "recommended": true
+    },
+    {
+      "id": "segment.pyannote.3-0",
+      "kind": "{{ text_model_kind_segment }}",
+      "languages": "{{ text_model_languages_any }}",
+      "size": "6.0 MB",
+      "license": "MIT",
+      "commercial": "{{ text_model_commercial_no }}",
+      "recommended": true
+    },
+    {
+      "id": "langid.whisper.tiny.int8",
+      "kind": "{{ text_model_kind_langid }}",
+      "languages": "{{ text_model_languages_whisper }}",
+      "size": "102.8 MB",
+      "license": "MIT",
+      "commercial": "{{ text_model_commercial_unknown }}",
+      "recommended": true
+    },
+    {
+      "id": "langid.whisper.base.int8",
+      "kind": "{{ text_model_kind_langid }}",
+      "languages": "{{ text_model_languages_whisper }}",
+      "size": "159.8 MB",
+      "license": "MIT",
+      "commercial": "{{ text_model_commercial_unknown }}",
+      "recommended": false
+    },
+    {
+      "id": "tagger.ced.mini.int8",
+      "kind": "{{ text_model_kind_tagger }}",
+      "languages": "{{ text_model_languages_any }}",
+      "size": "10.5 MB",
+      "license": "CC-BY-4.0, CC-BY-SA-4.0 (AudioSet labels)",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
     }
   ]
 }

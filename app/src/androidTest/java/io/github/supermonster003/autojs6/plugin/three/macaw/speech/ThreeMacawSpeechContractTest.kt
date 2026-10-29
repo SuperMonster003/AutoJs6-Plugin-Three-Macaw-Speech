@@ -429,6 +429,8 @@ class ThreeMacawSpeechContractTest {
             "audioDecode",
             // Roadmap P8.3 (D121, D136): contract version 2.
             SpeechContract.FEATURE_SPEAKER,
+            // Roadmap P8.4 (D146 - D151): the offline analyses of contract version 2.
+            SpeechContract.FEATURE_DIARIZATION, SpeechContract.FEATURE_LANGUAGE_ID, SpeechContract.FEATURE_AUDIO_TAGGING,
         )
 
         /**

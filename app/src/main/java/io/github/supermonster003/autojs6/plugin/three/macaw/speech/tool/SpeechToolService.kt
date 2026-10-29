@@ -32,6 +32,7 @@ class SpeechToolService : PluginToolProviderService() {
     private val transcribeTool by lazy { SpeechTranscribeTool(this) }
     private val synthesizeTool by lazy { SpeechSynthesizeTool(this) }
     private val speakerTool by lazy { SpeechSpeakerTool(this) }
+    private val analysisTool by lazy { SpeechAnalysisTool(this) }
 
     override fun createPluginInfo(): PluginInfo = pluginRuntimeFields().toPluginInfo()
 
@@ -48,6 +49,9 @@ class SpeechToolService : PluginToolProviderService() {
                 SpeechToolCatalog.TOOL_SYNTHESIZE -> synthesizeTool.call(call, SpeechToolArguments.synthesize(arguments))
                 SpeechToolCatalog.TOOL_SPEAKER_VERIFY -> speakerTool.verify(call, SpeechToolArguments.speakerVerify(arguments))
                 SpeechToolCatalog.TOOL_SPEAKER_IDENTIFY -> speakerTool.identify(call, SpeechToolArguments.speakerIdentify(arguments))
+                SpeechToolCatalog.TOOL_DIARIZE -> analysisTool.diarize(call, SpeechToolArguments.diarize(arguments))
+                SpeechToolCatalog.TOOL_DETECT_LANGUAGE -> analysisTool.detectLanguage(call, SpeechToolArguments.detectLanguage(arguments))
+                SpeechToolCatalog.TOOL_TAG -> analysisTool.tag(call, SpeechToolArguments.tag(arguments))
                 else -> throw PluginToolException(PluginToolErrorCodes.UNKNOWN_TOOL, "3-Macaw Speech has no tool ${call.tool}")
             }
         } catch (e: SpeechException) {

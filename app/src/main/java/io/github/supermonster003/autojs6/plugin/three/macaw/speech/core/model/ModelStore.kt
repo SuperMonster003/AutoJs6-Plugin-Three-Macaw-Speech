@@ -267,7 +267,7 @@ class ModelStore(root: File, private val clock: () -> Long = System::currentTime
         const val ORIGIN_UPSTREAM = "upstream"
         const val ORIGIN_IMPORT = "import"
         private const val MAX_MANIFEST_BYTES = 4L * 1024 * 1024
-        private val KINDS = setOf("asr", "kws", "punct", "speaker", "tts", "vad")
+        private val KINDS = setOf("asr", "kws", "langid", "punct", "segment", "speaker", "tagger", "tts", "vad")
 
         /** Catalog ids and the ids of imported models. zh-CN: 目录模型与导入模型的 ID. */
         val IMPORT_ID = Regex("[a-z0-9][a-z0-9._-]{1,63}")

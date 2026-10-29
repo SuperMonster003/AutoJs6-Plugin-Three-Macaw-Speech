@@ -38,8 +38,9 @@ class ModelCatalogParserTest {
             assertEquals(version.files.map { it.path }.toSet(), mapped.toSet())
             version.mirror?.let { assertEquals(CatalogRules.archiveSize(version.files.map { file -> file.size }), it.size) }
         }
-        // The bundled release 2 predates the speaker kind of schema 3 (roadmap D141 (4)). zh-CN: 内置的发布 2 早于 schema 3 的说话人类别.
-        (CatalogRules.KINDS - CatalogRules.KIND_SPEAKER).forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
+        // The bundled release 2 predates the kinds of schema 3 (roadmap D141 (4), D155). zh-CN: 内置的发布 2 早于 schema 3 的类别.
+        val schema3 = setOf(CatalogRules.KIND_SPEAKER, CatalogRules.KIND_SEGMENT, CatalogRules.KIND_LANGID, CatalogRules.KIND_TAGGER)
+        (CatalogRules.KINDS - schema3).forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
     }
 
     @Test
@@ -47,7 +48,10 @@ class ModelCatalogParserTest {
         val catalog = Fixtures.catalog
         assertEquals(3, catalog.schemaVersion)
         assertEquals(
-            listOf("asr.test.noncommercial", "kws.test.unknown", "punct.test.ct", "punct.test.en", "speaker.test.embedding", "tts.test.tiny"),
+            listOf(
+                "asr.test.noncommercial", "kws.test.unknown", "langid.test.whisper", "punct.test.ct", "punct.test.en", "segment.test.pyannote",
+                "speaker.test.embedding", "tagger.test.ced", "tts.test.tiny",
+            ),
             catalog.models.map { it.modelId },
         )
         val tiny = catalog.model("tts.test.tiny")!!.latestVersion
@@ -64,6 +68,22 @@ class ModelCatalogParserTest {
             listOf("kws.test.unknown", "punct.test.ct", "punct.test.en", "speaker.test.embedding", "tts.test.tiny"),
             catalog.query(language = "en-US").filter { it.recommended }.map { it.modelId },
         )
+    }
+
+    @Test
+    fun `the analysis kinds of schema 3 parse with their roles and languages`() {
+        val catalog = Fixtures.catalog
+        val segment = catalog.model("segment.test.pyannote")!!
+        val langid = catalog.model("langid.test.whisper")!!
+        val tagger = catalog.model("tagger.test.ced")!!
+        assertEquals(listOf(CatalogRules.KIND_SEGMENT, CatalogRules.KIND_LANGID, CatalogRules.KIND_TAGGER), listOf(segment.kind, langid.kind, tagger.kind))
+        assertEquals(listOf("pyannote-segmentation", "whisper-langid", "ced"), listOf(segment, langid, tagger).map { it.latestVersion.modelType })
+        assertEquals(mapOf("model" to "model.onnx"), segment.latestVersion.runtimeConfig)
+        assertEquals(mapOf("encoder" to "test-encoder.int8.onnx", "decoder" to "test-decoder.int8.onnx"), langid.latestVersion.runtimeConfig)
+        assertEquals(mapOf("model" to "model.int8.onnx", "labels" to "class_labels_indices.csv"), tagger.latestVersion.runtimeConfig)
+        assertEquals(listOf(listOf("zxx"), listOf("mul"), listOf("zxx")), listOf(segment, langid, tagger).map { it.latestVersion.languages })
+        assertEquals(CommercialUse.UNKNOWN, langid.latestVersion.license.commercialUse)
+        listOf(segment, langid, tagger).forEach { assertEquals(16000, it.latestVersion.sampleRate) }
     }
 
     @Test
@@ -122,6 +142,10 @@ class ModelCatalogParserTest {
             "kind prefix" to text.replaceFirst("\"kind\": \"kws\"", "\"kind\": \"tts\""),
             "speaker role on a missing file" to text.replace("\"model\": \"model.onnx\"", "\"model\": \"missing.onnx\""),
             "speaker type of another kind" to text.replace("\"modelType\": \"speaker-embedding\"", "\"modelType\": \"vits\""),
+            "tagger labels on a missing file" to text.replace("\"labels\": \"class_labels_indices.csv\"", "\"labels\": \"missing.csv\""),
+            "langid without its decoder" to text.replace("\"decoder\": \"test-decoder.int8.onnx\",", ""),
+            "tagger type of another kind" to text.replace("\"modelType\": \"ced\"", "\"modelType\": \"pyannote-segmentation\""),
+            "unknown field on a segment version" to text.replace("\"modelType\": \"pyannote-segmentation\",", "\"modelType\": \"pyannote-segmentation\", \"x\": 0,"),
         )
         mutations.forEach { (name, mutated) ->
             assertTrue("$name: mutation must change the text", mutated != text)
@@ -215,7 +239,13 @@ class ModelCatalogParserTest {
         kws["versions"] = (kws["versions"] as List<Map<String, Any?>>).map { it + ("modelType" to "kws-future") }
 
         val catalog = parser.parse(build())
-        assertEquals(listOf("asr.test.noncommercial", "punct.test.ct", "punct.test.en", "speaker.test.embedding", "tts.test.tiny"), catalog.models.map { it.modelId })
+        assertEquals(
+            listOf(
+                "asr.test.noncommercial", "langid.test.whisper", "punct.test.ct", "punct.test.en", "segment.test.pyannote", "speaker.test.embedding",
+                "tagger.test.ced", "tts.test.tiny",
+            ),
+            catalog.models.map { it.modelId },
+        )
         val model = catalog.model("tts.test.tiny")!!
         assertEquals(listOf(1), model.versions.map { it.versionCode })
         assertEquals(1, model.recommendedVersionCode)
@@ -229,7 +259,7 @@ class ModelCatalogParserTest {
         tiny["versions"] = tinyVersions.reversed()
         assertThrows(CatalogException::class.java) { parser.parse(build()) }
         tiny["versions"] = tinyVersions
-        assertEquals(5, parser.parse(build()).models.size)
+        assertEquals(8, parser.parse(build()).models.size)
         models[1]["modelId"] = "kws.test.future"
         assertThrows(CatalogException::class.java) { parser.parse(build()) }
         models[1]["modelId"] = "dict.test.future"

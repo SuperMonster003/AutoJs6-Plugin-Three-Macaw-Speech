@@ -230,8 +230,8 @@ class FileTranscriptionDeviceTest {
         try {
             assertTrue(main { transcription.start(FileSource.of(file), options(STREAMING)) })
             await("the first segment", 120_000) { main { transcription.run?.segments?.isNotEmpty() ?: true } }
-            main { transcription.cancel() }
-            assertEquals(FileRun.Phase.CANCELLING, main { transcription.run?.phase })
+            // One main thread task: a fast worker may finish the run between two of them. zh-CN: 放在同一个主线程任务里: 工作线程可能在两次任务之间就结束识别.
+            assertEquals(FileRun.Phase.CANCELLING, main { transcription.cancel(); transcription.run?.phase })
             val record = finished()
             assertEquals(FileTranscriptRecord.State.CANCELLED, record.state)
             assertNull(record.failure)

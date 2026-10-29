@@ -1,13 +1,16 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 /**
  * The text forms of the file tab (roadmap D112, D113, P7.8.1): page times, SRT cues with their times, CRLF and
- * numbering, plain text lines, blank segments and default file names.
- * zh-CN: 文件标签的文本形式 (路线图 D112, D113, P7.8.1): 页面时间, SRT 字幕条的时间, CRLF 与序号, 纯文本行, 空段与默认文件名.
+ * numbering, plain text lines, blank segments and default file names; since D153 the speaker labels of "diarize and
+ * transcribe" and the turn list of a diarization.
+ * zh-CN: 文件标签的文本形式 (路线图 D112, D113, P7.8.1): 页面时间, SRT 字幕条的时间, CRLF 与序号, 纯文本行, 空段与默认文件名; D153 起还有
+ * "分离 + 转写" 的说话人标签与说话人分离的轮次列表.
  */
 class TranscriptExportTest {
 
@@ -70,5 +73,17 @@ class TranscriptExportTest {
         assertEquals(".hidden.srt", TranscriptExport.fileName(".hidden", TranscriptExport.SRT_EXTENSION))
         assertEquals("transcript.srt", TranscriptExport.fileName("  ", TranscriptExport.SRT_EXTENSION))
         assertEquals("transcript.txt", TranscriptExport.fileName(null, TranscriptExport.TEXT_EXTENSION))
+    }
+
+    @Test
+    fun `speaker labels go before the text of each segment and the turns list one per line`() {
+        val segments = listOf(segment(" hello ", 0, 900), segment(" ", 900, 1000, 1), segment("bye", 1500, 2100, 2), segment("tail", 2200, 2400, 3))
+        val labeled = TranscriptExport.labeled(segments, listOf(0, 1, 1)) { speaker, text -> "S${speaker + 1}: $text" }
+        assertEquals(listOf("S1: hello", " ", "S2: bye", "tail"), labeled.map { it.text })
+        assertEquals(segments.map { it.startMillis }, labeled.map { it.startMillis })
+        assertEquals("S1: hello\nS2: bye\ntail\n", String(TranscriptExport.text(labeled), Charsets.UTF_8))
+        val turns = listOf(SpeakerTurn(0, 1500, 0), SpeakerTurn(1700, 4150, 1), SpeakerTurn(5000, 4900, 0))
+        assertEquals("00:00.0 - 00:01.5 A\n00:01.7 - 00:04.2 B\n00:05.0 - 00:05.0 A", TranscriptExport.turns(turns) { if (it == 0) "A" else "B" })
+        assertEquals("", TranscriptExport.turns(emptyList()) { "x" })
     }
 }

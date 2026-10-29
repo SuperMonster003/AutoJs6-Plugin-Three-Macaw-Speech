@@ -64,7 +64,8 @@
 - 触发式入口: 不必长按电源键也能打开同一个听写弹层: 快速设置磁贴 (锁屏上也能用), 桌面小部件与应用图标快捷方式, 可拖动的悬浮麦克风 (默认关闭), 长按或双击音量键的按键触发 (只过滤按键的无障碍服务, 默认关闭), 以及蓝牙耳机的语音键. 平时不录音, 只在弹层听写的几秒内使用麦克风.
 - 常驻唤醒 (默认关闭): 开启后说出唤醒词 (默认 `小鹦小鹦` 与 `Hey Macaw`, 可修改) 即打开同一个听写弹层, 熄屏或锁屏时也会点亮屏幕, 并朗读识别出的文字. 监听期间麦克风指示灯常亮, 有一条常驻通知, 也更耗电 (默认开启的省电模式在安静时不运行唤醒词模型, 插件占用的 CPU 少得多); 可设监听时长 (10, 30, 60 分钟后自动关闭或一直开着) 与只在充电时监听. 脚本, 其他应用或其他入口要用麦克风时自动让出, 用完后继续.
 - 说话人识别 (1.3.0): 在设置 > 常驻唤醒 > 说话人中输入名字并跟读 3 句话, 即可注册自己的声音 (可以注册多人, 也可以用试验证查看分数). 打开 "只听主人" 后, 常驻唤醒听到唤醒词时先比对声音, 只有与已注册的人相符才打开弹层, 别人说唤醒词会被忽略; 磁贴, 小部件, 耳机键等手动入口不受影响. 脚本可以用 `speech.speaker` 注册, 验证与辨认说话人 (需要 AutoJs6 6.8.0 及以上). 说话人识别模型约 26.5 MB, 在 "说话人" 页按提示下载.
-- 插件工具 (需要 AutoJs6 6.8.0 及以上): 提供 `speech_listen` (听一句话并返回识别出的文字), `speech_speak` (朗读一段文字), `speech_transcribe` (识别手机上的音频文件) 与 `speech_synthesize` (把文字合成为 WAV 或 M4A 文件) 四个工具. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 脚本也可以用 `plugins.tools` 调用. 1.3.0 新增 `speech_speaker_verify` (判断一段录音是不是某位已注册的人) 与 `speech_speaker_identify` (在已注册的人中找出最像的一位), 结果只有名字与分数.
+- 音频分析 (1.3.0): 试听试说页的文件识别还可以分离说话人 (标出谁在什么时候说话, 能用已注册的声音认出名字; 选 "分离 + 转写" 还会把每个人说的话转成文字), 识别语种 (Whisper 的 99 种语言), 以及给声音打标签 (人声, 音乐, 动物, 车辆, 警报等 AudioSet 的 527 类). 下载模型后全部在手机上离线完成 (页面会提示需要哪些模型). 脚本可以用 `speech.diarize`, `speech.detectLanguage` 与 `speech.tag` 调用 (需要 AutoJs6 6.8.0 及以上).
+- 插件工具 (需要 AutoJs6 6.8.0 及以上): 提供 `speech_listen` (听一句话并返回识别出的文字), `speech_speak` (朗读一段文字), `speech_transcribe` (识别手机上的音频文件) 与 `speech_synthesize` (把文字合成为 WAV 或 M4A 文件) 四个工具. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 脚本也可以用 `plugins.tools` 调用. 1.3.0 新增 `speech_speaker_verify` (判断一段录音是不是某位已注册的人) 与 `speech_speaker_identify` (在已注册的人中找出最像的一位), 结果只有名字与分数. 1.3.0 另新增三个分析工具: `speech_diarize` (分离说话人, 文件最长 10 分钟), `speech_detect_language` (识别语种) 与 `speech_tag` (给声音打标签).
 - 模型管理: 从签名的模型目录下载, 逐个文件校验 SHA-256 后才启用, 也可以导入本地模型; 仅限非商业用途的模型在下载前会提示许可.
 - 独立界面: 首页显示运行状态并管理模型, 试听试说页直接试验听写, 唤醒词与合成, 还能把手机上的音频或视频文件识别成文字, 保存为文本或 SRT 字幕, 设置页调整语言, 夜间模式, 主题色, 启动器图标与识别合成的默认值, 外观默认跟随 AutoJs6.
 
@@ -122,7 +123,7 @@
 
 ******
 
-识别, 标点, 唤醒词与合成模型的体积在 7 MB 到 410 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.3.0 的目录包含以下模型 (大小为安装后占用的空间):
+识别, 标点, 唤醒词, 合成, 说话人与音频分析模型的体积在 6 MB 到 410 MB 之间, 因此不随 APK 提供. 插件内置一份签名的模型目录, 从 AutoJs6 共享资源仓库的不可变发布下载模型, 镜像不可用时回退到 sherpa-onnx 的上游地址; 两条路径都要逐个文件校验 SHA-256 后才启用模型. 1.3.0 的目录包含以下模型 (大小为安装后占用的空间):
 
 | 模型 ID | 用途 | 语言 | 大小 | 许可 | 商业用途 |
 | --- | --- | --- | --- | --- | --- |
@@ -152,8 +153,12 @@
 | `tts.vits.piper.ar-jo-sa-miro-v2-high.int8` | 合成 (说话人: 1, 22.05 kHz) | ar | 36.6 MB | CC-BY-NC-ND-4.0, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
 | `tts.vits.mimic3.ko-ko-kss-low` | 合成 (说话人: 1, 22.05 kHz) | ko | 80.8 MB | CC0-1.0, GPL-3.0-or-later (espeak-ng-data) | 仅限非商业用途 |
 | `speaker.eres2net.3dspeaker.en-voxceleb` (推荐) | 说话人识别 | en, zh | 26.5 MB | Apache-2.0 | 可以 |
+| `segment.pyannote.3-0` (推荐) | 说话人分割 | 不限 | 6.0 MB | MIT | 仅限非商业用途 |
+| `langid.whisper.tiny.int8` (推荐) | 语种识别 | 99 种语言 | 102.8 MB | MIT | 未知 |
+| `langid.whisper.base.int8` | 语种识别 | 99 种语言 | 159.8 MB | MIT | 未知 |
+| `tagger.ced.mini.int8` (推荐) | 音频标签 | 不限 | 10.5 MB | CC-BY-4.0, CC-BY-SA-4.0 (AudioSet labels) | 可以 |
 
-仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与各个 Piper 合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later). 韩语流式模型的训练数据 (KsponSpeech) 只向韩国国民开放申请, 在韩国境外使用需要另签协议, 因此按仅限非商业用途标注, 也不经共享资源仓库镜像, 只从上游地址下载 (下载约 418 MB, 安装后 141 MB). 法语, 西班牙语, 德语与俄语四个 Piper 声音都由英文 lessac 声音微调而来, 与它一样仅限非商业用途. 八语流式模型 (PengChengStarling) 的权重为 Apache-2.0, 但发布者没有列出训练数据, 因此商业用途标为未知. 阿拉伯语 dii 与 miro 声音都由 CC BY-NC-ND 4.0 的合成语音训练, dii 本身为 CC BY-NC-SA 4.0, miro 为 CC BY-NC-ND 4.0; miro 不允许改编, 因此只从上游地址下载, 不经共享资源仓库镜像. 韩语 KSS 声音的权重为 CC0, 但训练数据 (KSS) 为 CC BY-NC-SA 4.0, 因此按仅限非商业用途标注.
+仅限非商业用途或许可未知的模型在下载前会提示许可, 脚本下载时需要显式传入 `acceptLicense: true`. 中文流式 2025 模型的权重未声明许可, 训练数据含仅限非商业用途的语料, 因此只从 sherpa-onnx 的上游地址下载, 不经共享资源仓库镜像. Kokoro 与各个 Piper 合成模型附带 eSpeak NG 的发音数据 (espeak-ng-data, GPL-3.0-or-later). 韩语流式模型的训练数据 (KsponSpeech) 只向韩国国民开放申请, 在韩国境外使用需要另签协议, 因此按仅限非商业用途标注, 也不经共享资源仓库镜像, 只从上游地址下载 (下载约 418 MB, 安装后 141 MB). 法语, 西班牙语, 德语与俄语四个 Piper 声音都由英文 lessac 声音微调而来, 与它一样仅限非商业用途. 八语流式模型 (PengChengStarling) 的权重为 Apache-2.0, 但发布者没有列出训练数据, 因此商业用途标为未知. 阿拉伯语 dii 与 miro 声音都由 CC BY-NC-ND 4.0 的合成语音训练, dii 本身为 CC BY-NC-SA 4.0, miro 为 CC BY-NC-ND 4.0; miro 不允许改编, 因此只从上游地址下载, 不经共享资源仓库镜像. 韩语 KSS 声音的权重为 CC0, 但训练数据 (KSS) 为 CC BY-NC-SA 4.0, 因此按仅限非商业用途标注. 说话人分割模型 (pyannote segmentation 3.0) 的权重为 MIT, 但训练数据中的 MSDWild 仅限研究用途, 因此按仅限非商业用途标注. 两个 Whisper 语种识别模型的权重为 MIT, 但 OpenAI 没有公开训练数据, 因此商业用途标为未知. CED-mini 音频标签模型的权重为 CC BY 4.0, 随附的 AudioSet 类别表为 CC BY-SA 4.0.
 
 首页的导入本地模型可以从 tar, tar.bz2 或 zip 归档或文件夹导入模型: 与目录模型一致的文件按该模型登记, 其他文件在填写种类, 模型类型, 名称与语言后作为自定义模型导入. 导入通过系统文件选择器完成, 不需要存储权限.
 
@@ -205,9 +210,10 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - `speech.synthesize(text, path, options)` 合成到 WAV 文件 (至多 8000 个字符, 可选模型, 说话人与语速); `speech.speak(text, options)` 与 `tts(text, { engine })` 经系统 TTS 引擎朗读.
 - `speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.
 - `speech.speaker.enroll(name, files, { replace })` 注册说话人 (多段录音取平均; 同名默认追加到原有声纹, `replace: true` 重新注册), `verify(name, file)` 返回分数与是否相符, `identify(file, { topK })` 在已注册的人中找出最像的一位并列出候选, `list()` 与 `remove(name)` 管理已注册的人; `enroll`, `verify` 与 `identify` 各有返回 Promise 的 `...Async` 版本. 结果只有名字, 分数, 是否相符与阈值 (默认 0.50, 可用 `threshold` 调整), 不含声纹向量. 需要 AutoJs6 6.8.0 正式版与说话人识别模型.
+- `speech.diarize(file, options)` 分离说话人, 返回按时间排列的轮次 (`segments`, 每项有 `startMillis`, `endMillis` 与从 0 编号的 `speaker`) 与人数 (`speakers`); 选项 `speakers` 指定人数 (0 为自动判断, 至多 20), `identify: true` 用已注册的声纹给说话人认出名字 (`names`). `speech.detectLanguage(file, { windows })` 用语音的前几个窗口 (每个 30 秒, 默认 3 个) 投票得出语种, 并列出候选与每个窗口的结果. `speech.tag(file, { topK, timeline })` 按 10 秒的窗口打分, 返回得分最高的标签 (AudioSet 的 527 个英文标签, 默认 5 个), `timeline: true` 附上每个窗口的标签. 三者都可以用 `onProgress(done, total)` 报告进度, 各有返回 Promise 的 `...Async` 版本; 需要 AutoJs6 6.8.0 正式版与对应的模型.
 - 整个插件同一时间只有一个麦克风会话 (听写或唤醒); 缺少麦克风权限时调用以 `PERMISSION_DENIED` 失败, 打开插件首页授予即可. 识别出的文字不会写入 AutoJs6 的日志.
 - AutoJs6 6.8.0 及以上, 脚本也可以经 `plugins.tools.call` 调用这些插件工具, 例如 `plugins.tools.call('speech_speak', { text: '你好' })`; 参数与 MCP Server 看到的相同. 日常脚本直接用 `speech` 模块更灵活.
-- 完整的方法, 选项, 事件与错误码见 [AutoJs6 文档](https://docs.autojs6.com/#/speech); AutoJs6 的示例代码 > 3-Macaw Speech 中有听写到文件, 唤醒词与听写, TTS 播报与语音命令交给 Agent 四个示例.
+- 完整的方法, 选项, 事件与错误码见 [AutoJs6 文档](https://docs.autojs6.com/#/speech); AutoJs6 的示例代码 > 3-Macaw Speech 中有听写到文件, 唤醒词与听写, TTS 播报, 语音命令交给 Agent, 说话人识别, 说话人分离, 语种识别与音频标签八个示例.
 
 ******
 
@@ -216,7 +222,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 ******
 
 - Android 7.0 (API 24) 及以上, 目标 API 37. arm64-v8a, armeabi-v7a, x86_64 与 x86 各有安装包, 另有 universal 安装包; 原生库按 16 KB 内存页对齐, 已在 16 KB 页模拟器上验证.
-- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6. 识别非 WAV 音频文件 (MP3, M4A 等) 与插件工具需要 AutoJs6 6.8.0 正式版或更高版本, 更早的 AutoJs6 中脚本只能识别 WAV. 脚本的 `speech.speaker` 同样需要 AutoJs6 6.8.0 正式版或更高版本; 插件内的 "说话人" 页与 "只听主人" 不依赖 AutoJs6.
+- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6. 识别非 WAV 音频文件 (MP3, M4A 等) 与插件工具需要 AutoJs6 6.8.0 正式版或更高版本, 更早的 AutoJs6 中脚本只能识别 WAV. 脚本的 `speech.speaker`, `speech.diarize`, `speech.detectLanguage` 与 `speech.tag` 同样需要 AutoJs6 6.8.0 正式版或更高版本; 插件内的 "说话人" 页, "只听主人" 与试听试说页的文件分析不依赖 AutoJs6.
 - 后台收音: 在 AutoJs6 处于前台时开始的听写或唤醒会话, AutoJs6 退到后台或熄屏后仍会继续收音 (插件以麦克风前台服务与通知保持录音). AutoJs6 已在后台时才打开的会话可能被系统静音, 此时会话收到错误码为 `PERMISSION_DENIED` 的 `warning` 事件但不会结束, AutoJs6 回到前台后恢复; 需要后台收音的脚本请在 AutoJs6 可见时开启会话.
 - 实测设备: Sony G8441 (Android 9), Sony XQ-AT72 (Android 12), Sony XQ-DQ72 (Android 13), Redmi 22120RN86C (Android 13), Xiaomi Pad 23046RP50C (Android 15), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24, 35 与 37 (16 KB 页) 模拟器.
 - 性能: 在低端的 Sony G8441 上, 流式模型加载约 1.7 秒, SenseVoice 约 2.8 秒, 听写处理速度约为实时的 3 倍; MeloTTS 与 Kokoro 在这类设备上合成慢于实时, AISHELL-3 最快. Sony XQ-DQ72 等较新设备加载约 0.5 到 1.2 秒, 合成快于实时.
@@ -229,6 +235,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - 1.3.0 新增模型: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13) 与 API 35 模拟器 (安装, 使用与删除). 测试录音里没有西班牙语, 阿拉伯语与韩语, 因此用合成的句子由识别模型读回: Kokoro v1.0 的西班牙语声音由 NeMo 读回, 字错率 0% 到 6.5%; 两个阿拉伯语声音由八语模型读回, 均为 3.0% (模拟器上 miro 为 33%); 韩语声音由 SenseVoice 读回, 0%; 八语模型识别英文录音的字错率为 0% 到 1.1%. 八语模型加载后峰值内存约 600 MiB (G8441) 到 880 MiB (XQ-DQ72); Kokoro v1.0 在 G8441 上合成慢于实时 (约为音频时长的 4 到 6 倍), 在 XQ-DQ72 上接近实时.
 - 试听试说页识别文件: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器. 在 OnePlus OPD2413 上, 一段 10 分 03 秒的 MP3 约 21 秒识别完 (SenseVoice, 开启自动标点); 离开页面后识别照常进行, 通知里显示进度.
 - 说话人识别: 实测 Sony XQ-AT72 (Android 12), XQ-DQ72 (Android 13), 以及 API 24 与 35 (16 KB 页) 模拟器 (注册, 验证, 辨认, 列出与删除, 以及 "只听主人" 的放行与拒绝; 使用 LibriSpeech 的两位朗读者与合成的唤醒词). 同一人的 2 秒片段得分 0.75 到 0.79, 另一人低于 0.08, 默认阈值 0.50; 在电脑上用 40 位英语与 12 位中文说话人测得, 2 秒片段误拒约 2.5% (英语) 与 0% (中文), 误收约 0.05% 与 0.9%. "只听主人" 的比对在 Sony 手机上约 0.15 到 0.25 秒.
+- 音频分析: 实测 Sony G8441 (Android 9), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 (16 KB 页) 模拟器 (分离与认人, 语种, 标签, 取消, 文件页, 三个工具与 AutoJs6 脚本). 两位 LibriSpeech 朗读者轮流朗读的 42.5 秒录音在各机上都分出 2 人 7 段, 按时长算 93% 的语音归到了正确的人; 已注册的一位被认出 (分数 0.85), 另一位没有 (0.01). 中文, 俄语与英文录音的语种都判断正确, 音乐, 白噪声与提示音都标在了对应的 10 秒窗口. 10 分钟录音在 OnePlus OPD2413 上分离约 70 秒, 识别语种 2.5 秒, 打标签 3.8 秒; 在 Sony G8441 上分别为 222 秒 (峰值内存约 470 MiB), 12 秒与 15 秒.
 
 ******
 
@@ -329,7 +336,7 @@ Android 只允许无障碍服务在系统处理之前拿到实体按键, 所以�
 - 触发式入口: 磁贴, 小部件, 快捷方式, 悬浮麦克风, 按键触发与耳机语音键本身都不录音, 只负责打开听写弹层. 按键触发是只过滤按键的无障碍服务: 不读取屏幕内容, 不执行手势, 只拦截所选的音量键 (短按照常调节音量, 熄屏, 来电或通话时不拦截). 悬浮麦克风需要悬浮窗权限, 以一条静默通知保持显示; 开机自启只用于在重启后恢复已开启的悬浮麦克风. Android 12 起耳机语音键需要附近的设备权限, 只在耳机打开的弹层中询问: 只用于让蓝牙服务把语音识别交给弹层并接通耳机麦克风, 不扫描设备, 不读取位置.
 - 常驻唤醒: 默认关闭, 只能在插件界面中开启 (重启或更新后需要点按通知恢复, 不会自动录音). 唤醒词在本机检测, 音频不保存也不上传, 识别出的文字不写日志; 开启期间一直录音, 麦克风指示灯常亮, 常驻通知可直接关闭. 与 3-Stone AI, 3-Stove Agent 的常驻监听互斥, 系统同一时刻只允许一个.
 - 声纹: 插件不保存注册用的录音, 只保存由它算出的声纹; 声纹只存在插件私有目录, 不上传, 不能导出也不能导入, 脚本与插件工具只拿到名字, 分数与是否相符. 在 "说话人" 页可逐个删除; 清除 3-Macaw Speech 的数据或卸载插件会删除全部声纹. "只听主人" 比对的唤醒词前约 2 秒录音只在内存中处理, 不保存.
-- 插件工具: 工具服务同样受 AutoJs6 插件权限保护, 只有 AutoJs6 能直接调用. `speech_listen` 每次只录一句话, 录音期间有通知 (Android 12 起还有麦克风指示灯); `speech_transcribe` 只读取 AutoJs6 交来的那一个文件, `speech_synthesize` 把音频交回 AutoJs6 写到指定位置. 识别与朗读的文字都不写日志.
+- 插件工具: 工具服务同样受 AutoJs6 插件权限保护, 只有 AutoJs6 能直接调用. `speech_listen` 每次只录一句话, 录音期间有通知 (Android 12 起还有麦克风指示灯); `speech_transcribe` 只读取 AutoJs6 交来的那一个文件, `speech_synthesize` 把音频交回 AutoJs6 写到指定位置. 识别与朗读的文字都不写日志. 三个分析工具同样只读取 AutoJs6 交来的那一个文件, `speech_diarize` 认人时只返回名字与分数, 不含声纹.
 
 ******
 
@@ -347,7 +354,7 @@ variant: default
 info service: org.autojs.plugin.INFO (category three-macaw-speech)
 capability service: org.autojs.plugin.SPEECH (category speech)
 wake action: org.autojs.plugin.action.WAKE
-tool service: org.autojs.plugin.TOOL_PROVIDER (short name speech: listen, speak, transcribe, synthesize; AutoJs6 6.8.0+)
+tool service: org.autojs.plugin.TOOL_PROVIDER (short name speech: listen, speak, transcribe, synthesize, speaker_verify, speaker_identify, diarize, detect_language, tag; AutoJs6 6.8.0+)
 minimum host build: 5456
 native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; arm64-v8a, armeabi-v7a, x86_64, x86)
 ```
@@ -390,11 +397,13 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 
 _2026/10/24_
 
-- `提示` 脚本中的 speech.speaker 与两个说话人工具需要 AutoJs6 6.8.0 正式版或更高版本; "说话人" 页与 "只听主人" 在插件内使用, 不依赖 AutoJs6 的版本. 用更早的 AutoJs6 时, 脚本的 speech.models.list() 会多列出一个类型为 speaker 的说话人识别模型, 可以照常安装或删除
+- `提示` 脚本中的 speech.speaker, speech.diarize, speech.detectLanguage, speech.tag 与五个说话人和分析工具需要 AutoJs6 6.8.0 正式版或更高版本; "说话人" 页, "只听主人" 与试听试说页的文件分析在插件内使用, 不依赖 AutoJs6 的版本. 用更早的 AutoJs6 时, 脚本的 speech.models.list() 会多列出说话人识别, 说话人分割, 语种识别与音频标签模型 (类型为 speaker, segment, langid 与 tagger), 可以照常安装或删除
 - `新增` 常驻唤醒新增省电模式 (设置 > 常驻唤醒, 默认开启): 只在听到说话声或其他声音时运行唤醒词模型, 安静时不运行, 插件占用的 CPU 少一半到九成 (周围越安静越少); 录音本身的耗电不变, 所以 Android 估算的耗电只略有减少 (实测见 README). 声音很轻的唤醒词可能听不到, 这时可以关掉省电模式
 - `新增` 可下载更多模型: 西班牙语离线识别 (NeMo, 带标点); 自动判断语言的八语流式识别, 覆盖阿拉伯语, 印尼语, 泰语, 越南语, 日语, 俄语, 中文与英文 (PengChengStarling, 安装后约 339 MB); Kokoro v1.0 多语言声音 (英语, 西班牙语, 法语, 印地语, 意大利语, 巴西葡萄牙语与中文共 49 个说话人, 每个说话人读自己的语言); 两个阿拉伯语声音与一个韩语声音. 阿拉伯语与韩语声音仅限非商业用途, 八语模型的训练数据未公开, 商业用途未知, 下载前都会提示许可. 新声音也按语言出现在系统 TTS 引擎里; 系统语音输入与插件工具只在其他已装模型都不覆盖某种语言时才自动选用八语模型
 - `新增` 说话人识别与 "只听主人" (设置 > 常驻唤醒): 在 "说话人" 页输入名字并跟读 3 句话, 即可注册自己的声音 (可以注册多人, 也可以用试验证查看分数); 打开 "只听主人" 后, 常驻唤醒听到唤醒词时先比对声音, 与已注册的人相符才打开弹层, 别人说唤醒词会被忽略. 磁贴, 小部件, 耳机键等手动入口不受影响. 需要先下载约 26.5 MB 的说话人识别模型 (页面会引导); 声纹只保存在本机, 不会上传或导出
 - `新增` 脚本可以用 speech.speaker 注册, 验证与辨认说话人, 并列出或删除已注册的人; 新增插件工具 speech_speaker_verify (判断一段录音是不是某位已注册的人) 与 speech_speaker_identify (在已注册的人中找出最像的一位), 结果只有名字与分数, 不含声纹
+- `新增` 试听试说页的文件识别新增三种分析: 分离说话人 (标出谁在什么时候说话, 可以用已注册的声音认出名字; 选 "分离 + 转写" 还会把每个人说的话转成文字), 识别语种 (Whisper 的 99 种语言) 与音频标签 (从人声, 音乐, 狗叫等 527 类声音中找出文件里有哪些). 都在手机上离线完成, 离开页面也会继续, 通知里显示进度. 需要先下载对应的模型, 页面会引导: 说话人分割模型约 6 MB (另需说话人识别模型), 语种识别模型约 103 MB, 音频标签模型约 10.5 MB. 说话人分割模型的训练数据含仅限研究用途的语料, 按仅限非商业用途标注; 语种识别模型的训练数据未公开, 商业用途未知
+- `新增` 脚本可以用 speech.diarize, speech.detectLanguage 与 speech.tag (以及返回 Promise 的 ...Async 版本) 做同样的分析, 并可报告进度; 新增插件工具 speech_diarize, speech_detect_language 与 speech_tag. 一个文件最长 30 分钟 (工具的说话人分离为 10 分钟); 同一时间只做一项分析, 其余的排队等候
 - `修复` Android 7.0 上又能下载模型了: 模型目录与模型文件都从 GitHub 获取, 其证书现在由 Android 7.0 没有的根证书 (Let's Encrypt 的 ISRG Root X1) 签发, 之前每次下载与刷新目录都因证书错误失败. 插件现在自带这张根证书, 与系统自带的一起使用; Android 7.1 及以上本来就有它, 不受影响
 
 #### v1.2.0

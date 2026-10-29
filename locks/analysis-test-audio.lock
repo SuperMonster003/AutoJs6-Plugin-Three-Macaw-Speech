@@ -1,0 +1,25 @@
+# Analysis device test recordings of roadmap P8.4.5 (androidTest assets, never in the plugin APK), checked by
+#   app/build.gradle.kts. Made by .python/generate_analysis_test_audio.py: two-speakers is cut from LibriSpeech
+#   test-clean (CC BY 4.0, https://www.openslr.org/12), language-* are synthesized by sherpa-onnx TTS models
+#   (https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), sounds is made by the script itself.
+format=1
+language-ru.path=app/src/androidTest/assets/analysis-audio/language-ru.wav
+language-ru.sha256=4315258da2b2e0479f6b5af076030d78d4ded0c5e1ffb526d15d5f40e4386ad5
+language-ru.source=Piper ru_RU denis medium int8 (sherpa-onnx tts-models), two sentences
+language-ru.license=MIT
+language-zh.path=app/src/androidTest/assets/analysis-audio/language-zh.wav
+language-zh.sha256=b278a26109a0115972da0d3bf53d59c93549c6332f9a405eedd90fd9869c6598
+language-zh.source=Kokoro int8 multi-lang v1.0 (sherpa-onnx tts-models), speaker 45, two sentences
+language-zh.license=Apache-2.0
+sounds.path=app/src/androidTest/assets/analysis-audio/sounds.wav
+sounds.sha256=f28cfc8b071716c15864d680d371a9692d58ffe6f58f36941a3fbefb0613579d
+sounds.source=made by this script: 10 s melody of harmonic tones, 10 s white noise (seed 7), 10 s of 1 kHz beeps
+sounds.license=CC0-1.0
+two-speakers-json.path=app/src/androidTest/assets/analysis-audio/two-speakers.json
+two-speakers-json.sha256=e0f6e26af8cce3a8159d7c5ca7700383b31d970cc722e9e7fc89e3332135403a
+two-speakers-json.source=the true turns of two-speakers.wav, written by this script
+two-speakers-json.license=CC-BY-4.0
+two-speakers.path=app/src/androidTest/assets/analysis-audio/two-speakers.wav
+two-speakers.sha256=3558d5ec5dc3d823dcca2da80dc4b944b899a8d200014e5d131bae8613c106bb
+two-speakers.source=LibriSpeech test-clean 1284-1180-0008.flac, 1089-134686-0000.flac, 1284-1180-0010.flac, 1089-134686-0002.flac, 1284-1180-0017.flac, 1089-134686-0005.flac, first 6.5 s each, alternating with 0.7 s of silence
+two-speakers.license=CC-BY-4.0

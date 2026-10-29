@@ -37,8 +37,11 @@ class SpeechToolCatalogTest {
     }
 
     @Test
-    fun `the six tools fit the names MCP clients allow`() {
-        assertEquals(listOf("listen", "speak", "transcribe", "synthesize", "speaker_verify", "speaker_identify"), tools.map { it["name"] })
+    fun `the nine tools fit the names MCP clients allow`() {
+        assertEquals(
+            listOf("listen", "speak", "transcribe", "synthesize", "speaker_verify", "speaker_identify", "diarize", "detect_language", "tag"),
+            tools.map { it["name"] },
+        )
         assertEquals(SpeechToolCatalog.TOOLS, tools.map { it["name"] })
         tools.forEach { tool ->
             val name = tool["name"] as String
@@ -78,11 +81,16 @@ class SpeechToolCatalogTest {
             mapOf(
                 "listen" to PluginToolValues.RISK_READONLY, "speak" to PluginToolValues.RISK_READONLY, "transcribe" to PluginToolValues.RISK_READONLY,
                 "synthesize" to PluginToolValues.RISK_WRITE, "speaker_verify" to PluginToolValues.RISK_READONLY, "speaker_identify" to PluginToolValues.RISK_READONLY,
+                "diarize" to PluginToolValues.RISK_READONLY, "detect_language" to PluginToolValues.RISK_READONLY, "tag" to PluginToolValues.RISK_READONLY,
             ),
             tools.associate { it["name"] to it["risk"] },
         )
         assertEquals(
-            mapOf("listen" to 120_000L, "speak" to 300_000L, "transcribe" to 300_000L, "synthesize" to 300_000L, "speaker_verify" to 120_000L, "speaker_identify" to 120_000L),
+            mapOf(
+                "listen" to 120_000L, "speak" to 300_000L, "transcribe" to 300_000L, "synthesize" to 300_000L, "speaker_verify" to 120_000L, "speaker_identify" to 120_000L,
+                // D152: the analyses take the contract ceiling.
+                "diarize" to 300_000L, "detect_language" to 300_000L, "tag" to 300_000L,
+            ),
             tools.associate { it["name"] to (it["timeoutMs"] as JsonNumber).longOrNull() },
         )
         tools.forEach { tool ->
@@ -106,7 +114,9 @@ class SpeechToolCatalogTest {
 
     @Test
     fun `transcribe and the speaker tools take a file and only synthesize writes one`() {
-        listOf("transcribe", "speaker_verify", "speaker_identify").forEach { assertEquals(it, mapOf("file" to "file"), specialParameters(tool(it))) }
+        listOf("transcribe", "speaker_verify", "speaker_identify", "diarize", "detect_language", "tag").forEach {
+            assertEquals(it, mapOf("file" to "file"), specialParameters(tool(it)))
+        }
         listOf("listen", "speak", "synthesize").forEach { assertEquals(it, emptyMap<String, String>(), specialParameters(tool(it))) }
         @Suppress("UNCHECKED_CAST")
         val outputs = tool("synthesize")["outputs"] as List<Map<String, Any?>>
@@ -137,6 +147,21 @@ class SpeechToolCatalogTest {
         assertEquals(SpeakRequest("x").speed.toDouble(), (synthesize.getValue("speed")["default"] as JsonNumber).toDouble(), 0.0)
         assertEquals(listOf(4000L, 8000L), listOf("speak", "synthesize").map { (properties(tool(it)).getValue("text")["maxLength"] as JsonNumber).longOrNull() })
         assertEquals(setOf("file", "name", "threshold"), properties(tool("speaker_verify")).keys)
+        // P8.4.4 (D152): the analysis tools declare the defaults and ranges of their parsers and of the speech contract.
+        val diarize = properties(tool("diarize"))
+        assertEquals(setOf("file", "speakers", "threshold", "identify"), diarize.keys)
+        assertEquals(DiarizeToolRequest(), SpeechToolArguments.diarize(emptyMap()))
+        assertEquals(listOf(0L, 20L, 0L), listOf("minimum", "maximum", "default").map { (diarize.getValue("speakers")[it] as JsonNumber).longOrNull() })
+        assertEquals(2.0, (diarize.getValue("threshold")["maximum"] as JsonNumber).toDouble(), 0.0)
+        assertEquals(false, diarize.getValue("identify")["default"])
+        val language = properties(tool("detect_language"))
+        assertEquals(setOf("file", "windows"), language.keys)
+        assertEquals(LanguageToolRequest().windows.toLong(), (language.getValue("windows")["default"] as JsonNumber).longOrNull())
+        assertEquals(listOf(1L, 60L), listOf("minimum", "maximum").map { (language.getValue("windows")[it] as JsonNumber).longOrNull() })
+        val tag = properties(tool("tag"))
+        assertEquals(setOf("file", "topK"), tag.keys)
+        assertEquals(TagToolRequest().topK.toLong(), (tag.getValue("topK")["default"] as JsonNumber).longOrNull())
+        assertEquals(listOf(1L, 20L), listOf("minimum", "maximum").map { (tag.getValue("topK")[it] as JsonNumber).longOrNull() })
         val identify = properties(tool("speaker_identify"))
         assertEquals(setOf("file", "threshold", "topK"), identify.keys)
         assertEquals(SpeakerIdentifyRequest().topK.toLong(), (identify.getValue("topK")["default"] as JsonNumber).longOrNull())

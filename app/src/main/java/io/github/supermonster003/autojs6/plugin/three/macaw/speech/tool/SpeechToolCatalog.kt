@@ -4,14 +4,16 @@ import org.autojs.plugin.speech.api.SpeechLimits
 
 /**
  * The catalog [SpeechToolService] returns from `IPluginToolProvider.getCatalog` (AutoJs6 plugin tool contract v1, roadmap
- * P7.6, D87): the short name `speech` (D94) and six tools, which AutoJs6 lists as `speech_listen`, `speech_speak`,
- * `speech_transcribe`, `speech_synthesize` and, since roadmap P8.3.5, `speech_speaker_verify` and
- * `speech_speaker_identify` (scores and names only, never a voiceprint). The document is static (D99): the host caches it per version code, and
+ * P7.6, D87): the short name `speech` (D94) and nine tools, which AutoJs6 lists as `speech_listen`, `speech_speak`,
+ * `speech_transcribe`, `speech_synthesize`, since roadmap P8.3.5 `speech_speaker_verify` and `speech_speaker_identify`
+ * (scores and names only, never a voiceprint), and since roadmap P8.4.4 `speech_diarize`, `speech_detect_language` and
+ * `speech_tag` (D152). The document is static (D99): the host caches it per version code, and
  * missing prerequisites (microphone permission, models) are reported by the call, not by dropping tools. The
  * descriptions reach the context of AI models as written, so they stay English and ASCII and name the error codes.
  * zh-CN: [SpeechToolService] 从 `IPluginToolProvider.getCatalog` 返回的目录 (AutoJs6 插件工具契约 v1, 路线图 P7.6, D87): 短名
- * `speech` (D94) 下六个工具, AutoJs6 列为 `speech_listen`, `speech_speak`, `speech_transcribe`, `speech_synthesize`, 以及路线图 P8.3.5
- * 起的 `speech_speaker_verify` 与 `speech_speaker_identify` (只有分数与名字, 从不含声纹). 文档是静态的
+ * `speech` (D94) 下九个工具, AutoJs6 列为 `speech_listen`, `speech_speak`, `speech_transcribe`, `speech_synthesize`, 路线图 P8.3.5
+ * 起的 `speech_speaker_verify` 与 `speech_speaker_identify` (只有分数与名字, 从不含声纹), 以及路线图 P8.4.4 起的 `speech_diarize`,
+ * `speech_detect_language` 与 `speech_tag` (D152). 文档是静态的
  * (D99): 宿主按 versionCode 缓存, 缺少的前提 (麦克风权限, 模型) 由调用报告, 不从目录里删工具. 说明原样进入 AI 模型的上下文, 因此保持
  * 英文与 ASCII, 并写明错误码.
  */
@@ -24,7 +26,12 @@ internal object SpeechToolCatalog {
     const val TOOL_SYNTHESIZE = "synthesize"
     const val TOOL_SPEAKER_VERIFY = "speaker_verify"
     const val TOOL_SPEAKER_IDENTIFY = "speaker_identify"
-    val TOOLS = listOf(TOOL_LISTEN, TOOL_SPEAK, TOOL_TRANSCRIBE, TOOL_SYNTHESIZE, TOOL_SPEAKER_VERIFY, TOOL_SPEAKER_IDENTIFY)
+    const val TOOL_DIARIZE = "diarize"
+    const val TOOL_DETECT_LANGUAGE = "detect_language"
+    const val TOOL_TAG = "tag"
+    val TOOLS = listOf(
+        TOOL_LISTEN, TOOL_SPEAK, TOOL_TRANSCRIBE, TOOL_SYNTHESIZE, TOOL_SPEAKER_VERIFY, TOOL_SPEAKER_IDENTIFY, TOOL_DIARIZE, TOOL_DETECT_LANGUAGE, TOOL_TAG,
+    )
 
     /** D95: listening, including at most [NOTIFICATION_WAIT_SECONDS] for a tap on the notification. zh-CN: D95: 听写, 含至多 60 s 等待点按通知. */
     const val LISTEN_TIMEOUT_MS = 120_000L
@@ -66,6 +73,9 @@ internal object SpeechToolCatalog {
     const val DEFAULT_TOP_K = SpeechLimits.DEFAULT_IDENTIFY_CANDIDATES
     const val MAX_TOP_K = SpeechLimits.MAX_IDENTIFY_CANDIDATES
 
+    /** P8.4.4: the clustering distance of a diarization (cosine distance, 0 - 2). zh-CN: 分离的聚类距离 (余弦距离, 0 - 2). */
+    const val MAX_CLUSTER_THRESHOLD = 2.0
+
     const val PARAM_FILE = "file"
     const val OUTPUT_AUDIO = "audio"
     const val FORMAT_WAV = "wav"
@@ -88,6 +98,8 @@ internal object SpeechToolCatalog {
     private val SPEAKER_FILE = """"$PARAM_FILE": {"type": "string", "x-autojs6-type": "file", "description": "An audio file with one person speaking, at least 1 second of speech; the first 60 seconds of speech are used."}"""
     private const val SPEAKER_AUDIO = "Reads WAV, MP3, AAC, M4A, Ogg Vorbis, Ogg Opus, FLAC and the audio track of MP4 or WebM files. Speakers are enrolled on the Speakers screen of 3-Macaw Speech (settings, resident wake word group) or by AutoJs6 scripts with speech.speaker.enroll; voiceprints stay on the phone and are never part of a result."
     private const val SPEAKER_ERRORS = "NOT_READY (no speaker recognition model of 3-Macaw Speech is installed), INPUT_UNREADABLE (unsupported or damaged file, or less than 1 second of speech, AUDIO_TOO_SHORT), LIMIT_EXCEEDED, CANCELLED"
+    private const val ANALYSIS_AUDIO = "Reads WAV, MP3, AAC, M4A, Ogg Vorbis, Ogg Opus, FLAC and the audio track of MP4 or WebM files"
+    private const val ANALYSIS_ERRORS = "INPUT_UNREADABLE (unsupported or damaged file), LIMIT_EXCEEDED, INVALID_ARGUMENTS, CANCELLED"
     private val SPEED = """"speed": {"type": "number", "minimum": $MIN_SPEED, "maximum": $MAX_SPEED, "default": $DEFAULT_SPEED, "description": "Speaking rate, 1.0 is normal."}"""
 
     val JSON: String = """{
@@ -306,6 +318,139 @@ internal object SpeechToolCatalog {
       },
       "risk": "readonly",
       "timeoutMs": $SPEAKER_TIMEOUT_MS,
+      "maxConcurrency": 1
+    },
+    {
+      "name": "$TOOL_DIARIZE",
+      "title": "Find who spoke when (3-Macaw Speech)",
+      "description": "Splits an audio file on the phone into speaker turns offline (speaker diarization) with the speaker segmentation and speaker recognition models of 3-Macaw Speech and returns the turns with the speaker of each, numbered from 0 in order of first appearance. Give speakers when the number of people is known; otherwise they are counted with threshold. With identify true, each speaker's longest turns (up to 10 seconds) are compared with the speakers enrolled in 3-Macaw Speech and names lists the closest one when it scores high enough. $ANALYSIS_AUDIO up to 10 minutes; diarize longer recordings with speech.diarize in an AutoJs6 script or on the Try it out screen of 3-Macaw Speech. Results never hold a voiceprint. Errors: NOT_READY (no speaker segmentation model or no speaker recognition model of 3-Macaw Speech is installed; install both), $ANALYSIS_ERRORS.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "$PARAM_FILE": {"type": "string", "x-autojs6-type": "file", "description": "The audio file, at most 10 minutes long."},
+          "speakers": {"type": "integer", "minimum": 0, "maximum": ${SpeechLimits.MAX_DIARIZATION_SPEAKERS}, "default": 0, "description": "The number of speakers when known; 0 counts them."},
+          "threshold": {"type": "number", "minimum": 0, "maximum": $MAX_CLUSTER_THRESHOLD, "description": "Clustering distance used to count speakers when speakers is 0; larger values merge more voices into one speaker. Default: the value measured for the speaker model, 0.85 for the published model."},
+          "identify": {"type": "boolean", "default": false, "description": "Also name the speakers enrolled in 3-Macaw Speech."}
+        },
+        "required": ["$PARAM_FILE"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"startMillis": {"type": "integer"}, "endMillis": {"type": "integer"}, "speaker": {"type": "integer"}},
+              "required": ["startMillis", "endMillis", "speaker"],
+              "additionalProperties": false
+            }
+          },
+          "speakers": {"type": "integer"},
+          "durationMillis": {"type": "integer"},
+          "modelId": {"type": "string"},
+          "speakerModelId": {"type": "string"},
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"speaker": {"type": "integer"}, "name": {"type": "string"}, "score": {"type": "number"}},
+              "required": ["speaker"],
+              "additionalProperties": false
+            }
+          },
+          $WARNINGS
+        },
+        "required": ["segments", "speakers", "durationMillis", "modelId", "speakerModelId", "warnings"],
+        "additionalProperties": false
+      },
+      "risk": "readonly",
+      "timeoutMs": $LONG_TIMEOUT_MS,
+      "maxConcurrency": 1
+    },
+    {
+      "name": "$TOOL_DETECT_LANGUAGE",
+      "title": "Detect the spoken language (3-Macaw Speech)",
+      "description": "Tells offline which language is spoken in an audio file on the phone with a language identification model of 3-Macaw Speech (Whisper, 99 languages). Speech is cut into windows of up to 30 seconds and the first windows vote; language is the language of most windows, candidates gives each language's share of the windows and segments the language heard in each window. Languages are two-letter codes such as en, zh or ja. $ANALYSIS_AUDIO up to 200 MB and 30 minutes. Errors: NOT_READY (no language identification model of 3-Macaw Speech is installed), INPUT_UNREADABLE (unsupported or damaged file, or no speech in it, AUDIO_TOO_SHORT), LIMIT_EXCEEDED, INVALID_ARGUMENTS, CANCELLED.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "$PARAM_FILE": {"type": "string", "x-autojs6-type": "file", "description": "The audio file."},
+          "windows": {"type": "integer", "minimum": 1, "maximum": ${SpeechLimits.MAX_LANGUAGE_WINDOWS}, "default": ${SpeechLimits.DEFAULT_LANGUAGE_WINDOWS}, "description": "How many speech windows of up to 30 seconds vote, from the start of the file."}
+        },
+        "required": ["$PARAM_FILE"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "language": {"type": "string"},
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"language": {"type": "string"}, "score": {"type": "number"}},
+              "required": ["language", "score"],
+              "additionalProperties": false
+            }
+          },
+          "segments": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"startMillis": {"type": "integer"}, "endMillis": {"type": "integer"}, "language": {"type": "string"}},
+              "required": ["startMillis", "endMillis", "language"],
+              "additionalProperties": false
+            }
+          },
+          "durationMillis": {"type": "integer"},
+          "modelId": {"type": "string"},
+          $WARNINGS
+        },
+        "required": ["language", "candidates", "segments", "durationMillis", "modelId", "warnings"],
+        "additionalProperties": false
+      },
+      "risk": "readonly",
+      "timeoutMs": $LONG_TIMEOUT_MS,
+      "maxConcurrency": 1
+    },
+    {
+      "name": "$TOOL_TAG",
+      "title": "Recognize sounds (3-Macaw Speech)",
+      "description": "Recognizes the sounds in an audio file on the phone offline (audio tagging) with an audio tagging model of 3-Macaw Speech and returns the topK most likely of the 527 AudioSet labels, such as Speech, Music, Dog or Siren. The file is scored in windows of 10 seconds; each label keeps its best score and the window where it was best. Labels are English. $ANALYSIS_AUDIO up to 200 MB and 30 minutes. Errors: NOT_READY (no audio tagging model of 3-Macaw Speech is installed), $ANALYSIS_ERRORS.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "$PARAM_FILE": {"type": "string", "x-autojs6-type": "file", "description": "The audio file."},
+          "topK": {"type": "integer", "minimum": 1, "maximum": ${SpeechLimits.MAX_TAG_TOP_K}, "default": ${SpeechLimits.DEFAULT_TAG_TOP_K}, "description": "How many labels to return, best first."}
+        },
+        "required": ["$PARAM_FILE"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {"type": "string"}, "mid": {"type": "string"}, "score": {"type": "number"}, "startMillis": {"type": "integer"}, "endMillis": {"type": "integer"}
+              },
+              "required": ["label", "mid", "score", "startMillis", "endMillis"],
+              "additionalProperties": false
+            }
+          },
+          "durationMillis": {"type": "integer"},
+          "modelId": {"type": "string"},
+          $WARNINGS
+        },
+        "required": ["labels", "durationMillis", "modelId", "warnings"],
+        "additionalProperties": false
+      },
+      "risk": "readonly",
+      "timeoutMs": $LONG_TIMEOUT_MS,
       "maxConcurrency": 1
     }
   ]

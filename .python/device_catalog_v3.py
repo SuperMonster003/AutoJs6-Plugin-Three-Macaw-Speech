@@ -2,17 +2,19 @@
 
     py .python/device_catalog_v3.py push <serial> <catalog-v3.json>   copy the pending catalog into the debug build
     py .python/device_catalog_v3.py run <serial> [--install] [--remove] [--models <ids>]
+    py .python/device_catalog_v3.py analysis <serial> [--long]        the offline analyses of P8.4 (AnalysisDeviceTest, the tools)
     py .python/device_catalog_v3.py clean <serial>                    remove the development catalog and the temp files
 
 `push` copies Shared-Assets `speech-models/catalogs/pending/v3/catalog-v3.json` (schema 3, catalogVersion 3, unsigned;
-the language models of P8.2 plus the speaker model of P8.3) through `/data/local/tmp` and `run-as` to
-`files/dev-catalog/catalog-v3.json` of the installed debug build, which uses it instead of the bundled snapshot
-(`SpeechModels.DEV_CATALOG`; release builds ignore it). `run` runs `CatalogV3ModelsDeviceTest`:
-`--install` installs the six models first (about 610 MB from the sherpa-onnx assets, since the `speech-models-v3`
-mirror is not published), `--remove` deletes them at the end; the output is PASS / FAIL with the `MacawDeviceRun` lines
-(memory, character error rates, sample rates). `clean` deletes the development catalog, so the bundled one is used
-again. Install the debug and test APKs first (`py .python/device_speech_run.py install <serial>`). Nothing here
-answers a dialog on the device.
+the language models of P8.2, the speaker model of P8.3 and the analysis models of P8.4) through `/data/local/tmp` and
+`run-as` to `files/dev-catalog/catalog-v3.json` of the installed debug build, which uses it instead of the bundled
+snapshot (`SpeechModels.DEV_CATALOG`; release builds ignore it). `run` runs `CatalogV3ModelsDeviceTest`: `--install`
+installs the six language models first (about 610 MB from the sherpa-onnx assets, since the `speech-models-v3` mirror
+is not published), `--models` the given ones instead (`ANALYSIS_MODELS` for P8.4), `--remove` deletes them at the end;
+the output is PASS / FAIL with the `MacawDeviceRun` lines (memory, character error rates, sample rates). `analysis`
+runs AnalysisDeviceTest and the analysis case of SpeechToolServiceDeviceTest (roadmap P8.4.5), `--long` adds the
+10 minute timing. `clean` deletes the development catalog, so the bundled one is used again. Install the debug and test
+APKs first (`py .python/device_speech_run.py install <serial>`). Nothing here answers a dialog on the device.
 """
 import argparse
 import sys
@@ -24,6 +26,8 @@ import device_speech_run as sr  # noqa: E402
 REMOTE = "/data/local/tmp/macaw-v3"
 DEV_CATALOG = "files/dev-catalog/catalog-v3.json"
 TEST = "CatalogV3ModelsDeviceTest"
+ANALYSIS_MODELS = "segment.pyannote.3-0,speaker.eres2net.3dspeaker.en-voxceleb,langid.whisper.tiny.int8,tagger.ced.mini.int8"
+ANALYSIS_TESTS = ("AnalysisDeviceTest", "SpeechToolServiceDeviceTest#test6AnalysisTools")
 
 
 def push(serial, catalog):
@@ -59,6 +63,9 @@ def main(argv=None):
     r.add_argument("--install", action="store_true")
     r.add_argument("--remove", action="store_true")
     r.add_argument("--models", help="comma separated model ids to install instead of all six")
+    a = sub.add_parser("analysis")
+    a.add_argument("serial")
+    a.add_argument("--long", action="store_true")
     c = sub.add_parser("clean")
     c.add_argument("serial")
     args = parser.parse_args(argv)
@@ -67,6 +74,9 @@ def main(argv=None):
         return 0 if push(args.serial, args.catalog) else 1
     if args.command == "clean":
         return 0 if clean(args.serial) else 1
+    if args.command == "analysis":
+        results = [sr.run_test(args.serial, test, ["macawLong=true"] if args.long and "#" not in test else []) for test in ANALYSIS_TESTS]
+        return 0 if all(results) else 1
     arguments = []
     if args.install or args.models:
         arguments.append(f"macawV3Models={args.models or 'true'}")

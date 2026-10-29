@@ -443,10 +443,14 @@ class TryoutActivity : StandaloneActivity() {
 
     // File ------------------------------------------------------------------------------------------------------
 
-    /** No microphone needed (D110); the missing model card only while there is nothing to show. zh-CN: 不需要麦克风 (D110). */
+    /**
+     * No microphone needed (D110); the missing model card only while no model of any file action is installed and
+     * there is nothing to show (D153).
+     * zh-CN: 不需要麦克风 (D110); 只有任何文件操作的模型都未安装且没有内容可显示时才显示缺少模型的卡片 (D153).
+     */
     @Composable
     private fun Transcribe() {
-        if (tryout.asrModels.isEmpty() && transcription.run == null && transcription.record == null) {
+        if (tryout.asrModels.isEmpty() && tryout.analysisModels.isEmpty() && transcription.run == null && transcription.record == null) {
             MissingModel("asr")
             return
         }
@@ -455,15 +459,21 @@ class TryoutActivity : StandaloneActivity() {
             transcription = transcription,
             languageLabel = { languageLabel(it) },
             onPick = { runCatching { pickAudio.launch(AUDIO_TYPES) } },
-            onCopy = ::copy,
+            onCopy = { copy(FileTexts.copyText(this, it)) },
             onSaveText = { saveExport(TranscriptExport.TEXT_EXTENSION, saveTextDocument::launch) },
             onSaveSrt = { saveExport(TranscriptExport.SRT_EXTENSION, saveSrtDocument::launch) },
+            onOpenModels = { startActivity(HomeActivity.intent(this)) },
         )
     }
 
     private fun startFile(uri: Uri) {
-        val model = tryout.fileModel ?: return
-        val options = FileRunOptions(model, tryout.fileLanguage.takeIf { tryout.takesLanguage(model) }, tryout.filePunctuation, tryout.vad)
+        val action = tryout.fileAction
+        if (tryout.missingKinds(action).isNotEmpty()) return
+        val model = tryout.fileModel?.takeIf { action.transcribes }
+        val options = FileRunOptions(
+            model, tryout.fileLanguage.takeIf { model != null && tryout.takesLanguage(model) }, tryout.filePunctuation, tryout.vad,
+            action = action, speakers = tryout.fileSpeakers, identify = tryout.fileIdentify, languageModel = tryout.languageModel,
+        )
         if (transcription.start(FileSource.of(this, uri), options)) askNotificationsOnce()
     }
 
@@ -484,7 +494,7 @@ class TryoutActivity : StandaloneActivity() {
     private fun export(uri: Uri?, bytes: (List<Utterance>) -> ByteArray) {
         val record = transcription.record
         if (uri == null || record == null) return
-        tryout.writeDocument(uri, bytes(record.segments)) { ok -> show(getString(if (ok) R.string.tryout_transcribe_saved else R.string.tryout_transcribe_save_failed)) }
+        tryout.writeDocument(uri, bytes(FileTexts.segments(this, record))) { ok -> show(getString(if (ok) R.string.tryout_transcribe_saved else R.string.tryout_transcribe_save_failed)) }
     }
 
     private fun copy(text: String) {

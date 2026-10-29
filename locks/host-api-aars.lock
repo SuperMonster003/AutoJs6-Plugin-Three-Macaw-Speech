@@ -10,7 +10,7 @@ format=1
 common-plugin-api.file=common-plugin-api.aar
 common-plugin-api.sha256=ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a
 speech-api.file=speech-api.aar
-speech-api.sha256=2d45a5e71b1222cebda5b8673cc4d3f5d30dc07258e5ffbbe568db4076e0ccb5
+speech-api.sha256=e363b32ecb84d9aff9e73b5716a2681bbb740bace324c1ec178310bd76eadd61
 plugin-tool-api.file=plugin-tool-api.aar
 plugin-tool-api.sha256=8bce82dd2c9811fa689f6b2c7b3926262cf3a756d78569ef4b19e1af21016005
 
@@ -26,3 +26,8 @@ plugin-tool-api.sha256=8bce82dd2c9811fa689f6b2c7b3926262cf3a756d78569ef4b19e1af2
 # assembled with :plugin-api:speech-api:assembleRelease in a clean clone. ISpeechPlugin appends eight methods (transactions
 # 15 - 22), CONTRACT_VERSION 2 with SpeechCapabilityKeys.MAX_CONTRACT_VERSION, new kinds, features, error codes, limits and keys;
 # REQUIRED_HOST_VERSION_CODE stays 5456 (D122). Only classes.jar differs from the artifact of be1b3eee0 (18d98c5dd386de30a02c34cd80d44ef822abc5729b6570209ba55119c2990e1f).
+
+# Offline analyses (roadmap P8.4.1, D146 - D151): speech-api release AAR from host commit f3c4443bf14 (2026-10-29), assembled with
+# :plugin-api:speech-api:assembleRelease in a clean clone. The reserved diarizeFile, detectLanguage and tagAudio calls are documented
+# (same transactions), SpeechContract gains ANALYSIS_TIMEOUT_MS, SpeechLimits the analysis ceilings, SpeechOptionKeys and
+# SpeechResultKeys the analysis keys. Only classes.jar differs from the artifact of c31ea30ee (2d45a5e71b1222cebda5b8673cc4d3f5d30dc07258e5ffbbe568db4076e0ccb5).

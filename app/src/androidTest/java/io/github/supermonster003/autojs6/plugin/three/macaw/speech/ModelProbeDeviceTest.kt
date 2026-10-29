@@ -4,6 +4,10 @@ import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.k2fsa.sherpa.onnx.AudioTagging
+import com.k2fsa.sherpa.onnx.AudioTaggingConfig
+import com.k2fsa.sherpa.onnx.AudioTaggingModelConfig
+import com.k2fsa.sherpa.onnx.FastClusteringConfig
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineCanaryModelConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
@@ -11,18 +15,26 @@ import com.k2fsa.sherpa.onnx.OfflineOmnilingualAsrCtcModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
+import com.k2fsa.sherpa.onnx.OfflineSpeakerDiarization
+import com.k2fsa.sherpa.onnx.OfflineSpeakerDiarizationConfig
+import com.k2fsa.sherpa.onnx.OfflineSpeakerSegmentationModelConfig
+import com.k2fsa.sherpa.onnx.OfflineSpeakerSegmentationPyannoteModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsKokoroModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
+import com.k2fsa.sherpa.onnx.OfflineZipformerAudioTaggingModelConfig
 import com.k2fsa.sherpa.onnx.OnlineModelConfig
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractor
 import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractorConfig
+import com.k2fsa.sherpa.onnx.SpokenLanguageIdentification
+import com.k2fsa.sherpa.onnx.SpokenLanguageIdentificationConfig
+import com.k2fsa.sherpa.onnx.SpokenLanguageIdentificationWhisperConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.WavReader
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
@@ -45,11 +57,12 @@ import kotlin.math.abs
  * the first request (`VmHWM` after resetting it, or the highest sampled `VmRSS`), the PSS afterwards and the first-answer
  * latency: the first partial after the first audible sample for a streaming recognizer fed at real-time pace, the
  * decoding time of the whole recording for an offline recognizer (one sentence, what a VAD segment gives it), the time
- * to the first samples for a synthesizer, the embedding times for a speaker model (roadmap P8.3). Skipped unless `macawProbeDir` is given. Results are `MacawDeviceRun` lines.
+ * to the first samples for a synthesizer, the embedding times for a speaker model (roadmap P8.3), the processing time of a diarization, a language identification
+ * or the windows of an audio tagger (roadmap P8.4). Skipped unless `macawProbeDir` is given. Results are `MacawDeviceRun` lines.
  * zh-CN: 候选模型入目录前的实测 (路线图 P8.2.1, D124): 加载 `.python/device_model_probe.py` 推送到 `/data/local/tmp` 的模型目录, 直接经
  * sherpa-onnx 1.13.8 API 并沿用插件的线程数, 报告加载耗时, 加载与回答第一个请求期间进程的峰值常驻内存 (重置后的 `VmHWM`, 不能重置时取采样到的
  * 最大 `VmRSS`), 之后的 PSS, 以及首个结果的延迟: 流式识别按实时速度送入, 记首个可闻采样到首个 partial 的时间; 离线识别记整段录音 (一句, 相当于一个
- * VAD 片段) 的解码时间; 合成记到首批采样的时间. 未给出 `macawProbeDir` 时跳过. 结果为 `MacawDeviceRun` 日志行.
+ * VAD 片段) 的解码时间; 合成记到首批采样的时间; 说话人模型记嵌入耗时 (路线图 P8.3), 说话人分离, 语种识别与音频标签记处理耗时 (路线图 P8.4). 未给出 `macawProbeDir` 时跳过. 结果为 `MacawDeviceRun` 日志行.
  */
 @RunWith(AndroidJUnit4::class)
 class ModelProbeDeviceTest {
@@ -159,6 +172,56 @@ class ModelProbeDeviceTest {
                     speaker(extractor, samples(wav()), loadMs)
                 } finally {
                     extractor.release()
+                }
+            }
+            "diarization" -> {
+                val config = OfflineSpeakerDiarizationConfig(
+                    segmentation = OfflineSpeakerSegmentationModelConfig(
+                        pyannote = OfflineSpeakerSegmentationPyannoteModelConfig(
+                            model = path("segmentation"),
+                            windowShiftRatio = SpeechDevice.argument("macawProbeShift")?.toFloatOrNull() ?: 0.1f,
+                        ),
+                        numThreads = SherpaEngines.ASR_THREADS,
+                    ),
+                    embedding = SpeakerEmbeddingExtractorConfig(model = path("embedding"), numThreads = SherpaEngines.ASR_THREADS),
+                    clustering = FastClusteringConfig(numClusters = SpeechDevice.argument("macawProbeClusters")?.toIntOrNull() ?: -1, threshold = SpeechDevice.argument("macawProbeThreshold")?.toFloatOrNull() ?: 0.5f),
+                )
+                val diarization = OfflineSpeakerDiarization(null, config)
+                SherpaEngines.requireNative(diarization, label)
+                val loadMs = SystemClock.elapsedRealtime() - loadStarted
+                try {
+                    diarize(diarization, samples(wav()), loadMs)
+                } finally {
+                    diarization.release()
+                }
+            }
+            "langid" -> {
+                val config = SpokenLanguageIdentificationConfig(
+                    whisper = SpokenLanguageIdentificationWhisperConfig(encoder = path("encoder"), decoder = path("decoder")),
+                    numThreads = SherpaEngines.ASR_THREADS,
+                )
+                val identification = SpokenLanguageIdentification(null, config)
+                SherpaEngines.requireNative(identification, label)
+                val loadMs = SystemClock.elapsedRealtime() - loadStarted
+                try {
+                    language(identification, samples(wav()), loadMs)
+                } finally {
+                    identification.release()
+                }
+            }
+            "tagger-ced", "tagger-zipformer" -> {
+                val model = if (type == "tagger-ced") {
+                    AudioTaggingModelConfig(ced = path("model"), numThreads = SherpaEngines.ASR_THREADS)
+                } else {
+                    AudioTaggingModelConfig(zipformer = OfflineZipformerAudioTaggingModelConfig(model = path("model")), numThreads = SherpaEngines.ASR_THREADS)
+                }
+                val tagging = AudioTagging(null, AudioTaggingConfig(model = model, labels = path("labels"), topK = 5))
+                SherpaEngines.requireNative(tagging, label)
+                val loadMs = SystemClock.elapsedRealtime() - loadStarted
+                try {
+                    tags(tagging, samples(wav()), loadMs)
+                } finally {
+                    tagging.release()
                 }
             }
             else -> throw AssertionError("unknown macawProbeType '$type'")
@@ -282,6 +345,100 @@ class ModelProbeDeviceTest {
         val audioS = "%.2f".format(samples.size.toDouble() / rate)
         return "loadMs=$loadMs dim=${first.size} first2sMs=$firstMs mean2sMs=$ms2 mean5sMs=$ms5 audioS=$audioS sameHalves=${"%.3f".format(same)}" +
             (other?.let { " otherSpeaker=${"%.3f".format(it)}" } ?: "")
+    }
+
+    /**
+     * Speaker diarization (roadmap P8.4, D126): the whole recording at once with the progress callback, then (with
+     * `macawProbeCancelAt`, a fraction) a second run whose callback answers non-zero at that share of the chunks, to time
+     * how fast a cancel takes effect.
+     * zh-CN: 说话人分离 (路线图 P8.4, D126): 带进度回调一次处理整段录音; 给出 `macawProbeCancelAt` (比例) 时再跑一次, 回调在该比例的块处返回非零,
+     * 记录取消生效的时间.
+     */
+    private fun diarize(diarization: OfflineSpeakerDiarization, samples: FloatArray, loadMs: Long): String {
+        var callbacks = 0
+        var total = 0
+        val started = SystemClock.elapsedRealtime()
+        val segments = diarization.processWithCallback(samples, Progress { done, all ->
+            callbacks += 1
+            total = all
+            0
+        }, 0L)
+        val processMs = SystemClock.elapsedRealtime() - started
+        val seconds = samples.size.toDouble() / AudioInput.SAMPLE_RATE
+        val speakers = segments.map { it.speaker }.toSet().size
+        val cancel = SpeechDevice.argument("macawProbeCancelAt")?.toDoubleOrNull()?.let { share ->
+            var stoppedAt = -1L
+            val begin = SystemClock.elapsedRealtime()
+            val partial = diarization.processWithCallback(samples, Progress { done, all ->
+                if (done >= all * share) {
+                    if (stoppedAt < 0) stoppedAt = SystemClock.elapsedRealtime()
+                    1
+                } else {
+                    0
+                }
+            }, 0L)
+            val end = SystemClock.elapsedRealtime()
+            " cancelAt=$share cancelReturnMs=${if (stoppedAt < 0) -1 else end - stoppedAt} cancelTotalMs=${end - begin} cancelSegments=${partial.size}"
+        }.orEmpty()
+        return "loadMs=$loadMs processMs=$processMs audioS=${"%.2f".format(seconds)} rtf=${"%.3f".format(processMs / 1000.0 / seconds)} " +
+            "speakers=$speakers segments=${segments.size} callbacks=$callbacks chunks=$total$cancel"
+    }
+
+    /**
+     * The progress callback of `processWithCallback`: sherpa-onnx 1.13.8 looks up `invoke(IIJ)Ljava/lang/Integer;` through
+     * JNI, which a Kotlin lambda (an invokedynamic lambda after D8) lacks, so a class with the specialized method is needed.
+     * zh-CN: `processWithCallback` 的进度回调: sherpa-onnx 1.13.8 经 JNI 查找 `invoke(IIJ)Ljava/lang/Integer;`, Kotlin lambda (经 D8 成为
+     * invokedynamic lambda) 没有这个方法, 所以要用带特化方法的类.
+     */
+    private class Progress(private val block: (Int, Int) -> Int) : Function3<Int, Int, Long, Int> {
+        override fun invoke(done: Int, total: Int, arg: Long): Int = block(done, total)
+    }
+
+    /** Spoken language identification (roadmap P8.4): the first call, then the mean of three. zh-CN: 语种识别: 首次调用与随后三次的平均耗时. */
+    private fun language(identification: SpokenLanguageIdentification, samples: FloatArray, loadMs: Long): String {
+        fun once(): String {
+            val stream = identification.createStream()
+            try {
+                stream.acceptWaveform(samples, AudioInput.SAMPLE_RATE)
+                return identification.compute(stream)
+            } finally {
+                stream.release()
+            }
+        }
+        val started = SystemClock.elapsedRealtime()
+        val language = once()
+        val firstMs = SystemClock.elapsedRealtime() - started
+        val begin = SystemClock.elapsedRealtime()
+        repeat(3) { once() }
+        val meanMs = (SystemClock.elapsedRealtime() - begin) / 3
+        return "loadMs=$loadMs firstMs=$firstMs meanMs=$meanMs audioS=${"%.2f".format(samples.size.toDouble() / AudioInput.SAMPLE_RATE)} language=$language"
+    }
+
+    /**
+     * Audio tagging (roadmap P8.4): 10 s windows (CED takes at most 10 s), the first window, then the mean over the rest
+     * of the recording, and the top labels of the first window.
+     * zh-CN: 音频标签: 按 10 s 窗口 (CED 至多接受 10 s), 首个窗口耗时, 其余窗口的平均耗时, 以及首个窗口的前几个标签.
+     */
+    private fun tags(tagging: AudioTagging, samples: FloatArray, loadMs: Long): String {
+        val window = AudioInput.SAMPLE_RATE * 10
+        val windows = (0 until samples.size step window).map { samples.copyOfRange(it, minOf(samples.size, it + window)) }.filter { it.size >= AudioInput.SAMPLE_RATE / 2 }
+        fun once(piece: FloatArray): List<String> {
+            val stream = tagging.createStream()
+            try {
+                stream.acceptWaveform(piece, AudioInput.SAMPLE_RATE)
+                return tagging.compute(stream, 3).map { "${it.name}:${"%.2f".format(it.prob)}" }
+            } finally {
+                stream.release()
+            }
+        }
+        val started = SystemClock.elapsedRealtime()
+        val top = once(windows.first())
+        val firstMs = SystemClock.elapsedRealtime() - started
+        val begin = SystemClock.elapsedRealtime()
+        windows.drop(1).forEach { once(it) }
+        val meanMs = if (windows.size > 1) (SystemClock.elapsedRealtime() - begin) / (windows.size - 1) else -1
+        return "loadMs=$loadMs firstWindowMs=$firstMs meanWindowMs=$meanMs windows=${windows.size} audioS=${"%.2f".format(samples.size.toDouble() / AudioInput.SAMPLE_RATE)} " +
+            "top=${top.joinToString("|").replace(' ', '_')}"
     }
 
     /** Character error rate against `macawProbeRef`, or only the length of the answer. zh-CN: 与 `macawProbeRef` 比较的字错率, 或只报告结果长度. */

@@ -68,7 +68,7 @@ internal data class ModelGroup(val kind: String, val rows: List<ModelRow>) {
  * 纯 Kotlin.
  */
 internal object ModelRows {
-    val KIND_ORDER = listOf("asr", "punct", "kws", "speaker", "tts", "vad")
+    val KIND_ORDER = listOf("asr", "punct", "kws", "speaker", "segment", "langid", "tagger", "tts", "vad")
 
     fun build(
         entries: List<ModelEntry>,

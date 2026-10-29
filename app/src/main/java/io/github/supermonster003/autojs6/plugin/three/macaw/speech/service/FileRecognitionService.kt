@@ -59,7 +59,7 @@ class FileRecognitionService : Service() {
             // Not ServiceCompat: androidx.core 1.15 masks the type with the types of Android 14 and drops mediaProcessing,
             // so Android 15 refuses the start ("type none").
             // zh-CN: 不用 ServiceCompat: androidx.core 1.15 用 Android 14 的类型掩码, 去掉了 mediaProcessing, Android 15 因此拒绝启动 ("type none").
-            val notification = ongoing(run ?: FileRun(FileRun.Phase.PREPARING, ""))
+            val notification = ongoing(run ?: FileRun(FileRun.Phase.PREPARING))
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) startForeground(RUNNING_ID, notification, foregroundType())
             else startForeground(RUNNING_ID, notification)
         } catch (e: Exception) {
@@ -106,7 +106,7 @@ class FileRecognitionService : Service() {
         val cancelling = run.phase == FileRun.Phase.CANCELLING
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_audio_file_24)
-            .setContentTitle(getString(if (cancelling) R.string.tryout_transcribe_cancelling else R.string.notification_file_running))
+            .setContentTitle(getString(if (cancelling) R.string.tryout_transcribe_cancelling else if (run.action.transcribes) R.string.notification_file_running else R.string.notification_file_analyzing))
             .setCategory(NotificationCompat.CATEGORY_PROGRESS)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setOngoing(true)
@@ -115,13 +115,11 @@ class FileRecognitionService : Service() {
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .setContentIntent(openTab(this))
         val total = run.declaredMillis
-        val recognized = TranscriptExport.clock(run.recognizedMillis)
-        when {
-            run.phase == FileRun.Phase.PREPARING -> builder.setProgress(0, 0, true).setContentText(getString(R.string.tryout_transcribe_preparing))
-            total != null && total > 0 -> builder
-                .setProgress(PROGRESS_MAX, (run.recognizedMillis.coerceIn(0, total) * PROGRESS_MAX / total).toInt(), false)
-                .setContentText(getString(R.string.tryout_transcribe_progress, recognized, TranscriptExport.clock(total)))
-            else -> builder.setProgress(0, 0, true).setContentText(getString(R.string.tryout_transcribe_progress_unknown, recognized))
+        builder.setContentText(FileTexts.progress(this, run))
+        if (run.phase != FileRun.Phase.PREPARING && total != null && total > 0) {
+            builder.setProgress(PROGRESS_MAX, (run.recognizedMillis.coerceIn(0, total) * PROGRESS_MAX / total).toInt(), false)
+        } else {
+            builder.setProgress(0, 0, true)
         }
         if (!cancelling) builder.addAction(0, getString(R.string.ui_dialog_cancel), cancel(this))
         return builder.build()
@@ -199,10 +197,20 @@ class FileRecognitionService : Service() {
         private fun result(context: Context, record: FileTranscriptRecord): Notification {
             createChannel(context)
             val recognized = TranscriptExport.clock(record.recognizedMillis)
-            val (title, text) = when (record.state) {
-                FileTranscriptRecord.State.COMPLETED -> R.string.notification_file_done to context.getString(R.string.notification_file_done_text, recognized)
-                FileTranscriptRecord.State.CANCELLED -> R.string.notification_file_cancelled to context.getString(R.string.tryout_transcribe_cancelled, recognized)
-                FileTranscriptRecord.State.FAILED -> R.string.notification_file_failed to context.getString(record.failure?.let { FileTexts.problem(it.problem) } ?: R.string.tryout_transcribe_error_engine)
+            val failed = context.getString(record.failure?.let { FileTexts.problem(it.problem) } ?: R.string.tryout_transcribe_error_engine)
+            // D153: the analyses have their own titles and no recognized time. zh-CN: D153: 分析有自己的标题, 没有已识别时长.
+            val (title, text) = if (record.action.transcribes) {
+                when (record.state) {
+                    FileTranscriptRecord.State.COMPLETED -> R.string.notification_file_done to context.getString(R.string.notification_file_done_text, recognized)
+                    FileTranscriptRecord.State.CANCELLED -> R.string.notification_file_cancelled to context.getString(R.string.tryout_transcribe_cancelled, recognized)
+                    FileTranscriptRecord.State.FAILED -> R.string.notification_file_failed to failed
+                }
+            } else {
+                when (record.state) {
+                    FileTranscriptRecord.State.COMPLETED -> R.string.notification_analysis_done to context.getString(R.string.notification_analysis_done_text)
+                    FileTranscriptRecord.State.CANCELLED -> R.string.notification_analysis_cancelled to null
+                    FileTranscriptRecord.State.FAILED -> R.string.notification_analysis_failed to failed
+                }
             }
             return NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_audio_file_24)

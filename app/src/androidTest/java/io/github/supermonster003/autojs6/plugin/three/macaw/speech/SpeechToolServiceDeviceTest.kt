@@ -67,12 +67,13 @@ import kotlin.math.abs
  * capability and the catalog, the refusals and the `NOT_READY` answers that need no model (CI's emulators run those),
  * then with installed models a transcription of `en.wav` and of its m4a, a synthesis to WAV and to m4a that reads back
  * and transcribes again, a reading by 3-Macaw Speech's engine with `wait: false` and `BUSY`, a dictation of `en.wav`
- * played into the [VirtualRoom] (`-e macawRoom virtual`) or through the speaker, and the cancellation of each long call.
+ * played into the [VirtualRoom] (`-e macawRoom virtual`) or through the speaker, and the cancellation of each long call;
+ * since P8.4 also the three analysis tools when their models are installed.
  * The test runs in the plugin process, so the Binder calls stay in process. Results are `MacawDeviceRun` lines with
  * numbers only, never a transcript or the spoken text.
  * zh-CN: 经服务本身测试插件工具提供方的四个工具 (路线图 P7.6.4, D101 E3): 发现, 能力与目录, 不需要模型的拒绝与 `NOT_READY` (CI 的模拟器运行这些),
  * 以及装有模型时: 识别 `en.wav` 与其 m4a, 合成 WAV 与 m4a 并读回再识别, 以本插件引擎朗读 (含 `wait: false` 与 `BUSY`), 把 `en.wav` 放进
- * [VirtualRoom] (`-e macawRoom virtual`) 或经扬声器播放来听写, 以及每个长调用的取消. 测试运行于插件进程, Binder 调用不跨进程. 结果为只含数值的
+ * [VirtualRoom] (`-e macawRoom virtual`) 或经扬声器播放来听写, 以及每个长调用的取消; P8.4 起模型已安装时还测试三个分析工具. 测试运行于插件进程, Binder 调用不跨进程. 结果为只含数值的
  * `MacawDeviceRun` 日志行, 从不记识别文字或朗读文字.
  */
 @RunWith(AndroidJUnit4::class)
@@ -292,6 +293,35 @@ class SpeechToolServiceDeviceTest {
         }
     }
 
+    /**
+     * The analysis tools of roadmap D152 on the recordings of `locks/analysis-test-audio.lock`, each when its models are
+     * installed: the result shapes of the catalog and never a voiceprint.
+     * zh-CN: 路线图 D152 的分析工具, 使用 `locks/analysis-test-audio.lock` 的录音, 各自在模型已安装时运行: 结果形状符合目录, 从不含声纹.
+     */
+    @Test
+    fun test6AnalysisTools() = withProvider { provider ->
+        val audio = "analysis-audio"
+        if (SpeechDevice.installed(SEGMENT) && SpeechDevice.installed(SPEAKER)) {
+            val started = SystemClock.elapsedRealtime()
+            val diarized = call(provider, TOOL_DIARIZE, JSONObject().put("speakers", 2), file = SpeechDevice.asset("$audio/two-speakers.wav")).result()
+            SpeechDevice.log("tools diarize speakers=${diarized.getInt("speakers")} segments=${diarized.getJSONArray("segments").length()} elapsedMillis=${SystemClock.elapsedRealtime() - started}")
+            assertEquals(2, diarized.getInt("speakers"))
+            assertEquals(SEGMENT, diarized.getString("modelId"))
+            assertFalse("no voiceprint", diarized.toString().contains("embedding"))
+        }
+        if (SpeechDevice.installed(LANGID)) {
+            val language = call(provider, TOOL_DETECT_LANGUAGE, JSONObject(), file = SpeechDevice.asset("$audio/language-zh.wav")).result()
+            SpeechDevice.log("tools detect_language found=${language.getString("language")} candidates=${language.getJSONArray("candidates").length()}")
+            assertEquals("zh", language.getString("language"))
+        }
+        if (SpeechDevice.installed(TAGGER)) {
+            val tags = call(provider, TOOL_TAG, JSONObject().put("topK", 3), file = SpeechDevice.asset("$audio/sounds.wav")).result()
+            val labels = tags.getJSONArray("labels").let { array -> (0 until array.length()).map { array.getJSONObject(it).getString("label") } }
+            SpeechDevice.log("tools tag labels=${labels.size}")
+            assertEquals(setOf("Music", "White noise", "Beep, bleep"), labels.toSet())
+        }
+    }
+
     /** A finished call: the result or the error code, from the refusal of `invoke` or the callback. zh-CN: 已结束的调用. */
     private class Answer(val code: String?, val message: String?, val bundle: Bundle?, val outputs: List<ByteArray>) {
         fun result(): JSONObject {
@@ -435,6 +465,13 @@ class SpeechToolServiceDeviceTest {
         const val TOOL_SPEAK = SpeechToolCatalog.TOOL_SPEAK
         const val TOOL_TRANSCRIBE = SpeechToolCatalog.TOOL_TRANSCRIBE
         const val TOOL_SYNTHESIZE = SpeechToolCatalog.TOOL_SYNTHESIZE
+        const val TOOL_DIARIZE = SpeechToolCatalog.TOOL_DIARIZE
+        const val TOOL_DETECT_LANGUAGE = SpeechToolCatalog.TOOL_DETECT_LANGUAGE
+        const val TOOL_TAG = SpeechToolCatalog.TOOL_TAG
+        const val SEGMENT = "segment.pyannote.3-0"
+        const val SPEAKER = "speaker.eres2net.3dspeaker.en-voxceleb"
+        const val LANGID = "langid.whisper.tiny.int8"
+        const val TAGGER = "tagger.ced.mini.int8"
         const val MAX_CER = 0.15
 
         /** Synthesized speech recognized again; the voices are clear, the recognizers trained on read speech. zh-CN: 合成再识别的字错率上限. */

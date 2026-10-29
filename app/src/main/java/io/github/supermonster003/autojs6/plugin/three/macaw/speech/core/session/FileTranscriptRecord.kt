@@ -66,10 +66,14 @@ data class FileFailure(val code: String, val message: String) {
  * The latest result of the file tab (roadmap D113): kept in the plugin's cache as versioned JSON so that the tab shows
  * it again after the plugin process restarts. A cancelled run keeps the segments found so far, a failed one its
  * [failure]. [declaredMillis] is the length the file declares, [recognizedMillis] how much audio went to the
- * recognizer. A file that is damaged, misses a field or has another [VERSION] reads as no record at all.
+ * recognizer. Since roadmap P8.4.4 (D153) a record also names its [action]: an analysis keeps its result in [analysis]
+ * (for the speakers also while [segments] is empty), and "diarize and transcribe" gives each segment its speaker in
+ * [segmentSpeakers]. Version 1 files (1.2.0) read as transcriptions. A file that is damaged, misses a field or has
+ * another version reads as no record at all.
  * zh-CN: 文件标签的最近一次结果 (路线图 D113): 以带版本号的 JSON 存放在插件缓存中, 插件进程重启后标签再次显示它. 取消的识别保留已得到的
- * 分段, 失败的保留 [failure]. [declaredMillis] 为文件声明的时长, [recognizedMillis] 为已送入识别的音频时长. 损坏, 缺少字段或 [VERSION]
- * 不同的文件一律视为没有记录.
+ * 分段, 失败的保留 [failure]. [declaredMillis] 为文件声明的时长, [recognizedMillis] 为已送入识别的音频时长. 自路线图 P8.4.4 (D153) 起记录还写明
+ * [action]: 分析结果存于 [analysis], "分离 + 转写" 在 [segmentSpeakers] 中给出每个分段的说话人. 版本 1 的文件 (1.2.0) 读作转写. 损坏, 缺少字段
+ * 或版本不同的文件一律视为没有记录.
  */
 data class FileTranscriptRecord(
     val state: State,
@@ -83,6 +87,9 @@ data class FileTranscriptRecord(
     val segments: List<Utterance>,
     val warnings: List<SpeechWarning> = emptyList(),
     val failure: FileFailure? = null,
+    val action: FileAction = FileAction.TRANSCRIBE,
+    val analysis: FileAnalysis? = null,
+    val segmentSpeakers: List<Int> = emptyList(),
 ) {
 
     enum class State { COMPLETED, CANCELLED, FAILED }
@@ -104,11 +111,17 @@ data class FileTranscriptRecord(
             "segments" to segments.map { linkedMapOf("text" to it.text, "startMillis" to it.startMillis, "endMillis" to it.endMillis, "language" to it.language) },
             "warnings" to warnings.map { linkedMapOf("code" to it.code, "message" to it.message) },
             "failure" to failure?.let { linkedMapOf("code" to it.code, "message" to it.message) },
+            "action" to action.name,
+            "analysis" to analysis?.let(FileAnalysis::toJson),
+            "segmentSpeakers" to segmentSpeakers,
         ),
     )
 
     companion object {
-        const val VERSION = 1
+        const val VERSION = 2
+
+        /** The 1.2.0 format: a transcription without action, analysis or speakers. zh-CN: 1.2.0 的格式: 没有操作, 分析与说话人的转写. */
+        private const val VERSION_1 = 1
 
         /** The record in [bytes], or null when they hold none this version can read. zh-CN: [bytes] 中的记录; 本版本读不了时为 null. */
         fun parse(bytes: ByteArray): FileTranscriptRecord? = try {
@@ -121,7 +134,9 @@ data class FileTranscriptRecord(
         }
 
         private fun read(json: Map<String, Any?>): FileTranscriptRecord? {
-            if ((json["version"] as? JsonNumber)?.longOrNull() != VERSION.toLong()) return null
+            val version = (json["version"] as? JsonNumber)?.longOrNull()
+            if (version != VERSION.toLong() && version != VERSION_1.toLong()) return null
+            val current = version == VERSION.toLong()
             val state = State.valueOf(json["state"] as String)
             val segments = (json["segments"] as List<*>).mapIndexed { index, item ->
                 val segment = item as Map<*, *>
@@ -133,6 +148,8 @@ data class FileTranscriptRecord(
             }
             val failure = (json["failure"] as Map<*, *>?)?.let { FileFailure(it["code"] as String, it["message"] as String) }
             if (state == State.FAILED && failure == null) return null
+            val speakers = if (current) (json["segmentSpeakers"] as List<*>).map { long(it).toInt() } else emptyList()
+            if (speakers.isNotEmpty() && speakers.size != segments.size) return null
             return FileTranscriptRecord(
                 state = state,
                 displayName = json["displayName"] as String?,
@@ -145,6 +162,9 @@ data class FileTranscriptRecord(
                 segments = segments,
                 warnings = warnings,
                 failure = failure,
+                action = if (current) FileAction.valueOf(json["action"] as String) else FileAction.TRANSCRIBE,
+                analysis = if (current) (json["analysis"] as Map<*, *>?)?.let(FileAnalysis::read) else null,
+                segmentSpeakers = speakers,
             )
         }
 

@@ -18,8 +18,11 @@ internal object HomeTexts {
     fun kindTitle(kind: String): Int = when (kind) {
         "asr" -> R.string.model_kind_asr
         "kws" -> R.string.model_kind_kws
+        "langid" -> R.string.model_kind_langid
         "punct" -> R.string.model_kind_punct
+        "segment" -> R.string.model_kind_segment
         "speaker" -> R.string.model_kind_speaker
+        "tagger" -> R.string.model_kind_tagger
         "tts" -> R.string.model_kind_tts
         else -> R.string.model_kind_vad
     }
@@ -27,8 +30,11 @@ internal object HomeTexts {
     /** What the models of [kind] are for, when the kind name alone does not say it. zh-CN: [kind] 类模型的用途, 仅在类别名不足以说明时提供. */
     @StringRes
     fun kindAbout(kind: String): Int? = when (kind) {
+        "langid" -> R.string.model_langid_about
         "punct" -> R.string.model_punct_about
+        "segment" -> R.string.model_segment_about
         "speaker" -> R.string.model_speaker_about
+        "tagger" -> R.string.model_tagger_about
         else -> null
     }
 
@@ -39,20 +45,26 @@ internal object HomeTexts {
         LicenseTag.UNKNOWN -> R.string.model_license_unknown
     }
 
-    /** Language names in the screen's locale (`yue` reads as Cantonese where the platform knows it). zh-CN: 以界面区域显示的语言名. */
+    /**
+     * Language names in the screen's locale (`yue` reads as Cantonese where the platform knows it); `zxx` (no
+     * linguistic content: segmentation and tagging models, roadmap P8.4) is left out.
+     * zh-CN: 以界面区域显示的语言名; 省略 `zxx` (无语言内容: 分割与标签模型, 路线图 P8.4).
+     */
     fun languages(context: Context, codes: List<String>): String {
         val locale = context.resources.configuration.locales[0]
-        return codes.joinToString(", ") { code ->
+        return codes.filter { it != NO_LANGUAGE }.joinToString(", ") { code ->
             Locale.forLanguageTag(code).getDisplayName(locale).takeIf { it.isNotBlank() && it != code } ?: code
         }
     }
+
+    private const val NO_LANGUAGE = "zxx"
 
     fun size(context: Context, bytes: Long): String = Formatter.formatShortFileSize(context, bytes)
 
     /** One line under the model name: languages, size and license expression. zh-CN: 模型名下的一行: 语言, 大小与许可表达式. */
     fun summary(context: Context, row: ModelRow): String {
         val parts = ArrayList<String>()
-        if (row.languages.isNotEmpty()) parts += languages(context, row.languages)
+        languages(context, row.languages).takeIf { it.isNotEmpty() }?.let { parts += it }
         val bytes = if (row.state == RowState.Installed) row.installedBytes else row.sizeBytes.takeIf { it > 0 }
         bytes?.let { parts += size(context, it) }
         parts += row.licenseSpdx

@@ -1,6 +1,11 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageWindow
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerName
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagLabel
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagScore
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -39,13 +44,45 @@ class FileTranscriptRecordTest {
     }
 
     @Test
+    fun `the analyses of roadmap D153 survive the round trip and version 1 reads as a transcription`() {
+        val speakers = FileAnalysis.Speakers(
+            listOf(SpeakerTurn(0, 1400, 0), SpeakerTurn(1500, 2600, 1)), 2, "speaker.eres2net.3dspeaker.en-voxceleb",
+            listOf(SpeakerName(0, "Alice", 0.71), SpeakerName(1, null, null)),
+        )
+        val diarized = completed.copy(action = FileAction.DIARIZE_TRANSCRIBE, analysis = speakers, segmentSpeakers = listOf(0, 1))
+        assertEquals(diarized, FileTranscriptRecord.parse(diarized.toJson()))
+        assertEquals("Alice", speakers.name(0))
+        val onlySpeakers = completed.copy(action = FileAction.DIARIZE, segments = emptyList(), language = null, analysis = speakers.copy(names = null))
+        assertEquals(onlySpeakers, FileTranscriptRecord.parse(onlySpeakers.toJson()))
+        val languages = completed.copy(
+            action = FileAction.LANGUAGE, segments = emptyList(), modelId = "langid.whisper.tiny.int8",
+            analysis = FileAnalysis.Languages("en", listOf("en" to 0.75f, "fr" to 0.25f), listOf(LanguageWindow(0, 30_000, "en"))),
+        )
+        assertEquals(languages, FileTranscriptRecord.parse(languages.toJson()))
+        val tags = completed.copy(
+            action = FileAction.TAG, segments = emptyList(), modelId = "tagger.ced.mini.int8",
+            analysis = FileAnalysis.Tags(listOf(TagScore(TagLabel(137, "/m/04rlf", "Music"), 0.875f, 10_000, 20_000))),
+        )
+        assertEquals(tags, FileTranscriptRecord.parse(tags.toJson()))
+        // A 1.2.0 file: version 1 without the new fields. zh-CN: 1.2.0 的文件: 版本 1, 没有新字段.
+        val old = String(completed.toJson(), Charsets.UTF_8)
+            .replace("\"version\":2", "\"version\":1")
+            .replace(",\"action\":\"TRANSCRIBE\",\"analysis\":null,\"segmentSpeakers\":[]", "")
+        assertEquals(completed, FileTranscriptRecord.parse(old.toByteArray()))
+        assertEquals(listOf(true, false, true, false, false), FileAction.entries.map { it.transcribes })
+        assertEquals(listOf(false, true, true, false, false), FileAction.entries.map { it.diarizes })
+    }
+
+    @Test
     fun `damaged, partial and other versions read as no record`() {
         val json = String(completed.toJson(), Charsets.UTF_8)
         assertNull(FileTranscriptRecord.parse(ByteArray(0)))
         assertNull(FileTranscriptRecord.parse(json.substring(0, json.length / 2).toByteArray()))
         assertNull(FileTranscriptRecord.parse("[]".toByteArray()))
-        assertNull(FileTranscriptRecord.parse(json.replace("\"version\":1", "\"version\":2").toByteArray()))
-        assertNull(FileTranscriptRecord.parse(json.replace("\"version\":1,", "").toByteArray()))
+        assertNull(FileTranscriptRecord.parse(json.replace("\"version\":2", "\"version\":3").toByteArray()))
+        assertNull(FileTranscriptRecord.parse(json.replace("\"version\":2,", "").toByteArray()))
+        assertNull(FileTranscriptRecord.parse(json.replace("\"action\":\"TRANSCRIBE\"", "\"action\":\"SING\"").toByteArray()))
+        assertNull("speakers for some segments only", FileTranscriptRecord.parse(completed.copy(segmentSpeakers = listOf(0)).toJson()))
         assertNull(FileTranscriptRecord.parse(json.replace("COMPLETED", "PAUSED").toByteArray()))
         assertNull(FileTranscriptRecord.parse(json.replace("\"modelId\"", "\"model\"").toByteArray()))
         assertNull(FileTranscriptRecord.parse(json.replace("\"startMillis\":1500", "\"startMillis\":-1").toByteArray()))

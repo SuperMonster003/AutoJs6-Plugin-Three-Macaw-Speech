@@ -39,14 +39,14 @@ import kotlin.math.sqrt
  * English and Chinese recordings, the Korean voice is read back by SenseVoice when it is installed, and Kokoro v1.0
  * speaks one sentence per language while its Japanese speakers are refused. The first use of PengChengStarling,
  * NeMo and Kokoro records the peak resident memory of the process (cached engines released first). Models that are not
- * installed are skipped; [test9RemovesTheCatalogV3Models] deletes them (`-e macawV3Remove true`). Results are
- * `MacawDeviceRun` lines.
+ * installed are skipped; [test9RemovesTheCatalogV3Models] deletes them and the ones listed in `macawV3Models`
+ * (`-e macawV3Remove true`). Results are `MacawDeviceRun` lines.
  * zh-CN: 设备上的目录 v3 语言模型 (路线图 D131, P8.2.4), 由 [test0InstallsTheCatalogV3Models] 从 `.python/device_catalog_v3.py` 推送的未签名
  * 开发目录安装 (Shared-Assets `pending/v3/catalog-v3.json` 放在 `filesDir/dev-catalog/`; `speech-models-v3` 镜像尚未发布, 因此每个模型都来自其
  * sherpa-onnx 资源). 测试资产里没有西班牙语, 阿拉伯语与韩语录音: 新声音合成句子, 由新识别模型读回 (字错率); PengChengStarling 另外识别英文与
  * 中文录音; 已安装 SenseVoice 时由它读回韩语声音; Kokoro v1.0 每种语言朗读一句, 日语说话人被拒绝. PengChengStarling, NeMo 与 Kokoro 首次使用时
- * 记录进程峰值常驻内存 (先释放缓存的引擎). 未安装的模型跳过; [test9RemovesTheCatalogV3Models] 删除它们 (`-e macawV3Remove true`). 结果为
- * `MacawDeviceRun` 日志行.
+ * 记录进程峰值常驻内存 (先释放缓存的引擎). 未安装的模型跳过; [test9RemovesTheCatalogV3Models] 删除它们以及 `macawV3Models` 列出的模型
+ * (`-e macawV3Remove true`). 结果为 `MacawDeviceRun` 日志行.
  */
 @RunWith(AndroidJUnit4::class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -181,7 +181,9 @@ class CatalogV3ModelsDeviceTest {
         assumeTrue("opt-in: -e macawV3Remove true", SpeechDevice.argument("macawV3Remove") == "true")
         val manager = SpeechModels.get(SpeechDevice.context)
         SpeechRuntime.get(SpeechDevice.context).engines.trim()
-        MODELS.filter(SpeechDevice::installed).forEach { id ->
+        // A list in macawV3Models goes too (the analysis models of P8.4). zh-CN: macawV3Models 给出的列表也一并删除 (P8.4 的分析模型).
+        val listed = SpeechDevice.argument("macawV3Models")?.takeIf { it != "true" }?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }.orEmpty()
+        (MODELS + listed).distinct().filter(SpeechDevice::installed).forEach { id ->
             assertTrue("$id was not removed", manager.remove(id))
             assertTrue("$id is still installed", !SpeechDevice.installed(id))
             SpeechDevice.log("v3 removed $id")

@@ -13,10 +13,11 @@ object CatalogRules {
      * Wire schemas the plugin reads (`distribution.CATALOG_SCHEMAS`). Each schema has its own file name, and the plugin
      * fetches the newest one: schema 2 adds the `punct` kind with its model types and upstream members behind `./`
      * (roadmap D106), while `catalog-v1.json` stays frozen for plugins before 1.2.0. Schema 3 adds the `speaker` kind
-     * (roadmap P8.3, D127), so `catalog-v2.json` keeps serving 1.2.0 without it.
+     * (roadmap P8.3, D127) and the analysis kinds `segment`, `langid` and `tagger` (P8.4, D144 - D146), so
+     * `catalog-v2.json` keeps serving 1.2.0 without them.
      * zh-CN: 插件可读的传输格式 (`distribution.CATALOG_SCHEMAS`). 每个格式有自己的文件名, 插件读取最新的一个: schema 2 增加 `punct` 类别及其
      * 模型类型, 以及带 `./` 的上游成员 (路线图 D106); `catalog-v1.json` 冻结, 供 1.2.0 之前的插件使用. schema 3 增加 `speaker` 类别 (路线图 P8.3,
-     * D127), `catalog-v2.json` 因此继续为不含它的 1.2.0 服务.
+     * D127) 与分析类别 `segment`, `langid`, `tagger` (P8.4, D144 - D146), `catalog-v2.json` 因此继续为不含它们的 1.2.0 服务.
      */
     val SCHEMAS = listOf(1, 2, 3)
     const val SCHEMA_VERSION = 3
@@ -53,7 +54,7 @@ object CatalogRules {
 
     val REPOSITORY = Regex("[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*")
     val RELEASE_TAG = Regex("speech-models-v([1-9][0-9]{0,9})")
-    val MODEL_ID = Regex("(asr|kws|punct|speaker|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
+    val MODEL_ID = Regex("(asr|kws|langid|punct|segment|speaker|tagger|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
 
     /**
      * The shape of a model of a kind this build does not know (roadmap D106): such models are skipped, not refused.
@@ -71,7 +72,7 @@ object CatalogRules {
     val UPSTREAM_TAG = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
     val UPSTREAM_ASSET = Regex("[A-Za-z0-9][A-Za-z0-9._+-]{0,254}")
 
-    val KINDS = listOf("asr", "kws", "punct", "speaker", "tts")
+    val KINDS = listOf("asr", "kws", "langid", "punct", "segment", "speaker", "tagger", "tts")
 
     /**
      * Kinds a user may import as a custom model (no catalog runtime roles for punctuation; speaker models need the
@@ -84,6 +85,17 @@ object CatalogRules {
 
     /** Speaker embedding models (roadmap P8.3, schema 3). zh-CN: 说话人嵌入模型 (路线图 P8.3, schema 3). */
     const val KIND_SPEAKER = "speaker"
+
+    /**
+     * The analysis kinds of roadmap P8.4 (schema 3): speaker segmentation of diarization, spoken language identification
+     * and audio tagging. Their models describe no spoken language: `languages` is `mul` (language identification) or
+     * `zxx` (segmentation, tagging), the ISO 639 codes for "many" and "no linguistic content" (D155).
+     * zh-CN: 路线图 P8.4 的分析类别 (schema 3): 说话人分离的分割, 语种识别与音频标签. 其模型不对应某种语言: `languages` 为 `mul` (语种识别) 或
+     * `zxx` (分割, 标签), 即 ISO 639 的 "多种" 与 "无语言内容" (D155).
+     */
+    const val KIND_SEGMENT = "segment"
+    const val KIND_LANGID = "langid"
+    const val KIND_TAGGER = "tagger"
 
     /**
      * sherpa-onnx 1.13.8 configuration family of every model type, with its required and optional file roles; [values]
@@ -110,6 +122,11 @@ object CatalogRules {
         "cnn-bilstm" to ModelTypeSpec("punct", listOf("model", "bpeVocab"), emptyList()),
         // sherpa-onnx SpeakerEmbeddingExtractor (3D-Speaker, WeSpeaker, NeMo ONNX exports with metadata), roadmap P8.3.
         "speaker-embedding" to ModelTypeSpec("speaker", listOf("model"), emptyList()),
+        // sherpa-onnx OfflineSpeakerDiarization (pyannote segmentation), SpokenLanguageIdentification (whisper encoder and
+        // decoder) and AudioTagging (CED with the AudioSet label table), roadmap P8.4.
+        "pyannote-segmentation" to ModelTypeSpec("segment", listOf("model"), emptyList()),
+        "whisper-langid" to ModelTypeSpec("langid", listOf("encoder", "decoder"), emptyList()),
+        "ced" to ModelTypeSpec("tagger", listOf("model", "labels"), emptyList()),
     )
     val LIST_ROLES = setOf("lexicon", "ruleFsts", "ruleFars")
     val DIRECTORY_ROLES = setOf("dataDir")
@@ -129,6 +146,7 @@ object CatalogRules {
     val SCHEMA_INTRODUCED = mapOf(
         "punct" to 2, "ct-transformer" to 2, "cnn-bilstm" to 2, "offline-transducer" to 2, MEMBER_PREFIX to 2,
         "speaker" to 3, "speaker-embedding" to 3,
+        "segment" to 3, "langid" to 3, "tagger" to 3, "pyannote-segmentation" to 3, "whisper-langid" to 3, "ced" to 3,
     )
 
     /** `distribution.catalog_file`: the catalog file of a schema, e.g. `catalog-v1.json`. zh-CN: 某个 schema 的目录文件名. */

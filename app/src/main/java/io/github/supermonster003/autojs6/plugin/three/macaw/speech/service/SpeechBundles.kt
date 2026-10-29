@@ -3,6 +3,9 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.service
 import android.os.Bundle
 import android.os.Parcel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.Diarization
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageResult
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagResult
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CommercialUse
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscript
@@ -199,6 +202,82 @@ internal object SpeechBundles {
                 putString(SpeechResultKeys.MODEL_ID, voiceprint.modelId)
             }
         }))
+    }
+
+    // Offline analyses (contract version 2, roadmap D147 - D151): long lists as parallel arrays.
+
+    fun diarization(result: Diarization): Bundle = answer(SpeechContract.CALL_VERSION_2) {
+        putLongArray(SpeechResultKeys.SEGMENT_STARTS, LongArray(result.turns.size) { result.turns[it].startMillis })
+        putLongArray(SpeechResultKeys.SEGMENT_ENDS, LongArray(result.turns.size) { result.turns[it].endMillis })
+        putIntArray(SpeechResultKeys.SEGMENT_SPEAKERS, IntArray(result.turns.size) { result.turns[it].speaker })
+        putInt(SpeechResultKeys.SPEAKER_COUNT, result.speakers)
+        putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)
+        putString(SpeechResultKeys.MODEL_ID, result.modelId)
+        result.names?.let { names ->
+            putParcelableArrayList(SpeechResultKeys.NAMES, ArrayList(names.map { name ->
+                Bundle().apply {
+                    putInt(SpeechResultKeys.SPEAKER, name.speaker)
+                    name.name?.let { putString(SpeechResultKeys.NAME, it) }
+                    name.score?.let { putFloat(SpeechResultKeys.SCORE, it.toFloat()) }
+                }
+            }))
+        }
+    }
+
+    fun language(result: LanguageResult): Bundle = answer(SpeechContract.CALL_VERSION_2) {
+        putString(SpeechResultKeys.LANGUAGE, result.language)
+        putParcelableArrayList(SpeechResultKeys.CANDIDATES, ArrayList(result.candidates.map { (language, score) ->
+            Bundle().apply {
+                putString(SpeechResultKeys.LANGUAGE, language)
+                putFloat(SpeechResultKeys.SCORE, score)
+            }
+        }))
+        putParcelableArrayList(SpeechResultKeys.SEGMENTS, ArrayList(result.windows.map { window ->
+            Bundle().apply {
+                putLong(SpeechResultKeys.START_MILLIS, window.startMillis)
+                putLong(SpeechResultKeys.END_MILLIS, window.endMillis)
+                putString(SpeechResultKeys.LANGUAGE, window.language)
+            }
+        }))
+        putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)
+        putString(SpeechResultKeys.MODEL_ID, result.modelId)
+    }
+
+    fun tags(result: TagResult): Bundle = answer(SpeechContract.CALL_VERSION_2) {
+        putParcelableArrayList(SpeechResultKeys.LABELS, ArrayList(result.labels.map { tag ->
+            Bundle().apply {
+                putString(SpeechResultKeys.LABEL, tag.label.name)
+                putString(SpeechResultKeys.MID, tag.label.mid)
+                putFloat(SpeechResultKeys.SCORE, tag.score)
+                putLong(SpeechResultKeys.START_MILLIS, tag.startMillis)
+                putLong(SpeechResultKeys.END_MILLIS, tag.endMillis)
+            }
+        }))
+        result.timeline?.let { windows ->
+            // The labels the timeline uses, each once, in order of first use.
+            val used = LinkedHashMap<Int, Int>()
+            val positions = IntArray(windows.size * result.topK)
+            val scores = FloatArray(windows.size * result.topK)
+            windows.forEachIndexed { i, window ->
+                // A window answers topK labels; with fewer labels in the model the rest repeat the last one at score 0.
+                for (j in 0 until result.topK) {
+                    val pair = window.labels.getOrNull(j)
+                    val label = pair?.first ?: window.labels.last().first
+                    positions[i * result.topK + j] = used.getOrPut(label.index) { used.size }
+                    scores[i * result.topK + j] = pair?.second ?: 0f
+                }
+            }
+            val labels = used.keys.map { index -> windows.asSequence().flatMap { it.labels.asSequence() }.first { it.first.index == index }.first }
+            putLongArray(SpeechResultKeys.TIMELINE_STARTS, LongArray(windows.size) { windows[it].startMillis })
+            putLongArray(SpeechResultKeys.TIMELINE_ENDS, LongArray(windows.size) { windows[it].endMillis })
+            putInt(SpeechResultKeys.TIMELINE_TOP_K, result.topK)
+            putIntArray(SpeechResultKeys.TIMELINE_LABELS, positions)
+            putFloatArray(SpeechResultKeys.TIMELINE_SCORES, scores)
+            putStringArray(SpeechResultKeys.LABEL_NAMES, labels.map { it.name }.toTypedArray())
+            putStringArray(SpeechResultKeys.LABEL_MIDS, labels.map { it.mid }.toTypedArray())
+        }
+        putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)
+        putString(SpeechResultKeys.MODEL_ID, result.modelId)
     }
 
     /** A warning or error Bundle (`errorCode`, `errorMessage`). zh-CN: 警告或错误 Bundle (`errorCode`, `errorMessage`). */

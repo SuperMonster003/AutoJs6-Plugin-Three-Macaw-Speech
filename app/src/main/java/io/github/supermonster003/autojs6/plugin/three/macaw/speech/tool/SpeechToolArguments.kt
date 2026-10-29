@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.tool
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.tool.SpeechToolCatalog as Catalog
+import org.autojs.plugin.speech.api.SpeechLimits
 import org.autojs.plugin.tool.api.PluginToolErrorCodes
 import org.autojs.plugin.tool.api.PluginToolException
 
@@ -46,13 +47,22 @@ internal data class SpeakerVerifyRequest(val name: String, val threshold: Double
 /** `speech_speaker_identify` (roadmap P8.3.5). zh-CN: `speech_speaker_identify` (路线图 P8.3.5). */
 internal data class SpeakerIdentifyRequest(val threshold: Double? = null, val topK: Int = Catalog.DEFAULT_TOP_K)
 
+/** `speech_diarize` (roadmap P8.4.4, D152); [speakers] 0 counts them, [threshold] null takes the model's value. zh-CN: `speech_diarize` 的参数. */
+internal data class DiarizeToolRequest(val speakers: Int = 0, val threshold: Double? = null, val identify: Boolean = false)
+
+/** `speech_detect_language` (roadmap P8.4.4, D152). zh-CN: `speech_detect_language` 的参数. */
+internal data class LanguageToolRequest(val windows: Int = SpeechLimits.DEFAULT_LANGUAGE_WINDOWS)
+
+/** `speech_tag` (roadmap P8.4.4, D152). zh-CN: `speech_tag` 的参数. */
+internal data class TagToolRequest(val topK: Int = SpeechLimits.DEFAULT_TAG_TOP_K)
+
 /**
- * Reads the arguments of the tools (roadmap D95 - D98, P8.3.5) with the ranges of [SpeechToolCatalog]. AutoJs6 checks them
+ * Reads the arguments of the tools (roadmap D95 - D98, P8.3.5, P8.4.4) with the ranges of [SpeechToolCatalog]. AutoJs6 checks them
  * against the input schema and fills in the defaults before the call; the provider checks again for clients that bind
  * the service directly, so a wrong shape or range is `INVALID_ARGUMENTS` either way. Absent values, JSON null among
  * them, take the defaults; unknown keys are ignored, as in [io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechOptions].
  * The messages name the argument, never its text. Pure Kotlin: the service turns the JSON object into a map first.
- * zh-CN: 按 [SpeechToolCatalog] 的取值范围读取各工具的参数 (路线图 D95 - D98, P8.3.5). AutoJs6 在调用前已按输入 schema 检查并补上默认值;
+ * zh-CN: 按 [SpeechToolCatalog] 的取值范围读取各工具的参数 (路线图 D95 - D98, P8.3.5, P8.4.4). AutoJs6 在调用前已按输入 schema 检查并补上默认值;
  * 提供方为直接绑定服务的客户端再查一遍, 因此形态或范围错误都是 `INVALID_ARGUMENTS`. 缺省值 (含 JSON null) 取默认值; 未知键被忽略. 信息只写
  * 参数名, 不写其文字. 纯 Kotlin: 服务先把 JSON 对象转成 Map.
  */
@@ -120,6 +130,30 @@ internal object SpeechToolArguments {
         threshold = threshold(arguments),
         topK = integer(arguments, "topK", 1, Catalog.MAX_TOP_K)?.toInt() ?: Catalog.DEFAULT_TOP_K,
     )
+
+    fun diarize(arguments: Map<String, Any?>): DiarizeToolRequest {
+        val threshold = arguments["threshold"]?.let { value ->
+            val number = (value as? Number)?.toDouble()?.takeIf { it.isFinite() } ?: invalid("threshold must be a number")
+            if (number < 0.0 || number > Catalog.MAX_CLUSTER_THRESHOLD) invalid("threshold must be between 0 and ${Catalog.MAX_CLUSTER_THRESHOLD}, got $number")
+            number
+        }
+        return DiarizeToolRequest(
+            speakers = integer(arguments, "speakers", 0, SpeechLimits.MAX_DIARIZATION_SPEAKERS)?.toInt() ?: 0,
+            threshold = threshold,
+            identify = boolean(arguments, "identify") ?: false,
+        )
+    }
+
+    fun detectLanguage(arguments: Map<String, Any?>): LanguageToolRequest =
+        LanguageToolRequest(integer(arguments, "windows", 1, SpeechLimits.MAX_LANGUAGE_WINDOWS)?.toInt() ?: SpeechLimits.DEFAULT_LANGUAGE_WINDOWS)
+
+    fun tag(arguments: Map<String, Any?>): TagToolRequest =
+        TagToolRequest(integer(arguments, "topK", 1, SpeechLimits.MAX_TAG_TOP_K)?.toInt() ?: SpeechLimits.DEFAULT_TAG_TOP_K)
+
+    private fun boolean(arguments: Map<String, Any?>, key: String): Boolean? {
+        val value = arguments[key] ?: return null
+        return value as? Boolean ?: invalid("$key must be a boolean")
+    }
 
     private fun threshold(arguments: Map<String, Any?>): Double? {
         val value = arguments["threshold"] ?: return null

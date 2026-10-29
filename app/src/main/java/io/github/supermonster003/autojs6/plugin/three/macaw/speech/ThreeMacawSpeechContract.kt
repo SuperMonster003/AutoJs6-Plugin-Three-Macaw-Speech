@@ -70,10 +70,14 @@ internal object ThreeMacawSpeechContract {
      * zh-CN: 本构建实现的可选功能: 模型管理 (`models`: 安装, 导入, 删除, 默认模型与目录刷新, 路线图 P2.3 / P2.4), 文件与外部 PCM 识别 (`asr`),
      * 麦克风听写 (`asrStreaming`), 语音活动检测 (`vad`), 唤醒会话 (`kws`, 路线图 P3), 合成到文件 (`tts`), 系统 TTS 引擎 (`ttsSystemEngine`, 路线图 P4)
      * 与 WAV 以外的音频文件 (`audioDecode`, 路线图 D84: 宿主只把这类文件交给声明了它的插件); 宿主不会依赖未声明的功能.
-     * Contract version 2 adds `speaker` (roadmap P8.3: enroll, verify, identify, list, remove), which a host counts only
-     * when it agreed on version 2. zh-CN: 契约版本 2 增加 `speaker` (路线图 P8.3: 注册, 验证, 辨认, 列出, 删除), 宿主只在商定版本 2 时才计入.
+     * Contract version 2 adds `speaker` (roadmap P8.3: enroll, verify, identify, list, remove) and the offline analyses
+     * `diarization`, `languageId` and `audioTagging` (roadmap P8.4), which a host counts only when it agreed on version 2.
+     * zh-CN: 契约版本 2 增加 `speaker` (路线图 P8.3: 注册, 验证, 辨认, 列出, 删除) 与离线分析 `diarization`, `languageId`, `audioTagging`
+     * (路线图 P8.4), 宿主只在商定版本 2 时才计入.
      */
-    val FEATURES: List<String> = listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker")
+    val FEATURES: List<String> = listOf(
+        "models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker", "diarization", "languageId", "audioTagging",
+    )
 
     /**
      * Version of the model catalog bundled in `assets/catalog/catalog-v2.json` (roadmap D28, P2.4, D108); `BundledCatalogTest`

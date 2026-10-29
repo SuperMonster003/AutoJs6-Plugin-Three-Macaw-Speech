@@ -1,0 +1,38 @@
+{
+  "readers": {
+    "a": "1284",
+    "b": "1089"
+  },
+  "turns": [
+    {
+      "startMillis": 0,
+      "endMillis": 6500,
+      "speaker": "a"
+    },
+    {
+      "startMillis": 7200,
+      "endMillis": 13700,
+      "speaker": "b"
+    },
+    {
+      "startMillis": 14400,
+      "endMillis": 20900,
+      "speaker": "a"
+    },
+    {
+      "startMillis": 21600,
+      "endMillis": 28100,
+      "speaker": "b"
+    },
+    {
+      "startMillis": 28800,
+      "endMillis": 35300,
+      "speaker": "a"
+    },
+    {
+      "startMillis": 36000,
+      "endMillis": 42500,
+      "speaker": "b"
+    }
+  ]
+}

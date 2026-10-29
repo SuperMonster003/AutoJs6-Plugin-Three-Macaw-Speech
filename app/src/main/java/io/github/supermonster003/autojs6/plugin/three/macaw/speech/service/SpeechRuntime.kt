@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioFiles
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MonoAudio
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.kws.KeywordTokenizer
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
@@ -362,17 +363,31 @@ internal class SpeechRuntime private constructor(val context: Context) {
         cancelled: () -> Boolean = { false },
     ): FileTranscript {
         val model = resolve(SpeechContract.KIND_ASR, options.model)
+        return AudioFiles.open(audio).use { reader -> recognize(reader, model, options, listener, cancelled) }
+    }
+
+    /**
+     * [recognizeFile] of audio that is already open: the speaker turns of "diarize and transcribe" on the file tab
+     * (roadmap D153), one call per turn on the same cached engines.
+     * zh-CN: 对已打开的音频执行 [recognizeFile]: 文件标签 "分离 + 转写" 的说话人轮次 (路线图 D153), 每个轮次一次调用, 共用缓存的引擎.
+     */
+    fun recognizeAudio(
+        reader: MonoAudio,
+        options: RecognizeOptions,
+        listener: FileRecognitionListener = FileRecognitionListener.NONE,
+        cancelled: () -> Boolean = { false },
+    ): FileTranscript = recognize(reader, resolve(SpeechContract.KIND_ASR, options.model), options, listener, cancelled)
+
+    private fun recognize(reader: MonoAudio, model: InstalledModel, options: RecognizeOptions, listener: FileRecognitionListener, cancelled: () -> Boolean): FileTranscript {
         val warnings = warnings(model, options.language, options.hotwords)
-        return AudioFiles.open(audio).use { reader ->
-            val leases = acquireRecognition(model, options.language, options.hotwords.isNotEmpty(), options.punctuation)
-            try {
-                val punctuator = punctuator(model, leases)
-                FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings, cancelled, listener) { sink ->
-                    fileDictation(leases.first().engine, options, sink, punctuator)
-                }
-            } finally {
-                leases.forEach { runCatching { it.close() } }
+        val leases = acquireRecognition(model, options.language, options.hotwords.isNotEmpty(), options.punctuation)
+        try {
+            val punctuator = punctuator(model, leases)
+            return FileRecognition.recognize(reader, model.modelId, options.language?.substringBefore('-')?.lowercase(), warnings, cancelled, listener) { sink ->
+                fileDictation(leases.first().engine, options, sink, punctuator)
             }
+        } finally {
+            leases.forEach { runCatching { it.close() } }
         }
     }
 

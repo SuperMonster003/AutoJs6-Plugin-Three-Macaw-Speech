@@ -16,13 +16,27 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.Diarization
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.DiarizeOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioFiles
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.PcmAudio
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CancelToken
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAnalysis
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileFailure
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileRecognitionListener
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscriptRecord
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.RecognizeOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechWarning
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.FileRecognitionService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechAnalysis
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
+import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.autojs.plugin.speech.api.SpeechLimits
 import java.io.File
@@ -69,25 +83,65 @@ private class DocumentSource(private val context: Context, private val uri: Uri)
     override fun open(): ParcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r") ?: throw FileNotFoundException("The provider returned no descriptor")
 }
 
-/** The choices of the file tab when a run starts (roadmap D114). zh-CN: 开始识别时文件标签上的选择 (路线图 D114). */
-internal data class FileRunOptions(val modelId: String, val language: String?, val punctuation: Boolean, val vad: Boolean)
+/**
+ * The choices of the file tab when a run starts (roadmap D114, D153): the action, the recognizer settings of the
+ * transcribing actions ([modelId] is null when no recognizer is installed), the speaker count (0: automatic) and
+ * identify switch of the diarizing ones and the language identification model.
+ * zh-CN: 开始时文件标签上的选择 (路线图 D114, D153): 操作, 转写类操作的识别设置 (没有安装识别模型时 [modelId] 为 null), 分离类操作的说话人数
+ * (0 为自动) 与认人开关, 以及语种识别模型.
+ */
+internal data class FileRunOptions(
+    val modelId: String?,
+    val language: String?,
+    val punctuation: Boolean,
+    val vad: Boolean,
+    val action: FileAction = FileAction.TRANSCRIBE,
+    val speakers: Int = 0,
+    val identify: Boolean = false,
+    val languageModel: String? = null,
+)
 
 /**
  * A run in progress: [declaredMillis] is the length the file declares (null until it is open or when unknown),
- * [recognizedMillis] how much audio went to the recognizer, [segments] the finals so far.
+ * [recognizedMillis] how much audio went to the recognizer, [segments] the finals so far. The analyses (roadmap D153)
+ * count [recognizedMillis] of [declaredMillis] as the share of their work done; "diarize and transcribe" has the
+ * speaker of each segment in [segmentSpeakers] once [speakers] is known.
  * zh-CN: 进行中的识别: [declaredMillis] 为文件声明的时长 (打开之前或未知时为 null), [recognizedMillis] 为已送入识别的音频时长, [segments] 为目前的整句.
+ * 分析 (路线图 D153) 以 [recognizedMillis] / [declaredMillis] 表示已完成的工作比例; "分离 + 转写" 在 [speakers] 已知后于 [segmentSpeakers]
+ * 给出每个分段的说话人.
  */
 internal data class FileRun(
     val phase: Phase,
-    val modelId: String,
+    val action: FileAction = FileAction.TRANSCRIBE,
+    val stage: Stage = Stage.TRANSCRIBING,
     val displayName: String? = null,
     val sizeBytes: Long? = null,
     val declaredMillis: Long? = null,
     val recognizedMillis: Long = 0,
     val segments: List<Utterance> = emptyList(),
+    val segmentSpeakers: List<Int> = emptyList(),
+    val speakers: FileAnalysis.Speakers? = null,
 ) {
     /** Opening the file and loading the model, recognizing, stopping after a cancel. zh-CN: 打开文件与加载模型, 识别中, 取消后停止中. */
     enum class Phase { PREPARING, RUNNING, CANCELLING }
+
+    /**
+     * What the run does now: transcribing the file, one of the analyses, or transcribing the turns found by the
+     * diarization.
+     * zh-CN: 当前所做的工作: 转写文件, 某个分析, 或转写分离得到的轮次.
+     */
+    enum class Stage {
+        TRANSCRIBING, DIARIZING, TURNS, LANGUAGE, TAGGING;
+
+        companion object {
+            fun first(action: FileAction): Stage = when (action) {
+                FileAction.TRANSCRIBE -> TRANSCRIBING
+                FileAction.DIARIZE, FileAction.DIARIZE_TRANSCRIBE -> DIARIZING
+                FileAction.LANGUAGE -> LANGUAGE
+                FileAction.TAG -> TAGGING
+            }
+        }
+    }
 }
 
 /**
@@ -97,11 +151,14 @@ internal data class FileRun(
  * seek (a pipe of some cloud providers) is copied to `cacheDir/tryout/input` first, within the 200 MB limit. Every
  * finished run (completed, cancelled with its segments so far, failed with its reason) is written to
  * `cacheDir/tryout/file-result.json` and read back once per process. [run] and [record] are Compose state, changed on
- * the main thread only; never log the file name or the recognized text (D85).
+ * the main thread only; never log the file name or the recognized text (D85). The analyses of roadmap D153 run through
+ * [SpeechAnalysis] (queued behind any analysis of the process); "diarize and transcribe" decodes the file once,
+ * diarizes it and recognizes each turn from memory, the segments carrying their turn's speaker.
  * zh-CN: 文件标签的识别 (路线图 D110 - D113, P7.8.2), 每个进程一份, 因此识别不随试听试说页结束: 一次一个文件, 在自己的工作线程上直接调用
  * `SpeechRuntime.recognizeFile` (不经 Binder), 期间持最长 60 分钟的部分唤醒锁并运行前台服务 [FileRecognitionService]. 不能定位的描述符
  * (部分云盘返回的管道) 先在 200 MB 限制内复制到 `cacheDir/tryout/input`. 每次结束的识别 (完成, 取消时带已有分段, 失败时带原因) 写入
  * `cacheDir/tryout/file-result.json`, 每个进程读回一次. [run] 与 [record] 是 Compose 状态, 只在主线程上修改; 不记录文件名与识别文字 (D85).
+ * 路线图 D153 的分析经 [SpeechAnalysis] 运行 (排在进程内其他分析之后); "分离 + 转写" 只解码一次文件, 分离后从内存逐个轮次识别, 分段带有所在轮次的说话人.
  */
 internal class FileTranscription private constructor(context: Context) {
     private val app = context.applicationContext
@@ -112,6 +169,9 @@ internal class FileTranscription private constructor(context: Context) {
     private val inputFile = File(directory, INPUT_NAME)
     private var loaded = false
     private var screens = 0
+
+    @Volatile
+    private var token = CancelToken()
 
     /** The run in progress, or null. zh-CN: 进行中的识别, 没有时为 null. */
     var run by mutableStateOf<FileRun?>(null)
@@ -140,11 +200,13 @@ internal class FileTranscription private constructor(context: Context) {
         // A new run replaces whatever the cache holds. zh-CN: 新的识别覆盖缓存中的内容.
         loaded = true
         cancelled.set(false)
+        val stop = CancelToken()
+        token = stop
         record = null
-        val first = FileRun(FileRun.Phase.PREPARING, options.modelId)
+        val first = FileRun(FileRun.Phase.PREPARING, options.action, FileRun.Stage.first(options.action))
         run = first
         FileRecognitionService.start(app, first)
-        worker.execute { recognize(source, options) }
+        worker.execute { recognize(source, options, stop) }
         return true
     }
 
@@ -153,6 +215,7 @@ internal class FileTranscription private constructor(context: Context) {
         val current = run ?: return
         if (current.phase == FileRun.Phase.CANCELLING) return
         cancelled.set(true)
+        token.cancel()
         update(current.copy(phase = FileRun.Phase.CANCELLING))
     }
 
@@ -179,79 +242,117 @@ internal class FileTranscription private constructor(context: Context) {
 
     // Worker -----------------------------------------------------------------------------------------------------
 
-    private fun recognize(source: FileSource, options: FileRunOptions) {
-        val lock = acquireWakeLock()
-        val segments = ArrayList<Utterance>()
+    /** What one run has found so far, published to the main thread. zh-CN: 一次运行目前得到的内容, 发布到主线程. */
+    private inner class Job(private val options: FileRunOptions) {
         var description = FileDescription(null, null)
+        var stage = FileRun.Stage.first(options.action)
         var declared: Long? = null
         var fed = 0L
-        var posted = 0L
+        var modelId = options.modelId.orEmpty()
+        var speakers: FileAnalysis.Speakers? = null
+        val segments = ArrayList<Utterance>()
+        val segmentSpeakers = ArrayList<Int>()
+        private var posted = 0L
 
         fun publish(recognizing: Boolean) {
             posted = SystemClock.elapsedRealtime()
             val name = description.displayName
             val size = description.sizeBytes
+            val now = stage
             val total = declared
             val millis = fed
             val list = segments.toList()
+            val owners = segmentSpeakers.toList()
+            val found = speakers
             main.post {
                 val current = run ?: return@post
                 val phase = if (recognizing && current.phase == FileRun.Phase.PREPARING) FileRun.Phase.RUNNING else current.phase
-                update(current.copy(phase = phase, displayName = name, sizeBytes = size, declaredMillis = total, recognizedMillis = millis, segments = list))
+                update(
+                    current.copy(
+                        phase = phase, stage = now, displayName = name, sizeBytes = size, declaredMillis = total, recognizedMillis = millis,
+                        segments = list, segmentSpeakers = owners, speakers = found,
+                    ),
+                )
             }
         }
 
-        val listener = object : FileRecognitionListener {
+        fun progress(done: Long, total: Long) {
+            fed = done
+            declared = total.takeIf { it > 0 }
+            if (SystemClock.elapsedRealtime() - posted >= PROGRESS_INTERVAL_MILLIS) publish(recognizing = true)
+        }
+
+        /** Recognition of the whole file ([turn] null) or of one turn starting [offset] ms into the work of the turns. zh-CN: 整个文件或一个轮次的识别. */
+        fun listener(turn: SpeakerTurn? = null, offset: Long = 0) = object : FileRecognitionListener {
             override fun opened(durationMillis: Long?) {
-                declared = durationMillis
+                if (turn == null) declared = durationMillis
                 publish(recognizing = true)
             }
 
             override fun progress(millis: Long) {
-                fed = millis
+                fed = offset + millis
                 if (SystemClock.elapsedRealtime() - posted >= PROGRESS_INTERVAL_MILLIS) publish(recognizing = true)
             }
 
             override fun segment(utterance: Utterance) {
-                segments += utterance
+                // The record keeps no emotion or event, so the shown result equals the one read back from the cache.
+                // zh-CN: 记录不保存情绪与事件, 因此显示的结果与从缓存读回的相同.
+                val plain = utterance.copy(emotion = null, event = null)
+                if (turn == null) {
+                    segments += plain
+                } else {
+                    segments += plain.copy(segmentIndex = segments.size, startMillis = utterance.startMillis + turn.startMillis, endMillis = utterance.endMillis + turn.startMillis)
+                    segmentSpeakers += turn.speaker
+                }
                 publish(recognizing = true)
             }
         }
 
+        fun record(
+            state: FileTranscriptRecord.State,
+            language: String? = null,
+            recognized: Long = fed,
+            warnings: List<SpeechWarning> = emptyList(),
+            analysis: FileAnalysis? = speakers,
+            failure: FileFailure? = null,
+        ) = FileTranscriptRecord(
+            state = state,
+            displayName = description.displayName,
+            sizeBytes = description.sizeBytes,
+            modelId = modelId,
+            language = language,
+            punctuation = options.punctuation,
+            declaredMillis = declared,
+            recognizedMillis = recognized,
+            segments = segments.toList(),
+            warnings = warnings,
+            failure = failure,
+            action = options.action,
+            analysis = analysis,
+            segmentSpeakers = if (options.action == FileAction.DIARIZE_TRANSCRIBE) segmentSpeakers.toList() else emptyList(),
+        )
+
+        /** The language most segments report. zh-CN: 多数分段报告的语言. */
+        fun spokenLanguage(): String? = segments.mapNotNull { it.language }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
+    }
+
+    private fun recognize(source: FileSource, options: FileRunOptions, stop: CancelToken) {
+        val lock = acquireWakeLock()
+        val job = Job(options)
         val record = try {
             directory.mkdirs()
             resultFile.delete()
-            description = runCatching { source.describe() }.getOrDefault(description)
-            publish(recognizing = false)
-            val request = RecognizeOptions(model = options.modelId, language = options.language, punctuation = options.punctuation, vad = options.vad)
-            val transcript = open(source).use { descriptor -> SpeechRuntime.get(app).recognizeFile(descriptor, request, listener) { cancelled.get() } }
-            FileTranscriptRecord(
-                state = if (cancelled.get()) FileTranscriptRecord.State.CANCELLED else FileTranscriptRecord.State.COMPLETED,
-                displayName = description.displayName,
-                sizeBytes = description.sizeBytes,
-                modelId = transcript.modelId,
-                language = transcript.language,
-                punctuation = options.punctuation,
-                declaredMillis = declared,
-                recognizedMillis = transcript.durationMillis,
-                segments = transcript.segments,
-                warnings = transcript.warnings,
-            )
+            job.description = runCatching { source.describe() }.getOrDefault(job.description)
+            job.publish(recognizing = false)
+            if (options.action == FileAction.TRANSCRIBE) transcribe(source, options, job) else analyze(source, options, job, stop)
         } catch (e: Throwable) {
             // Native and linkage errors too: the tab must never stay busy. zh-CN: 原生与链接错误也在内: 标签不能一直处于识别中.
             val stopped = cancelled.get()
             val failure = if (stopped) null else FileFailure.of(e)
-            if (failure != null) Log.w(TAG, "File recognition failed: ${failure.code}: ${failure.message}")
-            FileTranscriptRecord(
+            if (failure != null) Log.w(TAG, "File ${options.action.name.lowercase()} failed: ${failure.code}: ${failure.message}")
+            job.record(
                 state = if (stopped) FileTranscriptRecord.State.CANCELLED else FileTranscriptRecord.State.FAILED,
-                displayName = description.displayName,
-                sizeBytes = description.sizeBytes,
-                modelId = options.modelId,
-                language = segments.mapNotNull { it.language }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key,
-                punctuation = options.punctuation,
-                declaredMillis = declared,
-                recognizedMillis = fed,
-                segments = segments.toList(),
+                language = job.spokenLanguage(),
                 failure = failure,
             )
         } finally {
@@ -260,6 +361,76 @@ internal class FileTranscription private constructor(context: Context) {
         write(record)
         if (lock?.isHeld == true) runCatching { lock.release() }
         main.post { finish(record) }
+    }
+
+    private fun state(): FileTranscriptRecord.State = if (cancelled.get()) FileTranscriptRecord.State.CANCELLED else FileTranscriptRecord.State.COMPLETED
+
+    private fun transcribe(source: FileSource, options: FileRunOptions, job: Job): FileTranscriptRecord {
+        val request = RecognizeOptions(model = options.modelId, language = options.language, punctuation = options.punctuation, vad = options.vad)
+        val transcript = open(source).use { descriptor -> SpeechRuntime.get(app).recognizeFile(descriptor, request, job.listener()) { cancelled.get() } }
+        job.modelId = transcript.modelId
+        return job.record(state(), transcript.language, transcript.durationMillis, transcript.warnings)
+    }
+
+    /** The actions of roadmap D153; the models are resolved before the file opens, as for `recognizeFile`. zh-CN: D153 的分析操作. */
+    private fun analyze(source: FileSource, options: FileRunOptions, job: Job, stop: CancelToken): FileTranscriptRecord {
+        val analysis = SpeechAnalysis.get(app)
+        val control = SpeechAnalysis.Control(stop) { done, total -> job.progress(done, total) }
+        return when (options.action) {
+            FileAction.DIARIZE, FileAction.DIARIZE_TRANSCRIBE -> {
+                val request = DiarizeOptions(speakers = options.speakers, identify = options.identify)
+                val models = analysis.diarizationModels(request)
+                val recognizer = if (options.action.transcribes) RecognizeOptions(model = options.modelId, language = options.language, punctuation = options.punctuation, vad = options.vad) else null
+                // A missing recognizer fails before the diarization, not after it. zh-CN: 缺少识别模型时在分离之前失败.
+                recognizer?.let { SpeechRuntime.get(app).resolve(SpeechContract.KIND_ASR, it.model) }
+                job.modelId = models.first.modelId
+                val (diarization, samples) = open(source).use { descriptor -> AudioFiles.open(descriptor).use { reader -> analysis.diarizeKeepingAudio(reader, request, control, models) } }
+                job.speakers = FileAnalysis.Speakers(diarization.turns, diarization.speakers, diarization.speakerModelId, diarization.names)
+                if (recognizer == null) return job.record(state(), recognized = diarization.durationMillis)
+                transcribeTurns(samples, diarization, recognizer, options, job)
+            }
+            FileAction.LANGUAGE -> {
+                val model = SpeechRuntime.get(app).resolve(SpeechContract.KIND_LANGID, options.languageModel)
+                job.modelId = model.modelId
+                try {
+                    val result = open(source).use { descriptor -> AudioFiles.open(descriptor).use { reader -> analysis.detectLanguage(reader, LanguageOptions(model.modelId), control, model) } }
+                    job.record(state(), result.language, result.durationMillis, analysis = FileAnalysis.Languages(result.language, result.candidates, result.windows))
+                } catch (e: SpeechException) {
+                    // No speech at all: an empty result, as a transcription without segments. zh-CN: 完全没有语音: 空结果, 与没有分段的转写相同.
+                    if (e.code != SpeechErrorCodes.AUDIO_TOO_SHORT) throw e
+                    job.record(state(), analysis = null)
+                }
+            }
+            FileAction.TAG -> {
+                val model = SpeechRuntime.get(app).resolve(SpeechContract.KIND_TAGGER, null)
+                job.modelId = model.modelId
+                val result = open(source).use { descriptor -> AudioFiles.open(descriptor).use { reader -> analysis.tag(reader, TagOptions(model.modelId), control, model) } }
+                job.record(state(), recognized = result.durationMillis, analysis = FileAnalysis.Tags(result.labels))
+            }
+            FileAction.TRANSCRIBE -> throw IllegalArgumentException("Not an analysis")
+        }
+    }
+
+    /** "Diarize and transcribe" (D153): each turn recognized from the decoded samples. zh-CN: "分离 + 转写": 从已解码的采样逐个识别轮次. */
+    private fun transcribeTurns(samples: FloatArray, diarization: Diarization, request: RecognizeOptions, options: FileRunOptions, job: Job): FileTranscriptRecord {
+        job.stage = FileRun.Stage.TURNS
+        job.modelId = options.modelId.orEmpty()
+        job.fed = 0
+        job.declared = diarization.turns.sumOf { it.endMillis - it.startMillis }.takeIf { it > 0 }
+        job.publish(recognizing = true)
+        val warnings = LinkedHashSet<SpeechWarning>()
+        var done = 0L
+        for (turn in diarization.turns) {
+            if (cancelled.get()) break
+            val from = AudioInput.samples(turn.startMillis).toInt().coerceIn(0, samples.size)
+            val to = AudioInput.samples(turn.endMillis).toInt().coerceIn(from, samples.size)
+            val transcript = SpeechRuntime.get(app).recognizeAudio(PcmAudio(samples, from, to), request, job.listener(turn, done)) { cancelled.get() }
+            job.modelId = transcript.modelId
+            warnings += transcript.warnings
+            done += turn.endMillis - turn.startMillis
+            job.fed = done
+        }
+        return job.record(state(), job.spokenLanguage() ?: request.language?.substringBefore('-')?.lowercase(), diarization.durationMillis, warnings.toList())
     }
 
     private fun finish(finished: FileTranscriptRecord) {

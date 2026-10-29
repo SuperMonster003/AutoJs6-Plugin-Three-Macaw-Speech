@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import java.util.Locale
 
 /**
@@ -59,6 +60,24 @@ object TranscriptExport {
             append(line).append(CRLF).append(CRLF)
         }
     }.toByteArray(Charsets.UTF_8)
+
+    /**
+     * "Diarize and transcribe" (roadmap D153): the text of each segment written by [line] with its speaker, for TXT,
+     * SRT and copying; segments without text or without a speaker stay as they are.
+     * zh-CN: "分离 + 转写" (路线图 D153): 每个分段的文字经 [line] 与其说话人一起写出, 用于 TXT, SRT 与复制; 没有文字或没有说话人的分段保持不变.
+     */
+    fun labeled(segments: List<Utterance>, speakers: List<Int>, line: (Int, String) -> String): List<Utterance> =
+        segments.mapIndexed { index, segment ->
+            val speaker = speakers.getOrNull(index)
+            if (speaker == null || segment.text.isBlank()) segment else segment.copy(text = line(speaker, segment.text.trim()))
+        }
+
+    /**
+     * The turns of a diarization (roadmap D153), one "mm:ss.s - mm:ss.s speaker" line each.
+     * zh-CN: 说话人分离的轮次 (路线图 D153), 每个一行 "mm:ss.s - mm:ss.s 说话人".
+     */
+    fun turns(turns: List<SpeakerTurn>, label: (Int) -> String): String =
+        turns.joinToString("\n") { "${segmentClock(it.startMillis)} - ${segmentClock(maxOf(it.endMillis, it.startMillis))} ${label(it.speaker)}" }
 
     /**
      * The default name of a saved file: the picked file's name with [extension] instead of its own.

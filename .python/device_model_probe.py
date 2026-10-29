@@ -5,6 +5,7 @@ character error rate or the audio length).
     py -I .python/device_model_probe.py list
     py -I .python/device_model_probe.py probe <serial> <preset> --archives <dir> [--wav <file>] [--wav2 <file>] [--ref <text>]
                                           [--text <text>] [--sid <n>] [--lang <code>] [--out <name>] [--head <chars>]
+                                          [--threshold <t>] [--shift <r>] [--clusters <n>] [--cancel-at <share>]   (diarization)
     py -I .python/device_model_probe.py clean <serial>
 
 `--archives` is a directory outside the repository with the pinned upstream assets as `<tag>/<asset>` (the layout of
@@ -108,6 +109,49 @@ PRESETS = {
     "speaker-nemo-titanet-small": dict(
         asset="speaker-recongition-models/nemo_en_titanet_small.onnx", size=40257283,
         sha256="ad4a1802485d8b34c722d2a9d04249662f2ece5d28a7a039063ca22f515a789e", type="speaker", roles="model=nemo_en_titanet_small.onnx"),
+    # Candidates of roadmap P8.4 (D126). A diarization preset adds the speaker embedding model to the segmentation
+    # archive ("add"); "keep" pushes only the files the probe loads.
+    "diarization-pyannote-eres2net": dict(
+        asset="speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2", size=6958444,
+        sha256="24615ee884c897d9d2ba09bb4d30da6bb1b15e685065962db5b02e76e4996488", type="diarization",
+        add=[("speaker-recongition-models/3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx", 26485263,
+              "c59158379255ad66e161679cca6af8d52d51e389e3224ab7d7a7baae295c2db5")],
+        keep=["model.int8.onnx", "3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx"],
+        roles="segmentation=model.int8.onnx;embedding=3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx"),
+    "diarization-pyannote-fp32-eres2net": dict(
+        asset="speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2", size=6958444,
+        sha256="24615ee884c897d9d2ba09bb4d30da6bb1b15e685065962db5b02e76e4996488", type="diarization",
+        add=[("speaker-recongition-models/3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx", 26485263,
+              "c59158379255ad66e161679cca6af8d52d51e389e3224ab7d7a7baae295c2db5")],
+        keep=["model.onnx", "3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx"],
+        roles="segmentation=model.onnx;embedding=3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx"),
+    "diarization-pyannote-campplus": dict(
+        asset="speaker-segmentation-models/sherpa-onnx-pyannote-segmentation-3-0.tar.bz2", size=6958444,
+        sha256="24615ee884c897d9d2ba09bb4d30da6bb1b15e685065962db5b02e76e4996488", type="diarization",
+        add=[("speaker-recongition-models/3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx", 29596978,
+              "357a834f702b80161e5b981182c038e18553c1f2ca752ed6cec2052365d4129b")],
+        keep=["model.int8.onnx", "3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx"],
+        roles="segmentation=model.int8.onnx;embedding=3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx"),
+    "langid-whisper-tiny": dict(
+        asset="asr-models/sherpa-onnx-whisper-tiny.tar.bz2", size=116204861,
+        sha256="c46116994e539aa165266d96b325252728429c12535eb9d8b6a2b10f129e66b1", type="langid",
+        keep=["tiny-encoder.int8.onnx", "tiny-decoder.int8.onnx"], roles="encoder=tiny-encoder.int8.onnx;decoder=tiny-decoder.int8.onnx"),
+    "langid-whisper-base": dict(
+        asset="asr-models/sherpa-onnx-whisper-base.tar.bz2", size=207557382,
+        sha256="911b2083efd7c0dca2ac3b358b75222660dc09fb716d64fbfc417ba6c99ff3de", type="langid",
+        keep=["base-encoder.int8.onnx", "base-decoder.int8.onnx"], roles="encoder=base-encoder.int8.onnx;decoder=base-decoder.int8.onnx"),
+    "tagger-ced-tiny": dict(
+        asset="audio-tagging-models/sherpa-onnx-ced-tiny-audio-tagging-2024-04-19.tar.bz2", size=28531989,
+        sha256="84baf315b57d61aa69480c4fee878dab54cbc7be3e877db334e65d8b087e23c3", type="tagger-ced",
+        keep=["model.int8.onnx", "class_labels_indices.csv"], roles="model=model.int8.onnx;labels=class_labels_indices.csv"),
+    "tagger-ced-mini": dict(
+        asset="audio-tagging-models/sherpa-onnx-ced-mini-audio-tagging-2024-04-19.tar.bz2", size=47658399,
+        sha256="bec8bfa0af2c20ec3a9e7c6dd6c92d0fb6e96d6b25370ebe7a48e7283a60a02c", type="tagger-ced",
+        keep=["model.int8.onnx", "class_labels_indices.csv"], roles="model=model.int8.onnx;labels=class_labels_indices.csv"),
+    "tagger-zipformer-small": dict(
+        asset="audio-tagging-models/sherpa-onnx-zipformer-small-audio-tagging-2024-04-15.tar.bz2", size=111034072,
+        sha256="07e2fafcdcbc461f2816188d9b0bbafced12584030cf67d5652e549ef256a2c6", type="tagger-zipformer",
+        keep=["model.int8.onnx", "class_labels_indices.csv"], roles="model=model.int8.onnx;labels=class_labels_indices.csv"),
 }
 
 
@@ -146,7 +190,19 @@ def unpack(preset, archives):
             with tarfile.open(archive, "r:bz2") as tar:
                 tar.extractall(staging, filter="data")
         roots = [p for p in staging.iterdir() if p.is_dir()]
-        (roots[0] if len(roots) == 1 else staging).rename(target)
+        root = roots[0] if len(roots) == 1 else staging
+        for asset, size, digest in spec.get("add", []):
+            extra = archives / asset
+            if not extra.is_file() or extra.stat().st_size != size or sha256(extra) != digest:
+                raise SystemExit(f"{extra} is missing or does not match the pinned size and SHA-256")
+            shutil.copyfile(extra, root / extra.name)
+        if "keep" in spec:
+            for path in sorted(root.rglob("*"), reverse=True):
+                if path.is_file() and path.relative_to(root).as_posix() not in spec["keep"]:
+                    path.unlink()
+                elif path.is_dir() and not any(path.iterdir()):
+                    path.rmdir()
+        root.rename(target)
         if staging.exists():
             staging.rmdir()
     return target
@@ -185,7 +241,8 @@ def probe(args):
     for key, value in (("macawProbeRef", args.ref), ("macawProbeText", args.text)):
         if value is not None:
             extra[key + "64"] = base64.b64encode(value.encode("utf-8")).decode("ascii")
-    for key, value in (("macawProbeSid", args.sid), ("macawProbeOut", args.out), ("macawProbeHead", args.head)):
+    for key, value in (("macawProbeSid", args.sid), ("macawProbeOut", args.out), ("macawProbeHead", args.head), ("macawProbeThreshold", args.threshold),
+                       ("macawProbeShift", args.shift), ("macawProbeClusters", args.clusters), ("macawProbeCancelAt", args.cancel_at)):
         if value is not None:
             extra[key] = str(value)
     since = adb(args.serial, "shell", "date", "'+%m-%d %H:%M:%S.000'")
@@ -220,7 +277,7 @@ def main(argv):
     run.add_argument("serial")
     run.add_argument("preset", choices=sorted(PRESETS))
     run.add_argument("--archives", required=True)
-    for name in ("wav", "wav2", "ref", "text", "sid", "lang", "out", "head"):
+    for name in ("wav", "wav2", "ref", "text", "sid", "lang", "out", "head", "threshold", "shift", "clusters", "cancel-at"):
         run.add_argument(f"--{name}")
     wipe = sub.add_parser("clean")
     wipe.add_argument("serial")

@@ -64,13 +64,13 @@ class ThreeMacawSpeechService : Service() {
  * model thread and report through `ISpeechProgressCallback`), file recognition and voice activity detection (P3.3, on
  * the calling Binder thread), dictation sessions (P3.2) and wake sessions (P3.4) on [SpeechRuntime], and synthesis to a
  * file (P4.3, [SpeechSynthesis]: an operation on the synthesis thread with progress and cancellation). Contract version 2
- * (roadmap P8.3, D136) adds the speaker calls ([SpeakerRecognition], on the calling Binder thread); the offline analyses
- * reserved for P8.4 answer `PLUGIN_INCOMPATIBLE`.
+ * (roadmap P8.3, D136) adds the speaker calls ([SpeakerRecognition], on the calling Binder thread) and the offline
+ * analyses of P8.4 ([SpeechAnalysis]: operations on the analysis thread with progress and cancellation).
  * zh-CN: 契约版本 1 的 `ISpeechPlugin`. 模型管理 (路线图 P2.3 / P2.4: `listModels`, `installModel`, `cancelOperation`, `removeModel`,
  * `importModel`, `setDefaultModel`, `refreshCatalog`; 长操作在模型线程上运行, 经 `ISpeechProgressCallback` 报告), 文件识别与语音活动检测
  * (P3.3, 在调用方 Binder 线程上), 听写会话 (P3.2) 与唤醒会话 (P3.4) 基于 [SpeechRuntime], 以及合成到文件 (P4.3, [SpeechSynthesis]: 在合成线程上
- * 运行的操作, 带进度与取消). 契约版本 2 (路线图 P8.3, D136) 增加说话人调用 ([SpeakerRecognition], 在调用方 Binder 线程上); 为 P8.4 预留的离线分析
- * 返回 `PLUGIN_INCOMPATIBLE`.
+ * 运行的操作, 带进度与取消). 契约版本 2 (路线图 P8.3, D136) 增加说话人调用 ([SpeakerRecognition], 在调用方 Binder 线程上)
+ * 与 P8.4 的离线分析 ([SpeechAnalysis]: 在分析线程上运行的操作, 带进度与取消).
  */
 internal class SpeechPluginBinder(
     private val context: Context,
@@ -84,6 +84,8 @@ internal class SpeechPluginBinder(
     private val synthesis by lazy { SpeechSynthesis(runtime) }
 
     private val speakers: SpeakerRecognition get() = SpeakerRecognition.get(context)
+
+    private val analysis: SpeechAnalysis get() = SpeechAnalysis.get(context)
 
     override fun getInfo(): PluginInfo = context.pluginRuntimeFields().toPluginInfo()
 
@@ -125,6 +127,7 @@ internal class SpeechPluginBinder(
     override fun cancelOperation(opId: Int) {
         manager.cancel(opId)
         synthesis.cancel(opId)
+        analysis.cancel(opId)
     }
 
     override fun removeModel(request: Bundle?): Bundle = answering {
@@ -342,16 +345,19 @@ internal class SpeechPluginBinder(
         SpeechBundles.answer(SpeechContract.CALL_VERSION_2) { putBoolean(SpeechResultKeys.REMOVED, removed) }
     }
 
-    // Contract version 2, reserved for roadmap P8.4 (D126): their features are not advertised, so a host never calls them yet.
+    // Contract version 2: the offline analyses (roadmap P8.4, D146 - D151), operations answered with version 2.
 
-    override fun diarizeFile(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing { reserved("diarizeFile") }
+    override fun diarizeFile(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
+        analysis.startDiarize(audio, options, callback)
+    }
 
-    override fun detectLanguage(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing { reserved("detectLanguage") }
+    override fun detectLanguage(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
+        analysis.startLanguage(audio, options, callback)
+    }
 
-    override fun tagAudio(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing { reserved("tagAudio") }
-
-    private fun reserved(method: String): Nothing =
-        throw SpeechException(SpeechErrorCodes.PLUGIN_INCOMPATIBLE, "$method is not implemented by this version of 3-Macaw Speech")
+    override fun tagAudio(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
+        analysis.startTag(audio, options, callback)
+    }
 
     private fun recording(audio: ParcelFileDescriptor?, options: Bundle?): SpeakerRecognition.Recording.Descriptor = SpeakerRecognition.Recording.Descriptor(
         audio ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "An audio descriptor is required"),

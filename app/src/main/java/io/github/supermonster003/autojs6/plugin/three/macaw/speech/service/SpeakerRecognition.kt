@@ -120,6 +120,19 @@ internal class SpeakerRecognition(private val runtime: SpeechRuntime, val store:
         }
     }
 
+    /**
+     * The voiceprint of [model] closest to the speech [samples] of one diarized speaker (roadmap D147, `identify`), with
+     * that model's threshold; null when [model] has no voiceprint.
+     * zh-CN: 与一位分离出的说话人的语音 [samples] 最接近的 [model] 声纹 (路线图 D147, `identify`), 附该模型的阈值; [model] 没有声纹时为 null.
+     */
+    fun closest(samples: FloatArray, model: InstalledModel): SpeakerMatch? {
+        val voiceprints = store.of(model.modelId).takeIf { it.isNotEmpty() } ?: return null
+        return lease(model).use { lease ->
+            val candidates = SpeakerMath.rank(lease.engine.embed(samples), voiceprints, 1)
+            SpeakerMatch(candidates.firstOrNull(), SpeakerRules.threshold(model.modelId), candidates, model.modelId)
+        }
+    }
+
     fun list(): List<Voiceprint> = store.list().sortedBy { it.name }
 
     fun remove(name: String): Boolean = store.remove(SpeakerRules.name(name))
