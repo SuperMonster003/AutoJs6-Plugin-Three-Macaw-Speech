@@ -43,7 +43,7 @@ class SpeechOptionsTest {
 
     @Test
     fun `listen refusals carry INVALID_OPTIONS, LIMIT_EXCEEDED or PLUGIN_INCOMPATIBLE`() {
-        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.listen(source("contractVersion" to 2)) }
+        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.listen(source("contractVersion" to 3)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("source" to "line-in")) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("sampleRate" to 8000)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("silenceEndMillis" to 0)) }
@@ -126,7 +126,7 @@ class SpeechOptionsTest {
 
     @Test
     fun `synthesize refusals carry INVALID_OPTIONS, LIMIT_EXCEEDED or PLUGIN_INCOMPATIBLE`() {
-        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.synthesize(source("contractVersion" to 2, "text" to "hi")) }
+        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.synthesize(source("contractVersion" to 3, "text" to "hi")) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(null) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to " \n ")) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to 3)) }

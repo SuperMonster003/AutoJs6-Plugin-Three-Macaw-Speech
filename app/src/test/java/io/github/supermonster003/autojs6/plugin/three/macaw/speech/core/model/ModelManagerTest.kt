@@ -52,7 +52,7 @@ class ModelManagerTest {
 
     private fun manager(catalogBytes: ByteArray = Fixtures.catalogBytes): ModelManager {
         val signer = TestSigner()
-        val catalogs = ModelCatalogRepository(temporary.newFolder(), catalogBytes, null, signer.verifier(), server.transport)
+        val catalogs = ModelCatalogRepository(temporary.newFolder(), catalogBytes, null, signer.verifier(), server.transport, bundledFile = CatalogRules.CATALOG_FILE)
         val extractor = ArchiveExtractor()
         val license = LicensePolicy(store)
         return ModelManager(
@@ -197,7 +197,7 @@ class ModelManagerTest {
 
     @Test
     fun `list, defaults and removal follow the store`() {
-        assertEquals(5, manager.list().size)
+        assertEquals(6, manager.list().size)
         assertEquals(listOf("tts.test.tiny"), manager.list(kind = "tts").map { it.id })
         assertEquals(emptyList<String>(), manager.list(installed = true).map { it.id })
         install("tts.test.tiny")
@@ -324,7 +324,7 @@ class ModelManagerTest {
         File(downloads, "${"a".repeat(64)}.part").writeText("stale")
         val kept = File(downloads, "${Fixtures.tiny.latestVersion.mirror!!.sha256}.part").also { it.writeText("resume me") }
         val executor = Executors.newSingleThreadExecutor()
-        ModelManager(store, ModelCatalogRepository(temporary.newFolder(), Fixtures.catalogBytes, null, TestSigner().verifier(), server.transport),
+        ModelManager(store, ModelCatalogRepository(temporary.newFolder(), Fixtures.catalogBytes, null, TestSigner().verifier(), server.transport, bundledFile = CatalogRules.CATALOG_FILE),
             ModelInstaller(store, Downloader(server.transport), ArchiveExtractor(), downloads, freeSpace = { freeSpace }), Importer(store, ArchiveExtractor(), LicensePolicy(store), freeSpace = { freeSpace }),
             LicensePolicy(store), downloads, executor = executor)
         executor.shutdown()
@@ -396,7 +396,7 @@ class ModelManagerTest {
         File(store.root, ".staging/left/file.bin").apply { parentFile!!.mkdirs(); writeText("staged") }
         val recycler = ModelManager(
             store = store,
-            catalogs = ModelCatalogRepository(temporary.newFolder(), Fixtures.catalogBytes, null, TestSigner().verifier(), server.transport),
+            catalogs = ModelCatalogRepository(temporary.newFolder(), Fixtures.catalogBytes, null, TestSigner().verifier(), server.transport, bundledFile = CatalogRules.CATALOG_FILE),
             installer = ModelInstaller(store, Downloader(server.transport), ArchiveExtractor(), downloads, freeSpace = { freeSpace }),
             importer = Importer(store, ArchiveExtractor(), LicensePolicy(store), freeSpace = { freeSpace }),
             licensePolicy = LicensePolicy(store),

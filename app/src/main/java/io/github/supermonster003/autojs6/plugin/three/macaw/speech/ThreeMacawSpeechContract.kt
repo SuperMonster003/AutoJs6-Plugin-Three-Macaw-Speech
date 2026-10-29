@@ -37,8 +37,21 @@ internal object ThreeMacawSpeechContract {
      */
     const val REQUIRED_HOST_VERSION = 5456L
 
-    /** Speech contract version (roadmap D21 / D28). zh-CN: 语音契约版本 (路线图 D21 / D28). */
+    /**
+     * The base speech contract version (roadmap D21 / D28), advertised as `speechContractVersion`: it stays 1, the only
+     * value hosts before contract version 2 accept, while [MAX_CONTRACT_VERSION] tells newer hosts what else this build
+     * answers (roadmap D136).
+     * zh-CN: 基础语音契约版本 (路线图 D21 / D28), 以 `speechContractVersion` 声明: 保持为 1, 这是契约版本 2 之前的宿主唯一接受的值;
+     * [MAX_CONTRACT_VERSION] 告诉较新的宿主本构建还能应答什么 (路线图 D136).
+     */
     const val CONTRACT_VERSION = 1
+
+    /**
+     * The highest contract version this build answers, advertised as `speechMaxContractVersion` (roadmap D136): the
+     * speaker calls of version 2 (P8.3). Answers carry the version of their request.
+     * zh-CN: 本构建应答的最高契约版本, 以 `speechMaxContractVersion` 声明 (路线图 D136): 版本 2 的说话人调用 (P8.3). 应答带其请求的版本.
+     */
+    const val MAX_CONTRACT_VERSION = 2
 
     /**
      * Capability keys of roadmap D28; P1.1 moves them to `SpeechCapabilityKeys`.
@@ -57,8 +70,10 @@ internal object ThreeMacawSpeechContract {
      * zh-CN: 本构建实现的可选功能: 模型管理 (`models`: 安装, 导入, 删除, 默认模型与目录刷新, 路线图 P2.3 / P2.4), 文件与外部 PCM 识别 (`asr`),
      * 麦克风听写 (`asrStreaming`), 语音活动检测 (`vad`), 唤醒会话 (`kws`, 路线图 P3), 合成到文件 (`tts`), 系统 TTS 引擎 (`ttsSystemEngine`, 路线图 P4)
      * 与 WAV 以外的音频文件 (`audioDecode`, 路线图 D84: 宿主只把这类文件交给声明了它的插件); 宿主不会依赖未声明的功能.
+     * Contract version 2 adds `speaker` (roadmap P8.3: enroll, verify, identify, list, remove), which a host counts only
+     * when it agreed on version 2. zh-CN: 契约版本 2 增加 `speaker` (路线图 P8.3: 注册, 验证, 辨认, 列出, 删除), 宿主只在商定版本 2 时才计入.
      */
-    val FEATURES: List<String> = listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode")
+    val FEATURES: List<String> = listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker")
 
     /**
      * Version of the model catalog bundled in `assets/catalog/catalog-v2.json` (roadmap D28, P2.4, D108); `BundledCatalogTest`

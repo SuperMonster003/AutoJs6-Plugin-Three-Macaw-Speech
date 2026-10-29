@@ -38,15 +38,16 @@ class ModelCatalogParserTest {
             assertEquals(version.files.map { it.path }.toSet(), mapped.toSet())
             version.mirror?.let { assertEquals(CatalogRules.archiveSize(version.files.map { file -> file.size }), it.size) }
         }
-        CatalogRules.KINDS.forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
+        // The bundled release 2 predates the speaker kind of schema 3 (roadmap D141 (4)). zh-CN: 内置的发布 2 早于 schema 3 的说话人类别.
+        (CatalogRules.KINDS - CatalogRules.KIND_SPEAKER).forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
     }
 
     @Test
     fun `the fixture parses with every field mapped`() {
         val catalog = Fixtures.catalog
-        assertEquals(2, catalog.schemaVersion)
+        assertEquals(3, catalog.schemaVersion)
         assertEquals(
-            listOf("asr.test.noncommercial", "kws.test.unknown", "punct.test.ct", "punct.test.en", "tts.test.tiny"),
+            listOf("asr.test.noncommercial", "kws.test.unknown", "punct.test.ct", "punct.test.en", "speaker.test.embedding", "tts.test.tiny"),
             catalog.models.map { it.modelId },
         )
         val tiny = catalog.model("tts.test.tiny")!!.latestVersion
@@ -60,7 +61,7 @@ class ModelCatalogParserTest {
         assertEquals("Test tts.test.tiny", catalog.model("tts.test.tiny")!!.localizedName(Locale.US))
         assertTrue(catalog.model("tts.test.tiny")!!.localizedName(Locale.TRADITIONAL_CHINESE).startsWith(Char(0x6D4B).toString()))
         assertEquals(
-            listOf("kws.test.unknown", "punct.test.ct", "punct.test.en", "tts.test.tiny"),
+            listOf("kws.test.unknown", "punct.test.ct", "punct.test.en", "speaker.test.embedding", "tts.test.tiny"),
             catalog.query(language = "en-US").filter { it.recommended }.map { it.modelId },
         )
     }
@@ -74,7 +75,7 @@ class ModelCatalogParserTest {
         val version = catalog.model("tts.test.tiny")!!.latestVersion
         assertNull(version.mirror)
         assertEquals(version.upstreamBytes, version.downloadBytes)
-        val wrongSource = text.replace(mirrorJson, "\"mirror\": null").replace(tiny.sourceUrl, tiny.sourceUrl.replace("speech-models-v1", "speech-models-v3"))
+        val wrongSource = text.replace(mirrorJson, "\"mirror\": null").replace(tiny.sourceUrl, tiny.sourceUrl.replace("speech-models-v1", "speech-models-v4"))
         assertThrows(CatalogException::class.java) { parser.parse(wrongSource.toByteArray()) }
         // A missing key reads like null (more lenient than the reference validator, which requires the key).
         val missing = text.replace("$mirrorJson,", "")
@@ -90,18 +91,19 @@ class ModelCatalogParserTest {
         val file = tiny.files.first()
         val mutations = mapOf(
             "unknown top-level field" to text.replaceFirst("{", "{\n  \"extra\": 1,"),
-            "schema version 3" to text.replace("\"schemaVersion\": 2", "\"schemaVersion\": 3"),
-            "punct in schema 1" to text.replace("\"schemaVersion\": 2", "\"schemaVersion\": 1"),
-            "release tag mismatch" to text.replace("\"releaseTag\": \"speech-models-v2\"", "\"releaseTag\": \"speech-models-v3\""),
+            "schema version 4" to text.replace("\"schemaVersion\": 3", "\"schemaVersion\": 4"),
+            "punct in schema 1" to text.replace("\"schemaVersion\": 3", "\"schemaVersion\": 1"),
+            "speaker in schema 2" to text.replace("\"schemaVersion\": 3", "\"schemaVersion\": 2"),
+            "release tag mismatch" to text.replace("\"releaseTag\": \"speech-models-v3\"", "\"releaseTag\": \"speech-models-v4\""),
             "other repository" to text.replace("\"repository\": \"SuperMonster003/AutoJs6-Shared-Assets\"", "\"repository\": \"someone/else\""),
-            "bad generatedAt" to text.replace("2026-10-23T01:00:00Z", "2026-02-30T01:00:00Z"),
-            "releasedAt after generatedAt" to text.replace("2026-10-23T00:00:00Z", "2026-10-24T00:00:00Z"),
+            "bad generatedAt" to text.replace("2026-10-29T01:00:00Z", "2026-02-30T01:00:00Z"),
+            "releasedAt after generatedAt" to text.replace("2026-10-29T00:00:00Z", "2026-10-30T00:00:00Z"),
             "float version code" to text.replaceFirst("\"versionCode\": 1", "\"versionCode\": 1.0"),
             "boolean recommended as number" to text.replaceFirst("\"recommended\": false", "\"recommended\": 0"),
             "mirror size" to text.replace("\"size\": ${mirror.size}", "\"size\": ${mirror.size + 512}"),
             "mirror name" to text.replace("\"fileName\": \"${mirror.fileName}\"", "\"fileName\": \"x.tar\""),
             "mirror sha" to text.replace("\"sha256\": \"${mirror.sha256}\"", "\"sha256\": \"${"0".repeat(64)}\""),
-            "mirror of a later release" to text.replace(mirror.url, mirror.url.replace("speech-models-v1", "speech-models-v3")),
+            "mirror of a later release" to text.replace(mirror.url, mirror.url.replace("speech-models-v1", "speech-models-v4")),
             "file path traversal" to text.replace("\"path\": \"${file.path}\"", "\"path\": \"../${file.path}\""),
             "uppercase sha" to text.replace(file.sha256, file.sha256.uppercase()),
             "commercialUse as text" to text.replace("\"commercialUse\": true", "\"commercialUse\": \"yes\""),
@@ -112,12 +114,14 @@ class ModelCatalogParserTest {
             "upstream member not covering files" to text.replace("\"tiny-model/lexicon.txt\": \"lexicon.txt\",", ""),
             "recommended version" to text.replace("\"recommendedVersionCode\": 1", "\"recommendedVersionCode\": null"),
             "speakers on asr" to text.replaceFirst("\"sampleRate\": 16000,", "\"sampleRate\": 16000, \"speakers\": 1,"),
-            "duplicate key" to text.replaceFirst("\"catalogVersion\": 2,", "\"catalogVersion\": 2, \"catalogVersion\": 2,"),
+            "duplicate key" to text.replaceFirst("\"catalogVersion\": 3,", "\"catalogVersion\": 3, \"catalogVersion\": 3,"),
             "sampleRate on punct" to text.replace("\"modelType\": \"ct-transformer\",", "\"modelType\": \"ct-transformer\", \"sampleRate\": 16000,"),
             "punct role on a missing file" to text.replace("\"bpeVocab\": \"bpe.vocab\"", "\"bpeVocab\": \"missing.vocab\""),
             "punct type of another kind" to text.replace("\"modelType\": \"cnn-bilstm\"", "\"modelType\": \"vits\""),
             "two member prefixes" to text.replace("\"./sherpa-onnx-online-punct-test/bpe.vocab\"", "\"././sherpa-onnx-online-punct-test/bpe.vocab\""),
             "kind prefix" to text.replaceFirst("\"kind\": \"kws\"", "\"kind\": \"tts\""),
+            "speaker role on a missing file" to text.replace("\"model\": \"model.onnx\"", "\"model\": \"missing.onnx\""),
+            "speaker type of another kind" to text.replace("\"modelType\": \"speaker-embedding\"", "\"modelType\": \"vits\""),
         )
         mutations.forEach { (name, mutated) ->
             assertTrue("$name: mutation must change the text", mutated != text)
@@ -211,7 +215,7 @@ class ModelCatalogParserTest {
         kws["versions"] = (kws["versions"] as List<Map<String, Any?>>).map { it + ("modelType" to "kws-future") }
 
         val catalog = parser.parse(build())
-        assertEquals(listOf("asr.test.noncommercial", "punct.test.ct", "punct.test.en", "tts.test.tiny"), catalog.models.map { it.modelId })
+        assertEquals(listOf("asr.test.noncommercial", "punct.test.ct", "punct.test.en", "speaker.test.embedding", "tts.test.tiny"), catalog.models.map { it.modelId })
         val model = catalog.model("tts.test.tiny")!!
         assertEquals(listOf(1), model.versions.map { it.versionCode })
         assertEquals(1, model.recommendedVersionCode)
@@ -225,7 +229,7 @@ class ModelCatalogParserTest {
         tiny["versions"] = tinyVersions.reversed()
         assertThrows(CatalogException::class.java) { parser.parse(build()) }
         tiny["versions"] = tinyVersions
-        assertEquals(4, parser.parse(build()).models.size)
+        assertEquals(5, parser.parse(build()).models.size)
         models[1]["modelId"] = "kws.test.future"
         assertThrows(CatalogException::class.java) { parser.parse(build()) }
         models[1]["modelId"] = "dict.test.future"
@@ -241,7 +245,7 @@ class ModelCatalogParserTest {
         val catalog = StrictJson.parseObject(Fixtures.catalogBytes).toMutableMap()
         catalog["models"] = (catalog["models"] as List<*>).reversed()
         assertThrows(CatalogException::class.java) { parser.parse(StrictJson.write(catalog)) }
-        assertThrows(CatalogException::class.java) { parser.parse(Fixtures.catalogBytes, minimumCatalogVersion = 3) }
+        assertThrows(CatalogException::class.java) { parser.parse(Fixtures.catalogBytes, minimumCatalogVersion = 4) }
         assertThrows(CatalogException::class.java) { parser.parse(ByteArray((CatalogRules.MAX_CATALOG_BYTES + 1).toInt())) }
     }
 

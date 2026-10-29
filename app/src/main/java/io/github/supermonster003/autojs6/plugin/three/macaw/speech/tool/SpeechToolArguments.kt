@@ -40,13 +40,19 @@ internal data class SynthesizeRequest(
     val format: String = Catalog.FORMAT_WAV,
 )
 
+/** `speech_speaker_verify` (roadmap P8.3.5); [threshold] null for the model's value. zh-CN: [threshold] 为 null 时取模型的值. */
+internal data class SpeakerVerifyRequest(val name: String, val threshold: Double? = null)
+
+/** `speech_speaker_identify` (roadmap P8.3.5). zh-CN: `speech_speaker_identify` (路线图 P8.3.5). */
+internal data class SpeakerIdentifyRequest(val threshold: Double? = null, val topK: Int = Catalog.DEFAULT_TOP_K)
+
 /**
- * Reads the arguments of the four tools (roadmap D95 - D98) with the ranges of [SpeechToolCatalog]. AutoJs6 checks them
+ * Reads the arguments of the tools (roadmap D95 - D98, P8.3.5) with the ranges of [SpeechToolCatalog]. AutoJs6 checks them
  * against the input schema and fills in the defaults before the call; the provider checks again for clients that bind
  * the service directly, so a wrong shape or range is `INVALID_ARGUMENTS` either way. Absent values, JSON null among
  * them, take the defaults; unknown keys are ignored, as in [io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechOptions].
  * The messages name the argument, never its text. Pure Kotlin: the service turns the JSON object into a map first.
- * zh-CN: 按 [SpeechToolCatalog] 的取值范围读取四个工具的参数 (路线图 D95 - D98). AutoJs6 在调用前已按输入 schema 检查并补上默认值;
+ * zh-CN: 按 [SpeechToolCatalog] 的取值范围读取各工具的参数 (路线图 D95 - D98, P8.3.5). AutoJs6 在调用前已按输入 schema 检查并补上默认值;
  * 提供方为直接绑定服务的客户端再查一遍, 因此形态或范围错误都是 `INVALID_ARGUMENTS`. 缺省值 (含 JSON null) 取默认值; 未知键被忽略. 信息只写
  * 参数名, 不写其文字. 纯 Kotlin: 服务先把 JSON 对象转成 Map.
  */
@@ -102,6 +108,25 @@ internal object SpeechToolArguments {
             format.takeIf { it in Catalog.FORMATS } ?: invalid("format must be one of ${Catalog.FORMATS.joinToString()}, got $format")
         } ?: Catalog.FORMAT_WAV,
     )
+
+    fun speakerVerify(arguments: Map<String, Any?>): SpeakerVerifyRequest {
+        val name = string(arguments, "name", 1, Catalog.MAX_SPEAKER_NAME_CHARS)?.trim() ?: invalid("name is required")
+        if (name.isEmpty()) invalid("name must not be blank")
+        if (name.any { Character.isISOControl(it) }) invalid("name must not contain control characters or line breaks")
+        return SpeakerVerifyRequest(name, threshold(arguments))
+    }
+
+    fun speakerIdentify(arguments: Map<String, Any?>): SpeakerIdentifyRequest = SpeakerIdentifyRequest(
+        threshold = threshold(arguments),
+        topK = integer(arguments, "topK", 1, Catalog.MAX_TOP_K)?.toInt() ?: Catalog.DEFAULT_TOP_K,
+    )
+
+    private fun threshold(arguments: Map<String, Any?>): Double? {
+        val value = arguments["threshold"] ?: return null
+        val threshold = (value as? Number)?.toDouble()?.takeIf { it.isFinite() } ?: invalid("threshold must be a number")
+        if (threshold < 0.0 || threshold > 1.0) invalid("threshold must be between 0 and 1, got $threshold")
+        return threshold
+    }
 
     private fun text(arguments: Map<String, Any?>, max: Int): String {
         val text = string(arguments, "text", 1, max) ?: invalid("text is required")

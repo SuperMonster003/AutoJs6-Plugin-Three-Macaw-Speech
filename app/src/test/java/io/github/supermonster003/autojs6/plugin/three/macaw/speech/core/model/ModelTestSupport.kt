@@ -27,8 +27,14 @@ internal object Fixtures {
 
     fun bytes(name: String): ByteArray = Files.readAllBytes(file(name).toPath())
 
-    /** The schema 2 catalog the plugin fetches and bundles (`catalog-v2.json`). zh-CN: 插件刷新与内置的 schema 2 目录. */
+    /** The schema 3 catalog the plugin fetches (`catalog-v3.json`, release 3). zh-CN: 插件刷新的 schema 3 目录 (发布 3). */
     val catalogBytes: ByteArray get() = bytes(CatalogRules.CATALOG_FILE)
+
+    /**
+     * The schema 2 catalog of release 2 (`catalog-v2.json`), as bundled until roadmap P8.5.2 and cached by 1.2.0.
+     * zh-CN: 发布 2 的 schema 2 目录, 即路线图 P8.5.2 之前的内置目录与 1.2.0 的缓存.
+     */
+    val catalogV2Bytes: ByteArray get() = bytes("catalog-v2.json")
 
     val catalog: ModelCatalog get() = ModelCatalogParser().parse(catalogBytes)
 

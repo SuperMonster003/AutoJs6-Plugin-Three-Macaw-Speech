@@ -11,6 +11,9 @@ parser, verifier and extractor are tested against the reference implementation i
   the three models unchanged plus the two punctuation types of roadmap P7.7 (ct-transformer with plain upstream members,
   cnn-bilstm with bpeVocab and an upstream archive packed from "." whose members start with "./"), signed by the same key
   into catalog-v2.sig.json;
+- its successor catalog-v3.json (schema 3, catalogVersion 3, validated against catalog-v2.json): the five models unchanged
+  plus a speaker embedding model of roadmap P8.3 whose only upstream asset is a raw ONNX file, signed into
+  catalog-v3.sig.json;
 - the canonical mirror archives and the upstream assets the catalog pins;
 - bzip2 vectors written by libbzip2 (through Python's bz2 module): multi-block, long runs, every byte value,
   concatenated streams and an empty stream, with the SHA-256 of their plain content in bz2-vectors.json.
@@ -23,7 +26,8 @@ fixtures, then run :app:testDebugUnitTest.
 
 zh-CN: 使用 Shared-Assets 参考工具重新生成模型存储 (路线图 P2.3 / P2.4) 的 JVM 测试夹具: 目录规则与规范镜像归档来自 distribution.py,
 分离签名来自 crypto.py (OpenSSL), 因此插件的 Kotlin 解析器, 校验器与解包器是对照参考实现测试的. schema 1 的 catalog-v1.json 之后是
-schema 2 的 catalog-v2.json (路线图 P7.7: 原三个模型加两种标点类型, 其中 cnn-bilstm 的上游成员带 "./"). 签名密钥每次运行重新生成并删除私钥.
+schema 2 的 catalog-v2.json (路线图 P7.7: 原三个模型加两种标点类型, 其中 cnn-bilstm 的上游成员带 "./"), 再之后是 schema 3 的 catalog-v3.json
+(路线图 P8.3: 再加一个只有单个上游 ONNX 文件的说话人模型). 签名密钥每次运行重新生成并删除私钥.
 不属于构建与推送前检查; 修改夹具后手动运行, 再运行 :app:testDebugUnitTest.
 """
 from __future__ import annotations
@@ -96,11 +100,14 @@ def catalog_model(distribution, model: dict, release_tag: str, released_at: str)
     prefix = model.get("memberPrefix", "")
     if prefix:
         members = [(".", None)] + [(f"{prefix}{name}", content) for name, content in members]
-    archive = gnu_tar_bz2(members)
-    (OUTPUT / model["upstreamName"]).write_bytes(archive)
-    tag = {"tts": "tts-models", "kws": "kws-models", "punct": "punctuation-models"}.get(model["kind"], "asr-models")
-    upstream = [{"format": "tar.bz2", "url": f"{UPSTREAM}/{tag}/{model['upstreamName']}", "size": len(archive),
-                 "sha256": hashlib.sha256(archive).hexdigest(), "members": {f"{prefix}{top}/{p}": p for p in sorted(files)}}]
+    upstream = []
+    # A speaker model has no upstream archive: its only asset is the raw ONNX file of "raw".
+    if files:
+        archive = gnu_tar_bz2(members)
+        (OUTPUT / model["upstreamName"]).write_bytes(archive)
+        tag = {"tts": "tts-models", "kws": "kws-models", "punct": "punctuation-models"}.get(model["kind"], "asr-models")
+        upstream.append({"format": "tar.bz2", "url": f"{UPSTREAM}/{tag}/{model['upstreamName']}", "size": len(archive),
+                         "sha256": hashlib.sha256(archive).hexdigest(), "members": {f"{prefix}{top}/{p}": p for p in sorted(files)}})
     if "raw" in model:
         url_path, path, content = model["raw"]
         (OUTPUT / Path(url_path).name).write_bytes(content)
@@ -207,10 +214,24 @@ def main() -> int:
     successor_path = OUTPUT / "catalog-v2.json"
     successor_path.write_bytes(distribution.canonical_json_bytes(successor))
 
+    speaker = {
+        "modelId": "speaker.test.embedding", "kind": "speaker", "modelType": "speaker-embedding", "top": "", "files": {}, "extra": {},
+        "raw": ("speaker-recongition-models/speaker_test_16k.onnx", "model.onnx", blob(71, 1500)),
+        "license": {"spdx": "Apache-2.0", "commercialUse": True, "noticeKey": "speech_model_license_commercial"},
+        "config": {"model": "model.onnx"}, "sampleRate": 16000,
+    }
+    newest = {"schemaVersion": 3, "catalogVersion": 3, "releaseTag": "speech-models-v3", "generatedAt": "2026-10-29T01:00:00Z",
+              "repository": REPOSITORY, "models": sorted(successor["models"] + [catalog_model(distribution, speaker, "speech-models-v3",
+                                                                                                   "2026-10-29T00:00:00Z")],
+                                                       key=lambda item: item["modelId"])}
+    distribution.validate_catalog(newest, expected_repository=REPOSITORY, previous_catalog=successor)
+    newest_path = OUTPUT / "catalog-v3.json"
+    newest_path.write_bytes(distribution.canonical_json_bytes(newest))
+
     with tempfile.TemporaryDirectory(prefix="macaw-fixture-key-") as directory:
         private = Path(directory) / "private.pem"
         key_id = crypto.generate_key_pair(private, OUTPUT / "catalog-signing-public.pem", Path(directory) / "public.der")
-        for path in (catalog_path, successor_path):
+        for path in (catalog_path, successor_path, newest_path):
             signature = OUTPUT / path.name.replace(".json", ".sig.json")
             crypto.sign_catalog(path, private, signature, key_id, expected_repository=REPOSITORY)
             crypto.verify_catalog_material(path, signature, OUTPUT / "catalog-signing-public.pem", key_id, expected_repository=REPOSITORY)

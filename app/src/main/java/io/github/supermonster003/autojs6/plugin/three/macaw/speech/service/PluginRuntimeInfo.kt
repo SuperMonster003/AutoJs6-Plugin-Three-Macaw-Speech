@@ -9,6 +9,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ThreeMacawSpeechContract
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
+import org.autojs.plugin.speech.api.SpeechCapabilityKeys
 
 /**
  * The PluginInfo fields as plain values, so JVM tests can freeze the mapping without Android.
@@ -99,6 +100,8 @@ internal fun PluginRuntimeFields.toPluginInfo(): PluginInfo = PluginInfo().also 
     info.capabilities = Bundle().apply {
         putLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION, requiredHostVersion)
         putInt(ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION, contractVersion)
+        // Roadmap D136: the base version stays 1 for the hosts before contract version 2, the highest one is separate.
+        putInt(SpeechCapabilityKeys.MAX_CONTRACT_VERSION, ThreeMacawSpeechContract.MAX_CONTRACT_VERSION)
         putStringArray(ThreeMacawSpeechContract.CAPABILITY_FEATURES, features.toTypedArray())
         putInt(ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION, catalogVersion)
     }

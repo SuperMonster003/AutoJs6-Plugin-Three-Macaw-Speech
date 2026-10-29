@@ -20,6 +20,8 @@ import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineStream
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
+import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractor
+import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractorConfig
 import com.k2fsa.sherpa.onnx.Vad
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
@@ -94,6 +96,29 @@ class PunctuationEngine(
     override fun punctuate(text: String): String = synchronized(this) { add(text) }
 
     override fun close() = release()
+}
+
+/**
+ * A loaded speaker embedding model (roadmap P8.3.3, D125): [embed] turns 16 kHz speech into one embedding of [dim]
+ * values, one call at a time per instance.
+ * zh-CN: 已加载的说话人嵌入模型 (路线图 P8.3.3, D125): [embed] 把 16 kHz 语音变成一个 [dim] 维嵌入, 每个实例一次一个调用.
+ */
+class SpeakerEngine(private val extractor: SpeakerEmbeddingExtractor, val modelId: String) : Closeable {
+    val dim: Int = extractor.dim()
+
+    fun embed(samples: FloatArray): FloatArray = synchronized(this) {
+        val stream = extractor.createStream()
+        try {
+            stream.acceptWaveform(samples, AudioInput.SAMPLE_RATE)
+            stream.inputFinished()
+            if (!extractor.isReady(stream)) throw SpeechException(SpeechErrorCodes.AUDIO_TOO_SHORT, "The recording is too short for a speaker embedding")
+            extractor.compute(stream).also { if (it.size != dim) throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "$modelId answered ${it.size} of $dim values") }
+        } finally {
+            stream.release()
+        }
+    }
+
+    override fun close() = extractor.release()
 }
 
 private class OnlineEngineStream(private val engine: OnlineEngine, hotwords: List<String>) : StreamingStream {
@@ -289,6 +314,18 @@ object SherpaEngines {
             }
             else -> throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "${model.modelId} is not a punctuation model this build can load (${model.modelType})")
         }
+    }
+
+    /**
+     * A speaker embedding model of kind `speaker` (roadmap P8.3.3): 3D-Speaker and WeSpeaker ONNX files with their
+     * metadata, one `model` role; as many onnxruntime threads as the recognizers.
+     * zh-CN: `speaker` 类别的说话人嵌入模型 (路线图 P8.3.3): 带元数据的 3D-Speaker 与 WeSpeaker ONNX 文件, 一个 `model` 角色; onnxruntime 线程数与识别器相同.
+     */
+    fun speaker(model: InstalledModel): SpeakerEngine {
+        val config = SpeakerEmbeddingExtractorConfig(model = RuntimeRoles.of(model).file(model, "model"), numThreads = ASR_THREADS)
+        val extractor = load(model) { SpeakerEmbeddingExtractor(null, config) }
+        requireNative(extractor, model.modelId)
+        return SpeakerEngine(extractor, model.modelId)
     }
 
     fun vad(assets: AssetManager, settings: SherpaRuntime.VadSettings): SileroVoiceDetector = SileroVoiceDetector(SherpaRuntime.createVad(assets, settings))

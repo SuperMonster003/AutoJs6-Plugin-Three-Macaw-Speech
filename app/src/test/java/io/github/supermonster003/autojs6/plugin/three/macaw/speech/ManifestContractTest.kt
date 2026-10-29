@@ -102,7 +102,7 @@ class ManifestContractTest {
             listOf(
                 ".WakeActivity", ".ui.home.HomeActivity", ".ui.settings.SettingsActivity", ".ui.tryout.TryoutActivity",
                 ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
-                VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, RESIDENT_START, LISTEN_START,
+                ".ui.speakers.SpeakersActivity", VOICE_INPUT, ".ui.assistant.AssistantActivity", TRIGGER, LOCKED_TRIGGER, HEADSET, RESIDENT_START, LISTEN_START,
                 ".service.MicrophoneStartActivity",
                 ".service.MicrophonePermissionActivity",
                 ".ttsengine.CheckVoiceDataActivity", ".ttsengine.GetSampleTextActivity",
@@ -185,7 +185,10 @@ class ManifestContractTest {
 
     @Test
     fun `the plugin screens other than the two system entries are internal`() {
-        listOf(".ui.tryout.TryoutActivity", ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity").forEach { name ->
+        listOf(
+            ".ui.tryout.TryoutActivity", ".ui.release.ReleaseHistoryActivity", ".ui.about.NoticesActivity", ".ui.about.LegalDocumentActivity",
+            ".ui.speakers.SpeakersActivity",
+        ).forEach { name ->
             val activity = application.children("activity").single { it.android("name") == name }
             assertEquals("$name is internal", "false", activity.android("exported"))
             assertTrue(activity.children("intent-filter").isEmpty())

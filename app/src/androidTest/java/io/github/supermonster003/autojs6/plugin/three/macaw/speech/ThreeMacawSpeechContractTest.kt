@@ -167,9 +167,12 @@ class ThreeMacawSpeechContractTest {
                 setOf(
                     PluginCapabilityKeys.REQUIRES_HOST_VERSION, ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION,
                     ThreeMacawSpeechContract.CAPABILITY_FEATURES, ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION,
+                    SpeechCapabilityKeys.MAX_CONTRACT_VERSION,
                 ),
                 capabilities.keySet(),
             )
+            // Roadmap D136: the base version stays 1 for older hosts, the highest answered version is 2.
+            assertEquals(ThreeMacawSpeechContract.MAX_CONTRACT_VERSION, capabilities.getInt(SpeechCapabilityKeys.MAX_CONTRACT_VERSION))
             assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, capabilities.getLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION))
             assertEquals(1, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION))
             // Roadmap P2.3 / P2.4 / P3: model management, recognition, VAD and wake words are advertised, the bundled catalog is version 2 (D108).
@@ -190,14 +193,14 @@ class ThreeMacawSpeechContractTest {
             assertEquals(ISpeechPlugin.DESCRIPTOR, binder.interfaceDescriptor)
             // Real Parcels with the transaction codes of the AIDL order (getInfo = 1, getCapabilities = 2, ...).
             val capabilities = requireNotNull(transactBundle(binder, TRANSACTION_GET_CAPABILITIES))
-            assertEquals(SpeechContract.CONTRACT_VERSION, capabilities.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+            assertEquals(SpeechContract.CALL_VERSION_1, capabilities.getInt(SpeechContract.KEY_CONTRACT_VERSION))
             assertArrayEquals(FEATURES, capabilities.getStringArray(SpeechCapabilityKeys.FEATURES))
             assertTrue(capabilities.getInt(SpeechCapabilityKeys.CATALOG_VERSION) >= 1)
             assertEquals("sherpa-onnx", capabilities.getString(SpeechCapabilityKeys.ENGINE_NAME))
             assertEquals(BuildConfig.SHERPA_ONNX_VERSION, capabilities.getString(SpeechCapabilityKeys.ENGINE_VERSION))
 
             val query = Bundle().apply {
-                putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CONTRACT_VERSION)
+                putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_1)
                 putString(SpeechOptionKeys.KIND, SpeechContract.KIND_TTS)
             }
             val answer = requireNotNull(transactBundle(binder, TRANSACTION_LIST_MODELS, query))
@@ -424,6 +427,8 @@ class ThreeMacawSpeechContractTest {
             SpeechContract.FEATURE_TTS, SpeechContract.FEATURE_TTS_SYSTEM_ENGINE,
             // Roadmap D84: appended to the host contract after the staged speech-api AAR.
             "audioDecode",
+            // Roadmap P8.3 (D121, D136): contract version 2.
+            SpeechContract.FEATURE_SPEAKER,
         )
 
         /**

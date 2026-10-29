@@ -25,14 +25,14 @@ class BundledCatalogTest {
 
     @Test
     fun `the bundled files are exactly the locked bytes`() {
-        assertEquals("$directory/${CatalogRules.CATALOG_FILE}", lock["catalog.path"])
-        assertEquals("$directory/${CatalogRules.SIGNATURE_FILE}", lock["signature.path"])
+        assertEquals("$directory/${CatalogRules.BUNDLED_CATALOG_FILE}", lock["catalog.path"])
+        assertEquals("$directory/${CatalogRules.BUNDLED_SIGNATURE_FILE}", lock["signature.path"])
         assertEquals("$directory/catalog-signing-public.pem", lock["public-key.path"])
         assertEquals(lock["catalog.sha256"], LockFiles.sha256(lock.getValue("catalog.path")))
         assertEquals(lock["signature.sha256"], LockFiles.sha256(lock.getValue("signature.path")))
         assertEquals(lock["public-key.sha256"], LockFiles.sha256(lock.getValue("public-key.path")))
         val bundled = Files.list(RepositoryFiles.path(directory)).use { files -> files.map { it.fileName.toString() }.toList() }.toSet()
-        assertEquals("the signed catalog and its trust anchor", setOf(CatalogRules.CATALOG_FILE, CatalogRules.SIGNATURE_FILE, "catalog-signing-public.pem"), bundled)
+        assertEquals("the signed catalog and its trust anchor", setOf(CatalogRules.BUNDLED_CATALOG_FILE, CatalogRules.BUNDLED_SIGNATURE_FILE, "catalog-signing-public.pem"), bundled)
         assertTrue("the release snapshot must not reference a pending catalog", !lock.getValue("catalog.source").contains("/pending/"))
     }
 
@@ -41,7 +41,7 @@ class BundledCatalogTest {
         val catalog = ModelCatalogParser().parse(Files.readAllBytes(RepositoryFiles.path(lock.getValue("catalog.path"))))
         assertEquals(lock.getValue("catalog.version").toInt(), catalog.catalogVersion)
         assertEquals(ThreeMacawSpeechContract.CATALOG_VERSION, catalog.catalogVersion)
-        assertEquals(CatalogRules.SCHEMA_VERSION, catalog.schemaVersion)
+        assertEquals(CatalogRules.BUNDLED_SCHEMA, catalog.schemaVersion)
         assertTrue(catalog.models.isNotEmpty())
         assertTrue("every kind of the contract has a model", catalog.models.map { it.kind }.toSet().containsAll(listOf("asr", "kws", "punct", "tts")))
     }
@@ -58,12 +58,12 @@ class BundledCatalogTest {
 
     @Test
     fun `a bundled signature must verify with the bundled key and name its key id`() {
-        val signature = RepositoryFiles.path("$directory/${CatalogRules.SIGNATURE_FILE}")
+        val signature = RepositoryFiles.path("$directory/${CatalogRules.BUNDLED_SIGNATURE_FILE}")
         assertTrue("D108 requires the bundled release signature", Files.isRegularFile(signature))
         val pem = Files.readAllBytes(RepositoryFiles.path(lock.getValue("public-key.path")))
         val envelope = Files.readAllBytes(signature)
         assertEquals(CatalogSignatureVerifier.keyIdForDer(CatalogSignatureVerifier.derFromPem(pem)), StrictJson.parseObject(envelope)["keyId"])
-        ModelCatalogConfiguration.verifier(pem).verify(Files.readAllBytes(RepositoryFiles.path(lock.getValue("catalog.path"))), envelope)
+        ModelCatalogConfiguration.verifier(pem).verify(Files.readAllBytes(RepositoryFiles.path(lock.getValue("catalog.path"))), envelope, CatalogRules.BUNDLED_CATALOG_FILE)
     }
 
     @Test

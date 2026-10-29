@@ -26,6 +26,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.speaker.AudioTail
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.speaker.SpeakerRules
 import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
 import org.autojs.plugin.speech.api.ISpeechPlugin
@@ -61,11 +63,14 @@ class ThreeMacawSpeechService : Service() {
  * `cancelOperation`, `removeModel`, `importModel`, `setDefaultModel`, `refreshCatalog`; long operations run on the
  * model thread and report through `ISpeechProgressCallback`), file recognition and voice activity detection (P3.3, on
  * the calling Binder thread), dictation sessions (P3.2) and wake sessions (P3.4) on [SpeechRuntime], and synthesis to a
- * file (P4.3, [SpeechSynthesis]: an operation on the synthesis thread with progress and cancellation).
+ * file (P4.3, [SpeechSynthesis]: an operation on the synthesis thread with progress and cancellation). Contract version 2
+ * (roadmap P8.3, D136) adds the speaker calls ([SpeakerRecognition], on the calling Binder thread); the offline analyses
+ * reserved for P8.4 answer `PLUGIN_INCOMPATIBLE`.
  * zh-CN: 契约版本 1 的 `ISpeechPlugin`. 模型管理 (路线图 P2.3 / P2.4: `listModels`, `installModel`, `cancelOperation`, `removeModel`,
  * `importModel`, `setDefaultModel`, `refreshCatalog`; 长操作在模型线程上运行, 经 `ISpeechProgressCallback` 报告), 文件识别与语音活动检测
  * (P3.3, 在调用方 Binder 线程上), 听写会话 (P3.2) 与唤醒会话 (P3.4) 基于 [SpeechRuntime], 以及合成到文件 (P4.3, [SpeechSynthesis]: 在合成线程上
- * 运行的操作, 带进度与取消).
+ * 运行的操作, 带进度与取消). 契约版本 2 (路线图 P8.3, D136) 增加说话人调用 ([SpeakerRecognition], 在调用方 Binder 线程上); 为 P8.4 预留的离线分析
+ * 返回 `PLUGIN_INCOMPATIBLE`.
  */
 internal class SpeechPluginBinder(
     private val context: Context,
@@ -78,11 +83,14 @@ internal class SpeechPluginBinder(
 
     private val synthesis by lazy { SpeechSynthesis(runtime) }
 
+    private val speakers: SpeakerRecognition get() = SpeakerRecognition.get(context)
+
     override fun getInfo(): PluginInfo = context.pluginRuntimeFields().toPluginInfo()
 
     override fun getCapabilities(): Bundle = SpeechBundles.answer {
         putLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION, ThreeMacawSpeechContract.REQUIRED_HOST_VERSION)
         putInt(SpeechCapabilityKeys.CONTRACT_VERSION, ThreeMacawSpeechContract.CONTRACT_VERSION)
+        putInt(SpeechCapabilityKeys.MAX_CONTRACT_VERSION, ThreeMacawSpeechContract.MAX_CONTRACT_VERSION)
         putStringArray(SpeechCapabilityKeys.FEATURES, ThreeMacawSpeechContract.FEATURES.toTypedArray())
         putInt(SpeechCapabilityKeys.CATALOG_VERSION, manager.catalogVersion())
         putString(SpeechCapabilityKeys.ENGINE_NAME, "sherpa-onnx")
@@ -198,12 +206,14 @@ internal class SpeechPluginBinder(
      * The resident wake word (roadmap P7.4, D72, D75, D76): as [openWakeSession], as the background holder of the session
      * table, which every other microphone session silences until the microphone is free again, and without the microphone
      * foreground service (the resident service is that foreground service itself). Without `thenListen`. [power] is the
-     * power saving mode of roadmap P8.1 (D123, D128).
+     * power saving mode of roadmap P8.1 (D123, D128); [tail] keeps the latest microphone audio for the speaker check of a
+     * hit (roadmap P8.3, D139).
      * zh-CN: 常驻唤醒 (路线图 P7.4, D72, D75, D76): 与 [openWakeSession] 相同, 但作为会话表的后台持有者 (其他任何麦克风会话都让它静默, 直到麦克风
-     * 再次空闲), 不持有麦克风前台服务 (常驻服务本身就是这个前台服务). 不带 `thenListen`. [power] 是路线图 P8.1 的省电模式 (D123, D128).
+     * 再次空闲), 不持有麦克风前台服务 (常驻服务本身就是这个前台服务). 不带 `thenListen`. [power] 是路线图 P8.1 的省电模式 (D123, D128); [tail]
+     * 保留最近的麦克风音频, 供命中时的说话人检查使用 (路线图 P8.3, D139).
      */
-    fun openResidentWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, power: WakePower = WakePower.OFF): ISpeechSession = throwing {
-        wake(options, callback, null, takeover = false, resident = true, power = power)
+    fun openResidentWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, power: WakePower = WakePower.OFF, tail: AudioTail? = null): ISpeechSession = throwing {
+        wake(options, callback, null, takeover = false, resident = true, power = power, tail = tail)
     }
 
     private fun wake(
@@ -213,6 +223,7 @@ internal class SpeechPluginBinder(
         takeover: Boolean,
         resident: Boolean = false,
         power: WakePower = WakePower.OFF,
+        tail: AudioTail? = null,
     ): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
         val listener = callback ?: invalid("A wake callback is required")
@@ -226,7 +237,7 @@ internal class SpeechPluginBinder(
         val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = resident)
         try {
             val id = runtime.nextId(if (resident) "resident" else "wake")
-            return WakeBinder(runtime, slot, listener, listen, foreground = !resident, power = power) { events, listenEvents ->
+            return WakeBinder(runtime, slot, listener, listen, foreground = !resident, power = power, tail = tail) { events, listenEvents ->
                 WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
             }.also { it.open(keywordModel, buffer, listenModel) }
         } catch (t: Throwable) {
@@ -286,6 +297,82 @@ internal class SpeechPluginBinder(
 
     override fun refreshCatalog(callback: ISpeechProgressCallback?): Int = throwing {
         manager.refreshCatalog(context.getString(R.string.notification_catalog_refresh_title), listener(callback))
+    }
+
+    // Contract version 2: speakers (roadmap P8.3, D132 - D135). Answers and failures carry version 2; the host owns the
+    // descriptors and closes them after the call.
+
+    /** Blocks the calling Binder thread until every recording is embedded and stored. zh-CN: 阻塞调用方 Binder 线程直到所有录音都已提取并保存. */
+    override fun enrollSpeaker(audio: Array<out ParcelFileDescriptor?>?, options: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_2) {
+        checkContract(options, SpeechContract.CALL_VERSION_2)
+        val descriptors = audio.orEmpty()
+        SpeakerRules.recordings(descriptors.size)
+        val labels = options?.getStringArray(SpeechOptionKeys.DISPLAY_NAMES)
+        val recordings = descriptors.mapIndexed { index, descriptor ->
+            SpeakerRecognition.Recording.Descriptor(
+                descriptor ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "Audio descriptor ${index + 1} is missing"),
+                label(labels?.getOrNull(index), "Recording ${index + 1}"),
+            )
+        }
+        val model = options?.getString(SpeechOptionKeys.MODEL)?.also { if (it.isEmpty() || it.length > SpeechLimits.MAX_TOKEN_CHARS) invalid("Invalid model id") }
+        val replace = options?.getBoolean(SpeechOptionKeys.REPLACE, false) == true
+        SpeechBundles.enrollment(speakers.enroll(options?.getString(SpeechOptionKeys.NAME).orEmpty(), recordings, replace, model))
+    }
+
+    override fun verifySpeaker(audio: ParcelFileDescriptor?, options: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_2) {
+        checkContract(options, SpeechContract.CALL_VERSION_2)
+        val recording = recording(audio, options)
+        SpeechBundles.speakerMatch(speakers.verify(options?.getString(SpeechOptionKeys.NAME).orEmpty(), recording, threshold(options)), identify = false)
+    }
+
+    override fun identifySpeaker(audio: ParcelFileDescriptor?, options: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_2) {
+        checkContract(options, SpeechContract.CALL_VERSION_2)
+        val topK = if (options?.containsKey(SpeechOptionKeys.TOP_K) == true) options.getInt(SpeechOptionKeys.TOP_K, 0) else null
+        SpeechBundles.speakerMatch(speakers.identify(recording(audio, options), threshold(options), topK), identify = true)
+    }
+
+    override fun listSpeakers(query: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_2) {
+        checkContract(query, SpeechContract.CALL_VERSION_2)
+        SpeechBundles.speakers(speakers.list())
+    }
+
+    override fun removeSpeaker(request: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_2) {
+        checkContract(request, SpeechContract.CALL_VERSION_2)
+        val removed = speakers.remove(request?.getString(SpeechOptionKeys.NAME).orEmpty())
+        SpeechBundles.answer(SpeechContract.CALL_VERSION_2) { putBoolean(SpeechResultKeys.REMOVED, removed) }
+    }
+
+    // Contract version 2, reserved for roadmap P8.4 (D126): their features are not advertised, so a host never calls them yet.
+
+    override fun diarizeFile(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing { reserved("diarizeFile") }
+
+    override fun detectLanguage(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing { reserved("detectLanguage") }
+
+    override fun tagAudio(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing { reserved("tagAudio") }
+
+    private fun reserved(method: String): Nothing =
+        throw SpeechException(SpeechErrorCodes.PLUGIN_INCOMPATIBLE, "$method is not implemented by this version of 3-Macaw Speech")
+
+    private fun recording(audio: ParcelFileDescriptor?, options: Bundle?): SpeakerRecognition.Recording.Descriptor = SpeakerRecognition.Recording.Descriptor(
+        audio ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "An audio descriptor is required"),
+        label(options?.getString(SpeechOptionKeys.DISPLAY_NAME), "The recording"),
+    )
+
+    /**
+     * A file name of the host for messages: one line, at most [SpeechLimits.MAX_TOKEN_CHARS] characters.
+     * zh-CN: 用于消息的宿主文件名: 单行, 至多 [SpeechLimits.MAX_TOKEN_CHARS] 个字符.
+     */
+    private fun label(name: String?, fallback: String): String =
+        name?.takeIf { it.isNotBlank() && it.none(Char::isISOControl) }?.take(SpeechLimits.MAX_TOKEN_CHARS) ?: fallback
+
+    /**
+     * `threshold`: a Double from the host, any number from a direct caller; null when absent.
+     * zh-CN: `threshold`: 宿主传 Double, 直接调用方可传任意数字; 缺省为 null.
+     */
+    private fun threshold(options: Bundle?): Double? {
+        if (options == null || !options.containsKey(SpeechOptionKeys.THRESHOLD)) return null
+        @Suppress("DEPRECATION")
+        return (options.get(SpeechOptionKeys.THRESHOLD) as? Number)?.toDouble() ?: invalid("threshold must be a number")
     }
 
     private fun copyDescriptor(source: ParcelFileDescriptor, target: File, cancel: CancelToken, progress: (Long) -> Unit) {
@@ -353,21 +440,27 @@ internal class SpeechPluginBinder(
         return id
     }
 
-    /** Requests of another contract version are refused (`SpeechContract` rules). zh-CN: 拒绝其他契约版本的请求. */
-    private fun checkContract(request: Bundle?) {
+    /**
+     * Requests of a contract version the plugin does not answer (`SpeechContract` rules), or older than the call's
+     * [minimum] version, are refused (roadmap D136).
+     * zh-CN: 拒绝插件不应答的契约版本的请求 (`SpeechContract` 规则), 以及早于该调用 [minimum] 版本的请求 (路线图 D136).
+     */
+    private fun checkContract(request: Bundle?, minimum: Int = SpeechContract.CALL_VERSION_1) {
         if (request == null || !request.containsKey(SpeechContract.KEY_CONTRACT_VERSION)) return
         val version = request.getInt(SpeechContract.KEY_CONTRACT_VERSION)
-        if (!SpeechContract.supportsContractVersion(version)) throw ModelException(SpeechErrorCodes.PLUGIN_INCOMPATIBLE, "Unsupported speech contract version $version")
+        if (!SpeechContract.supportsContractVersion(version) || version < minimum) {
+            throw ModelException(SpeechErrorCodes.PLUGIN_INCOMPATIBLE, "Unsupported speech contract version $version")
+        }
     }
 
     private fun invalid(message: String): Nothing = throw ModelException(SpeechErrorCodes.INVALID_OPTIONS, message)
 
-    private inline fun answering(block: () -> Bundle): Bundle = try {
+    private inline fun answering(version: Int = SpeechContract.CALL_VERSION_1, block: () -> Bundle): Bundle = try {
         block()
     } catch (e: SpeechException) {
-        SpeechBundles.failure(e)
+        SpeechBundles.failure(e, version)
     } catch (e: RuntimeException) {
-        SpeechBundles.failure(SpeechErrorCodes.INTERNAL, e.message ?: e.javaClass.simpleName)
+        SpeechBundles.failure(SpeechErrorCodes.INTERNAL, e.message ?: e.javaClass.simpleName, version)
     }
 
     private inline fun <T> throwing(block: () -> T): T = try {

@@ -103,7 +103,7 @@ internal object SpeechDevice {
     }
 
     fun request(build: Bundle.() -> Unit = {}): Bundle = Bundle().apply {
-        putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CONTRACT_VERSION)
+        putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_1)
         build()
     }
 

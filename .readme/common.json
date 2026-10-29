@@ -253,6 +253,15 @@
       "license": "CC0-1.0, GPL-3.0-or-later (espeak-ng-data)",
       "commercial": "{{ text_model_commercial_no }}",
       "recommended": false
+    },
+    {
+      "id": "speaker.eres2net.3dspeaker.en-voxceleb",
+      "kind": "{{ text_model_kind_speaker }}",
+      "languages": "en, zh",
+      "size": "26.5 MB",
+      "license": "Apache-2.0",
+      "commercial": "{{ text_model_commercial_yes }}",
+      "recommended": true
     }
   ]
 }

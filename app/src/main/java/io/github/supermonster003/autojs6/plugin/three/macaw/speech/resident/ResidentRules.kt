@@ -72,9 +72,10 @@ internal enum class ListeningDuration(val id: String, val minutes: Int?) {
  * The preferences of the resident wake word; the switch itself is the component state (roadmap D75). [deadline] (epoch
  * milliseconds, wall clock, so that it holds across a reboot) ends the current listening time: turning the switch on, or
  * choosing another [duration] while it is on, sets it; null keeps it on. [readAloud] is D69, [powerSaving] D123 (on by
- * default; what it does is [ResidentPower]).
+ * default; what it does is [ResidentPower]), [onlyEnrolled] D139 (a hit counts only when an enrolled speaker says it).
  * zh-CN: 常驻唤醒的偏好; 开关本身是组件状态 (路线图 D75). [deadline] (墙上时间毫秒, 重启后仍有效) 结束当前的监听时长: 打开开关, 或开着时改选
- * [duration] 会设置它; null 表示一直开着. [readAloud] 即 D69, [powerSaving] 即 D123 (默认开; 其做法见 [ResidentPower]).
+ * [duration] 会设置它; null 表示一直开着. [readAloud] 即 D69, [powerSaving] 即 D123 (默认开; 其做法见 [ResidentPower]), [onlyEnrolled] 即 D139
+ * (只有已注册的说话人说出唤醒词才算命中).
  */
 internal data class ResidentSettings(
     val keywords: List<String> = ResidentKeywords.DEFAULT,
@@ -84,6 +85,7 @@ internal data class ResidentSettings(
     val readAloud: Boolean = true,
     val deadline: Long? = null,
     val powerSaving: Boolean = true,
+    val onlyEnrolled: Boolean = false,
 ) {
     init {
         require(ResidentKeywords.valid(keywords))

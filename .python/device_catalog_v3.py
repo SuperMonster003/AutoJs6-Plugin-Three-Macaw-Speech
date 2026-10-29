@@ -1,12 +1,13 @@
-"""Device evidence of the catalog v3 language models (roadmap P8.2.4, D127, D131) with an unsigned development catalog.
+"""Device evidence of the catalog v3 models (roadmap P8.2.4, P8.3, D127, D131) with an unsigned development catalog.
 
-    py .python/device_catalog_v3.py push <serial> <catalog-v2.json>   copy the pending catalog into the debug build
+    py .python/device_catalog_v3.py push <serial> <catalog-v3.json>   copy the pending catalog into the debug build
     py .python/device_catalog_v3.py run <serial> [--install] [--remove] [--models <ids>]
     py .python/device_catalog_v3.py clean <serial>                    remove the development catalog and the temp files
 
-`push` copies Shared-Assets `speech-models/catalogs/pending/v3/catalog-v2.json` (catalogVersion 3, unsigned) through
-`/data/local/tmp` and `run-as` to `files/dev-catalog/catalog-v2.json` of the installed debug build, which uses it instead
-of the bundled snapshot (`SpeechModels.DEV_CATALOG`; release builds ignore it). `run` runs `CatalogV3ModelsDeviceTest`:
+`push` copies Shared-Assets `speech-models/catalogs/pending/v3/catalog-v3.json` (schema 3, catalogVersion 3, unsigned;
+the language models of P8.2 plus the speaker model of P8.3) through `/data/local/tmp` and `run-as` to
+`files/dev-catalog/catalog-v3.json` of the installed debug build, which uses it instead of the bundled snapshot
+(`SpeechModels.DEV_CATALOG`; release builds ignore it). `run` runs `CatalogV3ModelsDeviceTest`:
 `--install` installs the six models first (about 610 MB from the sherpa-onnx assets, since the `speech-models-v3`
 mirror is not published), `--remove` deletes them at the end; the output is PASS / FAIL with the `MacawDeviceRun` lines
 (memory, character error rates, sample rates). `clean` deletes the development catalog, so the bundled one is used
@@ -21,16 +22,16 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import device_speech_run as sr  # noqa: E402
 
 REMOTE = "/data/local/tmp/macaw-v3"
-DEV_CATALOG = "files/dev-catalog/catalog-v2.json"
+DEV_CATALOG = "files/dev-catalog/catalog-v3.json"
 TEST = "CatalogV3ModelsDeviceTest"
 
 
 def push(serial, catalog):
     data = Path(catalog).read_bytes()
     sr.adb(serial, "shell", "mkdir", "-p", REMOTE)
-    sr.adb(serial, "push", str(catalog), f"{REMOTE}/catalog-v2.json")
-    sr.adb(serial, "shell", "chmod", "644", f"{REMOTE}/catalog-v2.json")
-    sr.adb(serial, "shell", "run-as", sr.PACKAGE, "sh", "-c", f"'mkdir -p files/dev-catalog && cp {REMOTE}/catalog-v2.json {DEV_CATALOG}'")
+    sr.adb(serial, "push", str(catalog), f"{REMOTE}/catalog-v3.json")
+    sr.adb(serial, "shell", "chmod", "644", f"{REMOTE}/catalog-v3.json")
+    sr.adb(serial, "shell", "run-as", sr.PACKAGE, "sh", "-c", f"'mkdir -p files/dev-catalog && cp {REMOTE}/catalog-v3.json {DEV_CATALOG}'")
     size = sr.adb(serial, "shell", "run-as", sr.PACKAGE, "stat", "-c", "%s", DEV_CATALOG, check=False)
     sr.adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
     ok = size.strip() == str(len(data))

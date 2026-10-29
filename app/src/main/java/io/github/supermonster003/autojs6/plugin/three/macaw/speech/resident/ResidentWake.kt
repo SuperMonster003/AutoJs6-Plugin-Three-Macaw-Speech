@@ -167,7 +167,7 @@ internal object ResidentWake {
 
     /** The options of the wake session (D70): one Bundle per keyword, the threshold of the sensitivity. zh-CN: 唤醒会话的选项. */
     fun options(settings: ResidentSettings): Bundle = Bundle().apply {
-        putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CONTRACT_VERSION)
+        putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_1)
         putParcelableArrayList(
             SpeechOptionKeys.KEYWORDS,
             ArrayList(
@@ -201,6 +201,7 @@ internal class ResidentPreferences(context: Context) {
             readAloud = preferences.getBoolean(KEY_READ_ALOUD, true),
             deadline = preferences.getLong(KEY_DEADLINE, 0L).takeIf { it > 0 },
             powerSaving = preferences.getBoolean(KEY_POWER_SAVING, true),
+            onlyEnrolled = preferences.getBoolean(KEY_ONLY_ENROLLED, false),
         )
     }
 
@@ -213,6 +214,7 @@ internal class ResidentPreferences(context: Context) {
             putBoolean(KEY_CHARGING, value.chargingOnly)
             putBoolean(KEY_READ_ALOUD, value.readAloud)
             putBoolean(KEY_POWER_SAVING, value.powerSaving)
+            putBoolean(KEY_ONLY_ENROLLED, value.onlyEnrolled)
             if (value.deadline == null) remove(KEY_DEADLINE) else putLong(KEY_DEADLINE, value.deadline)
         }
     }
@@ -229,6 +231,7 @@ internal class ResidentPreferences(context: Context) {
         const val KEY_READ_ALOUD = "readAloud"
         const val KEY_DEADLINE = "deadline"
         const val KEY_POWER_SAVING = "powerSaving"
+        const val KEY_ONLY_ENROLLED = "onlyEnrolled"
         val LINE = Char(10).toString()
     }
 }

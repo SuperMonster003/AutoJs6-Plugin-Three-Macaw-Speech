@@ -232,6 +232,12 @@
             android:name=".ui.about.LegalDocumentActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
             android:exported="false" />
+        <!-- The speaker screen (roadmap D140): opened from the resident wake word group of the settings. -->
+        <activity
+            android:name=".ui.speakers.SpeakersActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <!--
             The system voice input (roadmap P5.6, D41 - D47): a bottom sheet that answers ACTION_RECOGNIZE_SPEECH of any app
             (3-Stove Agent's microphone button, for one) with the recognized text only, so it is exported without a

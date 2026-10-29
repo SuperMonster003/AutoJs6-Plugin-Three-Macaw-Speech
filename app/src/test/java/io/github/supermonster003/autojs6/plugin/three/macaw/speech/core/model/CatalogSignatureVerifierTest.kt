@@ -20,17 +20,20 @@ class CatalogSignatureVerifierTest {
     @Test
     fun `the OpenSSL signatures of the reference tool verify under their own file names`() {
         val der = CatalogSignatureVerifier.derFromPem(Fixtures.bytes("catalog-signing-public.pem"))
+        val v3 = Fixtures.bytes("catalog-v3.sig.json")
         val v2 = Fixtures.bytes("catalog-v2.sig.json")
         val v1 = Fixtures.bytes("catalog-v1.sig.json")
-        val verifier = CatalogSignatureVerifier(der, StrictJson.parseObject(v2)["keyId"] as String)
-        verifier.verify(catalog, v2)
-        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog + " ".toByteArray(), v2) }
+        val verifier = CatalogSignatureVerifier(der, StrictJson.parseObject(v3)["keyId"] as String)
+        verifier.verify(catalog, v3)
+        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog + " ".toByteArray(), v3) }
+        verifier.verify(Fixtures.catalogV2Bytes, v2, catalogName = "catalog-v2.json")
         verifier.verify(Fixtures.catalogV1Bytes, v1, catalogName = "catalog-v1.json")
-        // The envelope names its file (crypto.py since schema 2): a v1 envelope cannot vouch for catalog-v2.json, nor a
-        // v2 envelope for catalog-v1.json.
-        // zh-CN: 信封写明文件名 (schema 2 起的 crypto.py): v1 信封不能为 catalog-v2.json 作保, v2 信封也不能为 catalog-v1.json 作保.
+        // The envelope names its file (crypto.py since schema 2): an envelope of one schema cannot vouch for the file of
+        // another.
+        // zh-CN: 信封写明文件名 (schema 2 起的 crypto.py): 一个 schema 的信封不能为另一个 schema 的文件作保.
         assertThrows(CatalogSignatureException::class.java) { verifier.verify(Fixtures.catalogV1Bytes, v1) }
-        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog, v2, catalogName = "catalog-v1.json") }
+        assertThrows(CatalogSignatureException::class.java) { verifier.verify(Fixtures.catalogV2Bytes, v2) }
+        assertThrows(CatalogSignatureException::class.java) { verifier.verify(catalog, v3, catalogName = "catalog-v2.json") }
     }
 
     @Test

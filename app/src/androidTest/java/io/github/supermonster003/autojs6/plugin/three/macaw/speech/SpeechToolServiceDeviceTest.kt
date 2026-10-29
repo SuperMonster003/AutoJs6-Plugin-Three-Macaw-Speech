@@ -98,7 +98,7 @@ class SpeechToolServiceDeviceTest {
         val catalog = JSONObject(provider.getCatalog(Bundle()).getString(PluginToolCatalogKeys.CATALOG_JSON)!!)
         assertEquals(SpeechToolCatalog.SHORT_NAME, catalog.getString("shortName"))
         val tools = catalog.getJSONArray("tools").let { array -> (0 until array.length()).associate { array.getJSONObject(it).let { tool -> tool.getString("name") to tool } } }
-        assertEquals(setOf(TOOL_LISTEN, TOOL_SPEAK, TOOL_TRANSCRIBE, TOOL_SYNTHESIZE), tools.keys)
+        assertEquals(SpeechToolCatalog.TOOLS.toSet(), tools.keys)
         assertEquals("write", tools.getValue(TOOL_SYNTHESIZE).getString("risk"))
         listOf(TOOL_LISTEN, TOOL_SPEAK, TOOL_TRANSCRIBE).forEach { assertEquals(it, "readonly", tools.getValue(it).getString("risk")) }
         val output = tools.getValue(TOOL_SYNTHESIZE).getJSONArray("outputs").getJSONObject(0)

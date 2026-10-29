@@ -3,7 +3,7 @@ enters the catalog, through ModelProbeDeviceTest (peak resident memory, PSS, loa
 character error rate or the audio length).
 
     py -I .python/device_model_probe.py list
-    py -I .python/device_model_probe.py probe <serial> <preset> --archives <dir> [--wav <file>] [--ref <text>]
+    py -I .python/device_model_probe.py probe <serial> <preset> --archives <dir> [--wav <file>] [--wav2 <file>] [--ref <text>]
                                           [--text <text>] [--sid <n>] [--lang <code>] [--out <name>] [--head <chars>]
     py -I .python/device_model_probe.py clean <serial>
 
@@ -20,6 +20,7 @@ import argparse
 import base64
 import hashlib
 import re
+import shutil
 import subprocess
 import sys
 import tarfile
@@ -79,6 +80,34 @@ PRESETS = {
         asset="tts-models/vits-mimic3-ko_KO-kss_low.tar.bz2", size=66838474,
         sha256="f015d1d15a52ed00d6fe22757c5ef4a74283c53daf829c838fa5c22616ed789c", type="vits",
         roles="model=ko_KO-kss_low.onnx;tokens=tokens.txt;dataDir=espeak-ng-data"),
+    # Speaker embedding candidates of roadmap P8.3 (D125): single ONNX files of the speaker-recongition-models release.
+    "speaker-3dspeaker-campplus-zh": dict(
+        asset="speaker-recongition-models/3dspeaker_speech_campplus_sv_zh-cn_16k-common.onnx", size=28281138,
+        sha256="f682b514c05d947ee3fa91cd6ec6c5c7543479a128373fa29b1faedccd21fd11", type="speaker", roles="model=3dspeaker_speech_campplus_sv_zh-cn_16k-common.onnx"),
+    "speaker-3dspeaker-campplus-zh-en": dict(
+        asset="speaker-recongition-models/3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx", size=28281164,
+        sha256="aa3cfc16963a10586a9393f5035d6d6b57e98d358b347f80c2a30bf4f00ceba2", type="speaker", roles="model=3dspeaker_speech_campplus_sv_zh_en_16k-common_advanced.onnx"),
+    "speaker-3dspeaker-eres2net-base-zh": dict(
+        asset="speaker-recongition-models/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx", size=39593761,
+        sha256="1a331345f04805badbb495c775a6ddffcdd1a732567d5ec8b3d5749e3c7a5e4b", type="speaker", roles="model=3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx"),
+    "speaker-3dspeaker-campplus-en": dict(
+        asset="speaker-recongition-models/3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx", size=29596978,
+        sha256="357a834f702b80161e5b981182c038e18553c1f2ca752ed6cec2052365d4129b", type="speaker", roles="model=3dspeaker_speech_campplus_sv_en_voxceleb_16k.onnx"),
+    "speaker-3dspeaker-eres2net-en": dict(
+        asset="speaker-recongition-models/3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx", size=26485263,
+        sha256="c59158379255ad66e161679cca6af8d52d51e389e3224ab7d7a7baae295c2db5", type="speaker", roles="model=3dspeaker_speech_eres2net_sv_en_voxceleb_16k.onnx"),
+    "speaker-wespeaker-resnet34-zh": dict(
+        asset="speaker-recongition-models/wespeaker_zh_cnceleb_resnet34.onnx", size=26534363,
+        sha256="f86cd6c509f331f0e20b07bd48d1b2eb7de54202643401c4e84695ac861a0e5a", type="speaker", roles="model=wespeaker_zh_cnceleb_resnet34.onnx"),
+    "speaker-wespeaker-resnet34-en": dict(
+        asset="speaker-recongition-models/wespeaker_en_voxceleb_resnet34.onnx", size=26534365,
+        sha256="5ef208a9da1453335308a6b6f4e6dfbd7e183a38b604de0a57664f45d257fe94", type="speaker", roles="model=wespeaker_en_voxceleb_resnet34.onnx"),
+    "speaker-wespeaker-campplus-en": dict(
+        asset="speaker-recongition-models/wespeaker_en_voxceleb_CAM++.onnx", size=29292684,
+        sha256="c46fad10b5f81e1aa4a60c162714208577093655076c5450f8c469e522ec54ef", type="speaker", roles="model=wespeaker_en_voxceleb_CAM++.onnx"),
+    "speaker-nemo-titanet-small": dict(
+        asset="speaker-recongition-models/nemo_en_titanet_small.onnx", size=40257283,
+        sha256="ad4a1802485d8b34c722d2a9d04249662f2ece5d28a7a039063ca22f515a789e", type="speaker", roles="model=nemo_en_titanet_small.onnx"),
 }
 
 
@@ -109,8 +138,13 @@ def unpack(preset, archives):
     target = archives / "probe-unpacked" / preset
     if not target.is_dir():
         staging = target.with_name(preset + ".partial")
-        with tarfile.open(archive, "r:bz2") as tar:
-            tar.extractall(staging, filter="data")
+        if archive.suffix == ".onnx":
+            # A single model file (the speaker embedding models) is pushed as a directory holding it.
+            (staging / "model").mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(archive, staging / "model" / archive.name)
+        else:
+            with tarfile.open(archive, "r:bz2") as tar:
+                tar.extractall(staging, filter="data")
         roots = [p for p in staging.iterdir() if p.is_dir()]
         (roots[0] if len(roots) == 1 else staging).rename(target)
         if staging.exists():
@@ -143,6 +177,10 @@ def probe(args):
             extra["macawProbeWav"] = f"{REMOTE}/{Path(wav).name}"
         else:
             extra["macawProbeWav"] = f"{remote}/{wav}"
+    if args.wav2:
+        # A speaker model also scores the first recording against this one of another speaker.
+        adb(args.serial, "push", args.wav2, f"{REMOTE}/{Path(args.wav2).name}")
+        extra["macawProbeWav2"] = f"{REMOTE}/{Path(args.wav2).name}"
     # Texts travel as base64: adb on Windows and the device shell do not agree on non-ASCII arguments.
     for key, value in (("macawProbeRef", args.ref), ("macawProbeText", args.text)):
         if value is not None:
@@ -182,7 +220,7 @@ def main(argv):
     run.add_argument("serial")
     run.add_argument("preset", choices=sorted(PRESETS))
     run.add_argument("--archives", required=True)
-    for name in ("wav", "ref", "text", "sid", "lang", "out", "head"):
+    for name in ("wav", "wav2", "ref", "text", "sid", "lang", "out", "head"):
         run.add_argument(f"--{name}")
     wipe = sub.add_parser("clean")
     wipe.add_argument("serial")

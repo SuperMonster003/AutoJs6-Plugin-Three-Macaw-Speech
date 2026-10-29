@@ -12,14 +12,27 @@ object CatalogRules {
     /**
      * Wire schemas the plugin reads (`distribution.CATALOG_SCHEMAS`). Each schema has its own file name, and the plugin
      * fetches the newest one: schema 2 adds the `punct` kind with its model types and upstream members behind `./`
-     * (roadmap D106), while `catalog-v1.json` stays frozen for plugins before 1.2.0.
+     * (roadmap D106), while `catalog-v1.json` stays frozen for plugins before 1.2.0. Schema 3 adds the `speaker` kind
+     * (roadmap P8.3, D127), so `catalog-v2.json` keeps serving 1.2.0 without it.
      * zh-CN: 插件可读的传输格式 (`distribution.CATALOG_SCHEMAS`). 每个格式有自己的文件名, 插件读取最新的一个: schema 2 增加 `punct` 类别及其
-     * 模型类型, 以及带 `./` 的上游成员 (路线图 D106); `catalog-v1.json` 冻结, 供 1.2.0 之前的插件使用.
+     * 模型类型, 以及带 `./` 的上游成员 (路线图 D106); `catalog-v1.json` 冻结, 供 1.2.0 之前的插件使用. schema 3 增加 `speaker` 类别 (路线图 P8.3,
+     * D127), `catalog-v2.json` 因此继续为不含它的 1.2.0 服务.
      */
-    val SCHEMAS = listOf(1, 2)
-    const val SCHEMA_VERSION = 2
+    val SCHEMAS = listOf(1, 2, 3)
+    const val SCHEMA_VERSION = 3
     const val CATALOG_FILE = "catalog-v$SCHEMA_VERSION.json"
     const val SIGNATURE_FILE = "catalog-v$SCHEMA_VERSION.sig.json"
+
+    /**
+     * Schema of the bundled snapshot: the signed `catalog-v2.json` of release 2 until the maintainer signs release 3,
+     * which replaces it in roadmap P8.5.2 (D108, D127); the plugin reads it as the first catalog and refreshes to
+     * [CATALOG_FILE].
+     * zh-CN: 内置快照的 schema: 维护者签名发布 3 之前为发布 2 的已签名 `catalog-v2.json`, 在路线图 P8.5.2 替换 (D108, D127); 插件把它当作首个目录读取,
+     * 刷新时取 [CATALOG_FILE].
+     */
+    const val BUNDLED_SCHEMA = 2
+    const val BUNDLED_CATALOG_FILE = "catalog-v$BUNDLED_SCHEMA.json"
+    const val BUNDLED_SIGNATURE_FILE = "catalog-v$BUNDLED_SCHEMA.sig.json"
     const val OFFICIAL_REPOSITORY = "SuperMonster003/AutoJs6-Shared-Assets"
     const val FAMILY_DIRECTORY = "speech-models"
     const val UPSTREAM_REPOSITORY = "k2-fsa/sherpa-onnx"
@@ -40,7 +53,7 @@ object CatalogRules {
 
     val REPOSITORY = Regex("[A-Za-z0-9][A-Za-z0-9_.-]*/[A-Za-z0-9][A-Za-z0-9_.-]*")
     val RELEASE_TAG = Regex("speech-models-v([1-9][0-9]{0,9})")
-    val MODEL_ID = Regex("(asr|kws|punct|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
+    val MODEL_ID = Regex("(asr|kws|punct|speaker|tts)\\.[a-z0-9][a-z0-9._-]{1,59}")
 
     /**
      * The shape of a model of a kind this build does not know (roadmap D106): such models are skipped, not refused.
@@ -58,13 +71,19 @@ object CatalogRules {
     val UPSTREAM_TAG = Regex("[A-Za-z0-9][A-Za-z0-9._-]{0,63}")
     val UPSTREAM_ASSET = Regex("[A-Za-z0-9][A-Za-z0-9._+-]{0,254}")
 
-    val KINDS = listOf("asr", "kws", "punct", "tts")
+    val KINDS = listOf("asr", "kws", "punct", "speaker", "tts")
 
-    /** Kinds a user may import as a custom model (no catalog runtime roles for punctuation). zh-CN: 可作为自定义模型导入的类别. */
+    /**
+     * Kinds a user may import as a custom model (no catalog runtime roles for punctuation; speaker models need the
+     * measured threshold of roadmap P8.3.1). zh-CN: 可作为自定义模型导入的类别 (标点没有目录运行时角色; 说话人模型需要路线图 P8.3.1 实测的阈值).
+     */
     val CUSTOM_IMPORT_KINDS = listOf("asr", "kws", "tts")
 
     /** Punctuation models work on text and carry no `sampleRate`. zh-CN: 标点模型处理文本, 不带 `sampleRate`. */
     const val KIND_PUNCT = "punct"
+
+    /** Speaker embedding models (roadmap P8.3, schema 3). zh-CN: 说话人嵌入模型 (路线图 P8.3, schema 3). */
+    const val KIND_SPEAKER = "speaker"
 
     /**
      * sherpa-onnx 1.13.8 configuration family of every model type, with its required and optional file roles; [values]
@@ -89,6 +108,8 @@ object CatalogRules {
         // sherpa-onnx OfflinePunctuation (ctTransformer) and OnlinePunctuation (cnnBilstm with its bpeVocab).
         "ct-transformer" to ModelTypeSpec("punct", listOf("model"), emptyList()),
         "cnn-bilstm" to ModelTypeSpec("punct", listOf("model", "bpeVocab"), emptyList()),
+        // sherpa-onnx SpeakerEmbeddingExtractor (3D-Speaker, WeSpeaker, NeMo ONNX exports with metadata), roadmap P8.3.
+        "speaker-embedding" to ModelTypeSpec("speaker", listOf("model"), emptyList()),
     )
     val LIST_ROLES = setOf("lexicon", "ruleFsts", "ruleFars")
     val DIRECTORY_ROLES = setOf("dataDir")
@@ -105,7 +126,10 @@ object CatalogRules {
      * else exists since schema 1.
      * zh-CN: 可以使用某个类别, 模型类型或成员前缀的最早 schema (`distribution.SCHEMA_INTRODUCED`); 其余自 schema 1 起即有.
      */
-    val SCHEMA_INTRODUCED = mapOf("punct" to 2, "ct-transformer" to 2, "cnn-bilstm" to 2, "offline-transducer" to 2, MEMBER_PREFIX to 2)
+    val SCHEMA_INTRODUCED = mapOf(
+        "punct" to 2, "ct-transformer" to 2, "cnn-bilstm" to 2, "offline-transducer" to 2, MEMBER_PREFIX to 2,
+        "speaker" to 3, "speaker-embedding" to 3,
+    )
 
     /** `distribution.catalog_file`: the catalog file of a schema, e.g. `catalog-v1.json`. zh-CN: 某个 schema 的目录文件名. */
     fun catalogFile(schema: Int): String = "catalog-v$schema.json"

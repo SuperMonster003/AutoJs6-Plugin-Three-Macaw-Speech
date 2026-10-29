@@ -50,6 +50,17 @@ internal class PackagedSpeechBinder(context: Context) : ISpeechPlugin.Stub(), Au
     override fun refreshCatalog(callback: ISpeechProgressCallback?) = operation(callback, delegate::refreshCatalog)
     override fun synthesizeToFile(request: Bundle?, output: ParcelFileDescriptor?, callback: ISpeechProgressCallback?) =
         operation(callback) { delegate.synthesizeToFile(request, output, it) }
+    override fun enrollSpeaker(audio: Array<out ParcelFileDescriptor?>?, options: Bundle?) = delegate.enrollSpeaker(audio, options)
+    override fun verifySpeaker(audio: ParcelFileDescriptor?, options: Bundle?) = delegate.verifySpeaker(audio, options)
+    override fun identifySpeaker(audio: ParcelFileDescriptor?, options: Bundle?) = delegate.identifySpeaker(audio, options)
+    override fun listSpeakers(query: Bundle?) = delegate.listSpeakers(query)
+    override fun removeSpeaker(request: Bundle?) = delegate.removeSpeaker(request)
+    override fun diarizeFile(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?) =
+        operation(callback) { delegate.diarizeFile(audio, options, it) }
+    override fun detectLanguage(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?) =
+        operation(callback) { delegate.detectLanguage(audio, options, it) }
+    override fun tagAudio(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?) =
+        operation(callback) { delegate.tagAudio(audio, options, it) }
     override fun cancelOperation(opId: Int) = owners.cancel(Binder.getCallingUid(), opId)
     override fun close() = owners.close()
 

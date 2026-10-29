@@ -10,6 +10,8 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechWarning
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.speaker.SpeakerMatch
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.speaker.Voiceprint
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.autojs.plugin.speech.api.SpeechLimits
@@ -25,17 +27,22 @@ import org.autojs.plugin.speech.api.SpeechResultKeys
  */
 internal object SpeechBundles {
 
-    fun answer(build: Bundle.() -> Unit = {}): Bundle = Bundle().apply {
-        putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CONTRACT_VERSION)
+    /**
+     * An answer stamped with [version], the version of its request (roadmap D136): 1 for the calls of contract version 1,
+     * which hosts before version 2 accept only, 2 for the speaker calls.
+     * zh-CN: 带 [version] 的应答, 即其请求的版本 (路线图 D136): 契约版本 1 的调用为 1 (版本 2 之前的宿主只接受它), 说话人调用为 2.
+     */
+    fun answer(version: Int = SpeechContract.CALL_VERSION_1, build: Bundle.() -> Unit = {}): Bundle = Bundle().apply {
+        putInt(SpeechContract.KEY_CONTRACT_VERSION, version)
         build()
     }
 
-    fun failure(code: String, message: String?): Bundle = answer {
+    fun failure(code: String, message: String?, version: Int = SpeechContract.CALL_VERSION_1): Bundle = answer(version) {
         putString(SpeechContract.KEY_ERROR_CODE, code)
         putString(SpeechContract.KEY_ERROR_MESSAGE, bounded(message ?: code))
     }
 
-    fun failure(error: SpeechException): Bundle = failure(error.code, error.message)
+    fun failure(error: SpeechException, version: Int = SpeechContract.CALL_VERSION_1): Bundle = failure(error.code, error.message, version)
 
     /** The exception a Binder call throws for [code] (decoded by the host's `SpeechErrorCodes.decode`). */
     fun thrown(code: String, message: String?): RuntimeException {
@@ -149,6 +156,49 @@ internal object SpeechBundles {
             }
         }))
         putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)
+    }
+
+    // Speakers (contract version 2, roadmap D132 - D134): names, scores, thresholds and counts, never an embedding.
+
+    fun enrollment(result: SpeakerRecognition.Enrollment): Bundle = answer(SpeechContract.CALL_VERSION_2) {
+        putString(SpeechResultKeys.NAME, result.voiceprint.name)
+        putInt(SpeechResultKeys.SAMPLES, result.voiceprint.samples)
+        putLong(SpeechResultKeys.DURATION_MILLIS, result.speechMillis)
+        putString(SpeechResultKeys.MODEL_ID, result.voiceprint.modelId)
+    }
+
+    /**
+     * `verifySpeaker`, or with [identify] `identifySpeaker`: its `name` only when the best score reached the threshold,
+     * and `candidates`.
+     * zh-CN: `verifySpeaker` 的应答; [identify] 时为 `identifySpeaker` 的应答: 最高分达到阈值时才带 `name`, 并带 `candidates`.
+     */
+    fun speakerMatch(match: SpeakerMatch, identify: Boolean): Bundle = answer(SpeechContract.CALL_VERSION_2) {
+        match.best?.let { best ->
+            if (!identify || match.matched) putString(SpeechResultKeys.NAME, best.name)
+            putFloat(SpeechResultKeys.SCORE, best.score.toFloat())
+        }
+        putBoolean(SpeechResultKeys.MATCHED, match.matched)
+        putFloat(SpeechResultKeys.THRESHOLD, match.threshold.toFloat())
+        putString(SpeechResultKeys.MODEL_ID, match.modelId)
+        if (identify) {
+            putParcelableArrayList(SpeechResultKeys.CANDIDATES, ArrayList(match.candidates.map { candidate ->
+                Bundle().apply {
+                    putString(SpeechResultKeys.NAME, candidate.name)
+                    putFloat(SpeechResultKeys.SCORE, candidate.score.toFloat())
+                }
+            }))
+        }
+    }
+
+    fun speakers(voiceprints: List<Voiceprint>): Bundle = answer(SpeechContract.CALL_VERSION_2) {
+        putParcelableArrayList(SpeechResultKeys.SPEAKERS, ArrayList(voiceprints.take(SpeechLimits.MAX_SPEAKERS).map { voiceprint ->
+            Bundle().apply {
+                putString(SpeechResultKeys.NAME, voiceprint.name)
+                putInt(SpeechResultKeys.SAMPLES, voiceprint.samples)
+                putLong(SpeechResultKeys.UPDATED_AT, voiceprint.updatedAt)
+                putString(SpeechResultKeys.MODEL_ID, voiceprint.modelId)
+            }
+        }))
     }
 
     /** A warning or error Bundle (`errorCode`, `errorMessage`). zh-CN: 警告或错误 Bundle (`errorCode`, `errorMessage`). */

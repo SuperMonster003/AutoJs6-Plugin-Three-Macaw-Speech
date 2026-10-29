@@ -50,7 +50,7 @@ internal object SpeechModels {
     fun importDirectory(context: Context): File = File(context.applicationContext.cacheDir, "imports")
 
     /**
-     * Debug builds only (roadmap D127): an unsigned catalog at `filesDir/dev-catalog/catalog-v2.json` (pushed with
+     * Debug builds only (roadmap D127): an unsigned catalog at `filesDir/dev-catalog/catalog-v3.json` (pushed with
      * `run-as`, `.python/device_catalog_v3.py`) replaces the bundled snapshot, so device tests can install the models of
      * a pending Shared-Assets catalog without changing the bundled one. zh-CN: 仅调试构建: 以 `run-as` 推送到该路径的未签名目录代替内置快照,
      * 设备测试因此可以安装 Shared-Assets 待签名目录中的模型, 而不改动内置快照.
@@ -79,6 +79,8 @@ internal object SpeechModels {
             bundledSignature = signature,
             verifier = ModelCatalogConfiguration.verifier(publicKey),
             transport = transport,
+            // The development catalog has the schema of the refresh files (roadmap P8.3), the bundled one its own.
+            bundledFile = if (development != null) CatalogRules.CATALOG_FILE else CatalogRules.BUNDLED_CATALOG_FILE,
         )
         val downloads = File(context.cacheDir, "downloads")
         val freeSpace = freeSpace(context)

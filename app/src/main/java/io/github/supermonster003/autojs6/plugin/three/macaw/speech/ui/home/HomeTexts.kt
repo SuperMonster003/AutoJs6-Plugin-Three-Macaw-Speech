@@ -19,6 +19,7 @@ internal object HomeTexts {
         "asr" -> R.string.model_kind_asr
         "kws" -> R.string.model_kind_kws
         "punct" -> R.string.model_kind_punct
+        "speaker" -> R.string.model_kind_speaker
         "tts" -> R.string.model_kind_tts
         else -> R.string.model_kind_vad
     }
@@ -27,6 +28,7 @@ internal object HomeTexts {
     @StringRes
     fun kindAbout(kind: String): Int? = when (kind) {
         "punct" -> R.string.model_punct_about
+        "speaker" -> R.string.model_speaker_about
         else -> null
     }
 

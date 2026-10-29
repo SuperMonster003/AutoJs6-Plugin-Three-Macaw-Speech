@@ -37,8 +37,8 @@ class SpeechToolCatalogTest {
     }
 
     @Test
-    fun `the four tools fit the names MCP clients allow`() {
-        assertEquals(listOf("listen", "speak", "transcribe", "synthesize"), tools.map { it["name"] })
+    fun `the six tools fit the names MCP clients allow`() {
+        assertEquals(listOf("listen", "speak", "transcribe", "synthesize", "speaker_verify", "speaker_identify"), tools.map { it["name"] })
         assertEquals(SpeechToolCatalog.TOOLS, tools.map { it["name"] })
         tools.forEach { tool ->
             val name = tool["name"] as String
@@ -47,9 +47,9 @@ class SpeechToolCatalogTest {
             assertTrue(full, full.length <= PluginToolLimits.MAX_FULL_NAME_CHARS)
             assertTrue(full, PluginToolNames.fitsMcpName(full))
         }
-        // D94: the longest names have 17 characters, 31 with the MCP prefix.
-        assertEquals(17, tools.maxOf { PluginToolNames.fullName(SpeechToolCatalog.SHORT_NAME, it["name"] as String).length })
-        assertEquals("mcp__autojs6__speech_synthesize".length, PluginToolLimits.MCP_TOOL_NAME_PREFIX.length + 17)
+        // D94, P8.3.5: the longest name has 23 characters, 37 with the MCP prefix.
+        assertEquals(23, tools.maxOf { PluginToolNames.fullName(SpeechToolCatalog.SHORT_NAME, it["name"] as String).length })
+        assertEquals("mcp__autojs6__speech_speaker_identify".length, PluginToolLimits.MCP_TOOL_NAME_PREFIX.length + 23)
     }
 
     @Test
@@ -75,11 +75,14 @@ class SpeechToolCatalogTest {
     @Test
     fun `risks, time limits and concurrency follow D93 and D95 - D98`() {
         assertEquals(
-            mapOf("listen" to PluginToolValues.RISK_READONLY, "speak" to PluginToolValues.RISK_READONLY, "transcribe" to PluginToolValues.RISK_READONLY, "synthesize" to PluginToolValues.RISK_WRITE),
+            mapOf(
+                "listen" to PluginToolValues.RISK_READONLY, "speak" to PluginToolValues.RISK_READONLY, "transcribe" to PluginToolValues.RISK_READONLY,
+                "synthesize" to PluginToolValues.RISK_WRITE, "speaker_verify" to PluginToolValues.RISK_READONLY, "speaker_identify" to PluginToolValues.RISK_READONLY,
+            ),
             tools.associate { it["name"] to it["risk"] },
         )
         assertEquals(
-            mapOf("listen" to 120_000L, "speak" to 300_000L, "transcribe" to 300_000L, "synthesize" to 300_000L),
+            mapOf("listen" to 120_000L, "speak" to 300_000L, "transcribe" to 300_000L, "synthesize" to 300_000L, "speaker_verify" to 120_000L, "speaker_identify" to 120_000L),
             tools.associate { it["name"] to (it["timeoutMs"] as JsonNumber).longOrNull() },
         )
         tools.forEach { tool ->
@@ -102,8 +105,8 @@ class SpeechToolCatalogTest {
     }
 
     @Test
-    fun `only transcribe takes a file and only synthesize writes one`() {
-        assertEquals(mapOf("file" to "file"), specialParameters(tool("transcribe")))
+    fun `transcribe and the speaker tools take a file and only synthesize writes one`() {
+        listOf("transcribe", "speaker_verify", "speaker_identify").forEach { assertEquals(it, mapOf("file" to "file"), specialParameters(tool(it))) }
         listOf("listen", "speak", "synthesize").forEach { assertEquals(it, emptyMap<String, String>(), specialParameters(tool(it))) }
         @Suppress("UNCHECKED_CAST")
         val outputs = tool("synthesize")["outputs"] as List<Map<String, Any?>>
@@ -133,6 +136,11 @@ class SpeechToolCatalogTest {
         assertEquals(SynthesizeRequest("x").format, synthesize.getValue("format")["default"])
         assertEquals(SpeakRequest("x").speed.toDouble(), (synthesize.getValue("speed")["default"] as JsonNumber).toDouble(), 0.0)
         assertEquals(listOf(4000L, 8000L), listOf("speak", "synthesize").map { (properties(tool(it)).getValue("text")["maxLength"] as JsonNumber).longOrNull() })
+        assertEquals(setOf("file", "name", "threshold"), properties(tool("speaker_verify")).keys)
+        val identify = properties(tool("speaker_identify"))
+        assertEquals(setOf("file", "threshold", "topK"), identify.keys)
+        assertEquals(SpeakerIdentifyRequest().topK.toLong(), (identify.getValue("topK")["default"] as JsonNumber).longOrNull())
+        assertEquals(SpeakerIdentifyRequest(), SpeechToolArguments.speakerIdentify(emptyMap()))
     }
 
     @Suppress("UNCHECKED_CAST")

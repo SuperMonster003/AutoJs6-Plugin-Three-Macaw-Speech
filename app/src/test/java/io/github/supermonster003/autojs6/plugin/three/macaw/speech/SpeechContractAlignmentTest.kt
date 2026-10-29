@@ -36,14 +36,17 @@ class SpeechContractAlignmentTest {
 
     @Test
     fun `contract version and capability keys match the host contract`() {
-        assertEquals(SpeechContract.CONTRACT_VERSION, ThreeMacawSpeechContract.CONTRACT_VERSION)
+        // Roadmap D136: the base version stays the first one, the highest one is the host contract's.
+        assertEquals(SpeechContract.MIN_CONTRACT_VERSION, ThreeMacawSpeechContract.CONTRACT_VERSION)
+        assertEquals(SpeechContract.MAX_CONTRACT_VERSION, ThreeMacawSpeechContract.MAX_CONTRACT_VERSION)
+        assertEquals(SpeechContract.MAX_CONTRACT_VERSION, SpeechContract.negotiate(ThreeMacawSpeechContract.CONTRACT_VERSION, ThreeMacawSpeechContract.MAX_CONTRACT_VERSION))
         assertTrue(SpeechContract.supportsContractVersion(ThreeMacawSpeechContract.CONTRACT_VERSION))
         assertEquals(SpeechCapabilityKeys.CONTRACT_VERSION, ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION)
         assertEquals(SpeechCapabilityKeys.FEATURES, ThreeMacawSpeechContract.CAPABILITY_FEATURES)
         assertEquals(SpeechCapabilityKeys.CATALOG_VERSION, ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION)
         assertEquals(PluginCapabilityKeys.REQUIRES_HOST_VERSION, SpeechCapabilityKeys.REQUIRES_HOST_VERSION)
-        // Roadmap D84: "audioDecode" was appended to the host contract after the staged speech-api AAR.
-        assertTrue("advertised features are contract features", (SpeechContract.FEATURES + "audioDecode").containsAll(ThreeMacawSpeechContract.FEATURES))
+        assertTrue("advertised features are contract features", SpeechContract.FEATURES.containsAll(ThreeMacawSpeechContract.FEATURES))
+        assertTrue(SpeechContract.FEATURE_SPEAKER in ThreeMacawSpeechContract.FEATURES)
     }
 
     @Test

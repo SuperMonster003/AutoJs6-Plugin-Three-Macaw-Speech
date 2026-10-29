@@ -75,7 +75,7 @@ class ModelInstallDeviceTest {
         val plugin: ISpeechPlugin = SpeechPluginBinder(context)
         val manager = SpeechModels.get(context)
         val request = Bundle().apply {
-            putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CONTRACT_VERSION)
+            putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_1)
             putString(SpeechOptionKeys.MODEL, MODEL)
         }
         plugin.removeModel(request)

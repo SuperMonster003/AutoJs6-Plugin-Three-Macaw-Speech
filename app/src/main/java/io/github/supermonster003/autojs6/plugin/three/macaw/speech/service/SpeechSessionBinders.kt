@@ -24,6 +24,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceGatedKeywords
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeEvents
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.speaker.AudioTail
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
 import org.autojs.plugin.speech.api.ISpeechSession
 import org.autojs.plugin.speech.api.ISpeechSessionCallback
@@ -427,11 +428,13 @@ internal class DictationBinder(
  * The resident wake word (roadmap D76) is the same session as the background holder of the session table, without the
  * microphone foreground service of its own ([foreground] false): every microphone session silences it the same way. Its
  * [power] saving mode (roadmap P8.1, D128) puts the silero VAD before the keyword spotter and reads longer microphone
- * frames; script wake sessions keep [WakePower.OFF].
+ * frames; script wake sessions keep [WakePower.OFF]. Its [tail] receives every frame before the spotter, for the speaker
+ * check of a hit (roadmap P8.3, D139).
  * zh-CN: 唤醒会话 (`openWakeSession`, 路线图 P3.4): 在麦克风上检测关键词; 有 `thenListen` 时每次命中在同一音频上进行一轮听写, 使用第二个识别器租约.
  * 路线图 D57: 没有轮次进行时, 插件自己入口的听写可以接管麦克风; 此时会话停止录音, 不报告任何事件, 接管释放后重新录音 (期间一直持有麦克风前台服务).
  * 常驻唤醒 (路线图 D76) 是同一种会话, 作为会话表的后台持有者, 不另持麦克风前台服务 ([foreground] 为 false): 任何麦克风会话都以同样方式让它静默.
- * 它的省电模式 [power] (路线图 P8.1, D128) 在唤醒词检测器之前加 silero VAD, 并以更长的帧读取麦克风; 脚本的唤醒会话保持 [WakePower.OFF].
+ * 它的省电模式 [power] (路线图 P8.1, D128) 在唤醒词检测器之前加 silero VAD, 并以更长的帧读取麦克风; 脚本的唤醒会话保持 [WakePower.OFF]. 它的 [tail]
+ * 在检测器之前收到每一帧, 供命中时的说话人检查使用 (路线图 P8.3, D139).
  */
 internal class WakeBinder(
     runtime: SpeechRuntime,
@@ -440,6 +443,7 @@ internal class WakeBinder(
     listenCallback: ISpeechSessionCallback?,
     private val foreground: Boolean = true,
     private val power: WakePower = WakePower.OFF,
+    private val tail: AudioTail? = null,
     makeSession: (WakeEvents, DictationEvents?) -> WakeSession,
 ) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())), SessionTable.Yielding {
 
@@ -506,6 +510,8 @@ internal class WakeBinder(
     override fun resumeMicrophone() = onAsr {
         if (session.isEnded) return@onAsr
         session.resumeAfterTakeover()
+        // The audio before the takeover belongs to nobody who could say the wake word now (roadmap D139).
+        tail?.clear()
         Log.i(TAG, "Wake session ${session.id} resumes after the takeover")
         if (session.state != SessionState.ACTIVE || recording) return@onAsr
         try {
@@ -516,6 +522,8 @@ internal class WakeBinder(
     }
 
     override fun accept(samples: FloatArray) {
+        // Before the spotter, so a hit finds its own audio in the tail (roadmap D139).
+        tail?.write(samples)
         session.accept(samples)
         val current = gate ?: return
         // Every 5 minutes of audio: how much of it the spotter decoded, for the device runs (roadmap P8.1).

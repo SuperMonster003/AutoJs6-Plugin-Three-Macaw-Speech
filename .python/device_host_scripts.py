@@ -5,7 +5,10 @@
     py .python/device_host_scripts.py late <serial>         a microphone session opened while AutoJs6 is already in the background
     py .python/device_host_scripts.py wake <serial>         wake word with thenListen, the keyword and a command played aloud
     py .python/device_host_scripts.py kill <serial>         the host process dies during a microphone session
-    py .python/device_host_scripts.py tools <serial>        the four plugin tools through `plugins.tools` (roadmap P7.6.4), TTS at 70 %
+    py .python/device_host_scripts.py tools <serial>        the plugin tools through `plugins.tools` (roadmap P7.6.4, P8.3.5), TTS at 70 %
+    py .python/device_host_scripts.py speaker <serial>      speech.speaker enroll / verify / identify / list / remove and the two
+                                                            speaker tools with the LibriSpeech readers of locks/speaker-test-audio.lock
+                                                            (roadmap P8.3.6; needs a host with contract v2 and the speaker model)
 
 Scripts start through AutoJs6's RunIntentActivity (no instrumentation, so every process keeps its real state) and write
 a JSON result next to themselves in shared storage, which AutoJs6 reads and writes with all-files access. Audio for the
@@ -30,12 +33,14 @@ PLUGIN = "io.github.supermonster003.autojs6.plugin.three.macaw.speech"
 REMOTE = "/sdcard/Download/autojs6-macaw-run"
 ROOT = Path(__file__).resolve().parent.parent
 AUDIO = ROOT / "app" / "src" / "androidTest" / "assets" / "test-audio"
+SPEAKER_AUDIO = ROOT / "app" / "src" / "androidTest" / "assets" / "speaker-audio"
 STREAMING = "asr.zipformer-streaming.zh-en.2023-02-20.int8"
 SENSE_VOICE = "asr.sense-voice.zh-en-ja-ko-yue.2024-07-17.int8"
 PHASE_SECONDS = 10
 EN_REFERENCE = "AFTER EARLY NIGHTFALL THE YELLOW LAMPS WOULD LIGHT UP HERE AND THERE THE SQUALID QUARTER OF THE BROTHELS"
 TOOLS_SYNTHESIS_TEXT = "The quick brown fox jumps over the lazy dog near the river bank"
-TOOLS_NAMES = "speech_listen,speech_speak,speech_synthesize,speech_transcribe"
+TOOLS_NAMES = "speech_listen,speech_speak,speech_speaker_identify,speech_speaker_verify,speech_synthesize,speech_transcribe"
+SPEAKER_NAMES = ("host-test-reader-a", "host-test-reader-b")
 MAX_CER = 0.15
 MAX_ROUND_TRIP_CER = 0.25
 
@@ -131,6 +136,63 @@ try {
     w.on("end", function (e) { media.stopMusic(); r.reason = e.reason; done(); });
     setTimeout(function () { if (w.isActive()) w.stop(); }, 40000);
 } catch (e) { fail(e); }
+""",
+    "speaker": COMMON + """
+function step(key, body) {
+    var t = Date.now();
+    try { r[key] = body(); } catch (e) { r[key] = { error: String(e.code || "") + " " + String(e.message || e).slice(0, 240) }; }
+    r[key].ms = Date.now() - t;
+}
+function clip(name) { return dir + "/" + name + ".wav"; }
+function enrollFiles(v) { return [1, 2, 3].map(function (i) { return clip("libri-" + v + "-enroll-" + i); }); }
+var A = "%(nameA)s", B = "%(nameB)s";
+r.features = speech.capabilities().features.join(",");
+// A host without contract v2 has no speech.speaker; the run reports it instead of failing on every step.
+// zh-CN: 不含契约 v2 的宿主没有 speech.speaker; 直接报告, 不让每一步都失败.
+r.hasSpeaker = typeof speech.speaker !== "undefined";
+if (!r.hasSpeaker) { done(); exit(); }
+step("enroll", function () {
+    var a = speech.speaker.enroll(A, enrollFiles("a"), { replace: true });
+    var b = speech.speaker.enroll(B, enrollFiles("b"), { replace: true });
+    return { a: a.samples, b: b.samples, speechMs: a.durationMillis };
+});
+step("verify", function () {
+    var out = {};
+    ["a", "b"].forEach(function (v) {
+        [1, 2].forEach(function (i) {
+            var c = clip("libri-" + v + "-trial-" + i);
+            var same = speech.speaker.verify(v === "a" ? A : B, c), other = speech.speaker.verify(v === "a" ? B : A, c);
+            out[v + i] = { same: same.score, sameOk: same.matched, other: other.score, otherOk: other.matched, threshold: same.threshold };
+        });
+    });
+    return out;
+});
+step("identify", function () {
+    var w = speech.speaker.identify(clip("libri-b-trial-1"), { topK: 2 });
+    return { name: w.name, matched: w.matched, candidates: (w.candidates || []).length };
+});
+step("tools", function () {
+    var v = plugins.tools.call("speech_speaker_verify", { file: clip("libri-a-trial-1"), name: A });
+    var i = plugins.tools.call("speech_speaker_identify", { file: clip("libri-a-trial-2"), topK: 2 });
+    var keys = Object.keys(v.result).concat(Object.keys(i.result)).join(",");
+    return { verify: v.result.matched, identify: i.result.name, candidates: i.result.candidates.length, vectorFree: keys.indexOf("mean") < 0 && keys.indexOf("embedding") < 0 };
+});
+step("list", function () {
+    return { names: speech.speaker.list().map(function (s) { return s.name; }).filter(function (n) { return n === A || n === B; }).join(",") };
+});
+step("remove", function () {
+    var removed = speech.speaker.remove(A) && speech.speaker.remove(B);
+    var refused = "";
+    try { speech.speaker.verify(A, clip("libri-a-trial-1")); refused = "accepted"; } catch (e) { refused = String(e.code || e.message || e).slice(0, 80); }
+    return { removed: removed, refused: refused };
+});
+// The Promise settles on this script's event loop, so the script waits for it instead of blocking. zh-CN: Promise 在本脚本的事件循环上兑现.
+speech.speaker.enroll(A, enrollFiles("a"), { replace: true });
+var asyncStarted = Date.now();
+var settled = false;
+function settle(value) { if (settled) return; settled = true; r.async = { matched: value, ms: Date.now() - asyncStarted }; try { speech.speaker.remove(A); } catch (e) {} done(); }
+speech.speaker.verifyAsync(A, clip("libri-a-trial-2")).then(function (v) { settle(v.matched); }, function (e) { settle(String(e.code || e.message || e)); });
+setTimeout(function () { settle("timeout"); }, 60000);
 """,
     "tools": COMMON + """
 function step(key, body) {
@@ -601,12 +663,63 @@ def run_tools(serial):
     return all(verdicts)
 
 
+def run_speaker(serial):
+    """speech.speaker and the speaker tools through AutoJs6 (roadmap P8.3.2, P8.3.5, P8.3.6)."""
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    adb(serial, "shell", "mkdir", "-p", REMOTE)
+    for wav in sorted(SPEAKER_AUDIO.glob("libri-*.wav")):
+        adb(serial, "push", str(wav), f"{REMOTE}/{wav.name}")
+    if not start(serial, "speaker", {"nameA": SPEAKER_NAMES[0], "nameB": SPEAKER_NAMES[1]}):
+        print(f"{label(serial)}: speaker: BLOCKED the script did not start (unlock the device; AutoJs6 needs all-files access)")
+        return False
+    r = result(serial, "speaker", 300)
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    if r is None:
+        print(f"{label(serial)}: speaker: FAIL no result")
+        return False
+    if not r.get("hasSpeaker"):
+        print(f"{label(serial)}: speaker: BLOCKED this AutoJs6 build has no speech.speaker (needs a host with contract v2; features {r.get('features')})")
+        return False
+    print(f"{label(serial)}: speaker (features {r.get('features')})")
+    verdicts = []
+
+    def item(name, ok, detail):
+        verdicts.append(ok)
+        print(f"    {name}: {'PASS' if ok else 'FAIL'} {detail}")
+
+    for key in ("enroll", "verify", "identify", "tools", "list", "remove", "async"):
+        step = r.get(key, {"error": "not run"})
+        if "error" in step:
+            item(key, False, f"{step['error'][:160]} ({step.get('ms')} ms)")
+            continue
+        if key == "enroll":
+            item(key, step["a"] == 3 and step["b"] == 3, f"samples {step['a']} / {step['b']}, {step['speechMs']} ms speech, {step['ms']} ms")
+        elif key == "verify":
+            trials = [step[k] for k in ("a1", "a2", "b1", "b2")]
+            ok = all(t["sameOk"] and not t["otherOk"] for t in trials)
+            scores = " ".join(f"{k} {step[k]['same']:.2f}/{step[k]['other']:.2f}" for k in ("a1", "a2", "b1", "b2"))
+            item(key, ok, f"same/other {scores}, threshold {trials[0]['threshold']}, {step['ms']} ms")
+        elif key == "identify":
+            item(key, step["name"] == SPEAKER_NAMES[1] and step["matched"], f"{step['name']} matched {step['matched']}, {step['candidates']} candidates, {step['ms']} ms")
+        elif key == "async":
+            item(key, step["matched"] is True, f"verifyAsync matched {step['matched']}, {step['ms']} ms")
+        elif key == "tools":
+            item(key, step["verify"] is True and step["identify"] == SPEAKER_NAMES[0] and step["vectorFree"],
+                 f"speech_speaker_verify {step['verify']}, speech_speaker_identify {step['identify']} ({step['candidates']} candidates), "
+                 f"no vectors {step['vectorFree']}, {step['ms']} ms")
+        elif key == "list":
+            item(key, step["names"] == ",".join(SPEAKER_NAMES), step["names"])
+        elif key == "remove":
+            item(key, step["removed"] is True and "SPEAKER_NOT_FOUND" in step["refused"], f"removed {step['removed']}, then verify: {step['refused']}")
+    return all(verdicts)
+
+
 def main(argv):
     if len(argv) != 2:
         print(__doc__)
         return 2
     action, serial = argv
-    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools}
+    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools, "speaker": run_speaker}
     if action == "tools":
         os.environ.setdefault("MACAW_VOLUME_PERCENT", "70")
     if action in ("listen", "late", "wake", "tools"):

@@ -1,13 +1,17 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.tool
 
+import org.autojs.plugin.speech.api.SpeechLimits
+
 /**
  * The catalog [SpeechToolService] returns from `IPluginToolProvider.getCatalog` (AutoJs6 plugin tool contract v1, roadmap
- * P7.6, D87): the short name `speech` (D94) and four tools, which AutoJs6 lists as `speech_listen`, `speech_speak`,
- * `speech_transcribe` and `speech_synthesize`. The document is static (D99): the host caches it per version code, and
+ * P7.6, D87): the short name `speech` (D94) and six tools, which AutoJs6 lists as `speech_listen`, `speech_speak`,
+ * `speech_transcribe`, `speech_synthesize` and, since roadmap P8.3.5, `speech_speaker_verify` and
+ * `speech_speaker_identify` (scores and names only, never a voiceprint). The document is static (D99): the host caches it per version code, and
  * missing prerequisites (microphone permission, models) are reported by the call, not by dropping tools. The
  * descriptions reach the context of AI models as written, so they stay English and ASCII and name the error codes.
  * zh-CN: [SpeechToolService] 从 `IPluginToolProvider.getCatalog` 返回的目录 (AutoJs6 插件工具契约 v1, 路线图 P7.6, D87): 短名
- * `speech` (D94) 下四个工具, AutoJs6 列为 `speech_listen`, `speech_speak`, `speech_transcribe` 与 `speech_synthesize`. 文档是静态的
+ * `speech` (D94) 下六个工具, AutoJs6 列为 `speech_listen`, `speech_speak`, `speech_transcribe`, `speech_synthesize`, 以及路线图 P8.3.5
+ * 起的 `speech_speaker_verify` 与 `speech_speaker_identify` (只有分数与名字, 从不含声纹). 文档是静态的
  * (D99): 宿主按 versionCode 缓存, 缺少的前提 (麦克风权限, 模型) 由调用报告, 不从目录里删工具. 说明原样进入 AI 模型的上下文, 因此保持
  * 英文与 ASCII, 并写明错误码.
  */
@@ -18,13 +22,18 @@ internal object SpeechToolCatalog {
     const val TOOL_SPEAK = "speak"
     const val TOOL_TRANSCRIBE = "transcribe"
     const val TOOL_SYNTHESIZE = "synthesize"
-    val TOOLS = listOf(TOOL_LISTEN, TOOL_SPEAK, TOOL_TRANSCRIBE, TOOL_SYNTHESIZE)
+    const val TOOL_SPEAKER_VERIFY = "speaker_verify"
+    const val TOOL_SPEAKER_IDENTIFY = "speaker_identify"
+    val TOOLS = listOf(TOOL_LISTEN, TOOL_SPEAK, TOOL_TRANSCRIBE, TOOL_SYNTHESIZE, TOOL_SPEAKER_VERIFY, TOOL_SPEAKER_IDENTIFY)
 
     /** D95: listening, including at most [NOTIFICATION_WAIT_SECONDS] for a tap on the notification. zh-CN: D95: 听写, 含至多 60 s 等待点按通知. */
     const val LISTEN_TIMEOUT_MS = 120_000L
 
     /** D96 - D98: the contract ceiling. zh-CN: D96 - D98: 契约上限. */
     const val LONG_TIMEOUT_MS = 300_000L
+
+    /** P8.3.5: one recording of at most 60 s of speech. zh-CN: P8.3.5: 一段至多 60 s 语音的录音. */
+    const val SPEAKER_TIMEOUT_MS = 120_000L
 
     const val NOTIFICATION_WAIT_SECONDS = 60
 
@@ -53,6 +62,9 @@ internal object SpeechToolCatalog {
     const val MAX_LANGUAGE_CHARS = 35
     const val MAX_MODEL_CHARS = 128
     const val MAX_VOICE_CHARS = 257
+    const val MAX_SPEAKER_NAME_CHARS = SpeechLimits.MAX_SPEAKER_NAME_CHARS
+    const val DEFAULT_TOP_K = SpeechLimits.DEFAULT_IDENTIFY_CANDIDATES
+    const val MAX_TOP_K = SpeechLimits.MAX_IDENTIFY_CANDIDATES
 
     const val PARAM_FILE = "file"
     const val OUTPUT_AUDIO = "audio"
@@ -72,6 +84,10 @@ internal object SpeechToolCatalog {
     private val WARNINGS = """"warnings": {"type": "array", "items": {"type": "object", "properties": {"code": {"type": "string"}, "message": {"type": "string"}}, "required": ["code", "message"], "additionalProperties": false}}"""
     private val LANGUAGE = """"language": {"type": "string", "minLength": 1, "maxLength": $MAX_LANGUAGE_CHARS"""
     private val VOICE = """"voice": {"type": "string", "minLength": 3, "maxLength": $MAX_VOICE_CHARS"""
+    private val THRESHOLD = """"threshold": {"type": "number", "minimum": 0, "maximum": 1, "description": "Cosine score a match needs. Default: the value measured for the speaker model, 0.5 for the published model."}"""
+    private val SPEAKER_FILE = """"$PARAM_FILE": {"type": "string", "x-autojs6-type": "file", "description": "An audio file with one person speaking, at least 1 second of speech; the first 60 seconds of speech are used."}"""
+    private const val SPEAKER_AUDIO = "Reads WAV, MP3, AAC, M4A, Ogg Vorbis, Ogg Opus, FLAC and the audio track of MP4 or WebM files. Speakers are enrolled on the Speakers screen of 3-Macaw Speech (settings, resident wake word group) or by AutoJs6 scripts with speech.speaker.enroll; voiceprints stay on the phone and are never part of a result."
+    private const val SPEAKER_ERRORS = "NOT_READY (no speaker recognition model of 3-Macaw Speech is installed), INPUT_UNREADABLE (unsupported or damaged file, or less than 1 second of speech, AUDIO_TOO_SHORT), LIMIT_EXCEEDED, CANCELLED"
     private val SPEED = """"speed": {"type": "number", "minimum": $MIN_SPEED, "maximum": $MAX_SPEED, "default": $DEFAULT_SPEED, "description": "Speaking rate, 1.0 is normal."}"""
 
     val JSON: String = """{
@@ -219,6 +235,77 @@ internal object SpeechToolCatalog {
       ],
       "risk": "write",
       "timeoutMs": $LONG_TIMEOUT_MS,
+      "maxConcurrency": 1
+    },
+    {
+      "name": "$TOOL_SPEAKER_VERIFY",
+      "title": "Verify a speaker (3-Macaw Speech)",
+      "description": "Checks offline whether the voice in an audio file on the phone is the enrolled speaker of the given name in 3-Macaw Speech and returns the cosine score, the threshold and whether the score reaches it. $SPEAKER_AUDIO Errors: INVALID_ARGUMENTS (no speaker of this name is enrolled, SPEAKER_NOT_FOUND, or a bad argument), $SPEAKER_ERRORS.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          $SPEAKER_FILE,
+          "name": {"type": "string", "minLength": 1, "maxLength": $MAX_SPEAKER_NAME_CHARS, "description": "The name the speaker was enrolled under."},
+          $THRESHOLD
+        },
+        "required": ["$PARAM_FILE", "name"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "score": {"type": "number"},
+          "matched": {"type": "boolean"},
+          "threshold": {"type": "number"},
+          "modelId": {"type": "string"},
+          $WARNINGS
+        },
+        "required": ["name", "score", "matched", "threshold", "modelId", "warnings"],
+        "additionalProperties": false
+      },
+      "risk": "readonly",
+      "timeoutMs": $SPEAKER_TIMEOUT_MS,
+      "maxConcurrency": 1
+    },
+    {
+      "name": "$TOOL_SPEAKER_IDENTIFY",
+      "title": "Identify a speaker (3-Macaw Speech)",
+      "description": "Finds offline which speaker enrolled in 3-Macaw Speech the voice in an audio file on the phone is closest to. Returns the best candidates with their cosine scores; name is present only when the best score reaches the threshold (matched true). With no speaker enrolled, candidates is empty and a warning says so. $SPEAKER_AUDIO Errors: INVALID_ARGUMENTS, $SPEAKER_ERRORS.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          $SPEAKER_FILE,
+          $THRESHOLD,
+          "topK": {"type": "integer", "minimum": 1, "maximum": $MAX_TOP_K, "default": $DEFAULT_TOP_K, "description": "How many candidates to return, best first."}
+        },
+        "required": ["$PARAM_FILE"],
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string"},
+          "score": {"type": "number"},
+          "matched": {"type": "boolean"},
+          "threshold": {"type": "number"},
+          "modelId": {"type": "string"},
+          "candidates": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {"name": {"type": "string"}, "score": {"type": "number"}},
+              "required": ["name", "score"],
+              "additionalProperties": false
+            }
+          },
+          $WARNINGS
+        },
+        "required": ["matched", "threshold", "modelId", "candidates", "warnings"],
+        "additionalProperties": false
+      },
+      "risk": "readonly",
+      "timeoutMs": $SPEAKER_TIMEOUT_MS,
       "maxConcurrency": 1
     }
   ]

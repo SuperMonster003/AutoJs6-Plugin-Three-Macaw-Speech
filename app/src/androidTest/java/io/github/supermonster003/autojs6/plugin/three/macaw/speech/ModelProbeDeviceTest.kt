@@ -21,6 +21,8 @@ import com.k2fsa.sherpa.onnx.OnlineModelConfig
 import com.k2fsa.sherpa.onnx.OnlineRecognizer
 import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
+import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractor
+import com.k2fsa.sherpa.onnx.SpeakerEmbeddingExtractorConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.WavReader
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
@@ -43,7 +45,7 @@ import kotlin.math.abs
  * the first request (`VmHWM` after resetting it, or the highest sampled `VmRSS`), the PSS afterwards and the first-answer
  * latency: the first partial after the first audible sample for a streaming recognizer fed at real-time pace, the
  * decoding time of the whole recording for an offline recognizer (one sentence, what a VAD segment gives it), the time
- * to the first samples for a synthesizer. Skipped unless `macawProbeDir` is given. Results are `MacawDeviceRun` lines.
+ * to the first samples for a synthesizer, the embedding times for a speaker model (roadmap P8.3). Skipped unless `macawProbeDir` is given. Results are `MacawDeviceRun` lines.
  * zh-CN: 候选模型入目录前的实测 (路线图 P8.2.1, D124): 加载 `.python/device_model_probe.py` 推送到 `/data/local/tmp` 的模型目录, 直接经
  * sherpa-onnx 1.13.8 API 并沿用插件的线程数, 报告加载耗时, 加载与回答第一个请求期间进程的峰值常驻内存 (重置后的 `VmHWM`, 不能重置时取采样到的
  * 最大 `VmRSS`), 之后的 PSS, 以及首个结果的延迟: 流式识别按实时速度送入, 记首个可闻采样到首个 partial 的时间; 离线识别记整段录音 (一句, 相当于一个
@@ -149,6 +151,16 @@ class ModelProbeDeviceTest {
                     tts.release()
                 }
             }
+            "speaker" -> {
+                val extractor = SpeakerEmbeddingExtractor(null, SpeakerEmbeddingExtractorConfig(model = path("model"), numThreads = SherpaEngines.ASR_THREADS))
+                SherpaEngines.requireNative(extractor, label)
+                val loadMs = SystemClock.elapsedRealtime() - loadStarted
+                try {
+                    speaker(extractor, samples(wav()), loadMs)
+                } finally {
+                    extractor.release()
+                }
+            }
             else -> throw AssertionError("unknown macawProbeType '$type'")
         }
         val peak = memory.stop()
@@ -221,6 +233,55 @@ class ModelProbeDeviceTest {
             writeWav(out, samples, tts.sampleRate())
         }
         return "loadMs=$loadMs firstAudioMs=$first totalMs=$totalMs sampleRate=${tts.sampleRate()} speakers=${tts.numSpeakers()} seconds=${"%.2f".format(seconds)} rtf=${"%.3f".format(totalMs / 1000.0 / seconds.coerceAtLeast(0.001))}"
+    }
+
+    /**
+     * A speaker embedding model (roadmap P8.3, D125): the first embedding of 2 s (part of the peak), then the mean time
+     * of five 2 s and five 5 s embeddings, and the cosine scores of two halves of the recording (same speaker) and, with
+     * `macawProbeWav2`, of the recording against another speaker's.
+     * zh-CN: 说话人嵌入模型 (路线图 P8.3, D125): 首个 2 s 嵌入 (计入峰值), 再取 2 s 与 5 s 各五次的平均耗时, 以及录音前后两半 (同一人) 与 (给出
+     * `macawProbeWav2` 时) 与另一人录音的余弦分数.
+     */
+    private fun speaker(extractor: SpeakerEmbeddingExtractor, samples: FloatArray, loadMs: Long): String {
+        val rate = AudioInput.SAMPLE_RATE
+        fun embed(piece: FloatArray): FloatArray {
+            val stream = extractor.createStream()
+            try {
+                stream.acceptWaveform(piece, rate)
+                stream.inputFinished()
+                assertTrue("the extractor is not ready for ${piece.size} samples", extractor.isReady(stream))
+                return extractor.compute(stream)
+            } finally {
+                stream.release()
+            }
+        }
+        fun cut(seconds: Double, from: Int = 0) = samples.copyOfRange(from, minOf(samples.size, from + (seconds * rate).toInt()))
+        fun cosine(a: FloatArray, b: FloatArray): Double {
+            var dot = 0.0; var na = 0.0; var nb = 0.0
+            for (i in a.indices) { dot += a[i] * b[i]; na += a[i] * a[i]; nb += b[i] * b[i] }
+            return dot / (Math.sqrt(na) * Math.sqrt(nb))
+        }
+        val started = SystemClock.elapsedRealtime()
+        val first = embed(cut(2.0))
+        val firstMs = SystemClock.elapsedRealtime() - started
+        fun mean(seconds: Double): Long {
+            val piece = cut(seconds)
+            val begin = SystemClock.elapsedRealtime()
+            repeat(5) { embed(piece) }
+            return (SystemClock.elapsedRealtime() - begin) / 5
+        }
+        val ms2 = mean(2.0)
+        val ms5 = mean(5.0)
+        val half = samples.size / 2
+        val same = cosine(embed(samples.copyOfRange(0, half)), embed(samples.copyOfRange(half, samples.size)))
+        val other = SpeechDevice.argument("macawProbeWav2")?.takeIf { it.isNotBlank() }?.let { name ->
+            val target = File(SpeechDevice.context.cacheDir, "probe-wav/${name.substringAfterLast('/')}")
+            shellCopy(name, target)
+            cosine(embed(samples), embed(samples(target)))
+        }
+        val audioS = "%.2f".format(samples.size.toDouble() / rate)
+        return "loadMs=$loadMs dim=${first.size} first2sMs=$firstMs mean2sMs=$ms2 mean5sMs=$ms5 audioS=$audioS sameHalves=${"%.3f".format(same)}" +
+            (other?.let { " otherSpeaker=${"%.3f".format(it)}" } ?: "")
     }
 
     /** Character error rate against `macawProbeRef`, or only the length of the answer. zh-CN: 与 `macawProbeRef` 比较的字错率, 或只报告结果长度. */

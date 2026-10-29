@@ -17,6 +17,9 @@ import android.util.Log
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.assistant.MacawVoiceInteractionService
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.speaker.AudioTail
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeakerRecognition
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechPluginBinder
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.AssistantEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.SheetVisibility
@@ -27,6 +30,8 @@ import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.autojs.plugin.speech.api.SpeechResultKeys
 import java.lang.ref.WeakReference
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 /**
  * The resident wake word (roadmap P7.4, D69 - D80): a foreground service of type `microphone` that keeps a wake session of
@@ -54,6 +59,12 @@ class ResidentWakeService : Service() {
     private val binder by lazy { SpeechPluginBinder(applicationContext) }
     private var session: ISpeechSession? = null
     private var started = false
+
+    /** The latest microphone audio of the wake session, for the speaker check of a hit (roadmap D139). zh-CN: 唤醒会话最近的麦克风音频, 供命中时的说话人检查. */
+    private val tail = AudioTail(AudioInput.samples(TAIL_MILLIS).toInt())
+
+    /** Speaker checks run here, off the ASR and main threads (roadmap D139). zh-CN: 说话人检查在此运行, 不占用 ASR 线程与主线程. */
+    private val checks: ExecutorService = Executors.newSingleThreadExecutor { Thread(it, "MacawSpeakerGate").apply { isDaemon = true } }
 
     /** Bumped for every wake session, pause and stop, so that late events of an earlier session are dropped. zh-CN: 每次开会话, 暂停与停止都递增. */
     private var generation = 0
@@ -228,8 +239,9 @@ class ResidentWakeService : Service() {
         sessionError = null
         state = ResidentNotifications.State.LOADING
         notifyState()
+        tail.clear()
         session = try {
-            binder.openResidentWakeSession(ResidentWake.options(settings), WakeEvents(gen), ResidentWake.power(settings))
+            binder.openResidentWakeSession(ResidentWake.options(settings), WakeEvents(gen), ResidentWake.power(settings), tail)
         } catch (e: RuntimeException) {
             // The binder throws `CODE: detail` as the contract defines.
             val code = SpeechErrorCodes.decode(e.message.orEmpty())?.first
@@ -245,7 +257,29 @@ class ResidentWakeService : Service() {
      * and the screen turns on (D73), or "Tap to speak" where no screen may open from the background (D71).
      * zh-CN: 命中 (D79): 弹层可见时忽略 (其朗读的文字可能含唤醒词), 否则打开弹层并点亮屏幕 (D73); 无法从后台打开界面时发 "点此说话" (D71).
      */
+    /**
+     * With "only enrolled voices" on (roadmap D135, D139), the audio before the hit must match an enrolled speaker; a
+     * rejected hit opens nothing. A check that cannot run (no speaker model or voiceprint) or fails lets the hit pass.
+     * zh-CN: 打开 "只听主人" 时 (路线图 D135, D139), 命中前的音频须与已注册的说话人相符; 被拒的命中什么也不打开. 无法检查 (没有说话人模型或声纹) 或检查失败时
+     * 命中照常放行.
+     */
     private fun onHit() {
+        if (!preferences.read().onlyEnrolled) return route()
+        val window = tail.last(AudioInput.samples(GATE_WINDOW_MILLIS).toInt())
+        val gen = generation
+        checks.execute {
+            val started = SystemClock.elapsedRealtime()
+            val match = runCatching { SpeakerRecognition.get(applicationContext).gate(window) }
+                .onFailure { Log.w(TAG, "Speaker check failed: ${it.message ?: it.javaClass.simpleName}") }
+                .getOrNull()
+            val passed = match == null || match.matched
+            val outcome = if (match == null) "not run" else if (passed) "passed" else "rejected"
+            Log.i(TAG, "Speaker check $outcome in ${SystemClock.elapsedRealtime() - started} ms")
+            main.post { if (passed && gen == generation && !stopping) route() }
+        }
+    }
+
+    private fun route() {
         val route = HitRoute.of(SheetVisibility.visible, MacawVoiceInteractionService.isActive(this), ResidentWake.overlayGranted(this), Build.VERSION.SDK_INT)
         Log.i(TAG, "Wake word hit: ${route.name.lowercase()}")
         hits++
@@ -282,6 +316,7 @@ class ResidentWakeService : Service() {
 
     override fun onDestroy() {
         stop(null)
+        checks.shutdown()
         if (current?.get() === this) current = null
         super.onDestroy()
     }
@@ -321,6 +356,10 @@ class ResidentWakeService : Service() {
 
     companion object {
         private const val TAG = "MacawResident"
+
+        /** The audio before a hit the speaker check scores (roadmap D139). zh-CN: 说话人检查所打分的命中前音频 (路线图 D139). */
+        const val GATE_WINDOW_MILLIS = 2000L
+        private const val TAIL_MILLIS = 2500L
         const val ACTION_TURN_OFF = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.action.RESIDENT_TURN_OFF"
         const val ACTION_RESTART = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.action.RESIDENT_RESTART"
 

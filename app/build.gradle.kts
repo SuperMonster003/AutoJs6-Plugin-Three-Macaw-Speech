@@ -176,6 +176,21 @@ run {
     }
 }
 
+run {
+    // Speaker device test recordings (roadmap P8.3.6, D143): LibriSpeech cuts and Kokoro speech, androidTest assets only.
+    val entries = readLock("locks/speaker-test-audio.lock")
+    val names = entries.keys.filter { it.endsWith(".path") }.map { it.removeSuffix(".path") }.sorted()
+    check(entries.keys == setOf("format") + names.flatMap { name -> listOf("path", "sha256", "source", "license").map { "$name.$it" } }) {
+        "Unexpected keys in locks/speaker-test-audio.lock"
+    }
+    val folder = "app/src/androidTest/assets/speaker-audio"
+    val listed = names.map { name -> entries.getValue("$name.path").also { check(it.startsWith("$folder/")) { "speaker audio $name must live in $folder" } } }
+    check(rootProject.file(folder).listFiles().orEmpty().filter { it.isFile }.map { "$folder/${it.name}" }.toSet() == listed.toSet()) {
+        "$folder must hold exactly the files of locks/speaker-test-audio.lock"
+    }
+    names.forEach { name -> verifiedFile(entries.getValue("$name.path"), entries["$name.sha256"], "speaker audio $name") }
+}
+
 // The legal texts of the About page (roadmap D32, P5.2): LICENSE and THIRD_PARTY_NOTICES.md of this repository and the two
 // downloaded texts of locks/legal-texts.lock, copied into the generated assets/legal/ folder of every variant.
 // zh-CN: 关于页的法律文本 (路线图 D32, P5.2): 本仓库的 LICENSE 与 THIRD_PARTY_NOTICES.md, 以及 locks/legal-texts.lock 中的两份下载文本,

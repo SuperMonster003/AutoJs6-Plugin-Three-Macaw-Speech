@@ -62,6 +62,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.Resi
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentSettings
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.WakeSensitivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeakerRecognition
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.FloatingMicService
@@ -98,6 +99,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.Manag
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.OperationTracker
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.TrackedOperation
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.ReleaseHistoryActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.speakers.SpeakersActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateController
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateStore
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.UpdateDialogs
@@ -172,6 +174,9 @@ class SettingsActivity : StandaloneActivity() {
     private var residentOn by mutableStateOf(false)
     private var resident by mutableStateOf(ResidentState())
     private var residentRival by mutableStateOf<ResidentListenerApp?>(null)
+
+    /** The enrolled speakers (roadmap D140), null while loading. zh-CN: 已注册的说话人数 (路线图 D140), 加载中为 null. */
+    private var speakerCount by mutableStateOf<Int?>(null)
     private var awaitingResidentOverlay = false
 
     /** Roadmap D78: the microphone for the resident wake word; granted, the switch tries again. zh-CN: 常驻唤醒的麦克风权限; 授予后重试开启. */
@@ -245,7 +250,13 @@ class SettingsActivity : StandaloneActivity() {
             val availability = runCatching { ResidentWake.availability(app) }.getOrDefault(ResidentAvailability.NO_WAKE_MODEL)
             val unspellable = if (availability == ResidentAvailability.READY) ResidentWake.unspellable(app, keywords) else null
             val state = ResidentState(availability, unspellable, ResidentWake.others(app))
-            main.post { if (!isDestroyed) resident = state }
+            val speakers = runCatching { SpeakerRecognition.get(app).list().size }.getOrDefault(0)
+            main.post {
+                if (!isDestroyed) {
+                    resident = state
+                    speakerCount = speakers
+                }
+            }
         }
     }
 
@@ -337,6 +348,10 @@ class SettingsActivity : StandaloneActivity() {
                 startActivity(HomeActivity.intent(this))
             resident.unspellable != null -> dialog = Dialog.RESIDENT_KEYWORDS
         }
+    }
+
+    private fun openSpeakers() {
+        startActivity(Intent(this, SpeakersActivity::class.java))
     }
 
     private fun openAppSettings() {
@@ -590,6 +605,17 @@ class SettingsActivity : StandaloneActivity() {
                 SwitchRow(stringResource(R.string.settings_resident_read_aloud), residentSettings.readAloud,
                     { on -> saveResident { it.copy(readAloud = on) } },
                     summary = stringResource(R.string.settings_resident_read_aloud_summary), icon = R.drawable.ic_volume_up_24, modifier = Modifier.testTag("macaw.settings.residentReadAloud"))
+                Hairline()
+                // Roadmap D139 / D140: off by default; turning it on with no one enrolled opens the speaker screen instead.
+                val speakers = speakerCount
+                SwitchRow(stringResource(R.string.settings_resident_only_enrolled), residentSettings.onlyEnrolled,
+                    { on -> if (on && speakers == 0) openSpeakers() else saveResident { it.copy(onlyEnrolled = on) } },
+                    summary = stringResource(R.string.settings_resident_only_enrolled_summary), icon = R.drawable.ic_check_circle_24, enabled = speakers != null,
+                    modifier = Modifier.testTag("macaw.settings.residentOnlyEnrolled"))
+                Hairline()
+                SettingsRow(stringResource(R.string.settings_resident_speakers),
+                    summary = speakers?.let { if (it == 0) stringResource(R.string.settings_resident_speakers_none) else stringResource(R.string.settings_resident_speakers_count, it) },
+                    icon = R.drawable.ic_person_24, onClick = ::openSpeakers, modifier = Modifier.testTag("macaw.settings.residentSpeakers"))
                 Text(
                     stringResource(R.string.settings_resident_note),
                     style = MaterialTheme.typography.bodySmall,
