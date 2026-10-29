@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Trust anchors for the plugin's HTTPS traffic (roadmap P5.1, Android 7.0 model downloads). GitHub serves the catalog
+  (raw.githubusercontent.com) and the release assets (objects / release-assets.githubusercontent.com) with a Let's Encrypt
+  chain that ends at ISRG Root X1, which the system store of Android 7.0 (API 24, the plugin's minSdk) lacks; 7.1.1 and
+  later carry it. The DER certificate in res/raw is locked by SHA-256 in locks/trust-anchors.lock (TrustAnchorsTest) and
+  only adds to the system store, so every other host keeps its platform trust; user-installed CAs stay untrusted, as the
+  platform default for targetSdk 24+ already has it. No cleartext permission is granted.
+  zh-CN: 插件 HTTPS 流量的信任锚 (路线图 P5.1, Android 7.0 模型下载). GitHub 的目录 (raw.githubusercontent.com) 与 Release 资产
+  (objects / release-assets.githubusercontent.com) 使用终止于 ISRG Root X1 的 Let's Encrypt 证书链, Android 7.0 (API 24, 本插件的 minSdk)
+  的系统信任库没有该根证书, 7.1.1 起才有. res/raw 中的 DER 证书以 SHA-256 锁定在 locks/trust-anchors.lock (TrustAnchorsTest), 只在系统
+  信任库之外追加, 其他主机仍按平台规则信任; 用户安装的 CA 仍不信任, 与 targetSdk 24+ 的平台默认一致. 不放开明文流量.
+-->
+<network-security-config>
+    <base-config>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/isrg_root_x1" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

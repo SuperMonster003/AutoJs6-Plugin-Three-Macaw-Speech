@@ -5,6 +5,9 @@
     py .python/device_ui_run.py contract <serial>        ThreeMacawSpeechContractTest (launcher alias, exported audit)
     py .python/device_ui_run.py download <serial> <id>   HomeDownloadDeviceTest (P5.1): downloads one commercial-use model
                                                         from its home screen row on an unmetered network
+    py .python/device_ui_run.py trust <serial>           TrustAnchorDeviceTest (P5.1): the TLS handshake with every GitHub
+                                                        host the plugin uses (catalog, release asset, release API), the
+                                                        Android 7.0 trust anchor of network_security_config.xml
     py .python/device_ui_run.py tryout <serial> [out]    TryoutDeviceTest (P5.3): dictation, wake word trial and synthesis
                                                         playback on the real microphone, the test recordings played
                                                         through the speaker at MACAW_VOLUME_PERCENT (70 by default) of
@@ -104,6 +107,8 @@ def main(argv):
     if action == "download" and len(argv) > 2:
         adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
         return 0 if run_test(serial, "HomeDownloadDeviceTest", [f"macawDownload={argv[2]}"]) else 1
+    if action == "trust":
+        return 0 if run_test(serial, "TrustAnchorDeviceTest", ["macawNetwork=true"]) else 1
     if action == "tryout":
         return 0 if tryout(serial, argv[2] if len(argv) > 2 else None) else 1
     if action == "voice":

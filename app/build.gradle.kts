@@ -158,6 +158,24 @@ run {
     names.forEach { name -> verifiedFile(entries.getValue("$name.path"), entries["$name.sha256"], "encoded audio $name") }
 }
 
+run {
+    // The extra TLS trust anchor of res/xml/network_security_config.xml (roadmap P5.1, Android 7.0 model downloads): the ISRG
+    // Root X1 certificate in DER form, locked in locks/trust-anchors.lock and checked again by TrustAnchorsTest.
+    // zh-CN: res/xml/network_security_config.xml 的额外 TLS 信任锚 (路线图 P5.1, Android 7.0 模型下载): DER 格式的 ISRG Root X1 证书,
+    // 锁定在 locks/trust-anchors.lock 中, TrustAnchorsTest 再次核对.
+    val entries = readLock("locks/trust-anchors.lock")
+    val names = entries.keys.filter { it.endsWith(".path") }.map { it.removeSuffix(".path") }.sorted()
+    check(names == listOf("isrg-root-x1")) { "locks/trust-anchors.lock must list isrg-root-x1" }
+    check(entries.keys == setOf("format") + names.flatMap { name -> listOf("path", "sha256", "url", "subject", "notAfter").map { "$name.$it" } }) {
+        "Unexpected keys in locks/trust-anchors.lock"
+    }
+    names.forEach { name ->
+        val path = entries.getValue("$name.path")
+        check(path == "app/src/main/res/raw/${name.replace('-', '_')}.der") { "trust anchor $name must be the DER file of res/raw" }
+        verifiedFile(path, entries["$name.sha256"], "trust anchor $name")
+    }
+}
+
 // The legal texts of the About page (roadmap D32, P5.2): LICENSE and THIRD_PARTY_NOTICES.md of this repository and the two
 // downloaded texts of locks/legal-texts.lock, copied into the generated assets/legal/ folder of every variant.
 // zh-CN: 关于页的法律文本 (路线图 D32, P5.2): 本仓库的 LICENSE 与 THIRD_PARTY_NOTICES.md, 以及 locks/legal-texts.lock 中的两份下载文本,

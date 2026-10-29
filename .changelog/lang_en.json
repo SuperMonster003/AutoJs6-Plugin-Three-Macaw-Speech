@@ -10,6 +10,9 @@
       "feature": [
         "Power saving mode for the resident wake word (Settings > Resident wake word, on by default): the wake word model runs only while the phone hears speech or another sound, not in a quiet room, so the plugin takes half to nine tenths less CPU time (the quieter, the less). The recording itself still costs the same, so Android's battery estimate drops only a little (see the README for the measurement). A very soft wake word may be missed; then turn power saving off",
         "More models to download: offline Spanish recognition (NeMo, with punctuation); streaming recognition of eight languages, Arabic, Indonesian, Thai, Vietnamese, Japanese, Russian, Chinese and English, that detects the language by itself (PengChengStarling, about 339 MB once installed); the Kokoro v1.0 multilingual voices (49 speakers of English, Spanish, French, Hindi, Italian, Brazilian Portuguese and Chinese, each speaking its own language); two Arabic voices and one Korean voice. The Arabic and Korean voices are for non-commercial use only, and the training data of the eight-language model is not disclosed, so its commercial use is unknown; the license is shown before each download. The new voices also appear by language in the system TTS engine, and the system voice input and the plugin tools pick the eight-language model automatically only for languages that no other installed model covers"
+      ],
+      "fix": [
+        "Model downloads work again on Android 7.0: the model catalog and the models are fetched from GitHub, whose certificates are now issued under a root certificate (ISRG Root X1 of Let's Encrypt) that Android 7.0 does not have, so every download and every catalog refresh failed with a certificate error. The plugin now carries that root certificate itself and uses it next to the ones of the system; Android 7.1 and later already have it and were not affected"
       ]
     },
     "v1.2.0": {

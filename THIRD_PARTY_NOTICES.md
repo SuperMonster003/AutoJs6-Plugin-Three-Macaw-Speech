@@ -117,6 +117,20 @@ Provenance and SHA-256 digests are recorded in `locks/host-api-aars.lock` and `l
 Jetpack Compose `ui-graphics` depends on `androidx.graphics:graphics-path`, whose
 `libandroidx.graphics.path.so` (Apache-2.0) is packaged for arm64-v8a, armeabi-v7a, x86_64 and x86.
 
+## Trust anchors
+
+| File | Source | Terms |
+| --- | --- | --- |
+| `app/src/main/res/raw/isrg_root_x1.der` | ISRG Root X1, the root certificate of Let's Encrypt (Internet Security Research Group), downloaded from https://letsencrypt.org/certs/isrgrootx1.der | A public certificate, not a licensed work; redistributed byte for byte |
+
+GitHub serves the model catalog (`raw.githubusercontent.com`) and the release assets of the models
+(`release-assets.githubusercontent.com`) with a certificate chain that ends at ISRG Root X1, which the system
+trust store of Android 7.0 (API 24, the plugin's minimum version) lacks. `res/xml/network_security_config.xml`
+adds this certificate next to the system store, never instead of it, without trusting user-installed
+certificates or cleartext traffic, so model downloads work on Android 7.0 as well; Android 7.1.1 and later
+already carry it. The SHA-256 digest of the DER file is recorded in `locks/trust-anchors.lock` and checked
+during the build and by `TrustAnchorsTest`.
+
 The Apache License 2.0 text is available at https://www.apache.org/licenses/LICENSE-2.0, the GNU
 General Public License version 3 at https://www.gnu.org/licenses/gpl-3.0.txt and the Mozilla Public
 License 2.0 in `LICENSE`; the MIT, BSD-2-Clause and Public Domain texts are in the upstream repositories
