@@ -22,9 +22,9 @@ object ModelCatalogConfiguration {
 
     /**
      * Bundled assets (roadmap P2.4), named by their wire schema like the refresh files (roadmap D108):
-     * [CatalogRules.BUNDLED_SCHEMA] until roadmap P8.5.2 bundles the signed schema 3 catalog.
-     * zh-CN: 内置资产 (路线图 P2.4), 与刷新文件一样按其传输格式命名 (路线图 D108): 路线图 P8.5.2 内置已签名的 schema 3 目录之前为
-     * [CatalogRules.BUNDLED_SCHEMA].
+     * [CatalogRules.BUNDLED_SCHEMA], the signed schema 3 catalog of release 3 since roadmap P8.5.2.
+     * zh-CN: 内置资产 (路线图 P2.4), 与刷新文件一样按其传输格式命名 (路线图 D108): [CatalogRules.BUNDLED_SCHEMA], 路线图 P8.5.2 起为发布 3
+     * 已签名的 schema 3 目录.
      */
     const val ASSET_CATALOG = "catalog/${CatalogRules.BUNDLED_CATALOG_FILE}"
     const val ASSET_SIGNATURE = "catalog/${CatalogRules.BUNDLED_SIGNATURE_FILE}"

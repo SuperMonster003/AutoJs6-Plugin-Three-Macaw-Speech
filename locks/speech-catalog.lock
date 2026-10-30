@@ -1,17 +1,18 @@
-# Bundled speech-models catalog snapshot and trust anchor (roadmap P2.4, D24, D108), checked by BundledCatalogTest.
-# catalog and signature: the exact signed bytes of the immutable Shared-Assets speech-models-v2 release (2026-10-23).
-#   The schema 2 catalog has 19 models: the 10 of v1 unchanged plus 9 new versions, 8 mirrored and 1 upstream-only.
-#   Its catalog bytes are unchanged from the reviewed 710484e candidate. D108 now requires the release signature,
-#   its locked digest and successful verification with the pinned family key; an unsigned snapshot cannot pass.
+# Bundled speech-models catalog snapshot and trust anchor (roadmap P2.4, D24, D108, P8.5.2), checked by BundledCatalogTest.
+# catalog and signature: the exact signed bytes of the immutable Shared-Assets speech-models-v3 release (2026-10-30,
+#   tag commit 714c23b, publish workflow 40992083270). Release 3 publishes two wire schemas of catalogVersion 3 (D127);
+#   the plugin bundles the schema 3 catalog-v3.json with its 30 models: the 19 of v2 (Kokoro v1.1 and Matcha zh-baker
+#   with a version 2 on re-pinned upstream assets, D158), 6 language models, the speaker model and 4 analysis models.
+#   Catalog and signature bytes equal the reviewed pending/v3 candidate and its offline signature.
 # public-key: speech-models/keys/catalog-signing-public.pem (maintainer commit 003d427), the speech-models family key.
 format=1
-catalog.path=app/src/main/assets/catalog/catalog-v2.json
-catalog.sha256=d5a975fa65161ed73d1582cd4118af764b82e803d26c6e40dc64ac607cedfb8c
-catalog.version=2
-catalog.source=AutoJs6-Shared-Assets@speech-models-v2:speech-models/catalogs/catalog-v2.json
-signature.path=app/src/main/assets/catalog/catalog-v2.sig.json
-signature.sha256=e4b3a58fa88e6317f432c45661a58f7cb4243aced533ab03e1042555f6c0a697
-signature.source=AutoJs6-Shared-Assets@speech-models-v2:speech-models/catalogs/catalog-v2.sig.json
+catalog.path=app/src/main/assets/catalog/catalog-v3.json
+catalog.sha256=23386175cf31a303d5f911fc23c7ece9064dafd399c6d36812ff785453f7ae27
+catalog.version=3
+catalog.source=AutoJs6-Shared-Assets@speech-models-v3:speech-models/catalogs/catalog-v3.json
+signature.path=app/src/main/assets/catalog/catalog-v3.sig.json
+signature.sha256=55e7c590ae8d8580db3edaedd06559f7e0a44a8f1279dd6adcc907d70b1bb6ce
+signature.source=AutoJs6-Shared-Assets@speech-models-v3:speech-models/catalogs/catalog-v3.sig.json
 public-key.path=app/src/main/assets/catalog/catalog-signing-public.pem
 public-key.sha256=5eb66eaed87a07c1c0b5f72e3fb147d24fe5c82063722f898c8f3d9cd98b7c76
 public-key.keyId=p256-bf5f0f579c7fbef1

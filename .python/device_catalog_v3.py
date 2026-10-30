@@ -9,8 +9,8 @@
 the language models of P8.2, the speaker model of P8.3 and the analysis models of P8.4) through `/data/local/tmp` and
 `run-as` to `files/dev-catalog/catalog-v3.json` of the installed debug build, which uses it instead of the bundled
 snapshot (`SpeechModels.DEV_CATALOG`; release builds ignore it). `run` runs `CatalogV3ModelsDeviceTest`: `--install`
-installs the six language models first (about 610 MB from the sherpa-onnx assets, since the `speech-models-v3` mirror
-is not published), `--models` the given ones instead (`ANALYSIS_MODELS` for P8.4), `--remove` deletes them at the end;
+installs the six language models first (about 610 MB; from the sherpa-onnx assets until the `speech-models-v3` mirror
+was published, from the mirror since; roadmap P8.5.2 bundles the signed release 3, so `push` is optional), `--models` the given ones instead (`ANALYSIS_MODELS` for P8.4), `--remove` deletes them at the end;
 the output is PASS / FAIL with the `MacawDeviceRun` lines (memory, character error rates, sample rates). `analysis`
 runs AnalysisDeviceTest and the analysis case of SpeechToolServiceDeviceTest (roadmap P8.4.5), `--long` adds the
 10 minute timing. `clean` deletes the development catalog, so the bundled one is used again. Install the debug and test

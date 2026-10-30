@@ -22,12 +22,12 @@ class ModelCatalogParserTest {
     fun `the bundled catalog parses and every version can be installed from upstream`() {
         // Structural checks only: the Shared-Assets pending catalog may still be regenerated, the detailed rules are
         // tested on the synthetic fixture below.
-        val bytes = Files.readAllBytes(RepositoryFiles.path("app/src/main/assets/catalog/catalog-v2.json"))
+        val bytes = Files.readAllBytes(RepositoryFiles.path("app/src/main/assets/catalog/${CatalogRules.BUNDLED_CATALOG_FILE}"))
         val catalog = parser.parse(bytes)
         assertEquals("speech-models-v${catalog.catalogVersion}", catalog.releaseTag)
         assertTrue(catalog.models.isNotEmpty())
-        assertEquals(2, catalog.schemaVersion)
-        assertEquals(setOf("asr", "kws", "punct", "tts"), catalog.models.map { it.kind }.toSet())
+        assertEquals(CatalogRules.BUNDLED_SCHEMA, catalog.schemaVersion)
+        assertEquals(CatalogRules.KINDS.toSet(), catalog.models.map { it.kind }.toSet())
         catalog.models.flatMap { it.versions }.forEach { version ->
             val mapped = version.upstream.flatMap { part ->
                 when (part) {
@@ -38,9 +38,8 @@ class ModelCatalogParserTest {
             assertEquals(version.files.map { it.path }.toSet(), mapped.toSet())
             version.mirror?.let { assertEquals(CatalogRules.archiveSize(version.files.map { file -> file.size }), it.size) }
         }
-        // The bundled release 2 predates the kinds of schema 3 (roadmap D141 (4), D155). zh-CN: 内置的发布 2 早于 schema 3 的类别.
-        val schema3 = setOf(CatalogRules.KIND_SPEAKER, CatalogRules.KIND_SEGMENT, CatalogRules.KIND_LANGID, CatalogRules.KIND_TAGGER)
-        (CatalogRules.KINDS - schema3).forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
+        // Release 3 (roadmap P8.5.2) recommends a model of every kind, the schema 3 kinds included. zh-CN: 发布 3 (路线图 P8.5.2) 为每个类别推荐一个模型, 含 schema 3 的类别.
+        CatalogRules.KINDS.forEach { kind -> assertTrue("a $kind model is recommended", catalog.recommendedModel(kind) != null) }
     }
 
     @Test

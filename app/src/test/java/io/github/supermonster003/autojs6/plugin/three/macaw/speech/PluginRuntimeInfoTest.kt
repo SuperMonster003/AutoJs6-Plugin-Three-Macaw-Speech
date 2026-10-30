@@ -52,7 +52,7 @@ class PluginRuntimeInfoTest {
             listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker", "diarization", "languageId", "audioTagging"),
             fields.features,
         )
-        assertEquals("the version of assets/catalog/catalog-v2.json (BundledCatalogTest)", 2, fields.catalogVersion)
+        assertEquals("the version of assets/catalog/catalog-v3.json (BundledCatalogTest)", 3, fields.catalogVersion)
     }
 
     @Test

@@ -25,13 +25,13 @@ object CatalogRules {
     const val SIGNATURE_FILE = "catalog-v$SCHEMA_VERSION.sig.json"
 
     /**
-     * Schema of the bundled snapshot: the signed `catalog-v2.json` of release 2 until the maintainer signs release 3,
-     * which replaces it in roadmap P8.5.2 (D108, D127); the plugin reads it as the first catalog and refreshes to
-     * [CATALOG_FILE].
-     * zh-CN: 内置快照的 schema: 维护者签名发布 3 之前为发布 2 的已签名 `catalog-v2.json`, 在路线图 P8.5.2 替换 (D108, D127); 插件把它当作首个目录读取,
-     * 刷新时取 [CATALOG_FILE].
+     * Schema of the bundled snapshot: the signed `catalog-v3.json` of release 3 since roadmap P8.5.2 (D108, D127), the
+     * same file as [CATALOG_FILE]; the plugin reads it as the first catalog. A snapshot of an older schema stays readable
+     * (1.3.0 bundled the signed `catalog-v2.json` of release 2 until P8.5.2, `ModelCatalogRepositoryTest`).
+     * zh-CN: 内置快照的 schema: 路线图 P8.5.2 起为发布 3 的已签名 `catalog-v3.json` (D108, D127), 与 [CATALOG_FILE] 同名; 插件把它当作首个目录读取.
+     * 较旧 schema 的快照仍可读取 (P8.5.2 之前 1.3.0 内置发布 2 的已签名 `catalog-v2.json`, 见 `ModelCatalogRepositoryTest`).
      */
-    const val BUNDLED_SCHEMA = 2
+    const val BUNDLED_SCHEMA = 3
     const val BUNDLED_CATALOG_FILE = "catalog-v$BUNDLED_SCHEMA.json"
     const val BUNDLED_SIGNATURE_FILE = "catalog-v$BUNDLED_SCHEMA.sig.json"
     const val OFFICIAL_REPOSITORY = "SuperMonster003/AutoJs6-Shared-Assets"

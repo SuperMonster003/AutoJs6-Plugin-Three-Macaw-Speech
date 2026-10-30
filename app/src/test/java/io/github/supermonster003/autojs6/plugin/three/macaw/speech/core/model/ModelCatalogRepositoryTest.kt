@@ -15,11 +15,11 @@ import java.io.File
  * Catalog refresh and trust (roadmap P2.4, D24, appendix D): the unsigned bundled snapshot is used first and marked,
  * a bundled signature must verify, refreshed catalogs must be signed, monotonic and atomically cached; tampered
  * catalogs and signatures, other keys, rollbacks, same-version equivocation and network failures keep the previous
- * catalog. Since roadmap P8.3 the refresh reads `catalog-v3.json` while the APK may still bundle the signed release 2
- * `catalog-v2.json`, and one release published in both files is the same version.
+ * catalog. Since roadmap P8.3 the refresh reads `catalog-v3.json`; a bundled snapshot of an older schema (the signed release 2
+ * `catalog-v2.json` of 1.3.0 until P8.5.2) stays readable, and one release published in both files is the same version.
  * zh-CN: 目录刷新与信任 (路线图 P2.4, D24, 附录 D): 未签名的内置快照先被使用并加以标注, 内置签名必须验签通过, 刷新的目录必须已签名, 版本
- * 单调并被原子缓存; 篡改的目录与签名, 其他密钥, 版本回退, 同版本不同内容与网络失败都保持原目录. 自路线图 P8.3 起刷新读取 `catalog-v3.json`,
- * 而 APK 仍可内置已签名的发布 2 `catalog-v2.json`; 同一发布的两个文件算作同一版本.
+ * 单调并被原子缓存; 篡改的目录与签名, 其他密钥, 版本回退, 同版本不同内容与网络失败都保持原目录. 自路线图 P8.3 起刷新读取 `catalog-v3.json`;
+ * 较旧 schema 的内置快照 (P8.5.2 之前 1.3.0 内置的已签名发布 2 `catalog-v2.json`) 仍可读取; 同一发布的两个文件算作同一版本.
  */
 class ModelCatalogRepositoryTest {
 
@@ -185,10 +185,11 @@ class ModelCatalogRepositoryTest {
     }
 
     @Test
-    fun `the bundled release 2 is read as schema 2 and the schema 3 refresh replaces it`() {
-        // The 1.3.0 APK until roadmap P8.5.2: the signed catalog-v2.json of release 2. zh-CN: 路线图 P8.5.2 之前的 1.3.0 APK.
+    fun `a bundled release 2 is read as schema 2 and the schema 3 refresh replaces it`() {
+        // The 1.3.0 APK until roadmap P8.5.2 bundled the signed catalog-v2.json of release 2; a snapshot of an older schema stays readable.
+        // zh-CN: 路线图 P8.5.2 之前的 1.3.0 APK 内置发布 2 的已签名 catalog-v2.json; 较旧 schema 的快照仍可读取.
         val v2 = Fixtures.catalogV2Bytes
-        val repository = repository(v2, signer.envelope(v2, catalog = CatalogRules.BUNDLED_CATALOG_FILE), bundledFile = CatalogRules.BUNDLED_CATALOG_FILE)
+        val repository = repository(v2, signer.envelope(v2, catalog = V2_FILE), bundledFile = V2_FILE)
         val bundled = repository.current()
         assertEquals(ModelCatalogRepository.Trust.SIGNED_BUNDLED, bundled.trust)
         assertEquals(2, bundled.catalog.schemaVersion)
@@ -197,7 +198,7 @@ class ModelCatalogRepositoryTest {
         assertEquals(ModelCatalogRepository.RefreshResult(3, updated = true), repository.refresh())
         assertEquals(3, repository.current().catalog.schemaVersion)
         // A snapshot of another schema than its file name is refused. zh-CN: schema 与文件名不符的快照被拒绝.
-        assertThrows(CatalogException::class.java) { repository(Fixtures.catalogBytes, bundledFile = CatalogRules.BUNDLED_CATALOG_FILE).bundled }
+        assertThrows(CatalogException::class.java) { repository(Fixtures.catalogBytes, bundledFile = V2_FILE).bundled }
     }
 
     @Test
@@ -210,16 +211,21 @@ class ModelCatalogRepositoryTest {
         File(cache, "catalog-v2.sig.json").writeBytes(signer.envelope(release3v2, catalog = "catalog-v2.json"))
         File(cache, "catalog.accepted").writeText("3\n${CatalogSignatureVerifier.sha256Hex(release3v2)}\n")
         val v2 = Fixtures.catalogV2Bytes
-        val repository = repository(v2, signer.envelope(v2, catalog = CatalogRules.BUNDLED_CATALOG_FILE), bundledFile = CatalogRules.BUNDLED_CATALOG_FILE)
+        val repository = repository(v2, signer.envelope(v2, catalog = V2_FILE), bundledFile = V2_FILE)
         assertEquals(2, repository.current().catalog.catalogVersion)
         publish(Fixtures.catalogBytes)
         assertEquals(ModelCatalogRepository.RefreshResult(3, updated = true), repository.refresh())
-        val restarted = repository(v2, signer.envelope(v2, catalog = CatalogRules.BUNDLED_CATALOG_FILE), bundledFile = CatalogRules.BUNDLED_CATALOG_FILE)
+        val restarted = repository(v2, signer.envelope(v2, catalog = V2_FILE), bundledFile = V2_FILE)
         assertEquals(3, restarted.current().catalog.catalogVersion)
         assertEquals(ModelCatalogRepository.Trust.SIGNED_REFRESHED, restarted.current().trust)
         assertEquals(listOf("3", CatalogSignatureVerifier.sha256Hex(Fixtures.catalogBytes), "3"), File(cache, "catalog.accepted").readLines())
         // Within one schema the same version with other bytes is still equivocation. zh-CN: 同一 schema 内同版本不同字节仍属分歧.
         publish(version(3, generatedAt = "2026-10-29T02:00:00Z"))
         assertThrows(CatalogRollbackException::class.java) { restarted.refresh() }
+    }
+
+    private companion object {
+        /** The file name of a schema 2 snapshot. zh-CN: schema 2 快照的文件名. */
+        const val V2_FILE = "catalog-v2.json"
     }
 }

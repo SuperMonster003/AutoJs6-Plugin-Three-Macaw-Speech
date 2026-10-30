@@ -175,9 +175,9 @@ class ThreeMacawSpeechContractTest {
             assertEquals(ThreeMacawSpeechContract.MAX_CONTRACT_VERSION, capabilities.getInt(SpeechCapabilityKeys.MAX_CONTRACT_VERSION))
             assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, capabilities.getLong(PluginCapabilityKeys.REQUIRES_HOST_VERSION))
             assertEquals(1, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CONTRACT_VERSION))
-            // Roadmap P2.3 / P2.4 / P3: model management, recognition, VAD and wake words are advertised, the bundled catalog is version 2 (D108).
+            // Roadmap P2.3 / P2.4 / P3: model management, recognition, VAD and wake words are advertised, the bundled catalog is version 3 (D108, P8.5.2).
             assertArrayEquals(FEATURES, capabilities.getStringArray(ThreeMacawSpeechContract.CAPABILITY_FEATURES))
-            assertEquals(2, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION, -1))
+            assertEquals(ThreeMacawSpeechContract.CATALOG_VERSION, capabilities.getInt(ThreeMacawSpeechContract.CAPABILITY_CATALOG_VERSION, -1))
         }
     }
 

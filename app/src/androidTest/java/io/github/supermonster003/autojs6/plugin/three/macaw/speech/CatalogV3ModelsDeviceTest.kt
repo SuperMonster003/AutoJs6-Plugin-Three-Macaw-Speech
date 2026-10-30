@@ -33,8 +33,8 @@ import kotlin.math.sqrt
 /**
  * The language models of catalog v3 on a device (roadmap D131, P8.2.4), installed by [test0InstallsTheCatalogV3Models]
  * from the unsigned development catalog that `.python/device_catalog_v3.py` pushes (Shared-Assets
- * `pending/v3/catalog-v3.json` in `filesDir/dev-catalog/`; the `speech-models-v3` mirror is not published yet, so every
- * model comes from its sherpa-onnx asset). The test assets have no Spanish, Arabic or Korean recording: the new voices
+ * `pending/v3/catalog-v3.json` in `filesDir/dev-catalog/`; until the `speech-models-v3` mirror was published every model came
+ * from its sherpa-onnx asset, and since roadmap P8.5.2 the bundled catalog is the signed release 3, so the push is optional). The test assets have no Spanish, Arabic or Korean recording: the new voices
  * synthesize sentences that the new recognizers read back (character error rate), PengChengStarling also reads the
  * English and Chinese recordings, the Korean voice is read back by SenseVoice when it is installed, and Kokoro v1.0
  * speaks one sentence per language while its Japanese speakers are refused. The first use of PengChengStarling,
@@ -42,8 +42,8 @@ import kotlin.math.sqrt
  * installed are skipped; [test9RemovesTheCatalogV3Models] deletes them and the ones listed in `macawV3Models`
  * (`-e macawV3Remove true`). Results are `MacawDeviceRun` lines.
  * zh-CN: 设备上的目录 v3 语言模型 (路线图 D131, P8.2.4), 由 [test0InstallsTheCatalogV3Models] 从 `.python/device_catalog_v3.py` 推送的未签名
- * 开发目录安装 (Shared-Assets `pending/v3/catalog-v3.json` 放在 `filesDir/dev-catalog/`; `speech-models-v3` 镜像尚未发布, 因此每个模型都来自其
- * sherpa-onnx 资源). 测试资产里没有西班牙语, 阿拉伯语与韩语录音: 新声音合成句子, 由新识别模型读回 (字错率); PengChengStarling 另外识别英文与
+ * 开发目录安装 (Shared-Assets `pending/v3/catalog-v3.json` 放在 `filesDir/dev-catalog/`; `speech-models-v3` 镜像发布之前每个模型都来自其
+ * sherpa-onnx 资源, 路线图 P8.5.2 起内置目录即已签名的发布 3, 推送开发目录可省略). 测试资产里没有西班牙语, 阿拉伯语与韩语录音: 新声音合成句子, 由新识别模型读回 (字错率); PengChengStarling 另外识别英文与
  * 中文录音; 已安装 SenseVoice 时由它读回韩语声音; Kokoro v1.0 每种语言朗读一句, 日语说话人被拒绝. PengChengStarling, NeMo 与 Kokoro 首次使用时
  * 记录进程峰值常驻内存 (先释放缓存的引擎). 未安装的模型跳过; [test9RemovesTheCatalogV3Models] 删除它们以及 `macawV3Models` 列出的模型
  * (`-e macawV3Remove true`). 结果为 `MacawDeviceRun` 日志行.

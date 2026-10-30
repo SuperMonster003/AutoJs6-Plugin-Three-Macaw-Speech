@@ -80,12 +80,12 @@ internal object ThreeMacawSpeechContract {
     )
 
     /**
-     * Version of the model catalog bundled in `assets/catalog/catalog-v2.json` (roadmap D28, P2.4, D108); `BundledCatalogTest`
+     * Version of the model catalog bundled in `assets/catalog/catalog-v3.json` (roadmap D28, P2.4, D108, P8.5.2); `BundledCatalogTest`
      * keeps it equal to the asset. `getCapabilities` reports the catalog in use, which a refresh may advance.
-     * zh-CN: `assets/catalog/catalog-v2.json` 中内置模型目录的版本 (路线图 D28, P2.4, D108); `BundledCatalogTest` 保证其与资产一致.
+     * zh-CN: `assets/catalog/catalog-v3.json` 中内置模型目录的版本 (路线图 D28, P2.4, D108, P8.5.2); `BundledCatalogTest` 保证其与资产一致.
      * `getCapabilities` 报告当前使用的目录, 刷新后可能更新.
      */
-    const val CATALOG_VERSION = 2
+    const val CATALOG_VERSION = 3
 
     /** Resource reference of the localized Plugin Center instruction. zh-CN: 插件中心本地化说明的资源引用. */
     const val INSTRUCTION_REFERENCE = "@raw/plugin_instruction"
