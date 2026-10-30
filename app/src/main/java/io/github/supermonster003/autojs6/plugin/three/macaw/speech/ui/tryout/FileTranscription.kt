@@ -394,7 +394,7 @@ internal class FileTranscription private constructor(context: Context) {
                 job.modelId = model.modelId
                 try {
                     val result = open(source).use { descriptor -> AudioFiles.open(descriptor).use { reader -> analysis.detectLanguage(reader, LanguageOptions(model.modelId), control, model) } }
-                    job.record(state(), result.language, result.durationMillis, analysis = FileAnalysis.Languages(result.language, result.candidates, result.windows))
+                    job.record(state(), result.language, result.durationMillis, analysis = FileAnalysis.Languages(result.language, result.candidates, result.segments))
                 } catch (e: SpeechException) {
                     // No speech at all: an empty result, as a transcription without segments. zh-CN: 完全没有语音: 空结果, 与没有分段的转写相同.
                     if (e.code != SpeechErrorCodes.AUDIO_TOO_SHORT) throw e

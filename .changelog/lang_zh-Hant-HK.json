@@ -5,6 +5,12 @@
   "changelog_label_improvement": "優化",
   "changelog_label_dependency": "依賴",
   "$data": {
+    "v1.4.0": {
+      "released_date": "2026/10/30",
+      "improvement": [
+        "辨識語言改為逐句判斷: 一段錄音裡說了幾種語言時, 能看到每句話說的是哪種語言 (很短的句子併入相鄰的句子). 試聽試說頁列出每一句, 腳本的 speech.detectLanguage 與工具 speech_detect_language 的 segments 也按句提供, 總的語言取說話時長最長的那種, 候選的分數是時長佔比; windows 選項不變. 每句都要判斷一次, 所以比 1.3.0 慢一些"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/10/30",
       "hint": [

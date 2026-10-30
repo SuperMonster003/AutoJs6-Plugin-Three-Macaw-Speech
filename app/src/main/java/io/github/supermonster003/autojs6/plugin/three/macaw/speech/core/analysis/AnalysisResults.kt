@@ -23,14 +23,14 @@ data class Diarization(
 /** The enrolled speaker closest to one diarized speaker; [name] null below the threshold. zh-CN: 与某位分离出的说话人最接近的已注册说话人. */
 data class SpeakerName(val speaker: Int, val name: String?, val score: Double?)
 
-/** One speech window of `detectLanguage` and the language whisper heard in it. zh-CN: `detectLanguage` 的一个语音窗及其语种. */
-data class LanguageWindow(val startMillis: Long, val endMillis: Long, val language: String)
+/** One sentence of `detectLanguage` and the language whisper heard in it. zh-CN: `detectLanguage` 的一句及其语种. */
+data class LanguageSegment(val startMillis: Long, val endMillis: Long, val language: String)
 
-/** A language identification (roadmap D148): [candidates] are languages with their share of the windows, best first. zh-CN: 一次语种识别的结果. */
+/** A language identification (roadmap D148, D165): [candidates] are languages with their share of the speaking time, best first. zh-CN: 一次语种识别的结果. */
 data class LanguageResult(
     val language: String,
     val candidates: List<Pair<String, Float>>,
-    val windows: List<LanguageWindow>,
+    val segments: List<LanguageSegment>,
     val durationMillis: Long,
     val modelId: String,
 )
@@ -54,16 +54,19 @@ data class TagResult(
 )
 
 /**
- * The pure rules of the offline analyses (roadmap D146 - D151): speaker turns renumbered and rounded, speech windows
+ * The pure rules of the offline analyses (roadmap D146 - D151, D165): speaker turns renumbered and rounded, the sentences
  * of language identification and their vote, the windows of audio tagging and the aggregation of their scores, and the
  * AudioSet label table of a tagger. Pure Kotlin.
- * zh-CN: 离线分析的纯规则 (路线图 D146 - D151): 说话人轮次的重新编号与取整, 语种识别的语音窗及其投票, 音频标签的窗口与分数汇总, 以及标签模型的
+ * zh-CN: 离线分析的纯规则 (路线图 D146 - D151, D165): 说话人轮次的重新编号与取整, 语种识别的语句及其投票, 音频标签的窗口与分数汇总, 以及标签模型的
  * AudioSet 标签表. 纯 Kotlin.
  */
 object AnalysisRules {
 
     /** Shortest last window of audio tagging; a shorter tail joins nothing and is dropped (unless it is the whole file). zh-CN: 音频标签最后一个窗的最短长度. */
     const val MIN_TAG_WINDOW_MILLIS = 1000L
+
+    /** A sentence of language identification with less speech joins a neighbor (roadmap D168, measured). zh-CN: 语音少于此值的语句并入相邻句 (路线图 D168, 实测). */
+    const val MIN_SENTENCE_MILLIS = 1250L
 
     /** Speech of each diarized speaker that `identify` embeds at most (its longest turns first). zh-CN: `identify` 为每位说话人至多提取的语音. */
     const val IDENTIFY_SPEECH_MILLIS = 10_000L
@@ -120,18 +123,21 @@ object AnalysisRules {
     }
 
     /**
-     * Speech windows of language identification (roadmap D148): consecutive VAD segments joined while the window stays
-     * within `LANGUAGE_WINDOW_MILLIS` of speech, a longer segment split, at most [limit] windows. A window keeps the time
-     * of its first and last sample.
-     * zh-CN: 语种识别的语音窗 (路线图 D148): 相邻的 VAD 语音段在窗内语音不超过 `LANGUAGE_WINDOW_MILLIS` 时合并, 更长的语音段被切开, 至多 [limit]
-     * 个窗. 窗保留其首尾采样的时间.
+     * The sentences of language identification (roadmap D148, D165). The windows stay the budget of D148: at most
+     * `LANGUAGE_WINDOW_MILLIS` of speech each and at most [limit] of them, a VAD segment that does not fit starts the next
+     * window and only one longer than a window is cut. Inside a window every VAD segment is a sentence, and one with less
+     * than [MIN_SENTENCE_MILLIS] of speech joins the neighbor it is closer to in time. Windows never share a sentence, so
+     * a sentence holds at most one window of speech, and what is alone in its window stays as it is. A sentence keeps the
+     * time of its first and last sample; its speech leaves out the silence inside it.
+     * zh-CN: 语种识别的语句 (路线图 D148, D165). 窗仍是 D148 的预算: 每窗至多 `LANGUAGE_WINDOW_MILLIS` 语音, 至多 [limit] 个窗, 放不下的 VAD 语音段
+     * 另起一窗, 只有比窗长的才被切开. 窗内每个 VAD 语音段是一句, 语音不足 [MIN_SENTENCE_MILLIS] 的句并入时间上更近的相邻句. 句不跨窗, 所以一句至多含一窗
+     * 语音, 窗内只有一句时保持原样. 句保留其首尾采样的时间; 其语音不含句内的静音.
      */
     class SpeechWindows(private val limit: Int) {
         private val maxSamples = AudioInput.samples(SpeechLimits.LANGUAGE_WINDOW_MILLIS).toInt()
-        private val windows = ArrayList<Pair<LongRange, FloatArray>>()
-        private var start = -1L
-        private var end = 0L
-        private var buffer = FloatArray(0)
+        private val minSamples = AudioInput.samples(MIN_SENTENCE_MILLIS).toInt()
+        private val windows = ArrayList<List<Pair<LongRange, FloatArray>>>()
+        private var sentences = ArrayList<Pair<LongRange, FloatArray>>()
         private var size = 0
 
         val isFull: Boolean get() = windows.size >= limit
@@ -143,42 +149,56 @@ object AnalysisRules {
             var offset = 0
             while (offset < segment.samples.size && !isFull) {
                 val take = minOf(segment.samples.size - offset, maxSamples - size)
-                if (start < 0) start = segment.start + offset
-                if (buffer.size < size + take) buffer = buffer.copyOf(minOf(maxSamples, maxOf(size + take, buffer.size * 2)))
-                System.arraycopy(segment.samples, offset, buffer, size, take)
+                sentences += (segment.start + offset until segment.start + offset + take) to segment.samples.copyOfRange(offset, offset + take)
                 size += take
                 offset += take
-                end = segment.start + offset
                 if (size == maxSamples) close()
             }
         }
 
-        /** The windows in time order, as sample ranges and their speech. zh-CN: 按时间顺序的窗, 采样范围及其语音. */
+        /** The sentences in time order, as sample ranges and their speech. zh-CN: 按时间顺序的语句, 采样范围及其语音. */
         fun finish(): List<Pair<LongRange, FloatArray>> {
             if (size > 0 && !isFull) close()
-            return windows
+            return windows.flatMap(::joined)
         }
 
         private fun close() {
             if (size == 0) return
-            windows += (start until end) to buffer.copyOf(size)
-            start = -1
+            windows += sentences
+            sentences = ArrayList()
             size = 0
+        }
+
+        private fun joined(window: List<Pair<LongRange, FloatArray>>): List<Pair<LongRange, FloatArray>> {
+            val out = ArrayList(window)
+            while (out.size > 1) {
+                val short = out.indexOfFirst { it.second.size < minSamples }
+                if (short < 0) break
+                val before = if (short > 0) out[short].first.first - out[short - 1].first.last else Long.MAX_VALUE
+                val after = if (short < out.lastIndex) out[short + 1].first.first - out[short].first.last else Long.MAX_VALUE
+                val left = if (before <= after) short - 1 else short
+                out[left] = out[left].first.first..out[left + 1].first.last to out[left].second + out[left + 1].second
+                out.removeAt(left + 1)
+            }
+            return out
         }
     }
 
     /**
-     * The vote of roadmap D148: the language of most windows, a tie going to the language heard first; candidates by
-     * votes (then first appearance) with their share of the windows. Empty [windows] are `AUDIO_TOO_SHORT`.
-     * zh-CN: 路线图 D148 的投票: 窗数最多的语种, 平票时取最先听到的语种; 候选按票数 (再按首次出现) 排序, 附得票占比. 没有窗时为 `AUDIO_TOO_SHORT`.
+     * The vote of roadmap D165: the language spoken longest over [segments] (their spans, silence inside a joined sentence
+     * included, so a script can repeat the sums), a tie going to the language heard first; candidates by that time (then
+     * first appearance) with their share of it. Empty [segments] are `AUDIO_TOO_SHORT`.
+     * zh-CN: 路线图 D165 的投票: [segments] 中说话时长最长的语种 (按其时间跨度计, 含合并句内的静音, 脚本可以复算), 平票时取最先听到的语种; 候选按时长
+     * (再按首次出现) 排序, 附时长占比. 没有语句时为 `AUDIO_TOO_SHORT`.
      */
-    fun vote(windows: List<LanguageWindow>): List<Pair<String, Float>> {
-        if (windows.isEmpty()) throw SpeechException(SpeechErrorCodes.AUDIO_TOO_SHORT, "The audio has no speech to identify the language of")
+    fun vote(segments: List<LanguageSegment>): List<Pair<String, Float>> {
+        if (segments.isEmpty()) throw SpeechException(SpeechErrorCodes.AUDIO_TOO_SHORT, "The audio has no speech to identify the language of")
         val first = LinkedHashMap<String, Int>()
-        windows.forEachIndexed { index, window -> first.putIfAbsent(window.language, index) }
-        val counts = windows.groupingBy { it.language }.eachCount()
-        return first.keys.sortedWith(compareByDescending<String> { counts.getValue(it) }.thenBy { first.getValue(it) })
-            .map { it to counts.getValue(it).toFloat() / windows.size }
+        segments.forEachIndexed { index, segment -> first.putIfAbsent(segment.language, index) }
+        val spoken = segments.groupingBy { it.language }.fold(0L) { sum, segment -> sum + segment.endMillis - segment.startMillis }
+        val total = spoken.values.sum().coerceAtLeast(1).toFloat()
+        return first.keys.sortedWith(compareByDescending<String> { spoken.getValue(it) }.thenBy { first.getValue(it) })
+            .map { it to spoken.getValue(it) / total }
     }
 
     /**

@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">Locuteurs et texte</string>
     <string name="tryout_file_action_diarize_transcribe_about">Sépare les locuteurs, puis transcrit ce que dit chacun</string>
     <string name="tryout_file_action_language">Identifier la langue</string>
-    <string name="tryout_file_action_language_about">Quelle langue est parlée, une par tranche de 30 secondes de parole</string>
+    <string name="tryout_file_action_language_about">Quelle langue est parlée, phrase par phrase</string>
     <string name="tryout_file_action_tag">Étiqueter les sons</string>
     <string name="tryout_file_action_tag_about">Quels sons contient le fichier, comme la parole, la musique ou un chien qui aboie</string>
     <string name="tryout_file_action_transcribe">Transcrire</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">Compare chaque locuteur aux empreintes vocales de l\'écran Locuteurs</string>
     <string name="tryout_file_language_candidates">Langues entendues</string>
     <string name="tryout_file_language_result">Langue parlée: %1$s</string>
+    <string name="tryout_file_language_sentences">Phrase par phrase</string>
     <string name="tryout_file_limits">Jusqu\'à 200 Mo et 30 minutes</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

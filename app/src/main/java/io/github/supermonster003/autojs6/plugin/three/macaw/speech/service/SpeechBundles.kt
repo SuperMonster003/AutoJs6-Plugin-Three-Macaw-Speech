@@ -232,11 +232,11 @@ internal object SpeechBundles {
                 putFloat(SpeechResultKeys.SCORE, score)
             }
         }))
-        putParcelableArrayList(SpeechResultKeys.SEGMENTS, ArrayList(result.windows.map { window ->
+        putParcelableArrayList(SpeechResultKeys.SEGMENTS, ArrayList(result.segments.map { segment ->
             Bundle().apply {
-                putLong(SpeechResultKeys.START_MILLIS, window.startMillis)
-                putLong(SpeechResultKeys.END_MILLIS, window.endMillis)
-                putString(SpeechResultKeys.LANGUAGE, window.language)
+                putLong(SpeechResultKeys.START_MILLIS, segment.startMillis)
+                putLong(SpeechResultKeys.END_MILLIS, segment.endMillis)
+                putString(SpeechResultKeys.LANGUAGE, segment.language)
             }
         }))
         putLong(SpeechResultKeys.DURATION_MILLIS, result.durationMillis)

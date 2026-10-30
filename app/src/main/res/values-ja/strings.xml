@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">話者分け + 文字起こし</string>
     <string name="tryout_file_action_diarize_transcribe_about">話者を分けてから, それぞれの発言を文字にします</string>
     <string name="tryout_file_action_language">言語を識別</string>
-    <string name="tryout_file_action_language_about">話されている言語を判定します (音声 30 秒ごとに 1 言語)</string>
+    <string name="tryout_file_action_language_about">話されている言語を文ごとに判定します</string>
     <string name="tryout_file_action_tag">音のタグ付け</string>
     <string name="tryout_file_action_tag_about">話し声, 音楽, 犬の鳴き声など, ファイルに含まれる音を判定します</string>
     <string name="tryout_file_action_transcribe">文字起こし</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">各話者を \"話者\" 画面で登録した声紋と比べます</string>
     <string name="tryout_file_language_candidates">聞こえた言語</string>
     <string name="tryout_file_language_result">話されている言語: %1$s</string>
+    <string name="tryout_file_language_sentences">文ごとの結果</string>
     <string name="tryout_file_limits">最大 200 MB, 30 分</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

@@ -5,6 +5,12 @@
   "changelog_label_improvement": "개선",
   "changelog_label_dependency": "의존성",
   "$data": {
+    "v1.4.0": {
+      "released_date": "2026/10/30",
+      "improvement": [
+        "언어 식별이 문장 단위로 바뀌었습니다: 녹음에 여러 언어가 섞여 있으면 문장마다 어떤 언어인지 볼 수 있습니다 (아주 짧은 문장은 이웃 문장에 합칩니다). 체험 화면에 문장별로 표시되고, 스크립트의 speech.detectLanguage와 도구 speech_detect_language의 segments도 문장 단위입니다. 전체 언어는 가장 오래 말한 언어이고 후보의 점수는 말한 시간의 비율입니다. windows 옵션은 그대로입니다. 문장마다 한 번씩 판단하므로 1.3.0보다 조금 느립니다"
+      ]
+    },
     "v1.3.0": {
       "released_date": "2026/10/30",
       "hint": [

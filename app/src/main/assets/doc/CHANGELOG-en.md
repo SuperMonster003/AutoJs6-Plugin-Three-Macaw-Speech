@@ -4,6 +4,12 @@
 
 ******
 
+# v1.4.0
+
+###### 2026/10/30
+
+* `Improvement` Language identification now goes sentence by sentence: when a recording mixes languages, you can see which language each sentence is in (very short sentences join a neighbor). Try it out lists every sentence, and the segments of speech.detectLanguage in scripts and of the speech_detect_language tool are sentences too; the overall language is the one spoken longest and the candidates' scores are shares of the speaking time. The windows option stays as it was. Each sentence takes its own pass, so this is somewhat slower than in 1.3.0
+
 # v1.3.0
 
 ###### 2026/10/30

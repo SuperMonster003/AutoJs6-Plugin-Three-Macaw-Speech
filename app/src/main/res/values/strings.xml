@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">Speakers and text</string>
     <string name="tryout_file_action_diarize_transcribe_about">Find the speakers, then write down what each one says</string>
     <string name="tryout_file_action_language">Identify language</string>
-    <string name="tryout_file_action_language_about">Which language is spoken, one per 30 seconds of speech</string>
+    <string name="tryout_file_action_language_about">Which language is spoken, sentence by sentence</string>
     <string name="tryout_file_action_tag">Tag sounds</string>
     <string name="tryout_file_action_tag_about">Which sounds the file has, such as speech, music or a dog barking</string>
     <string name="tryout_file_action_transcribe">Transcribe</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">Compares each speaker with the voiceprints of the Speakers screen</string>
     <string name="tryout_file_language_candidates">Languages heard</string>
     <string name="tryout_file_language_result">Spoken language: %1$s</string>
+    <string name="tryout_file_language_sentences">Sentence by sentence</string>
     <string name="tryout_file_limits">Up to 200 MB and 30 minutes</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

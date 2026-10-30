@@ -1,0 +1,19 @@
+{
+  "sentences": [
+    {
+      "startMillis": 500,
+      "endMillis": 4315,
+      "language": "zh"
+    },
+    {
+      "startMillis": 4815,
+      "endMillis": 11440,
+      "language": "en"
+    },
+    {
+      "startMillis": 11940,
+      "endMillis": 15084,
+      "language": "ru"
+    }
+  ]
+}

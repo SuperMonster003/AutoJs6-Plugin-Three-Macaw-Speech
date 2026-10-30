@@ -4,6 +4,12 @@
 
 ******
 
+# v1.4.0
+
+###### 2026/10/30
+
+* `Mejora` La identificación del idioma ahora va frase por frase: si una grabación mezcla idiomas, se ve en qué idioma está cada frase (las frases muy cortas se unen a una vecina). La pantalla de prueba lista cada frase, y los segments de speech.detectLanguage en scripts y de la herramienta speech_detect_language también son frases; el idioma general es el que más tiempo se habla y las puntuaciones de los candidatos son proporciones del tiempo de habla. La opción windows no cambia. Cada frase requiere su propia pasada, así que es algo más lento que en 1.3.0
+
 # v1.3.0
 
 ###### 2026/10/30

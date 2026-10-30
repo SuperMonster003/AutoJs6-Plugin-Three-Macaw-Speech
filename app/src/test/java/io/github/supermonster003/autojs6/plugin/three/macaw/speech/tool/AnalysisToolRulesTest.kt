@@ -2,7 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.tool
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.Diarization
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageResult
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageWindow
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageSegment
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerName
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagLabel
@@ -87,13 +87,15 @@ class AnalysisToolRulesTest {
     fun `the language and tag results have the shapes of the catalog`() {
         val language = parse(
             AnalysisToolRules.languageResult(
-                LanguageResult("en", listOf("en" to 2f / 3, "zh" to 1f / 3), listOf(LanguageWindow(0, 30_000, "en")), 95_000, "langid.whisper.tiny.int8"),
+                LanguageResult("en", listOf("en" to 2f / 3, "zh" to 1f / 3), listOf(LanguageSegment(0, 30_000, "en")), 95_000, "langid.whisper.tiny.int8"),
             ),
         )
         assertEquals(listOf("language", "candidates", "segments", "durationMillis", "modelId", "warnings"), language.keys.toList())
         @Suppress("UNCHECKED_CAST")
         val candidates = language["candidates"] as List<Map<String, Any?>>
         assertEquals(listOf(0.6667, 0.3333), candidates.map { (it["score"] as JsonNumber).toDouble() })
+        val many = LanguageResult("en", listOf("en" to 1f), (0 until 200).map { LanguageSegment(it * 1000L, it * 1000L + 900, "en") }, 200_000, "l")
+        assertEquals(PluginToolErrorCodes.LIMIT_EXCEEDED, code { AnalysisToolRules.languageResult(many, maxChars = 1000) })
         val speech = TagLabel(0, "/m/09x0r", "Speech")
         val tags = parse(AnalysisToolRules.tagResult(TagResult(listOf(TagScore(speech, 0.912345f, 10_000, 20_000)), null, 5, 25_000, "tagger.ced.mini.int8")))
         assertEquals(listOf("labels", "durationMillis", "modelId", "warnings"), tags.keys.toList())

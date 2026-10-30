@@ -372,12 +372,12 @@ internal object SpeechToolCatalog {
     {
       "name": "$TOOL_DETECT_LANGUAGE",
       "title": "Detect the spoken language (3-Macaw Speech)",
-      "description": "Tells offline which language is spoken in an audio file on the phone with a language identification model of 3-Macaw Speech (Whisper, 99 languages). Speech is cut into windows of up to 30 seconds and the first windows vote; language is the language of most windows, candidates gives each language's share of the windows and segments the language heard in each window. Languages are two-letter codes such as en, zh or ja. $ANALYSIS_AUDIO up to 200 MB and 30 minutes. Errors: NOT_READY (no language identification model of 3-Macaw Speech is installed), INPUT_UNREADABLE (unsupported or damaged file, or no speech in it, AUDIO_TOO_SHORT), LIMIT_EXCEEDED, INVALID_ARGUMENTS, CANCELLED.",
+      "description": "Tells offline which language is spoken in an audio file on the phone with a language identification model of 3-Macaw Speech (Whisper, 99 languages). Speech is cut into windows of up to 30 seconds and the first windows are judged sentence by sentence, so a recording that mixes languages shows them all (very short sentences join a neighbor); language is the language spoken longest, candidates gives each language's share of the speaking time and segments the language of each sentence. Languages are two-letter codes such as en, zh or ja. $ANALYSIS_AUDIO up to 200 MB and 30 minutes. Errors: NOT_READY (no language identification model of 3-Macaw Speech is installed), INPUT_UNREADABLE (unsupported or damaged file, or no speech in it, AUDIO_TOO_SHORT), LIMIT_EXCEEDED, INVALID_ARGUMENTS, CANCELLED.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "$PARAM_FILE": {"type": "string", "x-autojs6-type": "file", "description": "The audio file."},
-          "windows": {"type": "integer", "minimum": 1, "maximum": ${SpeechLimits.MAX_LANGUAGE_WINDOWS}, "default": ${SpeechLimits.DEFAULT_LANGUAGE_WINDOWS}, "description": "How many speech windows of up to 30 seconds vote, from the start of the file."}
+          "windows": {"type": "integer", "minimum": 1, "maximum": ${SpeechLimits.MAX_LANGUAGE_WINDOWS}, "default": ${SpeechLimits.DEFAULT_LANGUAGE_WINDOWS}, "description": "How many speech windows of up to 30 seconds are judged, from the start of the file; each sentence takes its own pass, so more windows take longer."}
         },
         "required": ["$PARAM_FILE"],
         "additionalProperties": false

@@ -4,6 +4,12 @@
 
 ******
 
+# v1.4.0
+
+###### 2026/10/30
+
+* `Amélioration` L'identification de la langue se fait désormais phrase par phrase: quand un enregistrement mêle plusieurs langues, on voit la langue de chaque phrase (les phrases très courtes rejoignent une voisine). L'écran d'essai liste chaque phrase, et les segments de speech.detectLanguage dans les scripts et de l'outil speech_detect_language sont aussi des phrases; la langue globale est celle parlée le plus longtemps et les scores des candidates sont des parts du temps de parole. L'option windows ne change pas. Chaque phrase demande son propre passage, c'est donc un peu plus lent qu'en 1.3.0
+
 # v1.3.0
 
 ###### 2026/10/30

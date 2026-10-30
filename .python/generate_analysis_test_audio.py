@@ -5,6 +5,7 @@
                                                [--segment <onnx> --speaker-model <onnx> --whisper <dir> --ced <dir>]
                                                 writes the files, rewrites the lock and, with the models, prints what
                                                 sherpa-onnx finds in them
+    py .python/generate_analysis_test_audio.py --mixed   rebuilds only language-mixed.wav from the committed recordings
     py .python/generate_analysis_test_audio.py --check   fails when a file differs from the lock
 
 The files live in app/src/androidTest/assets/analysis-audio/ (androidTest assets, never in the plugin APK) and are locked
@@ -16,6 +17,9 @@ in locks/analysis-test-audio.lock (path, SHA-256, source, license), which app/bu
   speaker-audio, so no clip is enrolled and diarized at once.
 - language-zh.wav / language-ru.wav: two sentences each, synthesized by the Kokoro int8 multi-lang v1.0 model (speaker
   45) and the Piper ru_RU denis medium model of sherpa-onnx (Apache-2.0 and MIT); English uses test-audio/en.wav.
+- language-mixed.wav: the first Chinese sentence, the English recording and the first Russian sentence one after another
+  with 0.5 s of silence (roadmap P9.1, D165: each language has its own sentence); language-mixed.json lists the true
+  sentences in milliseconds. Made from the committed recordings alone, so --mixed needs no model.
 - sounds.wav: 30 s made by this script (no third-party audio): a melody of decaying harmonic tones, white noise and
   1 kHz beeps, 10 s each, so each fills one tagging window (D149).
 
@@ -47,6 +51,7 @@ SENTENCES = {
 }
 KOKORO_SPEAKER = 45
 SOUND_SECONDS = 10.0
+MIXED_GAP_SECONDS = 0.5
 
 
 def sha256(path: Path) -> str:
@@ -138,6 +143,35 @@ def languages(kokoro: Path, piper: Path) -> list[tuple[str, str, str, str]]:
     return made
 
 
+def first_sentence(samples):
+    """The speech up to the first silence of at least 0.3 s (the synthesized clips are padded with digital silence)."""
+    import numpy as np
+
+    loud = np.flatnonzero(np.abs(samples) > 0.002)
+    gaps = np.flatnonzero(np.diff(loud) >= int(0.3 * RATE))
+    return samples[loud[0]:(loud[gaps[0]] if len(gaps) else loud[-1]) + 1]
+
+
+def mixed() -> list[tuple[str, str, str, str]]:
+    import numpy as np
+
+    def read(path: Path):
+        with wave.open(str(path), "rb") as source:
+            return np.frombuffer(source.readframes(source.getnframes()), dtype="<i2").astype(np.float32) / 32767
+
+    parts = [("zh", first_sentence(read(OUTPUT / "language-zh.wav"))), ("en", read(OUTPUT.parent / "test-audio" / "en.wav")), ("ru", first_sentence(read(OUTPUT / "language-ru.wav")))]
+    gap = np.zeros(int(MIXED_GAP_SECONDS * RATE), dtype=np.float32)
+    out, sentences, position = [gap], [], len(gap)
+    for language, samples in parts:
+        out += [samples, gap]
+        sentences.append({"startMillis": position * 1000 // RATE, "endMillis": (position + len(samples)) * 1000 // RATE, "language": language})
+        position += len(samples) + len(gap)
+    write_wav(OUTPUT / "language-mixed.wav", np.concatenate(out))
+    (OUTPUT / "language-mixed.json").write_text(json.dumps({"sentences": sentences}, indent=2) + "\n", encoding="utf-8", newline="\n")
+    source = "first sentence of language-zh.wav, test-audio/en.wav and first sentence of language-ru.wav"
+    return [("language-mixed", "wav", source, "Apache-2.0 AND CC-BY-4.0 AND MIT"), ("language-mixed", "json", "the true sentences of language-mixed.wav, written by this script", "Apache-2.0 AND CC-BY-4.0 AND MIT")]
+
+
 def sounds() -> list[tuple[str, str, str, str]]:
     import numpy as np
 
@@ -160,12 +194,23 @@ def sounds() -> list[tuple[str, str, str, str]]:
     return [("sounds", "wav", "made by this script: 10 s melody of harmonic tones, 10 s white noise (seed 7), 10 s of 1 kHz beeps", "CC0-1.0")]
 
 
+def locked() -> list[tuple[str, str, str, str]]:
+    """The entries of the lock, to keep them when --mixed rebuilds one recording."""
+    entries = dict(line.split("=", 1) for line in LOCK.read_text(encoding="utf-8").splitlines() if line and not line.startswith("#"))
+    made = []
+    for name in sorted(key[: -len(".path")] for key in entries if key.endswith(".path")):
+        path = Path(entries[f"{name}.path"])
+        made.append((path.stem, path.suffix[1:], entries[f"{name}.source"], entries[f"{name}.license"]))
+    return made
+
+
 def write_lock(made: list[tuple[str, str, str, str]]) -> None:
     text = [
         "# Analysis device test recordings of roadmap P8.4.5 (androidTest assets, never in the plugin APK), checked by",
         "#   app/build.gradle.kts. Made by .python/generate_analysis_test_audio.py: two-speakers is cut from LibriSpeech",
         "#   test-clean (CC BY 4.0, https://www.openslr.org/12), language-* are synthesized by sherpa-onnx TTS models",
-        "#   (https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), sounds is made by the script itself.",
+        "#   (https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), sounds is made by the script itself and",
+        "#   language-mixed is spliced from language-zh, test-audio/en.wav and language-ru (roadmap P9.1).",
         f"format={FORMAT}",
     ]
     for stem, extension, source, license in sorted(made):
@@ -252,17 +297,23 @@ def main() -> int:
     parser.add_argument("--speaker-model", type=Path, help="the speaker embedding model")
     parser.add_argument("--whisper", type=Path, help="the extracted sherpa-onnx-whisper-tiny folder")
     parser.add_argument("--ced", type=Path, help="the extracted CED audio tagging folder")
+    parser.add_argument("--mixed", action="store_true", help="rebuild only language-mixed.wav from the committed recordings")
     parser.add_argument("--check", action="store_true", help="compare the committed files with the lock")
     args = parser.parse_args()
     if args.check:
         errors = check()
         print("analysis test audio: " + ("ok" if not errors else "; ".join(errors)))
         return 1 if errors else 0
+    if args.mixed:
+        write_lock([entry for entry in locked() if entry[0] != "language-mixed"] + mixed())
+        print("wrote language-mixed.wav")
+        return 0
     if args.librispeech is None or args.kokoro is None or args.piper_ru is None:
         parser.error("--librispeech, --kokoro and --piper-ru are required unless --check")
     for old in OUTPUT.glob("*"):
         old.unlink()
-    write_lock(two_speakers(args.librispeech) + languages(args.kokoro, args.piper_ru) + sounds())
+    made = two_speakers(args.librispeech) + languages(args.kokoro, args.piper_ru) + sounds()
+    write_lock(made + mixed())
     if args.segment and args.speaker_model and args.whisper and args.ced:
         verify(args.segment, args.speaker_model, args.whisper, args.ced)
     files = [p for p in OUTPUT.iterdir() if p.is_file()]

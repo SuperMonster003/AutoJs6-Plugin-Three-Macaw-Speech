@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">المتحدثون والنص</string>
     <string name="tryout_file_action_diarize_transcribe_about">يفصل المتحدثين ثم يحول كلام كل منهم إلى نص</string>
     <string name="tryout_file_action_language">تحديد اللغة</string>
-    <string name="tryout_file_action_language_about">أي لغة منطوقة, لغة واحدة لكل 30 ثانية من الكلام</string>
+    <string name="tryout_file_action_language_about">أي لغة منطوقة, جملة بجملة</string>
     <string name="tryout_file_action_tag">وسم الأصوات</string>
     <string name="tryout_file_action_tag_about">الأصوات الموجودة في الملف, مثل الكلام والموسيقى ونباح كلب</string>
     <string name="tryout_file_action_transcribe">تفريغ الكلام</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">يقارن كل متحدث ببصمات الصوت المسجلة في شاشة المتحدثين</string>
     <string name="tryout_file_language_candidates">اللغات المسموعة</string>
     <string name="tryout_file_language_result">اللغة المنطوقة: %1$s</string>
+    <string name="tryout_file_language_sentences">جملة بجملة</string>
     <string name="tryout_file_limits">حتى 200 ميغابايت و30 دقيقة</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

@@ -1,6 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageWindow
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageSegment
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerName
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagLabel
@@ -38,8 +38,12 @@ sealed interface FileAnalysis {
         fun name(speaker: Int): String? = names?.firstOrNull { it.speaker == speaker }?.name
     }
 
-    /** The voted language, its candidates (share of the windows) and each window's language. zh-CN: 投票得到的语种, 候选与每个窗的语种. */
-    data class Languages(val language: String, val candidates: List<Pair<String, Float>>, val windows: List<LanguageWindow>) : FileAnalysis
+    /**
+     * The voted language, its candidates (share of the speaking time) and each sentence's language; a 1.3.0 record has
+     * one segment per window and shares of the windows.
+     * zh-CN: 投票得到的语种, 候选 (说话时长占比) 与每句的语种; 1.3.0 的记录每窗一段, 占比为窗数占比.
+     */
+    data class Languages(val language: String, val candidates: List<Pair<String, Float>>, val segments: List<LanguageSegment>) : FileAnalysis
 
     /** The best labels with their scores and peak windows. zh-CN: 得分最高的标签, 附分数与峰值窗口. */
     data class Tags(val labels: List<TagScore>) : FileAnalysis
@@ -57,7 +61,8 @@ sealed interface FileAnalysis {
                 "kind" to "languages",
                 "language" to analysis.language,
                 "candidates" to analysis.candidates.map { (language, share) -> linkedMapOf("language" to language, "share" to share.toDouble()) },
-                "windows" to analysis.windows.map { linkedMapOf("startMillis" to it.startMillis, "endMillis" to it.endMillis, "language" to it.language) },
+                // The key of 1.3.0, whose records stay readable; the items have not changed. zh-CN: 1.3.0 的键, 其记录仍可读; 条目形状未变.
+                "windows" to analysis.segments.map { linkedMapOf("startMillis" to it.startMillis, "endMillis" to it.endMillis, "language" to it.language) },
             )
             is Tags -> linkedMapOf(
                 "kind" to "tags",
@@ -90,9 +95,9 @@ sealed interface FileAnalysis {
                     val candidate = item as Map<*, *>
                     (candidate["language"] as String) to (candidate["share"] as JsonNumber).toDouble().toFloat()
                 },
-                windows = (json["windows"] as List<*>).map { item ->
-                    val window = item as Map<*, *>
-                    LanguageWindow(long(window["startMillis"]), long(window["endMillis"]), window["language"] as String)
+                segments = (json["windows"] as List<*>).map { item ->
+                    val segment = item as Map<*, *>
+                    LanguageSegment(long(segment["startMillis"]), long(segment["endMillis"]), segment["language"] as String)
                 },
             )
             "tags" -> Tags(

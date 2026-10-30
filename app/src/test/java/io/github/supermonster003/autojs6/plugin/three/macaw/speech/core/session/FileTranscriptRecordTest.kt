@@ -1,7 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageWindow
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageSegment
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerName
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagLabel
@@ -9,6 +9,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis
 import org.autojs.plugin.speech.api.SpeechErrorCodes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -56,9 +57,12 @@ class FileTranscriptRecordTest {
         assertEquals(onlySpeakers, FileTranscriptRecord.parse(onlySpeakers.toJson()))
         val languages = completed.copy(
             action = FileAction.LANGUAGE, segments = emptyList(), modelId = "langid.whisper.tiny.int8",
-            analysis = FileAnalysis.Languages("en", listOf("en" to 0.75f, "fr" to 0.25f), listOf(LanguageWindow(0, 30_000, "en"))),
+            analysis = FileAnalysis.Languages("en", listOf("en" to 0.75f, "fr" to 0.25f), listOf(LanguageSegment(0, 4_000, "en"), LanguageSegment(4_300, 5_600, "fr"))),
         )
         assertEquals(languages, FileTranscriptRecord.parse(languages.toJson()))
+        // A 1.3.0 record: the same version and key with one segment per window. zh-CN: 1.3.0 的记录: 版本与键相同, 每窗一段.
+        val windowed = String(languages.toJson(), Charsets.UTF_8)
+        assertTrue(windowed, "\"windows\":[{\"startMillis\":0,\"endMillis\":4000,\"language\":\"en\"}" in windowed)
         val tags = completed.copy(
             action = FileAction.TAG, segments = emptyList(), modelId = "tagger.ced.mini.int8",
             analysis = FileAnalysis.Tags(listOf(TagScore(TagLabel(137, "/m/04rlf", "Music"), 0.875f, 10_000, 20_000))),

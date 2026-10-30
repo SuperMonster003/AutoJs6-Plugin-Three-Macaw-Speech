@@ -86,8 +86,11 @@ internal object FileTexts {
         } else {
             TranscriptExport.turns(analysis.turns) { speaker(context, analysis, it) }
         }
-        is FileAnalysis.Languages -> analysis.candidates.joinToString("\n") { (language, share) ->
-            context.getString(R.string.tryout_file_pair, HomeTexts.languages(context, listOf(language)), percent(context, share.toDouble()))
+        is FileAnalysis.Languages -> {
+            val candidates = analysis.candidates.joinToString("\n") { (language, share) ->
+                context.getString(R.string.tryout_file_pair, HomeTexts.languages(context, listOf(language)), percent(context, share.toDouble()))
+            }
+            "$candidates\n\n${TranscriptExport.languages(analysis.segments) { HomeTexts.languages(context, listOf(it)) }}"
         }
         is FileAnalysis.Tags -> analysis.labels.joinToString("\n") {
             val peak = context.getString(R.string.tryout_file_tag_peak, TranscriptExport.segmentClock(it.startMillis), TranscriptExport.segmentClock(it.endMillis))

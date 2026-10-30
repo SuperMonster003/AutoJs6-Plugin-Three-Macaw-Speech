@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">分離 + 轉寫</string>
     <string name="tryout_file_action_diarize_transcribe_about">先分離說話人, 再把每個人說的話轉成文字</string>
     <string name="tryout_file_action_language">識別語種</string>
-    <string name="tryout_file_action_language_about">判斷說的是哪種語言, 每 30 秒語音判一種</string>
+    <string name="tryout_file_action_language_about">逐句判斷說的是哪種語言</string>
     <string name="tryout_file_action_tag">音訊標籤</string>
     <string name="tryout_file_action_tag_about">檔案裡有哪些聲音, 例如說話聲, 音樂或狗吠</string>
     <string name="tryout_file_action_transcribe">轉寫</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">把每位說話人與 \"說話人\" 頁面註冊的聲紋比較</string>
     <string name="tryout_file_language_candidates">聽到的語種</string>
     <string name="tryout_file_language_result">所說語種: %1$s</string>
+    <string name="tryout_file_language_sentences">逐句結果</string>
     <string name="tryout_file_limits">最大 200 MB, 30 分鐘</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

@@ -1,8 +1,17 @@
 # Analysis device test recordings of roadmap P8.4.5 (androidTest assets, never in the plugin APK), checked by
 #   app/build.gradle.kts. Made by .python/generate_analysis_test_audio.py: two-speakers is cut from LibriSpeech
 #   test-clean (CC BY 4.0, https://www.openslr.org/12), language-* are synthesized by sherpa-onnx TTS models
-#   (https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), sounds is made by the script itself.
+#   (https://github.com/k2-fsa/sherpa-onnx/releases/tag/tts-models), sounds is made by the script itself and
+#   language-mixed is spliced from language-zh, test-audio/en.wav and language-ru (roadmap P9.1).
 format=1
+language-mixed-json.path=app/src/androidTest/assets/analysis-audio/language-mixed.json
+language-mixed-json.sha256=b3ee4ba2d9a5ddcb2f4a137d8702c5442d079949d9227b31074b9a0a03662e6b
+language-mixed-json.source=the true sentences of language-mixed.wav, written by this script
+language-mixed-json.license=Apache-2.0 AND CC-BY-4.0 AND MIT
+language-mixed.path=app/src/androidTest/assets/analysis-audio/language-mixed.wav
+language-mixed.sha256=304435791c730306ba57d74655baf665481a1be3fadd2af0f5663a8fabc33a4f
+language-mixed.source=first sentence of language-zh.wav, test-audio/en.wav and first sentence of language-ru.wav
+language-mixed.license=Apache-2.0 AND CC-BY-4.0 AND MIT
 language-ru.path=app/src/androidTest/assets/analysis-audio/language-ru.wav
 language-ru.sha256=4315258da2b2e0479f6b5af076030d78d4ded0c5e1ffb526d15d5f40e4386ad5
 language-ru.source=Piper ru_RU denis medium int8 (sherpa-onnx tts-models), two sentences

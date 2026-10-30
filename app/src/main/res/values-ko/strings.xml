@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">화자 분리 + 받아쓰기</string>
     <string name="tryout_file_action_diarize_transcribe_about">화자를 분리한 뒤 각자의 말을 텍스트로 바꿉니다</string>
     <string name="tryout_file_action_language">언어 식별</string>
-    <string name="tryout_file_action_language_about">어떤 언어로 말하는지 판별합니다 (음성 30초마다 한 언어)</string>
+    <string name="tryout_file_action_language_about">어떤 언어로 말하는지 문장별로 판별합니다</string>
     <string name="tryout_file_action_tag">오디오 태그</string>
     <string name="tryout_file_action_tag_about">말소리, 음악, 개 짖는 소리 등 파일에 있는 소리를 판별합니다</string>
     <string name="tryout_file_action_transcribe">받아쓰기</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">각 화자를 \"화자\" 화면에서 등록한 성문과 비교합니다</string>
     <string name="tryout_file_language_candidates">들린 언어</string>
     <string name="tryout_file_language_result">말한 언어: %1$s</string>
+    <string name="tryout_file_language_sentences">문장별 결과</string>
     <string name="tryout_file_limits">최대 200 MB, 30분</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

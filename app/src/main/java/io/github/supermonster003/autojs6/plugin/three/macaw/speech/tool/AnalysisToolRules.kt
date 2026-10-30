@@ -53,15 +53,15 @@ internal object AnalysisToolRules {
         return bounded(write(json), maxChars, maxBytes, "${result.turns.size} speaker turns")
     }
 
-    fun languageResult(result: LanguageResult): String {
+    fun languageResult(result: LanguageResult, maxChars: Int = PluginToolLimits.MAX_RESULT_CHARS, maxBytes: Int = PluginToolLimits.MAX_RESULT_BYTES): String {
         val json = linkedMapOf<String, Any?>()
         json["language"] = result.language
         json["candidates"] = result.candidates.map { (language, score) -> linkedMapOf<String, Any?>("language" to language, "score" to round(score.toDouble())) }
-        json["segments"] = result.windows.map { linkedMapOf<String, Any?>("startMillis" to it.startMillis, "endMillis" to it.endMillis, "language" to it.language) }
+        json["segments"] = result.segments.map { linkedMapOf<String, Any?>("startMillis" to it.startMillis, "endMillis" to it.endMillis, "language" to it.language) }
         json["durationMillis"] = result.durationMillis
         json["modelId"] = result.modelId
         json["warnings"] = emptyList<Any?>()
-        return write(json)
+        return bounded(write(json), maxChars, maxBytes, "${result.segments.size} sentences")
     }
 
     fun tagResult(result: TagResult): String {

@@ -38,7 +38,7 @@ internal class SpeechAnalysisTool(context: Context) {
 
     fun detectLanguage(call: PluginToolCall, request: LanguageToolRequest): PluginToolResult = run(call, SpeechToolCatalog.TOOL_DETECT_LANGUAGE) { reader, control ->
         val result = analysis.detectLanguage(reader, LanguageOptions(windows = request.windows), control)
-        Log.i(TAG, "Identified the language of ${result.windows.size} window(s) of ${result.durationMillis} ms")
+        Log.i(TAG, "Identified the language of ${result.segments.size} sentence(s) of ${result.durationMillis} ms")
         AnalysisToolRules.languageResult(result)
     }
 

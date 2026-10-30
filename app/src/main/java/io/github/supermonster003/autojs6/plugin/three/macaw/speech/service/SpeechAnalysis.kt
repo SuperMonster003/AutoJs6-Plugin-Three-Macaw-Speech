@@ -13,7 +13,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.DiarizeOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageResult
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageWindow
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageSegment
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerName
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.TagOptions
@@ -259,11 +259,11 @@ internal class SpeechAnalysis(private val runtime: SpeechRuntime, private val sp
                 if (control.cancel.isCancelled) throw cancelled()
                 val language = lease.engine.identify(speech)
                 control.progress(share(total, HALF + HALF * (index + 1) / pieces.size), total)
-                LanguageWindow(AudioInput.millis(range.first), AudioInput.millis(range.last + 1), language)
+                LanguageSegment(AudioInput.millis(range.first), AudioInput.millis(range.last + 1), language)
             }
         }
         val candidates = AnalysisRules.vote(heard)
-        Log.i(TAG, "Identified the language of ${heard.size} window(s) in ${SystemClock.elapsedRealtime() - started} ms")
+        Log.i(TAG, "Identified the language of ${heard.size} sentence(s) in ${SystemClock.elapsedRealtime() - started} ms")
         return LanguageResult(candidates.first().first, candidates, heard, total, model.modelId)
     }
 

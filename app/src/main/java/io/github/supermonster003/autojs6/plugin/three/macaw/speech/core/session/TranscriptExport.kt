@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageSegment
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import java.util.Locale
 
@@ -78,6 +79,13 @@ object TranscriptExport {
      */
     fun turns(turns: List<SpeakerTurn>, label: (Int) -> String): String =
         turns.joinToString("\n") { "${segmentClock(it.startMillis)} - ${segmentClock(maxOf(it.endMillis, it.startMillis))} ${label(it.speaker)}" }
+
+    /**
+     * The sentences of a language identification (roadmap D165), one "mm:ss.s - mm:ss.s language" line each.
+     * zh-CN: 语种识别的语句 (路线图 D165), 每句一行 "mm:ss.s - mm:ss.s 语种".
+     */
+    fun languages(segments: List<LanguageSegment>, label: (String) -> String): String =
+        segments.joinToString("\n") { "${segmentClock(it.startMillis)} - ${segmentClock(maxOf(it.endMillis, it.startMillis))} ${label(it.language)}" }
 
     /**
      * The default name of a saved file: the picked file's name with [extension] instead of its own.

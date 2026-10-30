@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.LanguageSegment
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.analysis.SpeakerTurn
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -85,5 +86,7 @@ class TranscriptExportTest {
         val turns = listOf(SpeakerTurn(0, 1500, 0), SpeakerTurn(1700, 4150, 1), SpeakerTurn(5000, 4900, 0))
         assertEquals("00:00.0 - 00:01.5 A\n00:01.7 - 00:04.2 B\n00:05.0 - 00:05.0 A", TranscriptExport.turns(turns) { if (it == 0) "A" else "B" })
         assertEquals("", TranscriptExport.turns(emptyList()) { "x" })
+        val sentences = listOf(LanguageSegment(0, 1_500, "zh"), LanguageSegment(1_700, 4_200, "en"))
+        assertEquals("00:00.0 - 00:01.5 ZH\n00:01.7 - 00:04.2 EN", TranscriptExport.languages(sentences) { it.uppercase() })
     }
 }

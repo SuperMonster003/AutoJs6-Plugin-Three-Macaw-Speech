@@ -458,6 +458,23 @@ private fun Languages(analysis: FileAnalysis.Languages, languageLabel: @Composab
     analysis.candidates.forEachIndexed { index, (language, share) ->
         Score(stringResource(R.string.tryout_file_pair, languageLabel(language), FileTexts.percent(context, share.toDouble())), share, null, Modifier.testTag("macaw.tryout.file.candidate.$index"))
     }
+    Text(
+        stringResource(R.string.tryout_file_language_sentences),
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
+    )
+    analysis.segments.forEachIndexed { index, segment ->
+        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).testTag("macaw.tryout.file.sentence.$index"), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "${TranscriptExport.segmentClock(segment.startMillis)} - ${TranscriptExport.segmentClock(maxOf(segment.endMillis, segment.startMillis))}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(132.dp),
+            )
+            Text(languageLabel(segment.language), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+        }
+    }
 }
 
 @Composable

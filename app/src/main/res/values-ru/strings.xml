@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">Говорящие и текст</string>
     <string name="tryout_file_action_diarize_transcribe_about">Разделяет говорящих, затем переводит в текст слова каждого</string>
     <string name="tryout_file_action_language">Определить язык</string>
-    <string name="tryout_file_action_language_about">На каком языке говорят, один язык на каждые 30 секунд речи</string>
+    <string name="tryout_file_action_language_about">На каком языке говорят, по фразам</string>
     <string name="tryout_file_action_tag">Разметить звуки</string>
     <string name="tryout_file_action_tag_about">Какие звуки есть в файле, например речь, музыка или лай собаки</string>
     <string name="tryout_file_action_transcribe">Расшифровать</string>
@@ -399,6 +399,7 @@
     <string name="tryout_file_identify_summary">Сравнивает каждого говорящего с голосовыми отпечатками экрана \"Говорящие\"</string>
     <string name="tryout_file_language_candidates">Услышанные языки</string>
     <string name="tryout_file_language_result">Язык речи: %1$s</string>
+    <string name="tryout_file_language_sentences">По фразам</string>
     <string name="tryout_file_limits">До 200 МБ и 30 минут</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>

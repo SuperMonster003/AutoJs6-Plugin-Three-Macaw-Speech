@@ -15,6 +15,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.tryout.Fil
 import org.autojs.plugin.speech.api.ISpeechProgressCallback
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechErrorCodes
+import org.autojs.plugin.speech.api.SpeechLimits
 import org.autojs.plugin.speech.api.SpeechOptionKeys
 import org.autojs.plugin.speech.api.SpeechResultKeys
 import org.json.JSONObject
@@ -35,14 +36,16 @@ import java.util.concurrent.atomic.AtomicReference
  * The offline analyses on the device (roadmap P8.4.5, D146 - D153) with the recordings of `locks/analysis-test-audio.lock`
  * and the models of the development catalog (`py .python/device_catalog_v3.py`): diarization of two LibriSpeech readers
  * through the plugin's Binder (contract version 2, both readers found, at least 90 % of the speech given to the right
- * one, the enrolled reader named by identify), language identification of Chinese, Russian and English, tagging of the
- * made sounds (each label clearest in its own window), a cancel answered at once while the next analysis still runs,
- * and the file tab's "diarize and transcribe", language and tag actions with their cached records. With `-e macawLong
- * true` the three analyses also run on 10 minutes of audio (the timing of D152). Every case is skipped when its models
- * are not installed. Results are `MacawDeviceRun` lines with numbers only.
+ * one, the enrolled reader named by identify), language identification of Chinese, Russian and English and of a recording
+ * that mixes them sentence by sentence (D165), tagging of the made sounds (each label clearest in its own window), a
+ * cancel answered at once while the next analysis still runs, and the file tab's "diarize and transcribe", language and
+ * tag actions with their cached records. With `-e macawLong true` the three analyses also run on 10 minutes of audio (the
+ * timing of D152). Every case is skipped when its models are not installed. Results are `MacawDeviceRun` lines with
+ * numbers only.
  * zh-CN: 设备上的离线分析 (路线图 P8.4.5, D146 - D153), 使用 `locks/analysis-test-audio.lock` 的录音与开发目录的模型 (`py .python/device_catalog_v3.py`):
  * 经插件 Binder (契约版本 2) 分离两位 LibriSpeech 朗读者 (找到两人, 至少 90% 的语音归给正确的人, 认人能说出已注册的朗读者), 识别中文, 俄语与英语,
- * 给合成声音打标签 (每个标签在自己的窗口最明显), 取消立即应答而下一个分析照常运行, 以及文件标签的 "分离 + 转写", 语种与标签操作及其缓存记录.
+ * 以及逐句识别混合这三种语言的录音 (D165), 给合成声音打标签 (每个标签在自己的窗口最明显), 取消立即应答而下一个分析照常运行, 以及文件标签的 "分离 + 转写",
+ * 语种与标签操作及其缓存记录.
  * 加 `-e macawLong true` 时三种分析还在 10 分钟音频上运行 (D152 的计时). 模型未安装时跳过相应用例. 结果为只含数值的 `MacawDeviceRun` 日志行.
  */
 @RunWith(AndroidJUnit4::class)
@@ -170,11 +173,48 @@ class AnalysisDeviceTest {
             val started = SystemClock.elapsedRealtime()
             val result = language(SpeechDevice.asset(name), request { putString(SpeechOptionKeys.MODEL, LANGID) }).await(120)
             @Suppress("DEPRECATION")
-            val windows = result.getParcelableArrayList<Bundle>(SpeechResultKeys.SEGMENTS).orEmpty()
-            SpeechDevice.log("analysis language ${name.substringAfterLast('/')} found=${result.getString(SpeechResultKeys.LANGUAGE)} windows=${windows.size} elapsedMillis=${SystemClock.elapsedRealtime() - started}")
+            val sentences = result.getParcelableArrayList<Bundle>(SpeechResultKeys.SEGMENTS).orEmpty()
+            SpeechDevice.log("analysis language ${name.substringAfterLast('/')} found=${result.getString(SpeechResultKeys.LANGUAGE)} sentences=${sentences.size} elapsedMillis=${SystemClock.elapsedRealtime() - started}")
             assertEquals(name, expected, result.getString(SpeechResultKeys.LANGUAGE))
-            assertTrue("at least one window", windows.isNotEmpty())
+            assertTrue("at least one sentence", sentences.isNotEmpty())
         }
+    }
+
+    @Test
+    fun languageIdentificationFollowsTheSentencesOfAMixedRecording() {
+        assumeTrue("the language identification model is installed", SpeechDevice.installed(LANGID))
+        val truth = JSONObject(SpeechDevice.asset("$FOLDER/language-mixed.json").readText()).getJSONArray("sentences")
+        val started = SystemClock.elapsedRealtime()
+        val result = language(SpeechDevice.asset("$FOLDER/language-mixed.wav"), request { putString(SpeechOptionKeys.MODEL, LANGID) }).await(120)
+        @Suppress("DEPRECATION")
+        val sentences = result.getParcelableArrayList<Bundle>(SpeechResultKeys.SEGMENTS).orEmpty()
+        val heard = sentences.map { Triple(it.getLong(SpeechResultKeys.START_MILLIS), it.getLong(SpeechResultKeys.END_MILLIS), it.getString(SpeechResultKeys.LANGUAGE)) }
+        SpeechDevice.log("analysis language mixed sentences=${heard.size} languages=${heard.joinToString(",") { it.third.orEmpty() }} elapsedMillis=${SystemClock.elapsedRealtime() - started}")
+        for (index in 0 until truth.length()) {
+            val sentence = truth.getJSONObject(index)
+            val middle = (sentence.getLong("startMillis") + sentence.getLong("endMillis")) / 2
+            assertEquals("the sentence at $middle ms", sentence.getString("language"), heard.firstOrNull { middle in it.first..it.second }?.third)
+        }
+        @Suppress("DEPRECATION")
+        val candidates = result.getParcelableArrayList<Bundle>(SpeechResultKeys.CANDIDATES).orEmpty()
+        val spoken = heard.groupBy { it.third }.mapValues { (_, list) -> list.sumOf { it.second - it.first } }
+        assertEquals("each language", spoken.keys, candidates.map { it.getString(SpeechResultKeys.LANGUAGE) }.toSet())
+        candidates.forEach { assertEquals(spoken.getValue(it.getString(SpeechResultKeys.LANGUAGE)).toFloat() / spoken.values.sum(), it.getFloat(SpeechResultKeys.SCORE), 0.001f) }
+        assertEquals("the language spoken longest", spoken.maxByOrNull { it.value }?.key, result.getString(SpeechResultKeys.LANGUAGE))
+    }
+
+    @Test
+    fun languageIdentificationOfNinetySecondsOfSpeech() {
+        assumeTrue("the language identification model is installed", SpeechDevice.installed(LANGID))
+        // Reading with short pauses, the default windows (D165): the time per file of P9.1.5. zh-CN: 朗读录音, 默认窗口数 (D165): P9.1.5 的单文件耗时.
+        val file = repeated(NINETY_SECONDS_OF_SPEECH)
+        val started = SystemClock.elapsedRealtime()
+        val result = language(file, request { putString(SpeechOptionKeys.MODEL, LANGID) }).await(600)
+        @Suppress("DEPRECATION")
+        val sentences = result.getParcelableArrayList<Bundle>(SpeechResultKeys.SEGMENTS).orEmpty()
+        SpeechDevice.log("analysis language speech=90s sentences=${sentences.size} windows=${SpeechLimits.DEFAULT_LANGUAGE_WINDOWS} elapsedMillis=${SystemClock.elapsedRealtime() - started} perSentenceMillis=${(SystemClock.elapsedRealtime() - started) / sentences.size.coerceAtLeast(1)}")
+        assertEquals("en", result.getString(SpeechResultKeys.LANGUAGE))
+        assertTrue("sentences, not windows", sentences.size > SpeechLimits.DEFAULT_LANGUAGE_WINDOWS)
     }
 
     @Test
@@ -239,7 +279,9 @@ class AnalysisDeviceTest {
 
         if (SpeechDevice.installed(LANGID)) {
             val language = run(transcription, FileSource.of(SpeechDevice.asset("$FOLDER/language-ru.wav")), FileRunOptions(null, null, false, true, FileAction.LANGUAGE, languageModel = LANGID), 120_000)
-            assertEquals("ru", (language.analysis as FileAnalysis.Languages).language)
+            val languages = language.analysis as FileAnalysis.Languages
+            assertEquals("ru", languages.language)
+            assertTrue("a sentence at least", languages.segments.isNotEmpty())
         }
         if (SpeechDevice.installed(TAGGER)) {
             val tags = run(transcription, FileSource.of(SpeechDevice.asset("$FOLDER/sounds.wav")), FileRunOptions(null, null, false, true, FileAction.TAG), 120_000)
@@ -315,6 +357,9 @@ class AnalysisDeviceTest {
         const val MIN_ACCURACY = 0.9
         const val LONG_CANCEL_MILLIS = 120_000L
         const val TEN_MINUTES = 600_000L
+
+        /** `two-speakers.wav` holds 39 s of speech in 42.5 s, so this holds a little more than 90 s of it. zh-CN: 其中语音略多于 90 秒. */
+        const val NINETY_SECONDS_OF_SPEECH = 105_000L
 
         /** Each made sound and the window where it is clearest (D149). zh-CN: 每种合成声音及其最明显的窗口. */
         val EXPECTED_TAGS = mapOf("Music" to 0L, "White noise" to 10_000L, "Beep, bleep" to 20_000L)

@@ -20,6 +20,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.SpeechDevice.STREAMING
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAnalysis
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileProblem
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscriptRecord
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.TranscriptExport
@@ -311,6 +313,27 @@ class FileTranscriptionDeviceTest {
         }
     }
 
+    @Test
+    fun theTabListsTheLanguageOfEachSentence() {
+        assumeTrue("the language identification model is installed", SpeechDevice.installed(LANGID))
+        ActivityScenario.launch<TryoutActivity>(TryoutActivity.fileIntent(context)).use {
+            compose.waitUntil(15_000) { exists("macaw.tryout.file.pick") }
+            val file = SpeechDevice.asset("analysis-audio/language-mixed.wav")
+            assertTrue(main { transcription.start(FileSource.of(file), FileRunOptions(null, null, false, true, FileAction.LANGUAGE, languageModel = LANGID)) })
+            val record = finished()
+            assertEquals(FileTranscriptRecord.State.COMPLETED, record.state)
+            val sentences = (record.analysis as FileAnalysis.Languages).segments
+            assertEquals(setOf("zh", "en", "ru"), sentences.map { it.language }.toSet())
+            compose.waitUntil(10_000) { exists("macaw.tryout.file.languageResult") }
+            compose.waitForIdle()
+            sentences.indices.forEach { assertTrue("sentence $it", exists("macaw.tryout.file.sentence.$it")) }
+            assertFalse(exists("macaw.tryout.file.sentence.${sentences.size}"))
+            compose.onNodeWithTag("macaw.tryout.file.sentence.${sentences.lastIndex}", useUnmergedTree = true).performScrollTo()
+            capture(SpeechDevice.argument("macawPrefix") ?: "file", "language")
+            SpeechDevice.log("file tab language sentences=${sentences.size} languages=${sentences.joinToString(",") { it.language }}")
+        }
+    }
+
     // Helpers ----------------------------------------------------------------------------------------------------
 
     private fun options(model: String, punctuation: Boolean = false) = FileRunOptions(model, null, punctuation, vad = true)
@@ -399,6 +422,7 @@ class FileTranscriptionDeviceTest {
 
     private companion object {
         const val MISSING = "asr.not-installed.file-tab-test"
+        const val LANGID = "langid.whisper.tiny.int8"
         const val SECRET = "macaw-secret-4711"
         const val SECRET_NAME = "$SECRET.mp3"
         const val MARKS = ",.?!;:"
