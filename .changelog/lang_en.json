@@ -8,7 +8,8 @@
     "v1.3.0": {
       "released_date": "2026/10/24",
       "hint": [
-        "speech.speaker, speech.diarize, speech.detectLanguage and speech.tag in scripts and the five speaker and analysis tools need the AutoJs6 6.8.0 release or later; the Speakers page, \"Only enrolled voices\" and the file analyses of Try it out are used in the plugin itself and do not depend on the AutoJs6 version. With an older AutoJs6, speech.models.list() in scripts also lists the speaker recognition, speaker segmentation, language identification and audio tagging models (kinds speaker, segment, langid and tagger), which can be installed or deleted as usual"
+        "speech.speaker, speech.diarize, speech.detectLanguage and speech.tag in scripts and the five speaker and analysis tools need the AutoJs6 6.8.0 release or later; the Speakers page, \"Only enrolled voices\" and the file analyses of Try it out are used in the plugin itself and do not depend on the AutoJs6 version. With an older AutoJs6, speech.models.list() in scripts also lists the speaker recognition, speaker segmentation, language identification and audio tagging models (kinds speaker, segment, langid and tagger), which can be installed or deleted as usual",
+        "Analyzing long audio takes a lot of memory: finding the speakers of a 10 minute recording peaked at about 470 MB to 1.3 GB in tests, so the plugin asks Android for a larger memory limit; on phones with little memory, try shorter files first"
       ],
       "feature": [
         "Power saving mode for the resident wake word (Settings > Resident wake word, on by default): the wake word model runs only while the phone hears speech or another sound, not in a quiet room, so the plugin takes half to nine tenths less CPU time (the quieter, the less). The recording itself still costs the same, so Android's battery estimate drops only a little (see the README for the measurement). A very soft wake word may be missed; then turn power saving off",

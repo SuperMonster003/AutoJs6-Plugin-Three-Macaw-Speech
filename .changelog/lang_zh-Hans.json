@@ -8,7 +8,8 @@
     "v1.3.0": {
       "released_date": "2026/10/24",
       "hint": [
-        "脚本中的 speech.speaker, speech.diarize, speech.detectLanguage, speech.tag 与五个说话人和分析工具需要 AutoJs6 6.8.0 正式版或更高版本; \"说话人\" 页, \"只听主人\" 与试听试说页的文件分析在插件内使用, 不依赖 AutoJs6 的版本. 用更早的 AutoJs6 时, 脚本的 speech.models.list() 会多列出说话人识别, 说话人分割, 语种识别与音频标签模型 (类型为 speaker, segment, langid 与 tagger), 可以照常安装或删除"
+        "脚本中的 speech.speaker, speech.diarize, speech.detectLanguage, speech.tag 与五个说话人和分析工具需要 AutoJs6 6.8.0 正式版或更高版本; \"说话人\" 页, \"只听主人\" 与试听试说页的文件分析在插件内使用, 不依赖 AutoJs6 的版本. 用更早的 AutoJs6 时, 脚本的 speech.models.list() 会多列出说话人识别, 说话人分割, 语种识别与音频标签模型 (类型为 speaker, segment, langid 与 tagger), 可以照常安装或删除",
+        "分析长音频会用到较多内存: 分离一段 10 分钟录音的说话人, 实测插件的内存峰值约 470 MB 到 1.3 GB, 所以插件向系统申请了更大的内存上限; 内存较小的手机建议先分析较短的文件"
       ],
       "feature": [
         "常驻唤醒新增省电模式 (设置 > 常驻唤醒, 默认开启): 只在听到说话声或其他声音时运行唤醒词模型, 安静时不运行, 插件占用的 CPU 少一半到九成 (周围越安静越少); 录音本身的耗电不变, 所以 Android 估算的耗电只略有减少 (实测见 README). 声音很轻的唤醒词可能听不到, 这时可以关掉省电模式",

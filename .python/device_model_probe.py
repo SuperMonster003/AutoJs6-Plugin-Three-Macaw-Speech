@@ -61,8 +61,8 @@ PRESETS = {
         sha256="7d1efa2138a65b0b488df37f8b89e3d91a60676e416f515b952358d83dfd347e", type="sense-voice",
         roles="model=model.int8.onnx;tokens=tokens.txt", wav="test_wavs/ja.wav"),
     "kokoro-v1_0-int8": dict(
-        asset="tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2", size=132303094,
-        sha256="4c3052abaa60943a341f193888cf6abd68787dae6ab8ae5c925a706caa247e4e", type="kokoro",
+        asset="tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2", size=132353410,
+        sha256="72c347230107ef8a31098ec4d468a605244beef5f1ed00db97efa13518800653", type="kokoro",
         roles="model=model.int8.onnx;voices=voices.bin;tokens=tokens.txt;dataDir=espeak-ng-data;"
               "lexicon=lexicon-us-en.txt,lexicon-zh.txt;ruleFsts=date-zh.fst,phone-zh.fst,number-zh.fst"),
     "piper-ar-miro-v2": dict(
