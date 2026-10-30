@@ -109,7 +109,15 @@ internal class TryoutController(context: Context) {
     var fileModel by mutableStateOf<String?>(null)
     var fileLanguage by mutableStateOf<String?>(null)
     var filePunctuation by mutableStateOf(true)
-    var fileAction by mutableStateOf(FileAction.TRANSCRIBE)
+    private var fileActionState by mutableStateOf(preferences.fileAction)
+
+    /** Saved for the next visit (roadmap D160). zh-CN: 保存到下次进入 (路线图 D160). */
+    var fileAction: FileAction
+        get() = fileActionState
+        set(value) {
+            fileActionState = value
+            preferences.fileAction = value
+        }
     var fileSpeakers by mutableIntStateOf(0)
     var fileIdentify by mutableStateOf(false)
     var languageModel by mutableStateOf<String?>(null)

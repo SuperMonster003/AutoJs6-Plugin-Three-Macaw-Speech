@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsModelVoices
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
@@ -123,6 +124,12 @@ class ScreenPoliciesTest {
         assertEquals(0.5f, SpeechPreferencePolicy.speed(0.1f))
         assertEquals(2.0f, SpeechPreferencePolicy.speed(9f))
         assertEquals(1.3f, SpeechPreferencePolicy.speed(1.26f))
+        // Roadmap D160: the file tab keeps its last action; an unknown or missing value is transcription.
+        // zh-CN: 路线图 D160: 文件标签保留上次的操作; 未知或缺失的值为转写.
+        assertEquals(FileAction.TAG, SpeechPreferencePolicy.fileAction("TAG"))
+        assertEquals(FileAction.DIARIZE_TRANSCRIBE, SpeechPreferencePolicy.fileAction("DIARIZE_TRANSCRIBE"))
+        assertEquals(FileAction.TRANSCRIBE, SpeechPreferencePolicy.fileAction("tag"))
+        assertEquals(FileAction.TRANSCRIBE, SpeechPreferencePolicy.fileAction(null))
     }
 
     @Test

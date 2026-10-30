@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">Hablantes y texto</string>
     <string name="tryout_file_action_diarize_transcribe_about">Separa a los hablantes y luego pasa a texto lo que dice cada uno</string>
     <string name="tryout_file_action_language">Identificar idioma</string>
-    <string name="tryout_file_action_language_about">Qué idioma se habla</string>
+    <string name="tryout_file_action_language_about">Qué idioma se habla, uno por cada 30 segundos de voz</string>
     <string name="tryout_file_action_tag">Etiquetar sonidos</string>
     <string name="tryout_file_action_tag_about">Qué sonidos tiene el archivo, como voz, música o un perro que ladra</string>
     <string name="tryout_file_action_transcribe">Transcribir</string>

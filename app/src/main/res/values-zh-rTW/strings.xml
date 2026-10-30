@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">分離 + 轉寫</string>
     <string name="tryout_file_action_diarize_transcribe_about">先分離說話者, 再把每個人說的話轉成文字</string>
     <string name="tryout_file_action_language">辨識語言</string>
-    <string name="tryout_file_action_language_about">判斷說的是哪種語言</string>
+    <string name="tryout_file_action_language_about">判斷說的是哪種語言, 每 30 秒語音判一種</string>
     <string name="tryout_file_action_tag">音訊標籤</string>
     <string name="tryout_file_action_tag_about">檔案裡有哪些聲音, 例如說話聲, 音樂或狗叫</string>
     <string name="tryout_file_action_transcribe">轉寫</string>

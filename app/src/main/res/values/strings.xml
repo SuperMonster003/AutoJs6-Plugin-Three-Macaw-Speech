@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">Speakers and text</string>
     <string name="tryout_file_action_diarize_transcribe_about">Find the speakers, then write down what each one says</string>
     <string name="tryout_file_action_language">Identify language</string>
-    <string name="tryout_file_action_language_about">Which language is spoken</string>
+    <string name="tryout_file_action_language_about">Which language is spoken, one per 30 seconds of speech</string>
     <string name="tryout_file_action_tag">Tag sounds</string>
     <string name="tryout_file_action_tag_about">Which sounds the file has, such as speech, music or a dog barking</string>
     <string name="tryout_file_action_transcribe">Transcribe</string>

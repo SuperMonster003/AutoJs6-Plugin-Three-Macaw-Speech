@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
 import org.autojs.plugin.speech.api.SpeechLimits
 
 /**
@@ -23,6 +24,9 @@ object SpeechPreferencePolicy {
 
     /** Rounds to one decimal inside the range. zh-CN: 在范围内取一位小数. */
     fun speed(value: Float): Float = (Math.round(value.coerceIn(MIN_SPEED, MAX_SPEED) * 10f) / 10f)
+
+    /** The saved action of the file tab, transcription when unknown (roadmap D160). zh-CN: 文件标签保存的操作, 未知时为转写 (路线图 D160). */
+    fun fileAction(name: String?): FileAction = FileAction.entries.firstOrNull { it.name == name } ?: FileAction.TRANSCRIBE
 }
 
 /**
@@ -54,6 +58,14 @@ class SpeechPreferences(context: Context) {
         set(value) = edit { putInt(KEY_IDLE_MINUTES, SpeechPreferencePolicy.idleMinutes(value)) }
 
     val idleMillis: Long get() = idleMinutes * 60_000L
+
+    /**
+     * The last action of the tryout file tab (roadmap D160); its models and options stay per screen (D114).
+     * zh-CN: 试听试说页文件标签上次的操作 (路线图 D160); 其模型与选项仍只在页面存活期间保留 (D114).
+     */
+    var fileAction: FileAction
+        get() = SpeechPreferencePolicy.fileAction(preferences.getString(KEY_FILE_ACTION, null))
+        set(value) = edit { putString(KEY_FILE_ACTION, value.name) }
 
     /** Downloads on a metered network without asking (roadmap appendix D Q7 (a): asked by default). zh-CN: 计量网络下载不再询问. */
     var allowMeteredDownloads: Boolean
@@ -93,6 +105,7 @@ class SpeechPreferences(context: Context) {
         const val KEY_IDLE_MINUTES = "idleMinutes"
         const val KEY_METERED = "allowMeteredDownloads"
         const val KEY_NOTIFICATIONS_ASKED = "notificationsAsked"
+        const val KEY_FILE_ACTION = "tryoutFileAction"
         const val KEY_SPEAKER_PREFIX = "speaker."
         const val KEY_VOICE_PREFIX = "voice."
     }

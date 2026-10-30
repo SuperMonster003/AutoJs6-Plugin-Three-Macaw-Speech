@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">المتحدثون والنص</string>
     <string name="tryout_file_action_diarize_transcribe_about">يفصل المتحدثين ثم يحول كلام كل منهم إلى نص</string>
     <string name="tryout_file_action_language">تحديد اللغة</string>
-    <string name="tryout_file_action_language_about">أي لغة منطوقة</string>
+    <string name="tryout_file_action_language_about">أي لغة منطوقة, لغة واحدة لكل 30 ثانية من الكلام</string>
     <string name="tryout_file_action_tag">وسم الأصوات</string>
     <string name="tryout_file_action_tag_about">الأصوات الموجودة في الملف, مثل الكلام والموسيقى ونباح كلب</string>
     <string name="tryout_file_action_transcribe">تفريغ الكلام</string>

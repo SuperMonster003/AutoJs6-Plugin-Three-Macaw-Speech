@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.Locale
 
 /**
  * The appearance rules of the standalone settings specification (sections 6, 7, 9, 10): source priority and fallbacks,
@@ -40,6 +41,24 @@ class AppearanceTest {
         assertEquals(true, system.dark)
         assertEquals(AppearancePreferences.DARK_MODES.first(), AppearancePreferences.FOLLOW_HOST)
         assertEquals(12, AppearancePreferences.LANGUAGES.size)
+    }
+
+    @Test
+    fun `a language without a region takes the system region or its likely one`() {
+        // Roadmap D160: a bare `en` let a system build format "309 kB" with about a hundred direction marks.
+        // zh-CN: 路线图 D160: 只有 `en` 时, 有系统把 "309 kB" 格式化为夹着约一百个方向标记的文本.
+        fun tag(language: String, vararg system: String) = regionalLocale(language, system.map(Locale::forLanguageTag)).toLanguageTag()
+        assertEquals("en-US", tag("en", "zh-CN"))
+        assertEquals("en-GB", tag("en", "zh-CN", "en-GB"))
+        assertEquals("zh-Hans-CN", tag("zh-Hans", "zh-TW"))
+        assertEquals("zh-Hans-SG", tag("zh-Hans", "zh-SG"))
+        assertEquals("zh-Hant-HK", tag("zh-Hant-HK", "zh-TW"))
+        assertEquals("ar-EG", tag("ar"))
+        assertEquals("fr-FR", tag("fr-FR", "fr-CA"))
+        assertEquals("no likely region for other languages", "de", tag("de"))
+        AppearancePreferences.LANGUAGES.drop(2).forEach { language ->
+            assertTrue("$language gets a region", regionalLocale(language, emptyList()).country.isNotEmpty())
+        }
     }
 
     @Test

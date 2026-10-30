@@ -19,7 +19,7 @@ import java.util.concurrent.Executors
 internal data class HostAppearance(val language: String, val dark: Boolean, val primary: Int, val accent: Int)
 
 internal fun HostAppearance.configure(configuration: Configuration): Configuration = Configuration(configuration).apply {
-    val locale = Locale.forLanguageTag(language)
+    val locale = regionalLocale(language, List(configuration.locales.size()) { configuration.locales[it] })
     setLocales(LocaleList(locale))
     setLayoutDirection(locale)
     uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
@@ -27,6 +27,34 @@ internal fun HostAppearance.configure(configuration: Configuration): Configurati
 }
 
 internal fun HostAppearance.wrap(context: Context): Context = context.createConfigurationContext(configure(context.resources.configuration))
+
+/**
+ * The locale of a language tag with a region (roadmap D160): under a bare `en` some system builds (Sony XQ-AT72, Android 12)
+ * format a file size as "309", about a hundred direction marks and "kB", which the screens draw as a wide gap. A tag without
+ * a region takes the region of the first system locale of the same language and script, otherwise its likely region.
+ * zh-CN: 带地区的语言标签区域设置 (路线图 D160): 只有 `en` 时, 部分系统 (Sony XQ-AT72, Android 12) 把文件大小格式化为 "309", 约一百个方向标记与 "kB",
+ * 界面上显示为很宽的空白. 没有地区的标签取语言与文字相同的第一个系统区域设置的地区, 否则取其常见地区.
+ */
+internal fun regionalLocale(language: String, system: List<Locale>): Locale {
+    val locale = Locale.forLanguageTag(language)
+    if (locale.country.isNotEmpty() || locale.language.isEmpty()) return locale
+    val region = system.firstOrNull { it.country.isNotEmpty() && it.language == locale.language && script(it) == script(locale) }?.country
+        ?: LIKELY_REGIONS[locale.language + script(locale)]
+        ?: return locale
+    return Locale.Builder().setLocale(locale).setRegion(region).build()
+}
+
+/** The script of a Chinese locale, also when only its region tells it. zh-CN: 中文区域设置的文字, 只有地区时由地区推断. */
+private fun script(locale: Locale): String = when {
+    locale.script.isNotEmpty() || locale.language != "zh" -> locale.script
+    locale.country in setOf("TW", "HK", "MO") -> "Hant"
+    else -> "Hans"
+}
+
+/** Likely regions of the screen languages (CLDR likely subtags). zh-CN: 界面语言的常见地区 (CLDR likely subtags). */
+private val LIKELY_REGIONS = mapOf(
+    "zhHans" to "CN", "zhHant" to "TW", "en" to "US", "fr" to "FR", "es" to "ES", "ja" to "JP", "ko" to "KR", "ru" to "RU", "ar" to "EG",
+)
 
 /**
  * The plugin's own appearance preferences (standalone settings specification section 7): language, night mode and theme

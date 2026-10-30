@@ -387,7 +387,7 @@
     <string name="tryout_file_action_diarize_transcribe">Говорящие и текст</string>
     <string name="tryout_file_action_diarize_transcribe_about">Разделяет говорящих, затем переводит в текст слова каждого</string>
     <string name="tryout_file_action_language">Определить язык</string>
-    <string name="tryout_file_action_language_about">На каком языке говорят</string>
+    <string name="tryout_file_action_language_about">На каком языке говорят, один язык на каждые 30 секунд речи</string>
     <string name="tryout_file_action_tag">Разметить звуки</string>
     <string name="tryout_file_action_tag_about">Какие звуки есть в файле, например речь, музыка или лай собаки</string>
     <string name="tryout_file_action_transcribe">Расшифровать</string>
