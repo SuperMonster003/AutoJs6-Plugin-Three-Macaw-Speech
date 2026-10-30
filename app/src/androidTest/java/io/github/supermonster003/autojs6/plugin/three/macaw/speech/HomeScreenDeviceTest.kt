@@ -242,8 +242,9 @@ class HomeScreenDeviceTest {
         val downloads = File(root, "downloads").apply { mkdirs() }
         return ModelManager(
             store = store,
-            // The fixture key is not the pinned production key, so the verifier is built from it directly.
-            catalogs = ModelCatalogRepository(File(root, "catalog"), catalog, null, fixtureVerifier(publicKey), transport),
+            // The fixture key is not the pinned production key, so the verifier is built from it directly. The fixture is
+            // the schema 2 catalog, read under its own file name since the APK bundles schema 3 (roadmap P8.5.2).
+            catalogs = ModelCatalogRepository(File(root, "catalog"), catalog, null, fixtureVerifier(publicKey), transport, bundledFile = "catalog-v2.json"),
             installer = ModelInstaller(store, Downloader(transport), extractor, downloads, freeSpace = { Long.MAX_VALUE }),
             importer = Importer(store, extractor, license, freeSpace = { Long.MAX_VALUE }),
             licensePolicy = license,
