@@ -6,7 +6,7 @@
 
 # v1.3.0
 
-###### 2026/10/24
+###### 2026/10/30
 
 * `Aviso` speech.speaker, speech.diarize, speech.detectLanguage y speech.tag en los scripts y las cinco herramientas de hablantes y de análisis requieren la versión final de AutoJs6 6.8.0 o posterior; la página "Hablantes", "Solo voces registradas" y los análisis de archivos de Probar se usan dentro del complemento y no dependen de la versión de AutoJs6. Con un AutoJs6 anterior, speech.models.list() en los scripts también muestra los modelos de reconocimiento de hablante, segmentación de hablantes, identificación de idioma y etiquetado de audio (tipos speaker, segment, langid y tagger), que se instalan o eliminan como siempre
 * `Aviso` Analizar audio largo usa mucha memoria: separar los hablantes de una grabación de 10 minutos llegó a unos 470 MB a 1,3 GB en las pruebas, por eso el complemento pide a Android un límite de memoria mayor; en teléfonos con poca memoria, pruebe primero con archivos más cortos
@@ -17,6 +17,7 @@
 * `Función` El reconocimiento de archivos de Probar suma tres análisis: Separar hablantes (quién habló y cuándo, con el nombre de las voces registradas; "Hablantes y texto" además transcribe lo que dice cada persona), Identificar idioma (los 99 idiomas de Whisper) y Etiquetar sonidos (cuáles de 527 tipos de sonidos, como voz, música o un perro que ladra, contiene el archivo). Funcionan sin conexión en el teléfono, siguen al salir de la pantalla y muestran su progreso en una notificación. Primero se descargan los modelos, y la pantalla indica cómo: el de segmentación de hablantes (unos 6 MB, más el de reconocimiento de hablante), el de identificación de idioma (unos 103 MB) y el de etiquetado de audio (unos 10,5 MB). Los datos de entrenamiento del modelo de segmentación incluyen material solo para investigación, por lo que se marca como de uso no comercial; los datos de entrenamiento de los modelos de identificación de idioma no se han publicado, así que su uso comercial es desconocido
 * `Función` Los scripts pueden hacer los mismos análisis con speech.diarize, speech.detectLanguage y speech.tag (y sus versiones ...Async que devuelven una Promise), con informes de progreso; tres nuevas herramientas del complemento, speech_diarize, speech_detect_language y speech_tag, también los hacen. Un archivo puede durar hasta 30 minutos (10 minutos para speech_diarize); se hace un análisis a la vez y los demás esperan su turno
 * `Corrección` Las descargas de modelos vuelven a funcionar en Android 7.0: el catálogo y los modelos se obtienen de GitHub, cuyos certificados ahora se emiten bajo un certificado raíz (ISRG Root X1, de Let's Encrypt) que Android 7.0 no tiene, así que cada descarga y cada actualización del catálogo fallaba con un error de certificado. El plugin ahora incluye ese certificado raíz y lo usa junto con los del sistema; Android 7.1 y posteriores ya lo tienen y no estaban afectados
+* `Corrección` En algunos teléfonos, el tamaño de los modelos y archivos mostraba un gran espacio entre el número y la unidad (cuando el idioma de la interfaz no tenía región, como el inglés); ahora se muestra con normalidad
 
 # v1.2.0
 

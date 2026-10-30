@@ -6,7 +6,7 @@
   "changelog_label_dependency": "Dépendance",
   "$data": {
     "v1.3.0": {
-      "released_date": "2026/10/24",
+      "released_date": "2026/10/30",
       "hint": [
         "speech.speaker, speech.diarize, speech.detectLanguage et speech.tag dans les scripts et les cinq outils de locuteur et d'analyse demandent la version finale d'AutoJs6 6.8.0 ou ultérieure; la page \"Locuteurs\", \"Seulement les voix enregistrées\" et les analyses de fichiers d'Essayer s'utilisent dans le plugin lui-même et ne dépendent pas de la version d'AutoJs6. Avec un AutoJs6 plus ancien, speech.models.list() dans les scripts liste aussi les modèles de reconnaissance du locuteur, de segmentation des locuteurs, d'identification de la langue et d'étiquetage audio (types speaker, segment, langid et tagger), qui s'installent ou se suppriment comme les autres",
         "L'analyse d'un long audio demande beaucoup de mémoire: séparer les locuteurs d'un enregistrement de 10 minutes a atteint environ 470 Mo à 1,3 Go lors des tests, donc le plugin demande à Android une limite de mémoire plus élevée; sur un téléphone avec peu de mémoire, essayez d'abord des fichiers plus courts"
@@ -20,7 +20,8 @@
         "Les scripts peuvent faire les mêmes analyses avec speech.diarize, speech.detectLanguage et speech.tag (et leurs versions ...Async qui renvoient une Promise), avec suivi de la progression; trois nouveaux outils du plugin, speech_diarize, speech_detect_language et speech_tag, le font aussi. Un fichier peut durer jusqu'à 30 minutes (10 minutes pour speech_diarize); une seule analyse tourne à la fois et les autres attendent leur tour"
       ],
       "fix": [
-        "Les téléchargements de modèles fonctionnent de nouveau sur Android 7.0: le catalogue et les modèles sont récupérés depuis GitHub, dont les certificats sont désormais émis sous un certificat racine (ISRG Root X1, de Let's Encrypt) qu'Android 7.0 ne possède pas, si bien que chaque téléchargement et chaque actualisation du catalogue échouait avec une erreur de certificat. Le plugin embarque maintenant ce certificat racine et l'utilise avec ceux du système; Android 7.1 et les versions suivantes l'ont déjà et n'étaient pas concernés"
+        "Les téléchargements de modèles fonctionnent de nouveau sur Android 7.0: le catalogue et les modèles sont récupérés depuis GitHub, dont les certificats sont désormais émis sous un certificat racine (ISRG Root X1, de Let's Encrypt) qu'Android 7.0 ne possède pas, si bien que chaque téléchargement et chaque actualisation du catalogue échouait avec une erreur de certificat. Le plugin embarque maintenant ce certificat racine et l'utilise avec ceux du système; Android 7.1 et les versions suivantes l'ont déjà et n'étaient pas concernés",
+        "Sur certains téléphones, la taille des modèles et des fichiers affichait un grand espace entre le nombre et l'unité (quand la langue de l'interface n'avait pas de région, comme l'anglais); elle s'affiche maintenant normalement"
       ]
     },
     "v1.2.0": {

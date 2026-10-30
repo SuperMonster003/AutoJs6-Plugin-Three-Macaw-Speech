@@ -395,7 +395,7 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 #### v1.3.0
 
-_2026/10/24_
+_2026/10/30_
 
 - `Hint` speech.speaker, speech.diarize, speech.detectLanguage and speech.tag in scripts and the five speaker and analysis tools need the AutoJs6 6.8.0 release or later; the Speakers page, "Only enrolled voices" and the file analyses of Try it out are used in the plugin itself and do not depend on the AutoJs6 version. With an older AutoJs6, speech.models.list() in scripts also lists the speaker recognition, speaker segmentation, language identification and audio tagging models (kinds speaker, segment, langid and tagger), which can be installed or deleted as usual
 - `Hint` Analyzing long audio takes a lot of memory: finding the speakers of a 10 minute recording peaked at about 470 MB to 1.3 GB in tests, so the plugin asks Android for a larger memory limit; on phones with little memory, try shorter files first
@@ -406,6 +406,7 @@ _2026/10/24_
 - `Feature` File recognition on Try it out gains three analyses: Find speakers (who spoke when, with enrolled voices named; "Speakers and text" also transcribes what each person says), Identify language (the 99 languages of Whisper) and Tag sounds (which of 527 kinds of sounds, such as speech, music or a barking dog, the file holds). They run offline on the phone, keep going after you leave the screen and show their progress in a notification. The models are downloaded first, and the screen shows how: the speaker segmentation model (about 6 MB, plus the speaker recognition model), the language identification model (about 103 MB) and the audio tagging model (about 10.5 MB). The training data of the speaker segmentation model includes research-only material, so it is marked as non-commercial; the training data of the language identification models is not published, so their commercial use is unknown
 - `Feature` Scripts can run the same analyses with speech.diarize, speech.detectLanguage and speech.tag (and their ...Async versions that return a Promise), with progress reports; three new plugin tools, speech_diarize, speech_detect_language and speech_tag, do so too. A file can be up to 30 minutes long (10 minutes for speech_diarize); one analysis runs at a time and the others wait their turn
 - `Fix` Model downloads work again on Android 7.0: the model catalog and the models are fetched from GitHub, whose certificates are now issued under a root certificate (ISRG Root X1 of Let's Encrypt) that Android 7.0 does not have, so every download and every catalog refresh failed with a certificate error. The plugin now carries that root certificate itself and uses it next to the ones of the system; Android 7.1 and later already have it and were not affected
+- `Fix` On some phones, model and file sizes showed a wide gap between the number and the unit (when the screen language was one without a region, such as English); they now show normally
 
 #### v1.2.0
 
