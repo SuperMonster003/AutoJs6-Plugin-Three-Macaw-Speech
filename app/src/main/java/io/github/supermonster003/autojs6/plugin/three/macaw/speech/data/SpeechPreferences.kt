@@ -67,6 +67,14 @@ class SpeechPreferences(context: Context) {
         get() = SpeechPreferencePolicy.fileAction(preferences.getString(KEY_FILE_ACTION, null))
         set(value) = edit { putString(KEY_FILE_ACTION, value.name) }
 
+    /**
+     * Whether the file tab shows the lyrics view of the result (roadmap D169).
+     * zh-CN: 文件标签是否以歌词式视图显示结果 (路线图 D169).
+     */
+    var fileLyrics: Boolean
+        get() = preferences.getBoolean(KEY_FILE_LYRICS, false)
+        set(value) = edit { putBoolean(KEY_FILE_LYRICS, value) }
+
     /** Downloads on a metered network without asking (roadmap appendix D Q7 (a): asked by default). zh-CN: 计量网络下载不再询问. */
     var allowMeteredDownloads: Boolean
         get() = preferences.getBoolean(KEY_METERED, false)
@@ -106,6 +114,7 @@ class SpeechPreferences(context: Context) {
         const val KEY_METERED = "allowMeteredDownloads"
         const val KEY_NOTIFICATIONS_ASKED = "notificationsAsked"
         const val KEY_FILE_ACTION = "tryoutFileAction"
+        const val KEY_FILE_LYRICS = "tryoutFileLyrics"
         const val KEY_SPEAKER_PREFIX = "speaker."
         const val KEY_VOICE_PREFIX = "voice."
     }

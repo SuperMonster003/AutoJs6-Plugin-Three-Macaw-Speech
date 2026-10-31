@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.tryout
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +13,7 @@ import android.system.ErrnoException
 import android.system.Os
 import android.system.OsConstants
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -57,6 +59,9 @@ internal data class FileDescription(val displayName: String?, val sizeBytes: Lon
  * 进行, 因为云盘提供方下载文档时可能阻塞.
  */
 internal interface FileSource {
+    /** Where the file can be opened again after a restart (D170), if at all. zh-CN: 重启后能再次打开文件的位置 (D170), 没有时为 null. */
+    val uri: String? get() = null
+
     fun describe(): FileDescription
 
     fun open(): ParcelFileDescriptor
@@ -65,22 +70,26 @@ internal interface FileSource {
         fun of(context: Context, uri: Uri): FileSource = DocumentSource(context.applicationContext, uri)
 
         fun of(file: File): FileSource = object : FileSource {
+            override val uri get() = Uri.fromFile(file).toString()
+
             override fun describe() = FileDescription(file.name, file.length())
             override fun open(): ParcelFileDescriptor = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
         }
     }
 }
 
-private class DocumentSource(private val context: Context, private val uri: Uri) : FileSource {
+private class DocumentSource(private val context: Context, private val document: Uri) : FileSource {
 
-    override fun describe(): FileDescription = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)?.use { cursor ->
+    override val uri get() = document.toString()
+
+    override fun describe(): FileDescription = context.contentResolver.query(document, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)?.use { cursor ->
         if (!cursor.moveToFirst()) return@use null
         val name = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME).takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getString)
         val size = cursor.getColumnIndex(OpenableColumns.SIZE).takeIf { it >= 0 && !cursor.isNull(it) }?.let(cursor::getLong)
         FileDescription(name?.takeIf { it.isNotBlank() }, size?.takeIf { it >= 0 })
     } ?: FileDescription(null, null)
 
-    override fun open(): ParcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r") ?: throw FileNotFoundException("The provider returned no descriptor")
+    override fun open(): ParcelFileDescriptor = context.contentResolver.openFileDescriptor(document, "r") ?: throw FileNotFoundException("The provider returned no descriptor")
 }
 
 /**
@@ -173,6 +182,9 @@ internal class FileTranscription private constructor(context: Context) {
     @Volatile
     private var token = CancelToken()
 
+    /** The source of the latest run of this process. zh-CN: 本进程最近一次识别的来源. */
+    private var source: FileSource? = null
+
     /** The run in progress, or null. zh-CN: 进行中的识别, 没有时为 null. */
     var run by mutableStateOf<FileRun?>(null)
         private set
@@ -203,6 +215,7 @@ internal class FileTranscription private constructor(context: Context) {
         val stop = CancelToken()
         token = stop
         record = null
+        this.source = source
         val first = FileRun(FileRun.Phase.PREPARING, options.action, FileRun.Stage.first(options.action))
         run = first
         FileRecognitionService.start(app, first)
@@ -223,7 +236,35 @@ internal class FileTranscription private constructor(context: Context) {
     fun clear() {
         if (run != null) return
         record = null
+        source = null
+        holdDocument(null)
         worker.execute { resultFile.delete() }
+    }
+
+    /**
+     * What plays [record]: the source of this process's run, else the document it names (roadmap D170).
+     * zh-CN: 播放 [record] 的来源: 本进程识别的来源, 否则为记录写明的文档 (路线图 D170).
+     */
+    fun playbackSource(record: FileTranscriptRecord): FileSource? = source ?: record.sourceUri?.let { FileSource.of(app, Uri.parse(it)) }
+
+    /**
+     * Keeps the read grant of [document] over restarts and gives every other up, so the plugin holds at most one
+     * (roadmap D170). A provider may refuse it: the file then plays only while the picker's grant lasts.
+     * zh-CN: 让 [document] 的读取授权跨重启保留, 并放弃其他授权, 使插件至多持有一个 (路线图 D170). 提供方可能拒绝: 此时文件只在选择器的授权有效期内可播放.
+     */
+    fun holdDocument(document: Uri?) {
+        val resolver = app.contentResolver
+        runCatching {
+            resolver.persistedUriPermissions.filter { it.uri != document }.forEach { resolver.releasePersistableUriPermission(it.uri, Intent.FLAG_GRANT_READ_URI_PERMISSION) }
+            if (document != null) resolver.takePersistableUriPermission(document, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }.onFailure { Log.i(TAG, "No lasting read grant: ${it.javaClass.simpleName}") }
+    }
+
+    /** What a restarted process finds in the cache. zh-CN: 重启后的进程在缓存中读到的内容. */
+    @VisibleForTesting
+    fun readBack() {
+        source = null
+        record = read()
     }
 
     fun screenStarted() {
@@ -243,7 +284,7 @@ internal class FileTranscription private constructor(context: Context) {
     // Worker -----------------------------------------------------------------------------------------------------
 
     /** What one run has found so far, published to the main thread. zh-CN: 一次运行目前得到的内容, 发布到主线程. */
-    private inner class Job(private val options: FileRunOptions) {
+    private inner class Job(private val options: FileRunOptions, private val sourceUri: String?) {
         var description = FileDescription(null, null)
         var stage = FileRun.Stage.first(options.action)
         var declared: Long? = null
@@ -330,6 +371,7 @@ internal class FileTranscription private constructor(context: Context) {
             action = options.action,
             analysis = analysis,
             segmentSpeakers = if (options.action == FileAction.DIARIZE_TRANSCRIBE) segmentSpeakers.toList() else emptyList(),
+            sourceUri = sourceUri,
         )
 
         /** The language most segments report. zh-CN: 多数分段报告的语言. */
@@ -338,7 +380,7 @@ internal class FileTranscription private constructor(context: Context) {
 
     private fun recognize(source: FileSource, options: FileRunOptions, stop: CancelToken) {
         val lock = acquireWakeLock()
-        val job = Job(options)
+        val job = Job(options, source.uri)
         val record = try {
             directory.mkdirs()
             resultFile.delete()

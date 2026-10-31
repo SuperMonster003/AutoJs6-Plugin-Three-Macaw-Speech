@@ -78,6 +78,18 @@ class FileTranscriptRecordTest {
     }
 
     @Test
+    fun `the source of a record survives the round trip and a 1_3_0 record has none`() {
+        val uri = "content://com.android.providers.media.documents/document/audio%3A42"
+        val record = completed.copy(sourceUri = uri)
+        assertEquals(uri, FileTranscriptRecord.parse(record.toJson())?.sourceUri)
+        val older = String(completed.toJson()).replace(",\"sourceUri\":null", "")
+        assertTrue("the key is gone: $older", "sourceUri" !in older)
+        val read = FileTranscriptRecord.parse(older.toByteArray())
+        assertEquals(completed, read)
+        assertNull(read?.sourceUri)
+    }
+
+    @Test
     fun `damaged, partial and other versions read as no record`() {
         val json = String(completed.toJson(), Charsets.UTF_8)
         assertNull(FileTranscriptRecord.parse(ByteArray(0)))

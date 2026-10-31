@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -121,6 +122,18 @@ internal class TryoutController(context: Context) {
     var fileSpeakers by mutableIntStateOf(0)
     var fileIdentify by mutableStateOf(false)
     var languageModel by mutableStateOf<String?>(null)
+    private var fileLyricsState by mutableStateOf(preferences.fileLyrics)
+
+    /** Saved for the next visit (roadmap D169). zh-CN: 保存到下次进入 (路线图 D169). */
+    var fileLyrics: Boolean
+        get() = fileLyricsState
+        set(value) {
+            fileLyricsState = value
+            preferences.fileLyrics = value
+        }
+
+    /** The player of the file tab; one sound at a time (roadmap D164). zh-CN: 文件标签的播放器; 同时只播一个 (路线图 D164). */
+    val playback = FilePlayback(app) { stopPlayer() }
 
     /** Installed models of the analysis kinds (segment, speaker, langid, tagger). zh-CN: 已安装的分析类模型. */
     var analysisModels by mutableStateOf<List<ModelEntry>>(emptyList())
@@ -148,7 +161,7 @@ internal class TryoutController(context: Context) {
         }
     }
 
-    val busy: Boolean get() = dictationPhase != TryoutPhase.IDLE || wakePhase != TryoutPhase.IDLE || synthesisPhase != TryoutPhase.IDLE || playing
+    val busy: Boolean get() = dictationPhase != TryoutPhase.IDLE || wakePhase != TryoutPhase.IDLE || synthesisPhase != TryoutPhase.IDLE || playing || playback.playing
 
     /**
      * The kinds [action] needs and that have no installed model, in the order of the home screen (D153).
@@ -355,8 +368,10 @@ internal class TryoutController(context: Context) {
         if (synthesisId == null) synthesisPhase = TryoutPhase.IDLE
     }
 
-    private fun startPlayer(file: File) {
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    fun startPlayer(file: File) {
         stopPlayer()
+        playback.pause()
         val created = runCatching {
             MediaPlayer().apply {
                 setDataSource(file.absolutePath)
@@ -386,6 +401,7 @@ internal class TryoutController(context: Context) {
         dictation?.let { runCatching { it.cancel() } }
         wake?.let { runCatching { it.cancel() } }
         stopSynthesis()
+        playback.release()
     }
 
     private inline fun <T> call(block: () -> T): T? = try {

@@ -1,6 +1,7 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.tryout
 
 import android.text.format.Formatter
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,13 +25,18 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -38,11 +45,15 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAnalysis
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscriptRecord
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.PlaybackCue
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.PlaybackCues
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.TranscriptExport
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Utterance
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.Choice
@@ -50,22 +61,27 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.SettingsRow
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.SwitchRow
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.HomeTexts
+import kotlin.math.roundToInt
 
 /**
  * The file tab of the tryout screen (roadmap D110 - D115, P7.8.3, D153): the action row (transcribe, find speakers,
  * both, identify the language, tag the sounds) with only the settings of the chosen action, the picker button (cancel
  * while a run goes on), the progress, the segments as they arrive and the latest result with its actions or its
  * failure card: speaker turns in their colors, the language with its share of the speech windows, the sounds with
- * score bars and the window where each is clearest. The run itself lives in [FileTranscription], so the tab only shows
- * its state.
+ * score bars and the window where each is clearest. Since roadmap D164 a finished result has a player above it that
+ * sticks to the top of the page, whose rows follow the sound and which turns into the lyrics view. Leaving the tab pauses
+ * it, since the microphone tabs must not hear it (D171). The run itself lives in [FileTranscription], so the tab only
+ * shows its state.
  * zh-CN: 试听试说页的文件标签 (路线图 D110 - D115, P7.8.3, D153): "操作" 行 (转写, 分离说话人, 分离 + 转写, 识别语种, 音频标签) 与所选操作自己的设置,
  * 选择按钮 (运行中为取消), 进度, 逐条到达的分段, 以及最近一次结果与其操作或失败卡片: 按说话人着色的轮次, 语种与其在语音窗中的占比, 声音及其分数条
- * 与最明显的窗口. 运行本身在 [FileTranscription] 中进行, 标签只显示其状态.
+ * 与最明显的窗口. 路线图 D164 起结束的结果上方有一个粘在页面顶部的播放器, 各行随声音同步, 也可切换为歌词式视图. 离开标签即暂停, 因为麦克风标签不能听到它
+ * (D171). 运行本身在 [FileTranscription] 中进行, 标签只显示其状态.
  */
 @Composable
 internal fun FileTab(
     controller: TryoutController,
     transcription: FileTranscription,
+    scroll: ScrollState,
     languageLabel: @Composable (String?) -> String,
     onPick: () -> Unit,
     onCopy: (FileTranscriptRecord) -> Unit,
@@ -79,6 +95,14 @@ internal fun FileTab(
     val record = transcription.record
     val idle = run == null
     val action = controller.fileAction
+    val playable = record?.takeIf { run == null && it.state != FileTranscriptRecord.State.FAILED }
+    val playback = controller.playback
+    LaunchedEffect(playable) { if (playable == null) playback.close() else playback.open(playable, transcription.playbackSource(playable)) }
+    DisposableEffect(Unit) { onDispose { playback.pause() } }
+    val cues = remember(playable) { playable?.let(PlaybackCues::of) ?: PlaybackCues.NONE }
+    val follow = remember(scroll) { PlaybackFollow(scroll) }
+    LaunchedEffect(follow) { follow.watch() }
+    val player = remember(playable, cues) { playable?.let { ResultPlayer(playback, follow, cues) } }
     SettingsRow(stringResource(R.string.tryout_file_action), summary = stringResource(FileTexts.action(action)), icon = R.drawable.ic_apps_24, enabled = idle,
         onClick = { choosing = "action" }, modifier = Modifier.testTag("macaw.tryout.file.action"))
     val model = controller.asrModels.firstOrNull { it.id == controller.fileModel }
@@ -167,13 +191,40 @@ internal fun FileTab(
         )
     }
     record?.takeIf { run == null }?.let { Outcome(it, controller, languageLabel) }
+    val canLyric = cues.items.isNotEmpty() && playback.state != FilePlayback.State.UNAVAILABLE
+    var lyricsShown by remember { mutableIntStateOf(0) }
+    if (playable != null) {
+        // Sticks to the top of the page, or a long result would scroll the controls away. zh-CN: 粘在页面顶部, 否则长结果会把控件滚走.
+        var top by remember { mutableIntStateOf(0) }
+        PlayerBar(
+            playback,
+            lyrics = controller.fileLyrics,
+            lyricsEnabled = canLyric,
+            onLyrics = {
+                controller.fileLyrics = it
+                lyricsShown += 1
+            },
+            modifier = Modifier
+                .onPlaced {
+                    top = it.positionInParent().y.roundToInt()
+                    follow.barHeight = it.size.height
+                }
+                .zIndex(1f)
+                .offset { IntOffset(0, (scroll.value - top).coerceAtLeast(0)) },
+        )
+    }
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).heightIn(min = 120.dp).testTag("macaw.tryout.file.segments"),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
     ) {
-        Column(modifier = Modifier.padding(16.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
-            Result(run, record?.takeIf { run == null }, languageLabel)
+        // Only a run announces what arrives; a played result would talk over its own sound. zh-CN: 只有运行中才播报新内容; 播放中的结果不能盖过声音.
+        Column(modifier = Modifier.padding(16.dp).semantics { if (run != null) liveRegion = LiveRegionMode.Polite }) {
+            if (controller.fileLyrics && canLyric && playable != null) {
+                Lyrics(cues, playback, follow, lyricsShown, playable.analysis as? FileAnalysis.Speakers) { cueText(it, playable, languageLabel) }
+            } else {
+                Result(run, record?.takeIf { run == null }, player, languageLabel)
+            }
         }
     }
     if (record != null && run == null) {
@@ -253,6 +304,8 @@ private val SPEAKER_COLORS = listOf(
     Color(0xFF1E88E5), Color(0xFFD81B60), Color(0xFF43A047), Color(0xFFFB8C00),
     Color(0xFF8E24AA), Color(0xFF00ACC1), Color(0xFF6D4C41), Color(0xFF7CB342),
 )
+
+internal fun speakerColor(speaker: Int): Color = SPEAKER_COLORS[speaker % SPEAKER_COLORS.size]
 
 @Composable
 private fun speakerCount(count: Int): String = if (count == 0) stringResource(R.string.tryout_file_speakers_auto) else count.toString()
@@ -359,7 +412,7 @@ private fun Outcome(record: FileTranscriptRecord, controller: TryoutController, 
 
 /** The result card of a run or a record (D153). zh-CN: 运行或记录的结果卡片 (D153). */
 @Composable
-private fun Result(run: FileRun?, record: FileTranscriptRecord?, languageLabel: @Composable (String?) -> String) {
+private fun Result(run: FileRun?, record: FileTranscriptRecord?, player: ResultPlayer?, languageLabel: @Composable (String?) -> String) {
     val action = run?.action ?: record?.action ?: FileAction.TRANSCRIBE
     val segments = run?.segments ?: record?.segments.orEmpty()
     val owners = run?.segmentSpeakers ?: record?.segmentSpeakers.orEmpty()
@@ -368,13 +421,13 @@ private fun Result(run: FileRun?, record: FileTranscriptRecord?, languageLabel: 
     val completed = record?.state == FileTranscriptRecord.State.COMPLETED
     when {
         action.transcribes && segments.any { it.text.isNotBlank() } -> segments.forEachIndexed { index, segment ->
-            if (segment.text.isNotBlank()) Segment(segment, owners.getOrNull(index), speakers, Modifier.testTag("macaw.tryout.file.segment.$index"))
+            if (segment.text.isNotBlank()) Segment(segment, index, owners.getOrNull(index), speakers, player, Modifier.testTag("macaw.tryout.file.segment.$index"))
         }
         action == FileAction.DIARIZE && analysis is FileAnalysis.Speakers && analysis.turns.isNotEmpty() -> analysis.turns.forEachIndexed { index, turn ->
-            Turn(turn.startMillis, turn.endMillis, turn.speaker, analysis, Modifier.testTag("macaw.tryout.file.turn.$index"))
+            Turn(turn.startMillis, turn.endMillis, turn.speaker, analysis, index, player, Modifier.testTag("macaw.tryout.file.turn.$index"))
         }
-        analysis is FileAnalysis.Languages -> Languages(analysis, languageLabel)
-        analysis is FileAnalysis.Tags -> Tags(analysis)
+        analysis is FileAnalysis.Languages -> Languages(analysis, player, languageLabel)
+        analysis is FileAnalysis.Tags -> Tags(analysis, player)
         else -> {
             val waiting = when {
                 completed -> R.string.tryout_transcribe_empty
@@ -391,6 +444,18 @@ private fun Result(run: FileRun?, record: FileTranscriptRecord?, languageLabel: 
     }
 }
 
+/** The text of one line in the lyrics view (D164). zh-CN: 歌词式视图中一行的文字 (D164). */
+@Composable
+private fun cueText(cue: PlaybackCue, record: FileTranscriptRecord, languageLabel: @Composable (String?) -> String): String = when (val analysis = record.analysis.takeUnless { record.action.transcribes }) {
+    null -> cue.text
+    is FileAnalysis.Speakers -> FileTexts.speaker(LocalContext.current, analysis, cue.speaker ?: 0)
+    is FileAnalysis.Languages -> languageLabel(cue.text)
+    is FileAnalysis.Tags -> tagText(cue)
+}
+
+@Composable
+private fun tagText(cue: PlaybackCue): String = stringResource(R.string.tryout_file_pair, cue.text, FileTexts.percent(LocalContext.current, cue.score.toDouble()))
+
 @Composable
 private fun Note(text: String, tag: String) {
     Text(
@@ -402,9 +467,9 @@ private fun Note(text: String, tag: String) {
 }
 
 @Composable
-private fun SpeakerLabel(speaker: Int, speakers: FileAnalysis.Speakers?) {
+internal fun SpeakerLabel(speaker: Int, speakers: FileAnalysis.Speakers?) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(10.dp).background(SPEAKER_COLORS[speaker % SPEAKER_COLORS.size], CircleShape))
+        Box(Modifier.size(10.dp).background(speakerColor(speaker), CircleShape))
         Spacer(Modifier.width(6.dp))
         Text(
             FileTexts.speaker(LocalContext.current, speakers, speaker),
@@ -415,8 +480,8 @@ private fun SpeakerLabel(speaker: Int, speakers: FileAnalysis.Speakers?) {
 }
 
 @Composable
-private fun Segment(segment: Utterance, speaker: Int?, speakers: FileAnalysis.Speakers?, modifier: Modifier) {
-    Column(modifier = modifier.padding(bottom = 8.dp)) {
+private fun Segment(segment: Utterance, index: Int, speaker: Int?, speakers: FileAnalysis.Speakers?, player: ResultPlayer?, modifier: Modifier) {
+    CueRow(player, index, segment.startMillis, speaker?.let(::speakerColor) ?: MaterialTheme.colorScheme.primary, modifier) {
         if (speaker != null) SpeakerLabel(speaker, speakers)
         Text(
             "${TranscriptExport.segmentClock(segment.startMillis)} - ${TranscriptExport.segmentClock(maxOf(segment.endMillis, segment.startMillis))}",
@@ -428,20 +493,22 @@ private fun Segment(segment: Utterance, speaker: Int?, speakers: FileAnalysis.Sp
 }
 
 @Composable
-private fun Turn(startMillis: Long, endMillis: Long, speaker: Int, speakers: FileAnalysis.Speakers, modifier: Modifier) {
-    Row(modifier = modifier.fillMaxWidth().padding(bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            "${TranscriptExport.segmentClock(startMillis)} - ${TranscriptExport.segmentClock(maxOf(endMillis, startMillis))}",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(132.dp),
-        )
-        SpeakerLabel(speaker, speakers)
+private fun Turn(startMillis: Long, endMillis: Long, speaker: Int, speakers: FileAnalysis.Speakers, index: Int, player: ResultPlayer?, modifier: Modifier) {
+    CueRow(player, index, startMillis, speakerColor(speaker), modifier) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "${TranscriptExport.segmentClock(startMillis)} - ${TranscriptExport.segmentClock(maxOf(endMillis, startMillis))}",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(132.dp),
+            )
+            SpeakerLabel(speaker, speakers)
+        }
     }
 }
 
 @Composable
-private fun Languages(analysis: FileAnalysis.Languages, languageLabel: @Composable (String?) -> String) {
+private fun Languages(analysis: FileAnalysis.Languages, player: ResultPlayer?, languageLabel: @Composable (String?) -> String) {
     val context = LocalContext.current
     Text(
         stringResource(R.string.tryout_file_language_result, languageLabel(analysis.language)),
@@ -465,21 +532,32 @@ private fun Languages(analysis: FileAnalysis.Languages, languageLabel: @Composab
         modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
     )
     analysis.segments.forEachIndexed { index, segment ->
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp).testTag("macaw.tryout.file.sentence.$index"), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "${TranscriptExport.segmentClock(segment.startMillis)} - ${TranscriptExport.segmentClock(maxOf(segment.endMillis, segment.startMillis))}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(132.dp),
-            )
-            Text(languageLabel(segment.language), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+        CueRow(player, index, segment.startMillis, MaterialTheme.colorScheme.primary, Modifier.testTag("macaw.tryout.file.sentence.$index")) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "${TranscriptExport.segmentClock(segment.startMillis)} - ${TranscriptExport.segmentClock(maxOf(segment.endMillis, segment.startMillis))}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(132.dp),
+                )
+                Text(languageLabel(segment.language), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+            }
         }
     }
 }
 
 @Composable
-private fun Tags(analysis: FileAnalysis.Tags) {
+private fun Tags(analysis: FileAnalysis.Tags, player: ResultPlayer?) {
     val context = LocalContext.current
+    if (player?.ready == true) {
+        // Empty in a gap, so the list does not jump. zh-CN: 空白处为空串, 列表不跳动.
+        Text(
+            player.current?.let { stringResource(R.string.tryout_file_tag_now, tagText(it)) }.orEmpty(),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 8.dp).testTag("macaw.tryout.file.tag.now"),
+        )
+    }
     Text(
         stringResource(R.string.tryout_file_tags_heard),
         style = MaterialTheme.typography.labelMedium,
@@ -487,12 +565,14 @@ private fun Tags(analysis: FileAnalysis.Tags) {
         modifier = Modifier.padding(bottom = 4.dp),
     )
     analysis.labels.forEachIndexed { index, tag ->
-        Score(
-            stringResource(R.string.tryout_file_pair, tag.label.name, FileTexts.percent(context, tag.score.toDouble())),
-            tag.score,
-            stringResource(R.string.tryout_file_tag_peak, TranscriptExport.segmentClock(tag.startMillis), TranscriptExport.segmentClock(tag.endMillis)),
-            Modifier.testTag("macaw.tryout.file.tag.$index"),
-        )
+        CueRow(player, index, tag.startMillis, MaterialTheme.colorScheme.primary, Modifier.testTag("macaw.tryout.file.tag.$index")) {
+            Score(
+                stringResource(R.string.tryout_file_pair, tag.label.name, FileTexts.percent(context, tag.score.toDouble())),
+                tag.score,
+                stringResource(R.string.tryout_file_tag_peak, TranscriptExport.segmentClock(tag.startMillis), TranscriptExport.segmentClock(tag.endMillis)),
+                Modifier,
+            )
+        }
     }
 }
 

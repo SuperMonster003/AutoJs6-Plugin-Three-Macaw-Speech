@@ -403,6 +403,15 @@
     <string name="tryout_file_limits">حتى 200 ميغابايت و30 دقيقة</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>
+    <string name="tryout_file_player_back">الرجوع 5 ثوان</string>
+    <string name="tryout_file_player_forward">التقديم 5 ثوان</string>
+    <string name="tryout_file_player_lyrics">عرض النص الكبير</string>
+    <string name="tryout_file_player_pause">إيقاف مؤقت</string>
+    <string name="tryout_file_player_play">تشغيل</string>
+    <string name="tryout_file_player_position">موضع التشغيل</string>
+    <string name="tryout_file_player_preparing" tools:ignore="TypographyEllipsis">جار تحضير التشغيل...</string>
+    <string name="tryout_file_player_speed">سرعة التشغيل: %1$s</string>
+    <string name="tryout_file_player_unavailable">تعذر تشغيل هذا الملف: ربما نقل أو حذف, أو لا يستطيع هذا الجهاز قراءته. تبقى النتيجة هنا.</string>
     <string name="tryout_file_speaker">المتحدث %1$d</string>
     <string name="tryout_file_speakers">عدد المتحدثين</string>
     <string name="tryout_file_speakers_auto">تلقائي</string>
@@ -411,6 +420,7 @@
     <string name="tryout_file_stage_language">جار تحديد اللغة</string>
     <string name="tryout_file_stage_tag">جار وسم الأصوات</string>
     <string name="tryout_file_stage_turns">جار تفريغ كل مقطع</string>
+    <string name="tryout_file_tag_now">الآن: %1$s</string>
     <string name="tryout_file_tag_peak">أوضح مقطع: %1$s - %2$s</string>
     <string name="tryout_file_tags_heard">الأصوات المسموعة</string>
     <string name="tryout_file_waiting">تظهر النتيجة هنا عند انتهاء التحليل</string>

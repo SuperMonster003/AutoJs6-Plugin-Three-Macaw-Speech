@@ -68,12 +68,13 @@ data class FileFailure(val code: String, val message: String) {
  * [failure]. [declaredMillis] is the length the file declares, [recognizedMillis] how much audio went to the
  * recognizer. Since roadmap P8.4.4 (D153) a record also names its [action]: an analysis keeps its result in [analysis]
  * (for the speakers also while [segments] is empty), and "diarize and transcribe" gives each segment its speaker in
- * [segmentSpeakers]. Version 1 files (1.2.0) read as transcriptions. A file that is damaged, misses a field or has
- * another version reads as no record at all.
+ * [segmentSpeakers]. Since roadmap D170 [sourceUri] names the picked document, so a record read back can play it; a
+ * record without the key reads as one that cannot. Version 1 files (1.2.0) read as transcriptions. A file that is
+ * damaged, misses a field or has another version reads as no record at all.
  * zh-CN: 文件标签的最近一次结果 (路线图 D113): 以带版本号的 JSON 存放在插件缓存中, 插件进程重启后标签再次显示它. 取消的识别保留已得到的
  * 分段, 失败的保留 [failure]. [declaredMillis] 为文件声明的时长, [recognizedMillis] 为已送入识别的音频时长. 自路线图 P8.4.4 (D153) 起记录还写明
- * [action]: 分析结果存于 [analysis], "分离 + 转写" 在 [segmentSpeakers] 中给出每个分段的说话人. 版本 1 的文件 (1.2.0) 读作转写. 损坏, 缺少字段
- * 或版本不同的文件一律视为没有记录.
+ * [action]: 分析结果存于 [analysis], "分离 + 转写" 在 [segmentSpeakers] 中给出每个分段的说话人. 自路线图 D170 起 [sourceUri] 记下所选文档, 使读回的记录
+ * 能播放它; 没有此键的记录读作不能播放. 版本 1 的文件 (1.2.0) 读作转写. 损坏, 缺少字段或版本不同的文件一律视为没有记录.
  */
 data class FileTranscriptRecord(
     val state: State,
@@ -90,6 +91,7 @@ data class FileTranscriptRecord(
     val action: FileAction = FileAction.TRANSCRIBE,
     val analysis: FileAnalysis? = null,
     val segmentSpeakers: List<Int> = emptyList(),
+    val sourceUri: String? = null,
 ) {
 
     enum class State { COMPLETED, CANCELLED, FAILED }
@@ -114,6 +116,7 @@ data class FileTranscriptRecord(
             "action" to action.name,
             "analysis" to analysis?.let(FileAnalysis::toJson),
             "segmentSpeakers" to segmentSpeakers,
+            "sourceUri" to sourceUri,
         ),
     )
 
@@ -165,6 +168,7 @@ data class FileTranscriptRecord(
                 action = if (current) FileAction.valueOf(json["action"] as String) else FileAction.TRANSCRIBE,
                 analysis = if (current) (json["analysis"] as Map<*, *>?)?.let(FileAnalysis::read) else null,
                 segmentSpeakers = speakers,
+                sourceUri = json["sourceUri"] as String?,
             )
         }
 

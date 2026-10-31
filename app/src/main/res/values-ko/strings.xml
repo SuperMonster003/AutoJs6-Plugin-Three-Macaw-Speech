@@ -403,6 +403,15 @@
     <string name="tryout_file_limits">최대 200 MB, 30분</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>
+    <string name="tryout_file_player_back">5초 뒤로</string>
+    <string name="tryout_file_player_forward">5초 앞으로</string>
+    <string name="tryout_file_player_lyrics">가사 보기</string>
+    <string name="tryout_file_player_pause">일시 중지</string>
+    <string name="tryout_file_player_play">재생</string>
+    <string name="tryout_file_player_position">재생 위치</string>
+    <string name="tryout_file_player_preparing" tools:ignore="TypographyEllipsis">재생 준비 중...</string>
+    <string name="tryout_file_player_speed">재생 속도: %1$s</string>
+    <string name="tryout_file_player_unavailable">이 파일을 재생할 수 없습니다: 이동 또는 삭제되었거나 이 기기에서 읽을 수 없습니다. 결과는 여기에 그대로 남습니다.</string>
     <string name="tryout_file_speaker">화자 %1$d</string>
     <string name="tryout_file_speakers">화자 수</string>
     <string name="tryout_file_speakers_auto">자동</string>
@@ -411,6 +420,7 @@
     <string name="tryout_file_stage_language">언어 식별 중</string>
     <string name="tryout_file_stage_tag">소리 판별 중</string>
     <string name="tryout_file_stage_turns">구간별 받아쓰기 중</string>
+    <string name="tryout_file_tag_now">현재: %1$s</string>
     <string name="tryout_file_tag_peak">가장 뚜렷한 구간: %1$s - %2$s</string>
     <string name="tryout_file_tags_heard">들린 소리</string>
     <string name="tryout_file_waiting">분석이 끝나면 결과가 여기에 표시됩니다</string>

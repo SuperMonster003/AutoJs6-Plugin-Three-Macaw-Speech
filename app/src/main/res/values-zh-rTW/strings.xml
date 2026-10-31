@@ -403,6 +403,15 @@
     <string name="tryout_file_limits">最大 200 MB, 30 分鐘</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>
+    <string name="tryout_file_player_back">倒退 5 秒</string>
+    <string name="tryout_file_player_forward">快轉 5 秒</string>
+    <string name="tryout_file_player_lyrics">歌詞式檢視</string>
+    <string name="tryout_file_player_pause">暫停</string>
+    <string name="tryout_file_player_play">播放</string>
+    <string name="tryout_file_player_position">播放位置</string>
+    <string name="tryout_file_player_preparing" tools:ignore="TypographyEllipsis">正在準備播放...</string>
+    <string name="tryout_file_player_speed">播放速度: %1$s</string>
+    <string name="tryout_file_player_unavailable">無法播放此檔案: 檔案可能已被移動或刪除, 或本機無法讀取. 結果仍保留在這裡.</string>
     <string name="tryout_file_speaker">說話者 %1$d</string>
     <string name="tryout_file_speakers">說話者人數</string>
     <string name="tryout_file_speakers_auto">自動</string>
@@ -411,6 +420,7 @@
     <string name="tryout_file_stage_language">正在辨識語言</string>
     <string name="tryout_file_stage_tag">正在辨識聲音</string>
     <string name="tryout_file_stage_turns">正在逐段轉寫</string>
+    <string name="tryout_file_tag_now">目前: %1$s</string>
     <string name="tryout_file_tag_peak">最明顯: %1$s - %2$s</string>
     <string name="tryout_file_tags_heard">聽到的聲音</string>
     <string name="tryout_file_waiting">分析結束後結果會顯示在這裡</string>

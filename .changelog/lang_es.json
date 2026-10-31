@@ -7,6 +7,9 @@
   "$data": {
     "v1.4.0": {
       "released_date": "2026/10/30",
+      "feature": [
+        "El reconocimiento de archivos de Probar ahora puede reproducir el audio: un reproductor sobre el resultado con barra de progreso, velocidades de 0.5x a 2x y saltos de 5 segundos. La frase que se oye se resalta y sigue a la vista, al tocar una frase se reproduce desde ahí, y una vista de letra muestra la frase actual en grande (también en los resultados de hablantes, idiomas y etiquetas de sonido). El último resultado se puede reproducir después de salir de la página mientras el archivo siga ahí: el complemento conserva el acceso de lectura a ese único archivo hasta que borres el resultado o elijas otro."
+      ],
       "improvement": [
         "La identificación del idioma ahora va frase por frase: si una grabación mezcla idiomas, se ve en qué idioma está cada frase (las frases muy cortas se unen a una vecina). La pantalla de prueba lista cada frase, y los segments de speech.detectLanguage en scripts y de la herramienta speech_detect_language también son frases; el idioma general es el que más tiempo se habla y las puntuaciones de los candidatos son proporciones del tiempo de habla. La opción windows no cambia. Cada frase requiere su propia pasada, así que es algo más lento que en 1.3.0"
       ]

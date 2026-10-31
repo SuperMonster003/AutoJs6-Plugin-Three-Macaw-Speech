@@ -403,6 +403,15 @@
     <string name="tryout_file_limits">Jusqu\'à 200 Mo et 30 minutes</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>
+    <string name="tryout_file_player_back">Reculer de 5 secondes</string>
+    <string name="tryout_file_player_forward">Avancer de 5 secondes</string>
+    <string name="tryout_file_player_lyrics">Vue paroles</string>
+    <string name="tryout_file_player_pause">Pause</string>
+    <string name="tryout_file_player_play">Lire</string>
+    <string name="tryout_file_player_position">Position de lecture</string>
+    <string name="tryout_file_player_preparing" tools:ignore="TypographyEllipsis">Préparation de la lecture...</string>
+    <string name="tryout_file_player_speed">Vitesse de lecture: %1$s</string>
+    <string name="tryout_file_player_unavailable">Impossible de lire ce fichier: il a peut-être été déplacé ou supprimé, ou cet appareil ne peut pas le lire. Le résultat reste ici.</string>
     <string name="tryout_file_speaker">Locuteur %1$d</string>
     <string name="tryout_file_speakers">Nombre de locuteurs</string>
     <string name="tryout_file_speakers_auto">Automatique</string>
@@ -411,6 +420,7 @@
     <string name="tryout_file_stage_language">Identification de la langue</string>
     <string name="tryout_file_stage_tag">Étiquetage des sons</string>
     <string name="tryout_file_stage_turns">Transcription de chaque tour</string>
+    <string name="tryout_file_tag_now">Maintenant: %1$s</string>
     <string name="tryout_file_tag_peak">Le plus net: %1$s - %2$s</string>
     <string name="tryout_file_tags_heard">Sons entendus</string>
     <string name="tryout_file_waiting">Le résultat s\'affiche ici à la fin de l\'analyse</string>

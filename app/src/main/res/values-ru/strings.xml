@@ -403,6 +403,15 @@
     <string name="tryout_file_limits">До 200 МБ и 30 минут</string>
     <string name="tryout_file_name">3-macaw-speech.wav</string>
     <string name="tryout_file_pair">%1$s: %2$s</string>
+    <string name="tryout_file_player_back">Назад на 5 секунд</string>
+    <string name="tryout_file_player_forward">Вперёд на 5 секунд</string>
+    <string name="tryout_file_player_lyrics">Крупные субтитры</string>
+    <string name="tryout_file_player_pause">Пауза</string>
+    <string name="tryout_file_player_play">Воспроизвести</string>
+    <string name="tryout_file_player_position">Позиция воспроизведения</string>
+    <string name="tryout_file_player_preparing" tools:ignore="TypographyEllipsis">Подготовка воспроизведения...</string>
+    <string name="tryout_file_player_speed">Скорость воспроизведения: %1$s</string>
+    <string name="tryout_file_player_unavailable">Не удаётся воспроизвести файл: возможно, он перемещён или удалён, либо устройство не может его прочитать. Результат остаётся здесь.</string>
     <string name="tryout_file_speaker">Говорящий %1$d</string>
     <string name="tryout_file_speakers">Число говорящих</string>
     <string name="tryout_file_speakers_auto">Автоматически</string>
@@ -411,6 +420,7 @@
     <string name="tryout_file_stage_language">Определение языка</string>
     <string name="tryout_file_stage_tag">Разметка звуков</string>
     <string name="tryout_file_stage_turns">Расшифровка каждой реплики</string>
+    <string name="tryout_file_tag_now">Сейчас: %1$s</string>
     <string name="tryout_file_tag_peak">Отчётливее всего: %1$s - %2$s</string>
     <string name="tryout_file_tags_heard">Услышанные звуки</string>
     <string name="tryout_file_waiting">Результат появится здесь после анализа</string>

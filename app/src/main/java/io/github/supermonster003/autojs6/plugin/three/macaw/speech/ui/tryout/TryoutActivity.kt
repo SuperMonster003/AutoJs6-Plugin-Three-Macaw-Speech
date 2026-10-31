@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -134,6 +135,7 @@ class TryoutActivity : StandaloneActivity() {
         super.onStart()
         transcription.screenStarted()
         transcription.load()
+        tryout.playback.restore()
     }
 
     override fun onResume() {
@@ -146,6 +148,11 @@ class TryoutActivity : StandaloneActivity() {
         tryout.release()
         transcription.screenStopped()
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        tryout.playback.close()
+        super.onDestroy()
     }
 
     private fun selectTab(index: Int) {
@@ -165,6 +172,7 @@ class TryoutActivity : StandaloneActivity() {
 
     @Composable
     override fun Content() {
+        val scroll = rememberScrollState()
         val problem = tryout.problem
         LaunchedEffect(problem?.serial) { problem?.let { show(getString(problemText(it.code))) } }
         LaunchedEffect(message?.first) { message?.second?.let { snackbar.showSnackbar(it) } }
@@ -177,12 +185,12 @@ class TryoutActivity : StandaloneActivity() {
                         Tab(selected = tab == index, onClick = { selectTab(index) }, text = { Text(stringResource(title)) }, modifier = Modifier.testTag("macaw.tryout.tab.$index"))
                     }
                 }
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(bottom = 24.dp)) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(scroll).padding(bottom = 24.dp)) {
                     when (tab) {
                         0 -> Dictation()
                         1 -> Wake()
                         2 -> Synthesis()
-                        else -> Transcribe()
+                        else -> Transcribe(scroll)
                     }
                 }
             }
@@ -449,7 +457,7 @@ class TryoutActivity : StandaloneActivity() {
      * zh-CN: 不需要麦克风 (D110); 只有任何文件操作的模型都未安装且没有内容可显示时才显示缺少模型的卡片 (D153).
      */
     @Composable
-    private fun Transcribe() {
+    private fun Transcribe(scroll: ScrollState) {
         if (tryout.asrModels.isEmpty() && tryout.analysisModels.isEmpty() && transcription.run == null && transcription.record == null) {
             MissingModel("asr")
             return
@@ -457,6 +465,7 @@ class TryoutActivity : StandaloneActivity() {
         FileTab(
             controller = tryout,
             transcription = transcription,
+            scroll = scroll,
             languageLabel = { languageLabel(it) },
             onPick = { runCatching { pickAudio.launch(AUDIO_TYPES) } },
             onCopy = { copy(FileTexts.copyText(this, it)) },
@@ -474,7 +483,10 @@ class TryoutActivity : StandaloneActivity() {
             model, tryout.fileLanguage.takeIf { model != null && tryout.takesLanguage(model) }, tryout.filePunctuation, tryout.vad,
             action = action, speakers = tryout.fileSpeakers, identify = tryout.fileIdentify, languageModel = tryout.languageModel,
         )
-        if (transcription.start(FileSource.of(this, uri), options)) askNotificationsOnce()
+        if (transcription.start(FileSource.of(this, uri), options)) {
+            transcription.holdDocument(uri)
+            askNotificationsOnce()
+        }
     }
 
     /** D111: once on Android 13+, shared with the first download; a denial changes nothing. zh-CN: D111: Android 13+ 询问一次, 与首次下载共用记录. */
