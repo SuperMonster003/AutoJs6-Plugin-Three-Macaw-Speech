@@ -87,6 +87,7 @@ class ModelManagerTest {
         val (done, total) = listener.progress.last()
         assertEquals(total, done)
         assertEquals(Fixtures.tiny.latestVersion.mirror!!.size + Fixtures.tiny.latestVersion.installBytes, total)
+        assertEquals("the screens can tell the unpacking from the download", setOf(Fixtures.tiny.latestVersion.installBytes), listener.unpackBytes)
         assertEquals("no archive is kept after the install", emptyList<String>(), downloads.list()!!.toList())
         assertEquals(0, server.requests.count { it.first.contains("sherpa-onnx") })
     }

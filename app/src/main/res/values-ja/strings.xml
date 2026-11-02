@@ -132,6 +132,7 @@
     <string name="model_message_removed">%1$s を削除しました</string>
     <string name="model_message_updated">%1$s を v%2$d に更新しました</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
+    <string name="model_progress_installing">インストール中 (%1$d%%)</string>
     <string name="model_punct_about">句読点を出さない認識モデルの結果に, 読点, 句点, 疑問符を付けます (中国語と英語). 英語モデルは大文字も復元します. SenseVoice は自分で句読点を付けるため, これらのモデルを使いません.</string>
     <string name="model_segment_about">録音の中で各話者が話している区間を見つけます. 話者認識モデルと組み合わせて, 誰がいつ話したかを判定します. \"お試し\" 画面の \"話者を分ける\" とスクリプトで使います. 言語を問いません.</string>
     <string name="model_speaker_about">音声を \"話者\" 画面で登録した声紋と比べて, 誰が話しているかを判定します. 常駐ウェイクワードの \"登録した声だけ\" とスクリプトで使います. 言語を問いません. 声紋はこの端末にだけ保存され, 書き出されることはありません.</string>

@@ -52,14 +52,14 @@ class ModelRowsTest {
     fun `download operations and partial files decide the row state`() {
         val entries = listOf(entry("tts.queued", "tts"), entry("tts.running", "tts"), entry("tts.paused", "tts"), entry("tts.new", "tts"), entry("tts.update", "tts", installed = true))
         val operations = listOf(
-            TrackedOperation(1, "tts.running", TrackedOperation.Kind.DOWNLOAD, started = true, done = 40, total = 100),
+            TrackedOperation(1, "tts.running", TrackedOperation.Kind.DOWNLOAD, started = true, done = 40, total = 100, unpackBytes = 50),
             TrackedOperation(2, "tts.queued", TrackedOperation.Kind.DOWNLOAD),
             TrackedOperation(3, "tts.update", TrackedOperation.Kind.DOWNLOAD, started = true),
             TrackedOperation(4, null, TrackedOperation.Kind.IMPORT, started = true),
         )
         val rows = ModelRows.build(entries, operations, emptySet()) { id -> if (id == "tts.paused") 512 else 0 }.single().rows.associateBy { it.id }
         assertEquals(RowState.Queued(2), rows.getValue("tts.queued").state)
-        assertEquals(RowState.Running(1, 40, 100), rows.getValue("tts.running").state)
+        assertEquals(RowState.Running(1, 40, 100, 50), rows.getValue("tts.running").state)
         assertEquals(RowState.Paused(512), rows.getValue("tts.paused").state)
         assertEquals(RowState.Available, rows.getValue("tts.new").state)
         assertEquals("a reinstall shows its progress", RowState.Running(3, 0, 0), rows.getValue("tts.update").state)

@@ -132,6 +132,7 @@
     <string name="model_message_removed">%1$s a été supprimé</string>
     <string name="model_message_updated">%1$s a été mis à jour vers v%2$d</string>
     <string name="model_progress">%1$s sur %2$s (%3$d%%)</string>
+    <string name="model_progress_installing">Installation (%1$d%%)</string>
     <string name="model_punct_about">Ajoute virgules, points et points d\'interrogation au texte des modèles de reconnaissance qui n\'en mettent pas (chinois et anglais). Le modèle anglais rétablit aussi les majuscules. SenseVoice ponctue lui-même son texte et n\'utilise pas ces modèles.</string>
     <string name="model_segment_about">Trouve où parle chaque voix dans un enregistrement. Avec un modèle de reconnaissance du locuteur, il indique qui a parlé et quand, pour \"Séparer les locuteurs\" de l\'écran Essayer et pour les scripts. Il fonctionne avec toutes les langues.</string>
     <string name="model_speaker_about">Reconnaît qui parle en comparant une voix aux empreintes vocales enregistrées dans l\'écran Locuteurs, pour \"Seulement les voix enregistrées\" du mot de réveil permanent et pour les scripts. Fonctionne avec toutes les langues. Les empreintes vocales restent sur cet appareil et ne sont jamais exportées.</string>

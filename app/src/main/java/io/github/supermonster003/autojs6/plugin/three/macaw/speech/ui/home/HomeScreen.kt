@@ -50,6 +50,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstallProgress
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.LicenseNotices
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.LocalMacawPalette
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.CheckRow
@@ -281,11 +282,13 @@ private fun ModelRowItem(row: ModelRow, online: Boolean, onClick: () -> Unit, on
             )
             when (val state = row.state) {
                 is RowState.Running -> {
-                    val fraction = if (state.total > 0) (state.done.toFloat() / state.total).coerceIn(0f, 1f) else null
+                    val progress = InstallProgress.of(state.done, state.total, state.unpackBytes)
+                    val fraction = progress.fraction
                     if (fraction != null) {
                         LinearProgressIndicator(progress = { fraction }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("macaw.model.${row.id}.progress"))
                         Text(
-                            stringResource(R.string.model_progress, HomeTexts.size(context, state.done), HomeTexts.size(context, state.total), (fraction * 100).toInt()),
+                            if (progress.unpacking) stringResource(R.string.model_progress_installing, progress.percent)
+                            else stringResource(R.string.model_progress, HomeTexts.size(context, progress.done), HomeTexts.size(context, progress.total), progress.percent),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),

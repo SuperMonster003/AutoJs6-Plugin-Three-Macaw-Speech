@@ -61,6 +61,10 @@ sealed class OperationResult {
 /** Progress and completion of one operation id. zh-CN: 单个操作 ID 的进度与完成回调. */
 interface OperationListener {
     fun onProgress(opId: Int, done: Long, total: Long)
+
+    /** [onProgress] for the screens: the last [unpackBytes] of [total] are the unpacking (roadmap D181). zh-CN: 供界面使用的 [onProgress]: [total] 的最后 [unpackBytes] 为解包 (路线图 D181). */
+    fun onProgress(opId: Int, done: Long, total: Long, unpackBytes: Long) = onProgress(opId, done, total)
+
     fun onCompleted(opId: Int, result: OperationResult)
     fun onFailed(opId: Int, error: ModelException)
 }
@@ -90,7 +94,7 @@ class ModelManager(
 ) {
 
     /** What runs now, for the foreground notification. zh-CN: 当前运行的内容, 供前台通知使用. */
-    data class Activity(val pending: Int, val title: String?, val done: Long, val total: Long)
+    data class Activity(val pending: Int, val title: String?, val done: Long, val total: Long, val unpackBytes: Long = 0)
 
     fun interface ActivityListener {
         fun onActivity(activity: Activity)
@@ -107,6 +111,7 @@ class ModelManager(
         @Volatile var discard = false
         @Volatile var done = 0L
         @Volatile var total = 0L
+        @Volatile var unpackBytes = 0L
     }
 
     private val ids = AtomicInteger(0)
@@ -266,7 +271,7 @@ class ModelManager(
             busyModels += modelId
             try {
                 val replaced = store.installed(modelId)?.versionCode?.takeIf { it != version.versionCode }
-                val result = installer.install(current, version, snapshot.catalogVersion, operation.cancel) { done, total -> progress(operation, done, total) }
+                val result = installer.install(current, version, snapshot.catalogVersion, operation.cancel) { done, total, unpackBytes -> progress(operation, done, total, unpackBytes) }
                 log("Installed $modelId v${version.versionCode} from ${result.origin}, ${result.downloadedBytes} bytes downloaded" +
                     (result.mirrorFailure?.let { " (mirror failed: $it)" } ?: "") + (replaced?.let { ", replacing v$it" } ?: ""))
                 if (replaced != null) runCatching { onModelReplaced(modelId) }
@@ -467,7 +472,7 @@ class ModelManager(
         return operation.id
     }
 
-    private fun progress(operation: Operation, done: Long, total: Long) {
+    private fun progress(operation: Operation, done: Long, total: Long, unpackBytes: Long = 0) {
         if (operation.cancel.isCancelled) return
         // About 200 reports per phase (1 MiB steps when the total is unknown), plus the last one and every change of
         // total (the upstream fallback has another size).
@@ -476,13 +481,14 @@ class ModelManager(
         if (!last && total == operation.total && done >= operation.done && done - operation.done < step) return
         operation.done = done
         operation.total = total
-        runCatching { operation.listener.onProgress(operation.id, done, total) }
+        operation.unpackBytes = unpackBytes
+        runCatching { operation.listener.onProgress(operation.id, done, total, unpackBytes) }
         publishActivity()
     }
 
     private fun publishActivity() {
         val running = operations.values.firstOrNull { it.started }
-        runCatching { activity?.onActivity(Activity(operations.size, running?.title, running?.done ?: 0, running?.total ?: 0)) }
+        runCatching { activity?.onActivity(Activity(operations.size, running?.title, running?.done ?: 0, running?.total ?: 0, running?.unpackBytes ?: 0)) }
     }
 
     /**

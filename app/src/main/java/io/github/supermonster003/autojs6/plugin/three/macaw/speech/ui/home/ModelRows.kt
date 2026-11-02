@@ -13,6 +13,7 @@ internal data class TrackedOperation(
     val started: Boolean = false,
     val done: Long = 0,
     val total: Long = 0,
+    val unpackBytes: Long = 0,
 ) {
     enum class Kind { DOWNLOAD, IMPORT, REFRESH, RECYCLE }
 }
@@ -26,7 +27,7 @@ internal sealed class RowState {
     data class Paused(val downloadedBytes: Long) : RowState()
 
     data class Queued(val opId: Int) : RowState()
-    data class Running(val opId: Int, val done: Long, val total: Long) : RowState()
+    data class Running(val opId: Int, val done: Long, val total: Long, val unpackBytes: Long = 0) : RowState()
 }
 
 internal enum class LicenseTag { COMMERCIAL, NON_COMMERCIAL, UNKNOWN }
@@ -103,7 +104,7 @@ internal object ModelRows {
         val state = when {
             entry.installed && operation == null -> RowState.Installed
             operation != null && !operation.started -> RowState.Queued(operation.opId)
-            operation != null -> RowState.Running(operation.opId, operation.done, operation.total)
+            operation != null -> RowState.Running(operation.opId, operation.done, operation.total, operation.unpackBytes)
             builtin -> RowState.Installed
             else -> downloadedBytes(entry.id).takeIf { it > 0 }?.let(RowState::Paused) ?: RowState.Available
         }

@@ -18,6 +18,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstallProgress
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelManager
 
 /**
@@ -81,9 +82,11 @@ class ModelOperationService : Service() {
             .setSilent(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         if (activity.total > 0) {
-            val percent = (activity.done.coerceIn(0, activity.total) * 100 / activity.total).toInt()
-            builder.setProgress(100, percent, false)
-                .setContentText("${Formatter.formatShortFileSize(this, activity.done)} / ${Formatter.formatShortFileSize(this, activity.total)}")
+            val progress = InstallProgress.of(activity.done, activity.total, activity.unpackBytes)
+            builder.setProgress(100, progress.percent, false).setContentText(
+                if (progress.unpacking) getString(R.string.model_progress_installing, progress.percent)
+                else "${Formatter.formatShortFileSize(this, progress.done)} / ${Formatter.formatShortFileSize(this, progress.total)}",
+            )
         } else {
             builder.setProgress(0, 0, true)
         }

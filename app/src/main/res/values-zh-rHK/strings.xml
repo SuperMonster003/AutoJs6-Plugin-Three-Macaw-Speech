@@ -132,6 +132,7 @@
     <string name="model_message_removed">%1$s 已刪除</string>
     <string name="model_message_updated">%1$s 已更新至 v%2$d</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
+    <string name="model_progress_installing">正在安裝 (%1$d%%)</string>
     <string name="model_punct_about">為不帶標點的識別模型的結果加上逗號, 句號和問號 (中文與英文). 英文模型還會恢復大寫字母. SenseVoice 自帶標點, 不使用這些模型.</string>
     <string name="model_segment_about">找出錄音中每個聲音說話的位置. 與說話人識別模型一起判斷誰在甚麼時候說話, 供 \"試聽試說\" 頁面的 \"分離說話人\" 與腳本使用. 不限語言.</string>
     <string name="model_speaker_about">把一段聲音與 \"說話人\" 頁面登記的聲紋比較, 判斷是誰在說話, 供常駐喚醒的 \"只聽主人\" 與指令碼使用. 不限語言. 聲紋只儲存在本機, 不會匯出.</string>

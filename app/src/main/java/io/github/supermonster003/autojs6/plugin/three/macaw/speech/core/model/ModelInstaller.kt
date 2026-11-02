@@ -26,7 +26,7 @@ class ModelInstaller(
     data class Result(val model: InstalledModel, val origin: String, val mirrorFailure: String?, val downloadedBytes: Long)
 
     @Throws(ModelException::class)
-    fun install(model: CatalogModel, version: CatalogModelVersion, catalogVersion: Int, cancel: CancelToken, onProgress: (done: Long, total: Long) -> Unit): Result {
+    fun install(model: CatalogModel, version: CatalogModelVersion, catalogVersion: Int, cancel: CancelToken, onProgress: (done: Long, total: Long, unpackBytes: Long) -> Unit): Result {
         store.installed(model.modelId)?.let { existing ->
             if (existing.versionCode == version.versionCode && existing.source == ModelStore.SOURCE_CATALOG &&
                 existing.files == version.files && store.isIntact(existing)
@@ -48,15 +48,15 @@ class ModelInstaller(
         return installFromUpstream(model, version, catalogVersion, mirrorFailure, cancel, onProgress)
     }
 
-    private fun installFromMirror(model: CatalogModel, mirror: MirrorArchive, version: CatalogModelVersion, catalogVersion: Int, cancel: CancelToken, onProgress: (Long, Long) -> Unit): Result {
+    private fun installFromMirror(model: CatalogModel, mirror: MirrorArchive, version: CatalogModelVersion, catalogVersion: Int, cancel: CancelToken, onProgress: (Long, Long, Long) -> Unit): Result {
         requireSpace(downloader.remainingBytes(mirror, downloadDirectory) + version.installBytes)
         val total = mirror.size + version.installBytes
         val before = downloader.remainingBytes(mirror, downloadDirectory)
-        val archive = downloader.fetch(mirror, downloadDirectory, cancel) { onProgress(it, total) }
+        val archive = downloader.fetch(mirror, downloadDirectory, cancel) { onProgress(it, total, version.installBytes) }
         val staging = store.newStagingDirectory()
         try {
             try {
-                extractor.extractMirror(archive, version.files, staging, cancel) { onProgress(mirror.size + it, total) }
+                extractor.extractMirror(archive, version.files, staging, cancel) { onProgress(mirror.size + it, total, version.installBytes) }
             } catch (e: ModelException) {
                 // A verified archive that does not unpack to the catalog files is useless: drop it before the fallback.
                 if (e !is OperationCancelledException) archive.delete()
@@ -71,7 +71,7 @@ class ModelInstaller(
     }
 
     /** [mirrorFailure] is null for upstream-only versions. zh-CN: 仅上游版本的 [mirrorFailure] 为 null. */
-    private fun installFromUpstream(model: CatalogModel, version: CatalogModelVersion, catalogVersion: Int, mirrorFailure: String?, cancel: CancelToken, onProgress: (Long, Long) -> Unit): Result {
+    private fun installFromUpstream(model: CatalogModel, version: CatalogModelVersion, catalogVersion: Int, mirrorFailure: String?, cancel: CancelToken, onProgress: (Long, Long, Long) -> Unit): Result {
         val remaining = version.upstream.sumOf { downloader.remainingBytes(it, downloadDirectory) }
         requireSpace(remaining + version.installBytes)
         val total = version.upstreamBytes + version.installBytes
@@ -79,7 +79,7 @@ class ModelInstaller(
         var done = 0L
         val downloaded = version.upstream.map { part ->
             val base = done
-            downloader.fetch(part, downloadDirectory, cancel) { onProgress(base + it, total) }.also { done += part.size }
+            downloader.fetch(part, downloadDirectory, cancel) { onProgress(base + it, total, version.installBytes) }.also { done += part.size }
         }
         val staging = store.newStagingDirectory()
         try {
@@ -87,14 +87,14 @@ class ModelInstaller(
                 cancel.throwIfCancelled()
                 val base = done
                 when (part) {
-                    is UpstreamPart.TarBz2 -> extractor.extractUpstream(file, part.members, files, staging, cancel) { onProgress(base + it, total) }
+                    is UpstreamPart.TarBz2 -> extractor.extractUpstream(file, part.members, files, staging, cancel) { onProgress(base + it, total, version.installBytes) }
                     is UpstreamPart.RawFile -> extractor.installRawFile(file, part, files.getValue(part.path), staging)
                 }
                 done += when (part) {
                     is UpstreamPart.TarBz2 -> part.members.values.sumOf { files.getValue(it).size }
                     is UpstreamPart.RawFile -> part.size
                 }
-                onProgress(done, total)
+                onProgress(done, total, version.installBytes)
             }
             val missing = version.files.filter { !File(staging, it.path).isFile }
             if (missing.isNotEmpty()) throw IntegrityException("Upstream assets lack ${missing.size} catalog files")

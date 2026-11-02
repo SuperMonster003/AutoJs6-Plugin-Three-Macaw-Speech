@@ -208,8 +208,10 @@ internal class OperationTracker(private val post: (() -> Unit) -> Unit) {
     @Throws(ModelException::class)
     fun track(kind: TrackedOperation.Kind, modelId: String?, start: (OperationListener) -> Int): Int {
         val listener = object : OperationListener {
-            override fun onProgress(opId: Int, done: Long, total: Long) = post {
-                operations[opId]?.let { operations[opId] = it.copy(started = true, done = done, total = total) }
+            override fun onProgress(opId: Int, done: Long, total: Long) = onProgress(opId, done, total, 0)
+
+            override fun onProgress(opId: Int, done: Long, total: Long, unpackBytes: Long) = post {
+                operations[opId]?.let { operations[opId] = it.copy(started = true, done = done, total = total, unpackBytes = unpackBytes) }
             }
 
             override fun onCompleted(opId: Int, result: OperationResult) = post { finish(opId, kind, modelId) { Outcome.Completed(it, result) } }

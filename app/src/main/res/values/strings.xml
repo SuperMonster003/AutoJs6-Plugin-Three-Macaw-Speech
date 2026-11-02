@@ -132,6 +132,7 @@
     <string name="model_message_removed">%1$s was deleted</string>
     <string name="model_message_updated">%1$s was updated to v%2$d</string>
     <string name="model_progress">%1$s of %2$s (%3$d%%)</string>
+    <string name="model_progress_installing">Installing (%1$d%%)</string>
     <string name="model_punct_about">Adds commas, periods and question marks to the text of recognition models that leave them out (Chinese and English). The English model also restores capital letters. SenseVoice adds its own punctuation and does not use these models.</string>
     <string name="model_segment_about">Finds where each voice speaks in a recording. With a speaker recognition model it tells who spoke when, for \"Find speakers\" on the Try it out screen and for scripts. It works with any language.</string>
     <string name="model_speaker_about">Tells who is speaking by comparing a voice with the voiceprints enrolled on the Speakers screen, for \"Only enrolled voices\" of the resident wake word and for scripts. It works with any language. Voiceprints stay on this device and are never exported.</string>

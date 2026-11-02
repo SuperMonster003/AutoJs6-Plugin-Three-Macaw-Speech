@@ -209,12 +209,18 @@ internal class FakeGitHub : AutoCloseable {
 /** Collects the events of one operation. zh-CN: 收集单个操作的事件. */
 internal class RecordingListener : OperationListener {
     val progress: MutableList<Pair<Long, Long>> = Collections.synchronizedList(ArrayList())
+    val unpackBytes: MutableSet<Long> = Collections.synchronizedSet(HashSet())
     @Volatile var result: OperationResult? = null
     @Volatile var error: ModelException? = null
     private val done = CountDownLatch(1)
 
     override fun onProgress(opId: Int, done: Long, total: Long) {
         progress += done to total
+    }
+
+    override fun onProgress(opId: Int, done: Long, total: Long, unpackBytes: Long) {
+        this.unpackBytes += unpackBytes
+        onProgress(opId, done, total)
     }
 
     override fun onCompleted(opId: Int, result: OperationResult) {

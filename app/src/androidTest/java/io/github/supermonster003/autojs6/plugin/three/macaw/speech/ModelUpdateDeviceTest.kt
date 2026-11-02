@@ -104,7 +104,7 @@ class ModelUpdateDeviceTest {
         val transport = UrlConnectionTransport(userAgent = "Three-Macaw-Speech device test")
         val installer = ModelInstaller(manager.store, Downloader(transport), ArchiveExtractor(), File(context.cacheDir, "downloads"), freeSpace = { it.usableSpace })
         val started = SystemClock.elapsedRealtime()
-        installer.install(model, model.version(1)!!, snapshot.catalogVersion, CancelToken()) { _, _ -> }
+        installer.install(model, model.version(1)!!, snapshot.catalogVersion, CancelToken()) { _, _, _ -> }
         SpeechDevice.log("installed v1 of $id in ${SystemClock.elapsedRealtime() - started} ms")
     }
 

@@ -132,6 +132,7 @@
     <string name="model_message_removed">%1$s을(를) 삭제했습니다</string>
     <string name="model_message_updated">%1$s이(가) v%2$d(으)로 업데이트되었습니다</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
+    <string name="model_progress_installing">설치 중 (%1$d%%)</string>
     <string name="model_punct_about">문장 부호를 쓰지 않는 인식 모델의 결과에 쉼표, 마침표, 물음표를 붙입니다 (중국어와 영어). 영어 모델은 대문자도 복원합니다. SenseVoice는 직접 문장 부호를 붙이므로 이 모델을 사용하지 않습니다.</string>
     <string name="model_segment_about">녹음에서 각 목소리가 말하는 구간을 찾습니다. 화자 인식 모델과 함께 누가 언제 말했는지 판별하며, \"체험하기\" 화면의 \"화자 분리\" 와 스크립트에서 사용합니다. 언어에 관계없이 동작합니다.</string>
     <string name="model_speaker_about">목소리를 \"화자\" 화면에서 등록한 성문과 비교해 누가 말하는지 판별합니다. 상시 호출어의 \"등록된 목소리만\" 과 스크립트에서 사용합니다. 언어에 관계없이 동작합니다. 성문은 이 기기에만 저장되며 내보내지 않습니다.</string>

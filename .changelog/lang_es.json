@@ -18,7 +18,8 @@
       ],
       "fix": [
         "Tras eliminar o reemplazar un modelo de síntesis, otros modelos podían perder la mayor parte del texto leído, sin ningún error, hasta reiniciar el complemento. Ocurría cuando el modelo eliminado era el primero usado desde que se inició el complemento",
-        "Al abrir el complemento desde los ajustes de texto a voz del sistema, la lista se quedaba una fila por encima del grupo de síntesis; ahora el encabezado del grupo aparece arriba"
+        "Al abrir el complemento desde los ajustes de texto a voz del sistema, la lista se quedaba una fila por encima del grupo de síntesis; ahora el encabezado del grupo aparece arriba",
+        "Durante la descarga de un modelo, el total mostraba el doble del tamaño real (162 MB para un modelo de 81 MB) porque incluía el desempaquetado. Ahora la pantalla de inicio y la notificación muestran la descarga según el tamaño del modelo y después la instalación por separado"
       ],
       "improvement": [
         "La identificación del idioma ahora va frase por frase: si una grabación mezcla idiomas, se ve en qué idioma está cada frase (las frases muy cortas se unen a una vecina). La pantalla de prueba lista cada frase, y los segments de speech.detectLanguage en scripts y de la herramienta speech_detect_language también son frases; el idioma general es el que más tiempo se habla y las puntuaciones de los candidatos son proporciones del tiempo de habla. La opción windows no cambia. Cada frase requiere su propia pasada, así que es algo más lento que en 1.3.0"
