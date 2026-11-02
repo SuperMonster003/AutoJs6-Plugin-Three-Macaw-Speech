@@ -64,9 +64,11 @@ URL and SHA-256.
 eSpeak NG and UCD Tools are licensed under the GNU General Public License version 3 or later.
 sherpa-onnx builds them for its text-to-speech front end (`SHERPA_ONNX_ENABLE_TTS`, on in the official
 Android build), so `libsherpa-onnx-jni.so` contains their code on every device, whether or not a voice
-that uses eSpeak NG (piper, kokoro) is installed. Upstream plans to remove eSpeak NG and
-piper-phonemize in sherpa-onnx 2.0.0 (https://github.com/k2-fsa/sherpa-onnx/issues/3731); the plugin
-will move to such a release and drop this section (roadmap appendix D Q9).
+that uses eSpeak NG (piper, kokoro) is installed. Upstream removed eSpeak NG and piper-phonemize in
+sherpa-onnx 2.0.0 of 2026-10-23 (https://github.com/k2-fsa/sherpa-onnx/issues/3731). The plugin
+evaluated that release and stays on 1.13.8, because most of its voices would lose their speech or skip
+words without them (`docs/development/sherpa-onnx-2-migration.md`). This section applies for as long
+as it does; roadmap D179 lists the conditions for evaluating the move again.
 
 - License of the APK: the source code in this repository stays under MPL-2.0. MPL-2.0 section 3.3
   allows combining it with GPL-3.0-or-later code (no file here carries the "Incompatible With Secondary
