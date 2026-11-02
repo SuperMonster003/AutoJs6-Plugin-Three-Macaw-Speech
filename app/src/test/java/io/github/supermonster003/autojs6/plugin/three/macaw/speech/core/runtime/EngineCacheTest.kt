@@ -107,6 +107,25 @@ class EngineCacheTest {
     }
 
     @Test
+    fun `versions are told apart and the end of the last use is reported`() {
+        val idle = ArrayList<EngineKey>()
+        cache.onIdle = { idle += it }
+        val first = cache.acquire(key) { load("v1") }
+        val second = cache.acquire(key) { load("v1") }
+        assertTrue(cache.inUse(key.modelId, key.versionCode))
+        assertFalse(cache.inUse(key.modelId, key.versionCode + 1))
+        assertFalse(cache.inUse("kws.b", key.versionCode))
+        first.close()
+        assertTrue("the instance has another user", idle.isEmpty())
+        second.close()
+        assertEquals(listOf(key), idle)
+        assertFalse(cache.inUse(key.modelId, key.versionCode))
+        assertThrows(IllegalStateException::class.java) { cache.acquire(key.copy(variant = "bad")) { error("bad model") } }
+        assertEquals("a failed load ends its use too", 2, idle.size)
+        assertFalse(cache.inUse(key.modelId, key.versionCode))
+    }
+
+    @Test
     fun `a failed load leaves nothing behind and zero idle time releases at once`() {
         assertThrows(IllegalStateException::class.java) { cache.acquire(key) { error("bad model") } }
         assertFalse(cache.inUse("asr.a"))

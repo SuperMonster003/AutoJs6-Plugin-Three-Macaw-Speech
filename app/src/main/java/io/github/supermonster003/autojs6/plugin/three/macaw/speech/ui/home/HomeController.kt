@@ -46,10 +46,13 @@ internal sealed interface HomeDialog {
 internal sealed interface HomeMessage {
     data object Offline : HomeMessage
     data class Installed(val name: String) : HomeMessage
+    data class Updated(val name: String, val version: Int) : HomeMessage
     data class Imported(val name: String) : HomeMessage
     data class Removed(val name: String) : HomeMessage
     data class DefaultSet(val name: String) : HomeMessage
-    data class Failed(val code: String, val kind: TrackedOperation.Kind, val insufficientSpace: Boolean = false) : HomeMessage
+
+    /** [keptPrevious]: an update failed and the installed version stays. zh-CN: [keptPrevious]: 更新失败, 已安装的版本保留. */
+    data class Failed(val code: String, val kind: TrackedOperation.Kind, val insufficientSpace: Boolean = false, val keptPrevious: Boolean = false) : HomeMessage
 }
 
 /** Status card facts the Activity reads on every resume. zh-CN: Activity 每次恢复时读取的状态卡信息. */
@@ -112,12 +115,17 @@ internal class HomeController(
 
     fun row(modelId: String): ModelRow? = groups.firstNotNullOfOrNull { group -> group.rows.firstOrNull { it.id == modelId } }
 
+    /**
+     * Bytes the download of [modelId] would transfer: its update when one is offered. zh-CN: [modelId] 的下载将传输的字节数: 有更新时为更新的大小.
+     */
+    fun downloadSize(modelId: String): Long = row(modelId)?.let { it.update?.update?.sizeBytes ?: it.sizeBytes } ?: 0L
+
     /** Reloads the entries and the partial download sizes off the main thread. zh-CN: 在主线程之外重新加载条目与部分下载大小. */
     fun refresh() {
         io {
             val list = runCatching { backend.entries() }.getOrDefault(emptyList())
             val version = runCatching { backend.catalogVersion() }.getOrDefault(0)
-            val partial = list.filter { !it.installed && it.id !in backend.builtinIds }
+            val partial = list.filter { (!it.installed || it.update != null) && it.id !in backend.builtinIds }
                 .associate { it.id to runCatching { backend.downloadedBytes(it.id) }.getOrDefault(0L) }
             main {
                 entries = list
@@ -130,7 +138,7 @@ internal class HomeController(
 
     // Downloads ------------------------------------------------------------------------------------------------------
 
-    /** The download button, also "resume" for a paused download. zh-CN: 下载按钮, 对暂停的下载也表示 "继续". */
+    /** The download button, also "resume" for a paused download and "update" for an installed model. zh-CN: 下载按钮, 对暂停的下载也表示 "继续", 对已安装模型表示 "更新". */
     fun requestDownload(modelId: String) {
         if (!environment.networkAvailable()) {
             post(HomeMessage.Offline)
@@ -265,7 +273,13 @@ internal class HomeController(
             is OperationTracker.Outcome.Completed -> {
                 val result = outcome.result
                 if (result is OperationResult.Model) {
-                    post(if (operation.kind == TrackedOperation.Kind.IMPORT) HomeMessage.Imported(result.entry.name) else HomeMessage.Installed(result.entry.name))
+                    post(
+                        when {
+                            operation.kind == TrackedOperation.Kind.IMPORT -> HomeMessage.Imported(result.entry.name)
+                            result.replacedVersion != null -> HomeMessage.Updated(result.entry.name, result.entry.version)
+                            else -> HomeMessage.Installed(result.entry.name)
+                        },
+                    )
                 }
             }
             is OperationTracker.Outcome.Failed -> {
@@ -276,8 +290,10 @@ internal class HomeController(
                         lastImport?.let { dialog = HomeDialog.ImportForm(it) }
                     operation.kind == TrackedOperation.Kind.IMPORT && error.code == SpeechErrorCodes.MODEL_LICENSE_NOT_ACCEPTED ->
                         lastImport?.let { pending -> dialog = HomeDialog.License(licensedModel(error) ?: "", pending) }
-                    operation.kind == TrackedOperation.Kind.DOWNLOAD || operation.kind == TrackedOperation.Kind.IMPORT ->
-                        post(HomeMessage.Failed(error.code, operation.kind, error is InsufficientSpaceException))
+                    operation.kind == TrackedOperation.Kind.DOWNLOAD || operation.kind == TrackedOperation.Kind.IMPORT -> {
+                        val kept = operation.kind == TrackedOperation.Kind.DOWNLOAD && entries.any { it.id == operation.modelId && it.installed }
+                        post(HomeMessage.Failed(error.code, operation.kind, error is InsufficientSpaceException, kept))
+                    }
                 }
             }
         }

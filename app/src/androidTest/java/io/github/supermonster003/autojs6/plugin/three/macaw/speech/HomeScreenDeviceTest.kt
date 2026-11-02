@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -27,6 +28,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Mo
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelInstaller
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelManager
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelStore
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelUpdate
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationListener
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationResult
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.UrlConnectionTransport
@@ -180,6 +182,28 @@ class HomeScreenDeviceTest {
         show(FakeBackend(emptyList()), FakeEnvironment())
         compose.onNodeWithTag("macaw.emptyState").assertIsDisplayed()
         log("home empty catalog emptyState=shown")
+    }
+
+    @Test
+    fun anUpdateIsOfferedOnTheRowAndInTheDetails() {
+        val update = ModelUpdate(2, 80L shl 20, "LicenseRef-New", "speech_model_license_non_commercial", null)
+        val offered = entry("tts.old", "tts", installed = true).copy(latestVersion = 2, update = update)
+        val backend = FakeBackend(listOf(offered), licensed = setOf("tts.old"))
+        show(backend, FakeEnvironment())
+        scrollTo("macaw.model.tts.old")
+        child("macaw.model.tts.old.updateBadge").assertIsDisplayed()
+        compose.onNodeWithTag("macaw.model.tts.old.installed", useUnmergedTree = true).assertDoesNotExist()
+
+        child("macaw.model.tts.old").performClick()
+        awaitNode("macaw.details")
+        compose.onNodeWithTag("macaw.details.update").assertIsDisplayed()
+        compose.onNodeWithTag("macaw.details.delete").assertIsDisplayed()
+        compose.onNodeWithTag("macaw.details.update").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodes(hasTestTag("macaw.license")).fetchSemanticsNodes().isNotEmpty() }
+        assertTrue("the dialog names the license of the new version", compose.onAllNodes(hasText("LicenseRef-New", substring = true), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty())
+        compose.onNodeWithTag("macaw.license.confirm").performClick()
+        compose.waitUntil(5_000) { backend.installs.isNotEmpty() }
+        assertEquals(listOf("tts.old" to true), backend.installs.toList())
     }
 
     @Test

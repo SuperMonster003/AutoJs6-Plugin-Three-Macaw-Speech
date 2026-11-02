@@ -42,12 +42,13 @@ data class InstalledModel(
  * after its staged copy, written and verified in `.staging/`, was renamed into place together with its `.manifest.json`
  * (installed paths never start with a dot, so the manifest cannot collide with a model file); the rename is the commit.
  * Replacing a version moves the old directory to `.trash/` first and [reconcile] restores it if the process died in
- * between. `.state.json` holds the default model of each kind and the remembered license acceptances (roadmap D11),
- * written atomically. Pure JVM, no Android types.
+ * between. An update leaves an older version in place while [isVersionInUse] says an engine still runs on it (roadmap
+ * D174); [sweep] and the next [reconcile] delete it. `.state.json` holds the default model of each kind and the remembered
+ * license acceptances (roadmap D11), written atomically. Pure JVM, no Android types.
  * zh-CN: 私有模型存储 `filesDir/models/<modelId>/<versionCode>/` (路线图 D23). 版本目录只有在 `.staging/` 中写好并校验的副本连同其
  * `.manifest.json` 一起改名到位后才存在 (安装路径从不以点开头, 清单不会与模型文件冲突); 改名即提交. 替换版本时先把旧目录移到 `.trash/`,
- * 若进程在中途死亡, [reconcile] 会将其恢复. `.state.json` 保存每种模型的默认模型与已记住的许可接受记录 (路线图 D11), 以原子方式写入.
- * 纯 JVM, 不含 Android 类型.
+ * 若进程在中途死亡, [reconcile] 会将其恢复. 更新时, 只要 [isVersionInUse] 表明还有引擎在使用旧版本, 旧版本就留在原处 (路线图 D174), 由 [sweep] 与下一次
+ * [reconcile] 删除. `.state.json` 保存每种模型的默认模型与已记住的许可接受记录 (路线图 D11), 以原子方式写入. 纯 JVM, 不含 Android 类型.
  */
 class ModelStore(root: File, private val clock: () -> Long = System::currentTimeMillis) {
 
@@ -63,14 +64,25 @@ class ModelStore(root: File, private val clock: () -> Long = System::currentTime
 
     private data class State(val defaults: Map<String, String>, val licenses: List<LicenseAcceptance>)
 
+    /** Whether an engine runs or loads on a version (`EngineCache.inUse`). zh-CN: 是否有引擎正在运行或加载某版本. */
+    @Volatile
+    var isVersionInUse: (modelId: String, versionCode: Int) -> Boolean = { _, _ -> false }
+
+    /** Called before a version directory is deleted, while it still exists (roadmap D175). zh-CN: 版本目录删除之前调用, 此时它还在 (路线图 D175). */
+    @Volatile
+    var beforeDelete: (File) -> Unit = {}
+
     init {
         reconcile()
     }
 
     /**
      * Recovers from an interrupted operation: restores a replaced version whose successor never arrived, removes
-     * staging and trash leftovers, version directories without a readable manifest, and defaults of missing models.
-     * zh-CN: 从中断的操作中恢复: 恢复后继版本未到位的被替换版本, 删除暂存与回收站残留, 没有可读清单的版本目录, 以及指向缺失模型的默认设置.
+     * staging and trash leftovers, version directories without a readable manifest, old versions that a newer one
+     * replaced (an update that died before deleting them, or that kept them for an engine; roadmap D174), and defaults of
+     * missing models.
+     * zh-CN: 从中断的操作中恢复: 恢复后继版本未到位的被替换版本, 删除暂存与回收站残留, 没有可读清单的版本目录, 已被新版本替换的旧版本 (更新在删除前中断,
+     * 或为引擎保留; 路线图 D174), 以及指向缺失模型的默认设置.
      */
     fun reconcile() = synchronized(lock) {
         root.mkdirs()
@@ -95,6 +107,7 @@ class ModelStore(root: File, private val clock: () -> Long = System::currentTime
                     versionDirectory.deleteRecursively()
                 }
             }
+            sweepLocked(modelDirectory.name)
             if (modelDirectory.listFiles().isNullOrEmpty()) modelDirectory.delete()
         }
         cache = null
@@ -116,8 +129,10 @@ class ModelStore(root: File, private val clock: () -> Long = System::currentTime
 
     /**
      * Commits a fully written and verified [stagingDirectory] as [model]: writes the manifest, renames the directory
-     * into place, replaces the previous copy of the same version and removes the other versions of the model.
-     * zh-CN: 把已写完并校验的 [stagingDirectory] 提交为 [model]: 写入清单, 改名到位, 替换同版本的旧副本并删除该模型的其他版本.
+     * into place, replaces the previous copy of the same version and removes the other versions of the model, except an
+     * older version an engine still runs on ([sweep] removes it later).
+     * zh-CN: 把已写完并校验的 [stagingDirectory] 提交为 [model]: 写入清单, 改名到位, 替换同版本的旧副本并删除该模型的其他版本, 但引擎仍在使用的旧版本除外
+     * (之后由 [sweep] 删除).
      */
     fun commit(stagingDirectory: File, model: InstalledModel): InstalledModel = synchronized(lock) {
         val manifest = File(stagingDirectory, MANIFEST)
@@ -137,10 +152,31 @@ class ModelStore(root: File, private val clock: () -> Long = System::currentTime
             throw ModelException(SpeechErrorCodes.IO_FAILED, "Cannot activate ${model.modelId}")
         }
         displaced?.deleteRecursively()
-        modelDirectory.listFiles().orEmpty().filter { it.name != target.name }.forEach { discard(it, model.modelId) }
+        // beforeDelete asks for the installed models: they must already include this one.
+        cache = null
+        modelDirectory.listFiles().orEmpty()
+            .filter { it.name != target.name && !olderInUse(it, model) }
+            .forEach { discard(it, model.modelId) }
         cache = null
         model.copy(directory = target)
     }
+
+    /**
+     * Deletes the versions of [modelId] below the newest that no engine uses any more (roadmap D174).
+     * zh-CN: 删除 [modelId] 中低于最新版本且已无引擎使用的版本 (路线图 D174).
+     */
+    fun sweep(modelId: String) = synchronized(lock) {
+        if (isModelId(modelId)) sweepLocked(modelId)
+    }
+
+    private fun sweepLocked(modelId: String) {
+        val versions = File(root, modelId).listFiles().orEmpty().filter { it.name.toIntOrNull() != null }.sortedBy { it.name.toInt() }
+        versions.dropLast(1).filter { !isVersionInUse(modelId, it.name.toInt()) }.forEach { discard(it, modelId) }
+    }
+
+    // Only older versions stay: scan() reports the highest, which must be what was just committed.
+    private fun olderInUse(directory: File, model: InstalledModel): Boolean =
+        directory.name.toIntOrNull()?.let { it < model.versionCode && isVersionInUse(model.modelId, it) } == true
 
     /** Deletes every installed version of [modelId]; false when none was installed. zh-CN: 删除 [modelId] 的全部已安装版本. */
     fun remove(modelId: String): Boolean = synchronized(lock) {
@@ -190,6 +226,7 @@ class ModelStore(root: File, private val clock: () -> Long = System::currentTime
 
     /** Removes a version for good; the trash name has no `@`, so [reconcile] never restores it. zh-CN: 永久删除一个版本. */
     private fun discard(directory: File, modelId: String) {
+        runCatching { beforeDelete(directory) }
         trash.mkdirs()
         val moved = File(trash, "discarded-$modelId-${UUID.randomUUID()}")
         if (directory.renameTo(moved)) moved.deleteRecursively() else directory.deleteRecursively()

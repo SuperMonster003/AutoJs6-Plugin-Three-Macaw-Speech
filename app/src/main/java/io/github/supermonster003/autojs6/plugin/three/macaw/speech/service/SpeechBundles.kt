@@ -57,9 +57,10 @@ internal object SpeechBundles {
 
     /**
      * One model as `SpeechModelKeys`. The contract's `commercialUse` is a Boolean, so the catalog value `"unknown"`
-     * reads as false, which also means "needs `acceptLicense`" (roadmap D11).
+     * reads as false, which also means "needs `acceptLicense`" (roadmap D11). [MODEL_UPDATE_AVAILABLE] and
+     * [MODEL_LATEST_VERSION_CODE] are extras outside the contract (roadmap D166, D173).
      * zh-CN: 以 `SpeechModelKeys` 表示的单个模型. 契约中的 `commercialUse` 为布尔值, 目录取值 `"unknown"` 因此读作 false, 同样表示需要
-     * `acceptLicense` (路线图 D11).
+     * `acceptLicense` (路线图 D11). [MODEL_UPDATE_AVAILABLE] 与 [MODEL_LATEST_VERSION_CODE] 是契约之外的附加字段 (路线图 D166, D173).
      */
     fun model(entry: ModelEntry): Bundle = Bundle().apply {
         putString(SpeechModelKeys.ID, entry.id)
@@ -81,7 +82,12 @@ internal object SpeechBundles {
         entry.speakers?.let { putInt(SpeechModelKeys.SPEAKERS, it) }
         entry.sampleRate?.let { putInt(SpeechModelKeys.SAMPLE_RATE, it) }
         putString(SpeechModelKeys.SOURCE, entry.source)
+        putBoolean(MODEL_UPDATE_AVAILABLE, entry.update != null)
+        putInt(MODEL_LATEST_VERSION_CODE, entry.latestVersion)
     }
+
+    const val MODEL_UPDATE_AVAILABLE = "updateAvailable"
+    const val MODEL_LATEST_VERSION_CODE = "latestVersionCode"
 
     /** Truncates to the protocol's message ceiling on a character boundary. zh-CN: 按协议上限在字符边界截断. */
     fun bounded(message: String): String {

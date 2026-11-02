@@ -14,6 +14,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
@@ -413,5 +414,230 @@ class ModelManagerTest {
         // The manager's start already recycles stale downloads, so the operation counts the import copy and the staged file.
         assertTrue("import copy and staged bytes: ${result.freedBytes}", result.freedBytes >= ("import copy".length + "staged".length).toLong())
         assertTrue(result.files >= 2)
+    }
+
+    // Updates (roadmap D166, D173, D174) ----------------------------------------------------------------------------------
+
+    /** The fixture catalog with a version 2 of the tiny model: the same files, from a mirror URL of its own. */
+    private fun catalogWithUpdate(): ByteArray {
+        val json = StrictJson.parseObject(Fixtures.catalogBytes)
+        @Suppress("UNCHECKED_CAST")
+        val model = (json["models"] as List<MutableMap<String, Any?>>).first { it["modelId"] == TINY }
+        @Suppress("UNCHECKED_CAST")
+        val versions = model["versions"] as MutableList<Map<String, Any?>>
+        val first = versions.single()
+        @Suppress("UNCHECKED_CAST")
+        val mirror = first["mirror"] as Map<String, Any?>
+        versions += first + mapOf(
+            "versionCode" to 2,
+            "sourceUrl" to (first["sourceUrl"] as String).removeSuffix("/1") + "/2",
+            "mirror" to mirror + mapOf("fileName" to (mirror["fileName"] as String).replace("-v1-", "-v2-"), "url" to (mirror["url"] as String).replace("-v1-", "-v2-")),
+        )
+        model["recommendedVersionCode"] = 2
+        return StrictJson.write(json)
+    }
+
+    /** Version 1 is installed, then a catalog with version 2 arrives. zh-CN: 已安装版本 1, 随后到来包含版本 2 的目录. */
+    private fun updateArrives(): CatalogModelVersion {
+        assertNotNull(install(TINY).result)
+        val bytes = catalogWithUpdate()
+        val version = ModelCatalogParser().parse(bytes).model(TINY)!!.version(2)!!
+        server.serve(version.mirror!!.url, Fixtures.bytes(Fixtures.tiny.latestVersion.mirror!!.fileName))
+        manager = manager(bytes)
+        return version
+    }
+
+    private fun versionDirectory(code: Int) = File(store.root, "$TINY/$code")
+
+    private fun assertVersionOneStays() {
+        val kept = store.installed(TINY)!!
+        assertEquals(1, kept.versionCode)
+        assertEquals(emptyList<String>(), store.verify(kept))
+        assertFalse(versionDirectory(2).exists())
+        val entry = manager.entry(TINY)!!
+        assertTrue(entry.installed)
+        assertEquals("the update is still offered", 2, entry.update?.version)
+    }
+
+    @Test
+    fun `a newer catalog version is offered until it is installed`() {
+        assertNull(manager.entry(TINY)!!.update)
+        val version = updateArrives()
+        val offered = manager.entry(TINY)!!
+        assertEquals(1, offered.version)
+        assertEquals(2, offered.latestVersion)
+        assertEquals(ModelUpdate(2, version.mirror!!.size, version.license.spdx, version.license.noticeKey, version.sourceUrl), offered.update)
+        assertEquals(listOf(TINY), manager.list().filter { it.update != null }.map { it.id })
+        assertEquals("what is reported stays the installed version", Fixtures.tiny.version(1)!!.downloadBytes, offered.sizeBytes)
+
+        val result = install(TINY).result as OperationResult.Model
+        assertEquals(1, result.replacedVersion)
+        assertEquals(2, result.entry.version)
+        assertEquals(2, result.entry.latestVersion)
+        assertNull(result.entry.update)
+    }
+
+    @Test
+    fun `models that are not installed or are damaged offer no update`() {
+        manager = manager(catalogWithUpdate())
+        val available = manager.entry(TINY)!!
+        assertEquals("a new install takes the latest version", 2, available.version)
+        assertEquals(2, available.latestVersion)
+        assertNull(available.update)
+        assertEquals("the other models have one version", available.latestVersion - 1, manager.entry("kws.test.unknown")!!.latestVersion)
+
+        manager = manager()
+        updateArrives()
+        store.installed(TINY)!!.resolve("tokens.txt").delete()
+        val damaged = manager.entry(TINY)!!
+        assertFalse(damaged.installed)
+        assertNull("installing repairs it, with the latest version", damaged.update)
+        assertEquals(2, (install(TINY).result as OperationResult.Model).entry.version)
+    }
+
+    @Test
+    fun `a catalog that went back to an older version offers no update and installing follows it`() {
+        updateArrives()
+        assertNotNull(install(TINY).result)
+        assertEquals(2, store.installed(TINY)!!.versionCode)
+        manager = manager()
+        val entry = manager.entry(TINY)!!
+        assertTrue(entry.installed)
+        assertEquals(1, entry.latestVersion)
+        assertNull(entry.update)
+        // A newer version never stays behind an older one, in use or not: the store reports the highest.
+        store.isVersionInUse = { _, _ -> true }
+        assertEquals(1, (install(TINY).result as OperationResult.Model).entry.version)
+        assertEquals(1, store.installed(TINY)!!.versionCode)
+        assertFalse(versionDirectory(2).exists())
+    }
+
+    @Test
+    fun `an update replaces the old version and keeps the default`() {
+        updateArrives()
+        manager.setDefault(TINY, "tts")
+        val replaced = ArrayList<String>()
+        manager.onModelReplaced = { replaced += it }
+        val deleted = ArrayList<String>()
+        store.beforeDelete = { directory ->
+            assertTrue("the hook runs while the directory exists", directory.isDirectory)
+            deleted += directory.name
+        }
+        assertNotNull(install(TINY).result)
+        val installed = store.installed(TINY)!!
+        assertEquals(2, installed.versionCode)
+        assertEquals(versionDirectory(2).canonicalPath, installed.directory.canonicalPath)
+        assertEquals(emptyList<String>(), store.verify(installed))
+        assertFalse("the old version is deleted", versionDirectory(1).exists())
+        assertEquals(listOf("1"), deleted)
+        assertEquals(listOf(TINY), replaced)
+        assertEquals(TINY, manager.defaultModel("tts")!!.modelId)
+        assertEquals("no archive is kept", emptyList<String>(), downloads.list()!!.toList())
+        assertEquals(emptyList<String>(), File(store.root, ".staging").list()?.toList().orEmpty())
+
+        // The same version again has nothing to replace.
+        replaced.clear()
+        assertNull((install(TINY).result as OperationResult.Model).replacedVersion)
+        assertEquals(emptyList<String>(), replaced)
+    }
+
+    @Test
+    fun `an update whose downloads fail keeps the old version`() {
+        val version = updateArrives()
+        server.remove(version.mirror!!.url)
+        version.upstream.forEach { server.remove(it.url) }
+        assertEquals(SpeechErrorCodes.MODEL_DOWNLOAD_FAILED, install(TINY).error!!.code)
+        assertVersionOneStays()
+    }
+
+    @Test
+    fun `an update whose bytes differ keeps the old version`() {
+        val version = updateArrives()
+        val mirror = version.mirror!!
+        server.serve(mirror.url, Fixtures.bytes(Fixtures.tiny.latestVersion.mirror!!.fileName).also { it[600] = (it[600] + 1).toByte() })
+        val upstream = version.upstream.first()
+        server.serve(upstream.url, Fixtures.bytes(upstream.url.substringAfterLast('/')).also { it[50] = (it[50] + 1).toByte() })
+        assertEquals(SpeechErrorCodes.MODEL_CHECKSUM_MISMATCH, install(TINY).error!!.code)
+        assertVersionOneStays()
+    }
+
+    @Test
+    fun `an update that does not fit keeps the old version`() {
+        updateArrives()
+        freeSpace = 1024
+        assertTrue(install(TINY).error is InsufficientSpaceException)
+        assertVersionOneStays()
+    }
+
+    @Test
+    fun `an update that dies before the switch keeps the old version`() {
+        updateArrives()
+        store.beforeCommitRename = { throw IllegalStateException("process killed before the rename") }
+        assertEquals(SpeechErrorCodes.INTERNAL, install(TINY).error!!.code)
+        store.beforeCommitRename = {}
+        assertVersionOneStays()
+        assertEquals("the next start finds the same", 1, ModelStore(store.root).installed(TINY)!!.versionCode)
+    }
+
+    @Test
+    fun `a paused update keeps the old version and resumes`() {
+        val version = updateArrives()
+        val mirror = version.mirror!!
+        server.resource(mirror.url).bytesPerChunkDelayMillis = 300
+        server.transferStarted = CountDownLatch(1)
+        val paused = RecordingListener()
+        val opId = manager.install(TINY, false, paused)
+        assertTrue(server.transferStarted.await(10, TimeUnit.SECONDS))
+        Thread.sleep(150)
+        manager.cancel(opId)
+        assertEquals(SpeechErrorCodes.SESSION_CANCELLED, paused.await().error!!.code)
+        assertVersionOneStays()
+        assertTrue("its bytes stay for a resume", manager.downloadedBytes(TINY) in 1..mirror.size)
+        server.resource(mirror.url).bytesPerChunkDelayMillis = 0
+        assertEquals(2, (install(TINY).result as OperationResult.Model).entry.version)
+        assertEquals(0L, manager.downloadedBytes(TINY))
+    }
+
+    @Test
+    fun `a version an engine runs on stays until the engine is done`() {
+        updateArrives()
+        var running = true
+        store.isVersionInUse = { id, code -> running && id == TINY && code == 1 }
+        val old = store.installed(TINY)!!
+        val result = install(TINY).result as OperationResult.Model
+        assertEquals("new work gets the new version at once", 2, result.entry.version)
+        assertEquals(2, store.installed(TINY)!!.versionCode)
+        assertEquals("the running engine keeps its files", emptyList<String>(), store.verify(old))
+        store.sweep(TINY)
+        assertTrue("still running", versionDirectory(1).isDirectory)
+        running = false
+        store.sweep(TINY)
+        assertFalse(versionDirectory(1).exists())
+        assertTrue(versionDirectory(2).isDirectory)
+        store.sweep("tts.unknown.model")
+    }
+
+    @Test
+    fun `an old version left behind is gone at the next start`() {
+        updateArrives()
+        store.isVersionInUse = { _, _ -> true }
+        assertNotNull(install(TINY).result)
+        assertTrue(versionDirectory(1).isDirectory)
+        val reopened = ModelStore(store.root)
+        assertFalse(versionDirectory(1).exists())
+        assertEquals(2, reopened.installed(TINY)!!.versionCode)
+    }
+
+    @Test
+    fun `recycling keeps a version an engine runs on`() {
+        updateArrives()
+        store.isVersionInUse = { _, _ -> true }
+        assertNotNull(install(TINY).result)
+        store.reconcile()
+        assertTrue(versionDirectory(1).isDirectory)
+    }
+
+    private companion object {
+        const val TINY = "tts.test.tiny"
     }
 }

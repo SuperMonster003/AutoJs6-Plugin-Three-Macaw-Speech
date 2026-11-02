@@ -13,6 +13,7 @@
                                                             the three analysis tools with the recordings of locks/analysis-test-audio.lock
                                                             (roadmap P8.4.5; needs a host with P8.4.1 and the segment, speaker, langid
                                                             and tagger models)
+    py .python/device_host_scripts.py updates <serial>      updateAvailable and latestVersionCode of speech.models.list (roadmap P9.3.2)
 
 Scripts start through AutoJs6's RunIntentActivity (no instrumentation, so every process keeps its real state) and write
 a JSON result next to themselves in shared storage, which AutoJs6 reads and writes with all-files access. Audio for the
@@ -62,6 +63,14 @@ function fail(e) { r.errors.push(String(e.code || "") + " " + String(e.message |
 """
 
 SCRIPTS = {
+    "updates": COMMON + """
+try {
+    r.models = speech.models.list({ kind: 'tts' }).map(function (m) {
+        return { id: m.id, installed: m.installed, version: m.version, latest: m.latestVersionCode, update: m.updateAvailable };
+    });
+    done();
+} catch (e) { fail(e); }
+""",
     "api": COMMON + """
 try {
     r.available = speech.isAvailable();
@@ -506,6 +515,25 @@ def run_api(serial):
     return ok
 
 
+def run_updates(serial):
+    """`updateAvailable` and `latestVersionCode` of speech.models.list() in a script (roadmap P9.3.2): extras outside the contract the host must pass on."""
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    adb(serial, "shell", "mkdir", "-p", REMOTE)
+    if not start(serial, "updates", {}):
+        print(f"{label(serial)}: updates: BLOCKED the script did not start (unlock the device; AutoJs6 needs all-files access)")
+        return False
+    r = result(serial, "updates", 60)
+    adb(serial, "shell", "rm", "-rf", REMOTE, check=False)
+    if r is None:
+        print(f"{label(serial)}: updates: FAIL no result")
+        return False
+    models = r.get("models") or []
+    ok = not r["errors"] and bool(models) and all(isinstance(m.get("update"), bool) and isinstance(m.get("latest"), int) for m in models)
+    offered = [f"{m['id']} v{m['version']} -> v{m['latest']}" for m in models if m.get("update")]
+    print(f"{label(serial)}: updates: {'PASS' if ok else 'FAIL'} {len(models)} models, update offered: {', '.join(offered) or 'none'} {' '.join(r['errors'])}")
+    return ok
+
+
 def summarize(events, bounds, names):
     for index, name in enumerate(names):
         inside = [e for e in events if bounds[index] + 1000 <= e[0] < bounds[index + 1]]
@@ -841,7 +869,7 @@ def main(argv):
         print(__doc__)
         return 2
     action, serial = argv
-    runs = {"api": run_api, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools, "speaker": run_speaker,
+    runs = {"api": run_api, "updates": run_updates, "listen": run_listen, "late": lambda s: run_listen(s, late=True), "wake": run_wake, "kill": run_kill, "tools": run_tools, "speaker": run_speaker,
             "analysis": run_analysis}
     if action == "tools":
         os.environ.setdefault("MACAW_VOLUME_PERCENT", "70")

@@ -95,10 +95,13 @@
     <string name="model_action_resume">Resume</string>
     <string name="model_action_resume_named">Resume the download of %1$s</string>
     <string name="model_action_set_default">Set as default</string>
+    <string name="model_action_update">Update to v%1$d</string>
+    <string name="model_action_update_named">Update %1$s</string>
     <string name="model_badge_builtin">Built in</string>
     <string name="model_badge_default">Default</string>
     <string name="model_badge_imported">Imported</string>
     <string name="model_badge_recommended">Recommended</string>
+    <string name="model_badge_update">Update available (v%1$d)</string>
     <string name="model_detail_download_size">Download size</string>
     <string name="model_detail_id">Model ID</string>
     <string name="model_detail_installed_size">Installed size</string>
@@ -108,6 +111,8 @@
     <string name="model_detail_sample_rate">Sample rate</string>
     <string name="model_detail_sample_rate_value">%1$d Hz</string>
     <string name="model_detail_speakers">Speakers</string>
+    <string name="model_detail_update">New version</string>
+    <string name="model_detail_update_value">v%1$d, download %2$s</string>
     <string name="model_kind_asr">Speech recognition</string>
     <string name="model_kind_kws">Wake words</string>
     <string name="model_kind_langid">Language identification</string>
@@ -125,6 +130,7 @@
     <string name="model_message_imported">%1$s was imported</string>
     <string name="model_message_installed">%1$s is installed</string>
     <string name="model_message_removed">%1$s was deleted</string>
+    <string name="model_message_updated">%1$s was updated to v%2$d</string>
     <string name="model_progress">%1$s of %2$s (%3$d%%)</string>
     <string name="model_punct_about">Adds commas, periods and question marks to the text of recognition models that leave them out (Chinese and English). The English model also restores capital letters. SenseVoice adds its own punctuation and does not use these models.</string>
     <string name="model_segment_about">Finds where each voice speaks in a recording. With a speaker recognition model it tells who spoke when, for \"Find speakers\" on the Try it out screen and for scripts. It works with any language.</string>
@@ -133,6 +139,7 @@
     <string name="model_state_paused">Paused, %1$s downloaded</string>
     <string name="model_state_queued">Waiting for the download before it</string>
     <string name="model_tagger_about">Names the sounds of an audio file from 527 kinds, such as speech, music or a dog barking, for \"Tag sounds\" on the Try it out screen and for scripts. The names of the sounds are in English.</string>
+    <string name="model_update_kept">The installed version was not changed.</string>
     <string name="notices_corresponding_source">Corresponding source</string>
     <string name="notices_corresponding_source_summary">Every GitHub release of the plugin attaches the source of the speech runtime and its dependencies next to the APKs</string>
     <string name="notices_gpl">GNU General Public License 3.0</string>

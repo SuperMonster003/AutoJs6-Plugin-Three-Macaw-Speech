@@ -160,11 +160,13 @@ object TtsEngineCore {
 
     /**
      * The configuration of [model]; [language] is the sherpa-onnx Kokoro `lang` ([TtsSpeakerHints.engineLanguage], empty
-     * for none), ignored by the other types. zh-CN: [model] 的配置; [language] 为 sherpa-onnx Kokoro 的 `lang` (空为不传), 其他类型忽略.
+     * for none), ignored by the other types; [espeakData] turns the model's espeak-ng data directory into the one to use
+     * ([EspeakHome.dataDir]). zh-CN: [model] 的配置; [language] 为 sherpa-onnx Kokoro 的 `lang` (空为不传), 其他类型忽略; [espeakData] 把模型的
+     * espeak-ng 数据目录转换为实际使用的目录 ([EspeakHome.dataDir]).
      */
-    fun config(model: InstalledModel, roles: RuntimeRoles = RuntimeRoles.of(model), threads: Int = threads(), language: String = ""): OfflineTtsConfig {
+    fun config(model: InstalledModel, roles: RuntimeRoles = RuntimeRoles.of(model), threads: Int = threads(), language: String = "", espeakData: (String) -> String = { it }): OfflineTtsConfig {
         val lexicon = roles.files(model, "lexicon").joinToString(",")
-        val dataDir = roles.optionalDirectory(model, "dataDir").orEmpty()
+        val dataDir = roles.optionalDirectory(model, "dataDir")?.let(espeakData).orEmpty()
         val tokens = roles.file(model, "tokens")
         val modelConfig = when (model.modelType) {
             "vits" -> OfflineTtsModelConfig(
@@ -218,8 +220,8 @@ object TtsEngineCore {
      * Loads [model] (seconds for the large models) with the Kokoro `lang` [language]; `ENGINE_FAILED` when sherpa-onnx
      * refuses it. zh-CN: 以 Kokoro `lang` [language] 加载 [model].
      */
-    fun load(model: InstalledModel, language: String = ""): TtsEngine {
-        val config = config(model, language = language)
+    fun load(model: InstalledModel, language: String = "", espeakData: (String) -> String = { it }): TtsEngine {
+        val config = config(model, language = language, espeakData = espeakData)
         val tts = try {
             OfflineTts(null, config)
         } catch (e: RuntimeException) {

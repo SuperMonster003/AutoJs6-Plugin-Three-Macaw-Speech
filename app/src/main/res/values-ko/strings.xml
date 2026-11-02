@@ -95,10 +95,13 @@
     <string name="model_action_resume">재개</string>
     <string name="model_action_resume_named">%1$s 다운로드 재개</string>
     <string name="model_action_set_default">기본값으로 설정</string>
+    <string name="model_action_update">v%1$d(으)로 업데이트</string>
+    <string name="model_action_update_named">%1$s 업데이트</string>
     <string name="model_badge_builtin">내장</string>
     <string name="model_badge_default">기본</string>
     <string name="model_badge_imported">가져옴</string>
     <string name="model_badge_recommended">추천</string>
+    <string name="model_badge_update">업데이트 가능 (v%1$d)</string>
     <string name="model_detail_download_size">다운로드 크기</string>
     <string name="model_detail_id">모델 ID</string>
     <string name="model_detail_installed_size">설치 크기</string>
@@ -108,6 +111,8 @@
     <string name="model_detail_sample_rate">샘플링 레이트</string>
     <string name="model_detail_sample_rate_value">%1$d Hz</string>
     <string name="model_detail_speakers">화자</string>
+    <string name="model_detail_update">새 버전</string>
+    <string name="model_detail_update_value">v%1$d, 다운로드 %2$s</string>
     <string name="model_kind_asr">음성 인식</string>
     <string name="model_kind_kws">호출어</string>
     <string name="model_kind_langid">언어 식별</string>
@@ -125,6 +130,7 @@
     <string name="model_message_imported">%1$s을(를) 가져왔습니다</string>
     <string name="model_message_installed">%1$s이(가) 설치되었습니다</string>
     <string name="model_message_removed">%1$s을(를) 삭제했습니다</string>
+    <string name="model_message_updated">%1$s이(가) v%2$d(으)로 업데이트되었습니다</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
     <string name="model_punct_about">문장 부호를 쓰지 않는 인식 모델의 결과에 쉼표, 마침표, 물음표를 붙입니다 (중국어와 영어). 영어 모델은 대문자도 복원합니다. SenseVoice는 직접 문장 부호를 붙이므로 이 모델을 사용하지 않습니다.</string>
     <string name="model_segment_about">녹음에서 각 목소리가 말하는 구간을 찾습니다. 화자 인식 모델과 함께 누가 언제 말했는지 판별하며, \"체험하기\" 화면의 \"화자 분리\" 와 스크립트에서 사용합니다. 언어에 관계없이 동작합니다.</string>
@@ -133,6 +139,7 @@
     <string name="model_state_paused">일시중지됨, %1$s 다운로드됨</string>
     <string name="model_state_queued">앞의 다운로드를 기다리는 중</string>
     <string name="model_tagger_about">오디오 파일의 소리를 말소리, 음악, 개 짖는 소리 등 527가지 중에서 판별합니다. \"체험하기\" 화면의 \"오디오 태그\" 와 스크립트에서 사용합니다. 소리 이름은 영어입니다.</string>
+    <string name="model_update_kept">설치된 버전은 변경되지 않았습니다.</string>
     <string name="notices_corresponding_source">대응 소스 코드</string>
     <string name="notices_corresponding_source_summary">플러그인의 모든 GitHub 릴리스에는 APK와 함께 음성 런타임과 그 의존성의 소스 코드가 첨부됩니다</string>
     <string name="notices_gpl">GNU General Public License 3.0</string>

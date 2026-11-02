@@ -95,10 +95,13 @@
     <string name="model_action_resume">استئناف</string>
     <string name="model_action_resume_named">استئناف تنزيل %1$s</string>
     <string name="model_action_set_default">تعيين كافتراضي</string>
+    <string name="model_action_update">التحديث إلى v%1$d</string>
+    <string name="model_action_update_named">تحديث %1$s</string>
     <string name="model_badge_builtin">مدمج</string>
     <string name="model_badge_default">افتراضي</string>
     <string name="model_badge_imported">مستورد</string>
     <string name="model_badge_recommended">موصى به</string>
+    <string name="model_badge_update">يتوفر تحديث (v%1$d)</string>
     <string name="model_detail_download_size">حجم التنزيل</string>
     <string name="model_detail_id">ID النموذج</string>
     <string name="model_detail_installed_size">الحجم بعد التثبيت</string>
@@ -108,6 +111,8 @@
     <string name="model_detail_sample_rate">معدل أخذ العينات</string>
     <string name="model_detail_sample_rate_value">%1$d Hz</string>
     <string name="model_detail_speakers">المتحدثون</string>
+    <string name="model_detail_update">إصدار جديد</string>
+    <string name="model_detail_update_value">v%1$d, تنزيل %2$s</string>
     <string name="model_kind_asr">التعرف على الكلام</string>
     <string name="model_kind_kws">كلمات التنبيه</string>
     <string name="model_kind_langid">تحديد اللغة</string>
@@ -125,6 +130,7 @@
     <string name="model_message_imported">تم استيراد %1$s</string>
     <string name="model_message_installed">تم تثبيت %1$s</string>
     <string name="model_message_removed">تم حذف %1$s</string>
+    <string name="model_message_updated">تم تحديث %1$s إلى v%2$d</string>
     <string name="model_progress">%1$s من %2$s (%3$d%%)</string>
     <string name="model_punct_about">يضيف الفواصل والنقاط وعلامات الاستفهام إلى نص نماذج التعرف التي لا تضعها (الصينية والإنجليزية). يعيد النموذج الإنجليزي أيضا الأحرف الكبيرة. يضع SenseVoice علامات الترقيم بنفسه ولا يستخدم هذه النماذج.</string>
     <string name="model_segment_about">يجد مواضع كلام كل صوت في التسجيل. مع نموذج للتعرف على المتحدث يحدد من تكلم ومتى, لخيار \"فصل المتحدثين\" في شاشة التجربة وللسكربتات. يعمل مع أي لغة.</string>
@@ -133,6 +139,7 @@
     <string name="model_state_paused">متوقف مؤقتا, تم تنزيل %1$s</string>
     <string name="model_state_queued">في انتظار التنزيل السابق</string>
     <string name="model_tagger_about">يسمي أصوات الملف الصوتي من بين 527 نوعا, مثل الكلام والموسيقى ونباح كلب, لخيار \"وسم الأصوات\" في شاشة التجربة وللسكربتات. أسماء الأصوات بالإنجليزية.</string>
+    <string name="model_update_kept">لم يتغير الإصدار المثبت.</string>
     <string name="notices_corresponding_source">المصدر المقابل</string>
     <string name="notices_corresponding_source_summary">يُرفق كل إصدار من الإضافة على GitHub الشيفرة المصدرية لبيئة تشغيل الكلام وتبعياتها بجانب ملفات APK</string>
     <string name="notices_gpl">GNU General Public License 3.0</string>

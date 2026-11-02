@@ -44,6 +44,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VadOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.VoiceActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeOptions
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.EspeakHome
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsEngineCore
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsModelVoices
@@ -95,6 +96,9 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     private val speakerNames = ConcurrentHashMap<String, List<String>>()
 
+    /** Survives updates and removals of the model whose data espeak-ng started with (roadmap D175). zh-CN: 不受 espeak-ng 启动时所用模型的更新与删除影响 (路线图 D175). */
+    private val espeak = EspeakHome(EspeakLink(File(context.noBackupFilesDir, "espeak/espeak-ng-data")))
+
     val sessions = SessionTable()
 
     private val ids = AtomicInteger(0)
@@ -108,7 +112,15 @@ internal class SpeechRuntime private constructor(val context: Context) {
 
     init {
         models.isModelInUse = { engines.inUse(it) }
+        models.onModelReplaced = { engines.evict(it) }
+        models.store.isVersionInUse = { id, version -> engines.inUse(id, version) }
+        models.store.beforeDelete = { directory ->
+            espeak.leave(directory) { models.store.installed().filter { it.directory != directory }.mapNotNull(::espeakData) }
+        }
+        engines.onIdle = { models.sweep(it.modelId) }
     }
+
+    private fun espeakData(model: InstalledModel): File? = runCatching { RuntimeRoles.of(model).optionalDirectory(model, "dataDir") }.getOrNull()?.let(::File)
 
     fun nextId(prefix: String): String = "$prefix-${ids.incrementAndGet()}"
 
@@ -261,7 +273,9 @@ internal class SpeechRuntime private constructor(val context: Context) {
     fun acquireTts(model: InstalledModel, speaker: Int? = null): EngineCache.Lease<TtsEngine> {
         val language = TtsSpeakerHints.engineLanguage(model.modelId, speaker ?: speakers(model).defaultId)
         val variant = if (language.isEmpty()) "tts" else "tts:$language"
-        return engines.acquire(EngineKey(model.modelId, model.versionCode, variant), TtsEngineCore.weight(model)) { TtsEngineCore.load(model, language) }
+        return engines.acquire(EngineKey(model.modelId, model.versionCode, variant), TtsEngineCore.weight(model)) {
+            TtsEngineCore.load(model, language) { espeak.dataDir(File(it)).path }
+        }
     }
 
     /** Loads [model] on the loader thread and leaves it idle in the cache, so the first sentence starts sooner. zh-CN: 预加载. */

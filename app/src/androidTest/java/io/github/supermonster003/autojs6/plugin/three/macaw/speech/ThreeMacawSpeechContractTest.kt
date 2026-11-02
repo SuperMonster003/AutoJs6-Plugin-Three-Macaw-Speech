@@ -213,6 +213,9 @@ class ThreeMacawSpeechContractTest {
                 assertTrue(requireNotNull(model.getString(SpeechModelKeys.ID)).startsWith("tts."))
                 assertTrue(model.getLong(SpeechModelKeys.SIZE_BYTES) > 0)
                 assertTrue(requireNotNull(model.getBundle(SpeechModelKeys.LICENSE)).containsKey(SpeechModelKeys.LICENSE_SPDX))
+                // Extras outside the contract keep their names and types (roadmap D166, D173).
+                assertTrue(model.containsKey("updateAvailable"))
+                assertTrue(model.getInt("latestVersionCode") >= 1)
             }
 
             val unknown = Bundle().apply { putString(SpeechOptionKeys.MODEL, "tts.no.such.model") }

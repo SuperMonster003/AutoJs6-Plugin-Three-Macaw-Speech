@@ -3,6 +3,7 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CommercialUse
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelStore
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelUpdate
 
 /** A model operation the screens started and still track. zh-CN: 界面发起并仍在跟踪的模型操作. */
 internal data class TrackedOperation(
@@ -30,6 +31,12 @@ internal sealed class RowState {
 
 internal enum class LicenseTag { COMMERCIAL, NON_COMMERCIAL, UNKNOWN }
 
+/**
+ * The update of an installed row (roadmap D166); [pausedBytes] are what a stopped update already downloaded.
+ * zh-CN: 已安装行的更新 (路线图 D166); [pausedBytes] 为已停止的更新已下载的字节数.
+ */
+internal data class RowUpdate(val update: ModelUpdate, val pausedBytes: Long)
+
 /** One row of the home model list (roadmap P5.1). zh-CN: 首页模型列表的一行 (路线图 P5.1). */
 internal data class ModelRow(
     val id: String,
@@ -52,11 +59,14 @@ internal data class ModelRow(
     /** Part of the APK (the silero VAD): never downloaded or removed. zh-CN: APK 内置 (silero VAD): 不下载也不删除. */
     val builtin: Boolean,
     val state: RowState,
+    /** Also true while an update of the model runs. zh-CN: 模型更新进行中时也为真. */
+    val installed: Boolean = state == RowState.Installed,
+    val update: RowUpdate? = null,
 )
 
 /** A kind group of the list; [installed] counts its installed rows. zh-CN: 列表中按种类的分组; [installed] 为已安装行数. */
 internal data class ModelGroup(val kind: String, val rows: List<ModelRow>) {
-    val installed: Int get() = rows.count { it.state == RowState.Installed }
+    val installed: Int get() = rows.count { it.installed }
 }
 
 /**
@@ -80,8 +90,8 @@ internal object ModelRows {
         val rows = entries.mapIndexed { index, entry -> index to row(entry, byModel[entry.id], entry.id in builtinIds, downloadedBytes) }
         return KIND_ORDER.mapNotNull { kind ->
             val group = rows.filter { it.second.kind == kind }.sortedWith(
-                compareByDescending<Pair<Int, ModelRow>> { it.second.isDefault && it.second.state == RowState.Installed }
-                    .thenByDescending { it.second.state == RowState.Installed }
+                compareByDescending<Pair<Int, ModelRow>> { it.second.isDefault && it.second.installed }
+                    .thenByDescending { it.second.installed }
                     .thenByDescending { it.second.recommended }
                     .thenBy { it.first },
             ).map { it.second }
@@ -121,9 +131,11 @@ internal object ModelRows {
             imported = entry.source == ModelStore.SOURCE_IMPORTED,
             builtin = builtin,
             state = state,
+            installed = entry.installed,
+            update = entry.update?.let { RowUpdate(it, downloadedBytes(entry.id)) },
         )
     }
 
     /** Installed models a user installed (catalog or imported), without the bundled VAD. zh-CN: 用户安装的模型数, 不含内置 VAD. */
-    fun installedCount(groups: List<ModelGroup>): Int = groups.sumOf { group -> group.rows.count { !it.builtin && it.state == RowState.Installed } }
+    fun installedCount(groups: List<ModelGroup>): Int = groups.sumOf { group -> group.rows.count { !it.builtin && it.installed } }
 }

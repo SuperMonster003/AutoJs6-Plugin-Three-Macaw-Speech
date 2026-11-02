@@ -95,10 +95,13 @@
     <string name="model_action_resume">Продолжить</string>
     <string name="model_action_resume_named">Продолжить загрузку %1$s</string>
     <string name="model_action_set_default">Использовать по умолчанию</string>
+    <string name="model_action_update">Обновить до v%1$d</string>
+    <string name="model_action_update_named">Обновить %1$s</string>
     <string name="model_badge_builtin">Встроенная</string>
     <string name="model_badge_default">По умолчанию</string>
     <string name="model_badge_imported">Импортирована</string>
     <string name="model_badge_recommended">Рекомендуется</string>
+    <string name="model_badge_update">Доступно обновление (v%1$d)</string>
     <string name="model_detail_download_size">Размер загрузки</string>
     <string name="model_detail_id">ID модели</string>
     <string name="model_detail_installed_size">Размер после установки</string>
@@ -108,6 +111,8 @@
     <string name="model_detail_sample_rate">Частота дискретизации</string>
     <string name="model_detail_sample_rate_value">%1$d Hz</string>
     <string name="model_detail_speakers">Дикторы</string>
+    <string name="model_detail_update">Новая версия</string>
+    <string name="model_detail_update_value">v%1$d, загрузка %2$s</string>
     <string name="model_kind_asr">Распознавание речи</string>
     <string name="model_kind_kws">Слова активации</string>
     <string name="model_kind_langid">Определение языка</string>
@@ -125,6 +130,7 @@
     <string name="model_message_imported">Модель %1$s импортирована</string>
     <string name="model_message_installed">Модель %1$s установлена</string>
     <string name="model_message_removed">Модель %1$s удалена</string>
+    <string name="model_message_updated">Модель %1$s обновлена до v%2$d</string>
     <string name="model_progress">%1$s из %2$s (%3$d%%)</string>
     <string name="model_punct_about">Добавляет запятые, точки и вопросительные знаки в текст моделей распознавания, которые их не ставят (китайский и английский). Английская модель также восстанавливает заглавные буквы. SenseVoice расставляет знаки сама и эти модели не использует.</string>
     <string name="model_segment_about">Находит, где звучит каждый голос в записи. Вместе с моделью распознавания говорящего определяет, кто и когда говорил, для функции \"Разделить говорящих\" на экране \"Попробовать\" и для скриптов. Работает с любым языком.</string>
@@ -133,6 +139,7 @@
     <string name="model_state_paused">Приостановлено, загружено %1$s</string>
     <string name="model_state_queued">Ожидает завершения предыдущей загрузки</string>
     <string name="model_tagger_about">Называет звуки аудиофайла из 527 видов, например речь, музыку или лай собаки, для функции \"Разметить звуки\" на экране \"Попробовать\" и для скриптов. Названия звуков на английском.</string>
+    <string name="model_update_kept">Установленная версия не изменилась.</string>
     <string name="notices_corresponding_source">Соответствующий исходный код</string>
     <string name="notices_corresponding_source_summary">К каждому выпуску плагина на GitHub рядом с APK прилагается исходный код речевой среды выполнения и её зависимостей</string>
     <string name="notices_gpl">GNU General Public License 3.0</string>

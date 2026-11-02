@@ -265,7 +265,8 @@ private fun ModelRowItem(row: ModelRow, online: Boolean, onClick: () -> Unit, on
         Column(modifier = Modifier.weight(1f)) {
             Text(row.name, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.padding(top = 4.dp)) {
-                if (row.isDefault && row.state == RowState.Installed) Badge(stringResource(R.string.model_badge_default), accent = true, tag = "macaw.model.${row.id}.default")
+                if (row.isDefault && row.installed) Badge(stringResource(R.string.model_badge_default), accent = true, tag = "macaw.model.${row.id}.default")
+                if (row.state == RowState.Installed) row.update?.let { Badge(stringResource(R.string.model_badge_update, it.update.version), accent = true, tag = "macaw.model.${row.id}.updateBadge") }
                 if (row.recommended && !row.builtin) Badge(stringResource(R.string.model_badge_recommended))
                 if (row.builtin) Badge(stringResource(R.string.model_badge_builtin))
                 if (row.imported) Badge(stringResource(R.string.model_badge_imported))
@@ -294,17 +295,25 @@ private fun ModelRowItem(row: ModelRow, online: Boolean, onClick: () -> Unit, on
                 }
                 is RowState.Queued -> StateText(stringResource(R.string.model_state_queued))
                 is RowState.Paused -> StateText(stringResource(R.string.model_state_paused, HomeTexts.size(context, state.downloadedBytes)))
+                RowState.Installed -> row.update?.takeIf { it.pausedBytes > 0 }?.let { StateText(stringResource(R.string.model_state_paused, HomeTexts.size(context, it.pausedBytes))) }
                 else -> Unit
             }
         }
         Spacer(Modifier.width(4.dp))
         when (row.state) {
-            RowState.Installed -> Icon(
-                painterResource(R.drawable.ic_check_circle_24),
-                contentDescription = stringResource(R.string.model_state_installed),
-                tint = Color(LocalMacawPalette.current.success),
-                modifier = Modifier.padding(12.dp).size(24.dp).testTag("macaw.model.${row.id}.installed"),
-            )
+            RowState.Installed -> when {
+                row.update == null -> Icon(
+                    painterResource(R.drawable.ic_check_circle_24),
+                    contentDescription = stringResource(R.string.model_state_installed),
+                    tint = Color(LocalMacawPalette.current.success),
+                    modifier = Modifier.padding(12.dp).size(24.dp).testTag("macaw.model.${row.id}.installed"),
+                )
+                row.update.pausedBytes > 0 -> {
+                    RowButton(R.drawable.ic_play_arrow_24, stringResource(R.string.model_action_resume_named, row.name), "macaw.model.${row.id}.resume", online, onDownload)
+                    RowButton(R.drawable.ic_close_24, stringResource(R.string.model_action_cancel_named, row.name), "macaw.model.${row.id}.cancel", true, onCancel)
+                }
+                else -> RowButton(R.drawable.ic_update_24, stringResource(R.string.model_action_update_named, row.name), "macaw.model.${row.id}.update", online, onDownload)
+            }
             RowState.Available -> RowButton(R.drawable.ic_download_24, stringResource(R.string.model_action_download_named, row.name), "macaw.model.${row.id}.download", online, onDownload)
             is RowState.Paused -> {
                 RowButton(R.drawable.ic_play_arrow_24, stringResource(R.string.model_action_resume_named, row.name), "macaw.model.${row.id}.resume", online, onDownload)
@@ -362,8 +371,10 @@ private fun HomeDialogs(controller: HomeController, actions: HomeActions) {
         is HomeDialog.License -> {
             val row = controller.row(dialog.modelId)
             val name = row?.name ?: dialog.modelId.ifEmpty { stringResource(R.string.home_import_title) }
-            val notice = stringResource(LicenseNotices.resource(row?.noticeKey))
-            val expression = row?.let { stringResource(R.string.license_dialog_expression, it.licenseSpdx) }
+            // An update asks for the license of the version it brings. zh-CN: 更新询问的是它带来的版本的许可.
+            val update = row?.update?.update
+            val notice = stringResource(LicenseNotices.resource(if (update != null) update.noticeKey else row?.noticeKey))
+            val expression = row?.let { stringResource(R.string.license_dialog_expression, update?.licenseSpdx ?: it.licenseSpdx) }
             MessageDialog(
                 title = stringResource(R.string.license_dialog_title, name),
                 message = if (expression == null) notice else notice + "\n\n" + expression,
@@ -371,13 +382,13 @@ private fun HomeDialogs(controller: HomeController, actions: HomeActions) {
                 onConfirm = { controller.acceptLicense(dialog) },
                 confirmText = stringResource(R.string.license_dialog_accept),
                 tag = "macaw.license",
-                neutralText = row?.noticeUrl?.let { stringResource(R.string.license_dialog_source) },
-                onNeutral = row?.noticeUrl?.let { url -> { actions.onOpenUrl(url) } },
+                neutralText = (update?.noticeUrl ?: row?.noticeUrl)?.let { stringResource(R.string.license_dialog_source) },
+                onNeutral = (update?.noticeUrl ?: row?.noticeUrl)?.let { url -> { actions.onOpenUrl(url) } },
             )
         }
         is HomeDialog.Metered -> {
             var remember by rememberSaveable { mutableStateOf(false) }
-            val size = controller.row(dialog.modelId)?.sizeBytes ?: 0L
+            val size = controller.downloadSize(dialog.modelId)
             MessageDialog(
                 title = stringResource(R.string.metered_dialog_title),
                 message = stringResource(R.string.metered_dialog_message, HomeTexts.size(context, size)),
@@ -436,6 +447,15 @@ private fun DetailsDialog(row: ModelRow, controller: HomeController, actions: Ho
         ) {
             when (row.state) {
                 RowState.Installed -> {
+                    row.update?.let { update ->
+                        val paused = update.pausedBytes > 0
+                        val text = if (paused) stringResource(R.string.model_action_resume) else stringResource(R.string.model_action_update, update.update.version)
+                        DetailButton(text, "macaw.details.update", controller.networkAvailable) {
+                            controller.dialog = null
+                            controller.requestDownload(row.id)
+                        }
+                        if (paused) DetailButton(stringResource(R.string.model_action_cancel), "macaw.details.cancel") { controller.cancelDownload(row.id) }
+                    }
                     if (!row.isDefault && !row.builtin) DetailButton(stringResource(R.string.model_action_set_default), "macaw.details.default") { controller.setDefault(row.id) }
                     if (!row.builtin) DetailButton(stringResource(R.string.model_action_delete), "macaw.details.delete") { controller.requestDelete(row.id) }
                 }
@@ -468,6 +488,7 @@ private fun DetailsDialog(row: ModelRow, controller: HomeController, actions: Ho
                     modifier = Modifier.padding(vertical = 4.dp).testTag("macaw.details.about"),
                 )
             }
+            row.update?.let { Fact(stringResource(R.string.model_detail_update), stringResource(R.string.model_detail_update_value, it.update.version, HomeTexts.size(context, it.update.sizeBytes))) }
             if (row.languages.isNotEmpty()) Fact(stringResource(R.string.model_detail_languages), HomeTexts.languages(context, row.languages))
             if (row.sizeBytes > 0) Fact(stringResource(R.string.model_detail_download_size), HomeTexts.size(context, row.sizeBytes))
             row.installedBytes?.takeIf { row.state == RowState.Installed }?.let { Fact(stringResource(R.string.model_detail_installed_size), HomeTexts.size(context, it)) }
@@ -502,8 +523,10 @@ private fun DetailButton(text: String, tag: String, enabled: Boolean = true, onC
 internal fun describe(context: android.content.res.Resources, message: HomeMessage): String = when (message) {
     HomeMessage.Offline -> context.getString(R.string.home_offline_message)
     is HomeMessage.Installed -> context.getString(R.string.model_message_installed, message.name)
+    is HomeMessage.Updated -> context.getString(R.string.model_message_updated, message.name, message.version)
     is HomeMessage.Imported -> context.getString(R.string.model_message_imported, message.name)
     is HomeMessage.Removed -> context.getString(R.string.model_message_removed, message.name)
     is HomeMessage.DefaultSet -> context.getString(R.string.model_message_default, message.name)
-    is HomeMessage.Failed -> context.getString(HomeTexts.error(message.code, message.insufficientSpace))
+    is HomeMessage.Failed -> context.getString(HomeTexts.error(message.code, message.insufficientSpace)) +
+        if (message.keptPrevious) "\n" + context.getString(R.string.model_update_kept) else ""
 }

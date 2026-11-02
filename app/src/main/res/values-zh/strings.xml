@@ -95,10 +95,13 @@
     <string name="model_action_resume">继续</string>
     <string name="model_action_resume_named">继续下载 %1$s</string>
     <string name="model_action_set_default">设为默认</string>
+    <string name="model_action_update">更新到 v%1$d</string>
+    <string name="model_action_update_named">更新 %1$s</string>
     <string name="model_badge_builtin">内置</string>
     <string name="model_badge_default">默认</string>
     <string name="model_badge_imported">已导入</string>
     <string name="model_badge_recommended">推荐</string>
+    <string name="model_badge_update">可更新 (v%1$d)</string>
     <string name="model_detail_download_size">下载大小</string>
     <string name="model_detail_id">模型 ID</string>
     <string name="model_detail_installed_size">安装大小</string>
@@ -108,6 +111,8 @@
     <string name="model_detail_sample_rate">采样率</string>
     <string name="model_detail_sample_rate_value">%1$d Hz</string>
     <string name="model_detail_speakers">说话人</string>
+    <string name="model_detail_update">新版本</string>
+    <string name="model_detail_update_value">v%1$d, 需下载 %2$s</string>
     <string name="model_kind_asr">语音识别</string>
     <string name="model_kind_kws">唤醒词</string>
     <string name="model_kind_langid">语种识别</string>
@@ -125,6 +130,7 @@
     <string name="model_message_imported">%1$s 已导入</string>
     <string name="model_message_installed">%1$s 已安装</string>
     <string name="model_message_removed">%1$s 已删除</string>
+    <string name="model_message_updated">%1$s 已更新到 v%2$d</string>
     <string name="model_progress">%1$s / %2$s (%3$d%%)</string>
     <string name="model_punct_about">给不带标点的识别模型的结果加上逗号, 句号和问号 (中文与英文). 英文模型还会恢复大写字母. SenseVoice 自带标点, 不使用这些模型.</string>
     <string name="model_segment_about">找出录音中每个声音说话的位置. 与说话人识别模型一起判断谁在什么时候说话, 供 \"试听试说\" 页面的 \"分离说话人\" 与脚本使用. 不限语言.</string>
@@ -133,6 +139,7 @@
     <string name="model_state_paused">已暂停, 已下载 %1$s</string>
     <string name="model_state_queued">排队等待前一个下载</string>
     <string name="model_tagger_about">从 527 类声音中说出音频文件里有哪些声音, 例如说话声, 音乐或狗叫, 供 \"试听试说\" 页面的 \"音频标签\" 与脚本使用. 声音名称为英文.</string>
+    <string name="model_update_kept">已安装的版本没有变动.</string>
     <string name="notices_corresponding_source">对应源码</string>
     <string name="notices_corresponding_source_summary">插件在 GitHub 的每个发行版都在 APK 旁附带语音运行时及其依赖的源码</string>
     <string name="notices_gpl">GNU General Public License 3.0</string>

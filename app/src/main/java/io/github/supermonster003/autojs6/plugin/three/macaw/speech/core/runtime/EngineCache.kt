@@ -28,13 +28,15 @@ fun interface IdleScheduler {
  * loads on first use (on the caller's thread, which is never a Binder main path for sessions) and counts the users,
  * [Lease.close] gives a use back, and an instance nobody used for [idleMillis] is released. Loading one key never
  * blocks the others. [inUse] answers `ModelManager.isModelInUse` (a model in use cannot be removed), [evict] drops the
- * idle instances of a removed model. Recognizers, spotters and synthesizers share one memory budget (roadmap P4.1): an
+ * idle instances of a removed or updated model, and [onIdle] reports the end of the last use of an instance, when the old
+ * version of an updated model can go (roadmap D174). Recognizers, spotters and synthesizers share one memory budget (roadmap P4.1): an
  * instance is weighed by its model's installed bytes, and before a new one loads the idle instances released longest
  * ago are closed until the loaded weight fits [budgetBytes]; instances in use are never closed, so a load that cannot fit
  * still happens (and is logged). Pure JVM.
  * zh-CN: 由需要同一模型的所有会话与文件调用共享的已加载运行时实例 (路线图 D30): [acquire] 在首次使用时加载 (在调用方线程上, 对会话而言从不是 Binder
  * 主路径) 并计数使用者, [Lease.close] 归还一次使用, [idleMillis] 内无人使用的实例被释放. 加载一个键不会阻塞其他键. [inUse] 回答
- * `ModelManager.isModelInUse` (使用中的模型不能删除), [evict] 丢弃已删除模型的空闲实例. 识别器, 唤醒词检测器与合成器共用一个内存预算 (路线图
+ * `ModelManager.isModelInUse` (使用中的模型不能删除), [evict] 丢弃已删除或已更新模型的空闲实例, [onIdle] 报告某实例最后一次使用结束, 此时已更新模型的旧版本
+ * 可以删除 (路线图 D174). 识别器, 唤醒词检测器与合成器共用一个内存预算 (路线图
  * P4.1): 实例按其模型的安装字节数计重, 加载新实例之前, 按释放时间从早到晚关闭空闲实例, 直到已加载的总重不超过 [budgetBytes]; 使用中的实例
  * 从不关闭, 因此放不下的加载照常进行 (并记录日志). 纯 JVM.
  */
@@ -51,6 +53,10 @@ class EngineCache(
      */
     @Volatile
     var idleMillis: Long = idleMillis
+
+    /** The last use of an instance ended; runs on the caller's thread. zh-CN: 某实例最后一次使用结束; 在调用方线程上运行. */
+    @Volatile
+    var onIdle: (EngineKey) -> Unit = {}
 
     internal class Entry(val key: EngineKey) {
         var engine: Closeable? = null
@@ -145,6 +151,11 @@ class EngineCache(
 
     fun inUse(modelId: String): Boolean = synchronized(entries) { entries.values.any { it.key.modelId == modelId && it.users > 0 } }
 
+    /** Whether a session runs on, or a load reads, [versionCode] of [modelId]. zh-CN: 是否有会话在使用, 或有加载在读取 [modelId] 的 [versionCode]. */
+    fun inUse(modelId: String, versionCode: Int): Boolean = synchronized(entries) {
+        entries.values.any { it.key.modelId == modelId && it.key.versionCode == versionCode && it.users > 0 }
+    }
+
     /** Keys of the instances currently loaded. zh-CN: 当前已加载实例的键. */
     fun loaded(): List<EngineKey> = synchronized(entries) { entries.values.filter { it.engine != null }.map { it.key } }
 
@@ -177,18 +188,20 @@ class EngineCache(
             if (entry.engine == null) {
                 // The load failed: nothing to keep.
                 if (entries[entry.key] === entry) entries.remove(entry.key)
-                return
-            }
-            entry.releasedAt = ++releases
-            if (idleMillis <= 0) {
-                entries.remove(entry.key)
-                true
-            } else {
-                entry.cancelIdle = scheduler.schedule(idleMillis) { expire(entry) }
                 false
+            } else {
+                entry.releasedAt = ++releases
+                if (idleMillis <= 0) {
+                    entries.remove(entry.key)
+                    true
+                } else {
+                    entry.cancelIdle = scheduler.schedule(idleMillis) { expire(entry) }
+                    false
+                }
             }
         }
         if (discard) closeEngine(entry)
+        runCatching { onIdle(entry.key) }
     }
 
     private fun expire(entry: Entry) {

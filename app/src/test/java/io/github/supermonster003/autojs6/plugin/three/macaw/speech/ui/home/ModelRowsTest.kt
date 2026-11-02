@@ -3,7 +3,9 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CommercialUse
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelEntry
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelStore
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelUpdate
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -61,6 +63,33 @@ class ModelRowsTest {
         assertEquals(RowState.Paused(512), rows.getValue("tts.paused").state)
         assertEquals(RowState.Available, rows.getValue("tts.new").state)
         assertEquals("a reinstall shows its progress", RowState.Running(3, 0, 0), rows.getValue("tts.update").state)
+    }
+
+    @Test
+    fun `an update keeps the row installed and in its place`() {
+        val update = ModelUpdate(2, 500, "MIT", null, null)
+        val entries = listOf(
+            entry("tts.other", "tts", installed = true),
+            entry("tts.old", "tts", installed = true, isDefault = true).copy(latestVersion = 2, update = update),
+            entry("tts.paused", "tts", installed = true).copy(latestVersion = 2, update = update),
+            entry("tts.new", "tts", recommended = true),
+        )
+        val idle = ModelRows.build(entries, emptyList(), emptySet()) { id -> if (id == "tts.paused") 64 else 0 }.single()
+        assertEquals(listOf("tts.old", "tts.other", "tts.paused", "tts.new"), idle.rows.map { it.id })
+        val offered = idle.rows.first()
+        assertEquals(RowState.Installed, offered.state)
+        assertEquals(RowUpdate(update, 0), offered.update)
+        assertEquals(RowUpdate(update, 64), idle.rows[2].update)
+        assertEquals("a paused update keeps the row installed", RowState.Installed, idle.rows[2].state)
+        assertNull(idle.rows[1].update)
+
+        val running = ModelRows.build(entries, listOf(TrackedOperation(9, "tts.old", TrackedOperation.Kind.DOWNLOAD, started = true, done = 10, total = 100)), emptySet()) { 0 }
+        val group = running.single()
+        assertEquals("the running update does not move the row", idle.rows.map { it.id }, group.rows.map { it.id })
+        assertEquals(RowState.Running(9, 10, 100), group.rows.first().state)
+        assertTrue(group.rows.first().installed)
+        assertEquals("still counted as installed", 3, group.installed)
+        assertEquals(3, ModelRows.installedCount(running))
     }
 
     @Test

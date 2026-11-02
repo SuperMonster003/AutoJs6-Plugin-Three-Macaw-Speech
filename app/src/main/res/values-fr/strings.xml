@@ -95,10 +95,13 @@
     <string name="model_action_resume">Reprendre</string>
     <string name="model_action_resume_named">Reprendre le téléchargement de %1$s</string>
     <string name="model_action_set_default">Définir par défaut</string>
+    <string name="model_action_update">Mettre à jour vers v%1$d</string>
+    <string name="model_action_update_named">Mettre à jour %1$s</string>
     <string name="model_badge_builtin">Intégré</string>
     <string name="model_badge_default">Par défaut</string>
     <string name="model_badge_imported">Importé</string>
     <string name="model_badge_recommended">Recommandé</string>
+    <string name="model_badge_update">Mise à jour disponible (v%1$d)</string>
     <string name="model_detail_download_size">Taille du téléchargement</string>
     <string name="model_detail_id">ID du modèle</string>
     <string name="model_detail_installed_size">Taille une fois installé</string>
@@ -108,6 +111,8 @@
     <string name="model_detail_sample_rate">Fréquence d\'échantillonnage</string>
     <string name="model_detail_sample_rate_value">%1$d Hz</string>
     <string name="model_detail_speakers">Locuteurs</string>
+    <string name="model_detail_update">Nouvelle version</string>
+    <string name="model_detail_update_value">v%1$d, téléchargement de %2$s</string>
     <string name="model_kind_asr">Reconnaissance vocale</string>
     <string name="model_kind_kws">Mots de réveil</string>
     <string name="model_kind_langid">Identification de la langue</string>
@@ -125,6 +130,7 @@
     <string name="model_message_imported">%1$s a été importé</string>
     <string name="model_message_installed">%1$s est installé</string>
     <string name="model_message_removed">%1$s a été supprimé</string>
+    <string name="model_message_updated">%1$s a été mis à jour vers v%2$d</string>
     <string name="model_progress">%1$s sur %2$s (%3$d%%)</string>
     <string name="model_punct_about">Ajoute virgules, points et points d\'interrogation au texte des modèles de reconnaissance qui n\'en mettent pas (chinois et anglais). Le modèle anglais rétablit aussi les majuscules. SenseVoice ponctue lui-même son texte et n\'utilise pas ces modèles.</string>
     <string name="model_segment_about">Trouve où parle chaque voix dans un enregistrement. Avec un modèle de reconnaissance du locuteur, il indique qui a parlé et quand, pour \"Séparer les locuteurs\" de l\'écran Essayer et pour les scripts. Il fonctionne avec toutes les langues.</string>
@@ -133,6 +139,7 @@
     <string name="model_state_paused">En pause, %1$s téléchargés</string>
     <string name="model_state_queued">En attente du téléchargement précédent</string>
     <string name="model_tagger_about">Nomme les sons d\'un fichier audio parmi 527 types, comme la parole, la musique ou un chien qui aboie, pour \"Étiqueter les sons\" de l\'écran Essayer et pour les scripts. Les noms des sons sont en anglais.</string>
+    <string name="model_update_kept">La version installée n\'a pas changé.</string>
     <string name="notices_corresponding_source">Source correspondante</string>
     <string name="notices_corresponding_source_summary">Chaque version du plugin sur GitHub joint, à côté des APK, la source de l\'environnement d\'exécution vocal et de ses dépendances</string>
     <string name="notices_gpl">GNU General Public License 3.0</string>

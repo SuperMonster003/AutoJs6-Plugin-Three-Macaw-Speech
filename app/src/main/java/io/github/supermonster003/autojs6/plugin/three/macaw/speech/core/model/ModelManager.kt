@@ -32,12 +32,26 @@ data class ModelEntry(
     val speakers: Int?,
     val sampleRate: Int?,
     val source: String,
+    /** The version the catalog installs now, [version] without one (roadmap D173). zh-CN: 目录当前安装的版本, 没有时等于 [version] (路线图 D173). */
+    val latestVersion: Int = version,
+    /** What an update would bring, null when nothing newer is installable. zh-CN: 更新将带来的内容, 没有可安装的新版本时为 null. */
+    val update: ModelUpdate? = null,
 )
+
+/**
+ * The newer catalog version of an installed model (roadmap D166, D173); `install` brings it. Its license may differ from
+ * the installed version's, which the entry reports.
+ * zh-CN: 已安装模型在目录中的新版本 (路线图 D166, D173), 由 `install` 安装. 其许可可能与条目报告的已安装版本不同.
+ */
+data class ModelUpdate(val version: Int, val sizeBytes: Long, val licenseSpdx: String, val noticeKey: String?, val noticeUrl: String?)
 
 /** Results of the operations that run on the model thread. zh-CN: 在模型线程上运行的操作的结果. */
 sealed class OperationResult {
-    /** [downloadedBytes]: bytes transferred by this operation (a resumed download counts only the rest). */
-    data class Model(val entry: ModelEntry, val origin: String, val mirrorFailure: String?, val downloadedBytes: Long = 0) : OperationResult()
+    /**
+     * [downloadedBytes]: bytes transferred by this operation (a resumed download counts only the rest); [replacedVersion]:
+     * the version an update replaced. zh-CN: [downloadedBytes]: 本操作传输的字节数 (续传只计其余部分); [replacedVersion]: 被更新替换的版本.
+     */
+    data class Model(val entry: ModelEntry, val origin: String, val mirrorFailure: String?, val downloadedBytes: Long = 0, val replacedVersion: Int? = null) : OperationResult()
     data class Catalog(val catalogVersion: Int, val updated: Boolean) : OperationResult()
 
     /** [ModelManager.recycle]: bytes and files freed. zh-CN: [ModelManager.recycle]: 释放的字节数与文件数. */
@@ -103,6 +117,10 @@ class ModelManager(
     @Volatile
     var isModelInUse: (String) -> Boolean = { false }
 
+    /** Called after an update switched a model, so its idle old engines go. zh-CN: 更新切换模型后调用, 以释放其空闲的旧引擎. */
+    @Volatile
+    var onModelReplaced: (String) -> Unit = {}
+
     init {
         executor.execute { runCatching { recycleDownloads() }.onFailure { log("Download recycling failed: $it") } }
     }
@@ -153,6 +171,9 @@ class ModelManager(
     private fun entry(model: CatalogModel, installed: InstalledModel?, defaults: Map<String, String>): ModelEntry {
         val intact = installed != null && store.isIntact(installed)
         val version = if (intact) model.version(installed.versionCode) ?: model.latestVersion else model.installableVersion ?: model.latestVersion
+        val installable = model.installableVersion
+        // Only a newer version is an update (roadmap D173): a catalog that went back to an older one leaves the model alone.
+        val newer = installable?.takeIf { intact && installed.source == ModelStore.SOURCE_CATALOG && it.versionCode > installed.versionCode }
         return ModelEntry(
             id = model.modelId,
             kind = model.kind,
@@ -172,6 +193,8 @@ class ModelManager(
             speakers = version.speakers,
             sampleRate = version.sampleRate,
             source = ModelStore.SOURCE_CATALOG,
+            latestVersion = installable?.versionCode ?: version.versionCode,
+            update = newer?.let { ModelUpdate(it.versionCode, it.downloadBytes, it.license.spdx, it.license.noticeKey, it.sourceUrl) },
         )
     }
 
@@ -223,8 +246,11 @@ class ModelManager(
 
     /**
      * `installModel`: unknown ids and models without an installable version fail at once; everything else, including
-     * the license check (roadmap D11), completes through [listener].
-     * zh-CN: `installModel`: 未知 ID 与没有可安装版本的模型立即失败; 其余 (包括许可检查, 路线图 D11) 经 [listener] 完成.
+     * the license check (roadmap D11), completes through [listener]. It is also the update of an installed older version
+     * (roadmap D166, D174): the old files stay until the new ones are verified, so a failure leaves the model as it was,
+     * and a model in use switches at once, since running sessions hold their engines in memory.
+     * zh-CN: `installModel`: 未知 ID 与没有可安装版本的模型立即失败; 其余 (包括许可检查, 路线图 D11) 经 [listener] 完成. 它同时也是已装旧版本的更新
+     * (路线图 D166, D174): 旧文件保留到新文件校验通过, 失败时模型保持原样; 使用中的模型立即切换, 因为运行中的会话把引擎放在内存里.
      */
     @Throws(ModelException::class)
     fun install(modelId: String, acceptLicense: Boolean, listener: OperationListener, title: String? = null): Int {
@@ -239,10 +265,12 @@ class ModelManager(
             licensePolicy.require(modelId, version, acceptLicense)
             busyModels += modelId
             try {
+                val replaced = store.installed(modelId)?.versionCode?.takeIf { it != version.versionCode }
                 val result = installer.install(current, version, snapshot.catalogVersion, operation.cancel) { done, total -> progress(operation, done, total) }
                 log("Installed $modelId v${version.versionCode} from ${result.origin}, ${result.downloadedBytes} bytes downloaded" +
-                    (result.mirrorFailure?.let { " (mirror failed: $it)" } ?: ""))
-                OperationResult.Model(entry(modelId)!!, result.origin, result.mirrorFailure, result.downloadedBytes)
+                    (result.mirrorFailure?.let { " (mirror failed: $it)" } ?: "") + (replaced?.let { ", replacing v$it" } ?: ""))
+                if (replaced != null) runCatching { onModelReplaced(modelId) }
+                OperationResult.Model(entry(modelId)!!, result.origin, result.mirrorFailure, result.downloadedBytes, replaced)
             } finally {
                 busyModels -= modelId
             }
@@ -281,6 +309,15 @@ class ModelManager(
             val model = importer.importTree(tree, request, catalogs.current().catalog, operation.cancel) { progress(operation, it, 0) }
             OperationResult.Model(entry(model.modelId)!!, model.origin, null)
         }
+
+    /**
+     * Deletes the old versions of [modelId] an update kept for a running engine, once none uses them (roadmap D174); on the
+     * model thread, because the caller is the thread that ended a session.
+     * zh-CN: 删除更新时为运行中的引擎保留, 现已无人使用的 [modelId] 旧版本 (路线图 D174); 在模型线程上执行, 因为调用方是结束会话的线程.
+     */
+    fun sweep(modelId: String) {
+        executor.execute { runCatching { store.sweep(modelId) }.onFailure { log("Sweeping old versions of $modelId failed: $it") } }
+    }
 
     /** `refreshCatalog` (roadmap D24, manual only per D29). zh-CN: `refreshCatalog` (路线图 D24, 按 D29 仅手动触发). */
     fun refreshCatalog(title: String, listener: OperationListener): Int = enqueue(title, listener) { operation ->
@@ -382,7 +419,7 @@ class ModelManager(
     }
 
     private fun artifacts(model: CatalogModel): List<String> =
-        model.versions.flatMap { version -> listOfNotNull(version.mirror?.sha256) + version.upstream.map { it.sha256 } }
+        model.versions.flatMap { version -> listOfNotNull(version.mirror?.sha256) + version.upstream.map { it.sha256 } }.distinct()
 
     private fun discardDownloads(modelId: String) {
         val model = catalogs.current().catalog.model(modelId) ?: return
