@@ -4,6 +4,7 @@
     py .python/device_release_check.py compare <serial> <file> [--remove]    the same after the update, against <file>
     py .python/device_release_check.py language <serial>                     speech.detectLanguage goes sentence by sentence
     py .python/device_release_check.py offer <serial> <archive> <modelId>    a version 1 model is offered its update
+    py .python/device_release_check.py remove <serial> <modelId>...          removes models that a check installed
 
 `snapshot` and `compare` cover the catalog version, the installed models with their sizes and the default models, and the
 enrolled speakers. A device without any speaker gets `release-check-reader` from the LibriSpeech reader with `--enroll`
@@ -86,6 +87,14 @@ try {
     r.imported = m.id; r.importedVersion = m.version;
     var now = row();
     r.version = now.version; r.update = now.updateAvailable; r.latest = now.latestVersionCode; r.source = now.source;
+    done();
+} catch (e) { fail(e); }
+"""
+
+
+hs.SCRIPTS["release-remove"] = hs.COMMON + """
+try {
+    r.removed = [%(models)s].map(function (id) { return [id, speech.models.remove(id)]; });
     done();
 } catch (e) { fail(e); }
 """
@@ -180,6 +189,15 @@ def run_offer(serial, archive, model):
     return ok
 
 
+def run_remove(serial, models):
+    fresh(serial)
+    r = run_script(serial, "release-remove", {"models": ",".join(json.dumps(m) for m in models)}, 60)
+    if r is None:
+        return False
+    print(f"{hs.label(serial)}: remove: {r['removed']}")
+    return True
+
+
 def main(argv):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -197,6 +215,9 @@ def main(argv):
     offer.add_argument("serial")
     offer.add_argument("archive")
     offer.add_argument("model")
+    remove = commands.add_parser("remove")
+    remove.add_argument("serial")
+    remove.add_argument("models", nargs="+")
     args = parser.parse_args(argv)
     if args.command == "snapshot":
         return 0 if run_snapshot(args.serial, args.file, args.enroll) else 1
@@ -204,6 +225,8 @@ def main(argv):
         return 0 if run_compare(args.serial, args.file, args.remove) else 1
     if args.command == "language":
         return 0 if run_language(args.serial) else 1
+    if args.command == "remove":
+        return 0 if run_remove(args.serial, args.models) else 1
     return 0 if run_offer(args.serial, args.archive, args.model) else 1
 
 
