@@ -210,6 +210,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D174 | (派生, P9.3 子会话) 模型正在使用时的更新时机 (D166) | 不等空闲: 新版校验通过后立即切换, 运行中的会话, 常驻唤醒与系统 TTS 引擎继续用内存里的旧引擎做完, 新任务用新版. 理由: 全部引擎在加载时读完文件 (只有 espeak-ng 懒读, 见 D175), 所以切换不影响运行中的任务; 而常驻唤醒可能一直不空闲, 等空闲就等于永远不更新. 旧版目录保留到最后一个使用者结束 (`EngineCache.onIdle` -> `ModelManager.sweep`), 这期间进程死亡则下次启动由 `reconcile` 回收; 更新后释放空闲的旧引擎. 实测: 持有旧引擎更新, 旧引擎继续合成, 结束后旧目录删除 (G8441, OnePlus, API 35 AVD). | P9.3.1 |
 | D175 | (派生, P9.3 子会话) espeak-ng 数据目录改用稳定链接 | 实测缺陷: 数据目录是进程级的, 由第一个加载的模型决定, 它被删除后同进程其他 espeak 模型静默丢音频, 不报错不崩溃 (G8441 探针: Kokoro 先用再移走目录, Piper 10496 样本, 正常 75201; Piper 先用再移走, Kokoro 6330 样本, 正常 85461). 现有的删除模型路径同样受影响. 目录模型的 espeak 数据全部相同 (355 文件, 17991651 字节), 所以修法是让引擎读稳定路径: 符号链接 `noBackupFilesDir/espeak/espeak-ng-data` (`EspeakHome` + `EspeakLink`; minSdk 24 不能用 nio `Files`, 用 `android.system.Os.symlink` + `Os.rename`), 目录删除前 `ModelStore.beforeDelete` 把链接移到另一个模型; 以 `phontab` 判数据完整. 同时修复删除模型路径 (changelog 记为修复项). | P9.3.1 |
 | D176 | (派生, P9.3 子会话) 首页的更新界面 | 行内徽标 "可更新 (vN)" 与更新按钮, 详情页按钮与一行版本事实. 许可与计量网络询问复用下载流程, 许可按新版判断, 计量询问显示更新大小. 暂停后显示已下载量与继续 / 取消. 更新进行中保持行的位置与已安装计数, 不把模型算成未安装. 失败提示多一句 "已安装的版本没有变动". 不发系统通知 (D166). | P9.3.1 |
+| D177 | NPU 加速 (QNN) 的评估门结果 (Q137, 维护者 2026-11-02 选推荐项) | no-go: 1.4.0 不接入 QNN, 照常进入 P9.5, P9.4.3 / P9.4.4 未执行, 留 P7.2 候选. 依据 (`docs/development/npu-qnn-evaluation.md`): 小米 SM8475 上 20 s 模型约 240 ms / 次且与语音长度无关, 约 8 s 以下比 CPU 慢 (1 s 时慢约 4 倍), 17.6 s 时快 2.4 倍, 四段录音混合 RTF 0.034 -> 0.027, 进程 CPU 时间少 9.2 倍, `mixed-zh-en` 文本变差, 真实功耗未实测; 只有 SM8350 及更新的旗舰可用, 这些机器 CPU 已约 30 倍实时, G8441 / Redmi 与常驻唤醒都用不上; 上游没有带 TTS 的 QNN AAR, 现用 1.13.8 的 GPL 打包与 QNN 闭源库冲突; APK +20 到 +51 MB, 模型占用约 490 MB, 首次加载 106 s; Qualcomm 许可可无因撤销, 赔偿义务未写上限. 重新评估的条件: 插件迁到 sherpa-onnx 2.0.x (Q9, Q138) 且上游提供带 TTS 的官方 QNN AAR; 或模型不再按固定时长耗时; 或出现 QNN 的唤醒词 / VAD 模型. |
 
 ---
 
@@ -230,7 +231,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 - 在线识别 / 合成服务对接 (云 ASR / TTS API).
 - 标点恢复模型, 说话人识别 / 分离, 语种识别, 音频事件标签 (1.1.0 候选).
 - 非 WAV 音频解码 (MP3 / AAC / OGG; 1.2.0 起支持, 见 P7.5 与 D81), 系统音频 / 通话录音抓取.
-- 自行编译 sherpa-onnx 或 onnxruntime; NPU (QNN / NNAPI) 加速 (1.4.0 起 P9.4 评估 QNN, 评估门 go 后才实施, D167; 自行编译仍是非目标).
+- 自行编译 sherpa-onnx 或 onnxruntime; NPU (QNN / NNAPI) 加速 (P9.4 评估 QNN 后 no-go, 留候选, D167, D177; 自行编译仍是非目标).
 - 宿主 `tts` 模块新增插件 backend (D3 已选系统引擎路线).
 
 ---
@@ -706,7 +707,7 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 | 非 WAV 解码 | `MediaCodec` 解码 MP3 / AAC / OGG 为 PCM. 状态: 1.2.0 第 2 项, 在 P7.5 实施 (D81-D86) | D15 推翻 (D81) |
 | MCP 工具 | 经 `plugin-tool-api` 暴露 "听一句话" / "朗读" 工具给 MCP Server 与 Agent. 状态: 1.2.0 第 3 项, 在 P7.6 实施 (D87 起; 改为四个工具, 见 D87) | 宿主 plugin-tool 发现落地 |
 | 更多语言模型 | 日 / 韩 / 粤 (SenseVoice 已含), 俄 / 法 / 西 / 阿 流式模型, 多语 TTS (piper 各语种). 状态: 1.2.0 第 4 项, 在 P7.7 实施: 俄 / 法 / 韩流式识别与法 / 西 / 德 / 俄 Piper (D102, D103); 西 / 阿流式, 阿语 TTS, Kokoro int8, Supertonic 本次不收. 1.3.0 第 2 项: 在 P8.2 按新门槛继续 (单模型 <= 350 MiB, 许可可查; 优先 西 / 阿 与 日 / 韩, D124) | 目录 v2 审核 |
-| NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型. 状态: 1.3.0 不纳入 (维护者 2026-10-24 经调度会话选择题选定: 上游稳定性未验证, 只对 Qualcomm 机型有效), 留候选; 1.4.0 第 4 项: 维护者 2026-10-30 选入, P9.4 先评估再 go / no-go (D167), no-go 则继续留候选 | 上游稳定性; SM8350 及更新的 SoC; QNN 运行库再分发许可 |
+| NPU 加速 | QNN (Qualcomm) 变体 AAR 与模型. 状态: 1.3.0 不纳入 (维护者 2026-10-24 经调度会话选择题选定: 上游稳定性未验证, 只对 Qualcomm 机型有效), 留候选; 1.4.0 第 4 项: 维护者 2026-10-30 选入, P9.4 先评估再 go / no-go (D167), no-go 则继续留候选; 2026-11-02 评估后维护者定 no-go (D177, `docs/development/npu-qnn-evaluation.md`), 重评条件见 D177 | 上游无带 TTS 的 QNN AAR; 约 8 s 以下语音比 CPU 慢; 只覆盖 SM8350 及更新的旗舰; QNN 运行库再分发许可与撤销风险 |
 | 常驻唤醒降耗 | P7.4.8 实测开启时插件 CPU 平均约为一个核心的 25% (XQ-DQ72 熄屏 30 分钟 453.9 s, 估算 17.9 mAh); 可评估静音时不送唤醒词模型 (VAD 门控) 或减少推理线程, 需与命中率 (P7.4.7 的声学用例) 对照. 状态: 保留候选, 1.2.0 不做, 1.3.0 再评估 (附录 D Q19); 1.3.0 第 1 项, 在 P8.1 实施 (省电模式开关, 耗电与 CPU 时间减半且命中不降, D123) | 1.3.0 评估 |
 | 试听试说页 "识别文件" | 在试听试说页用系统文件选择器选一个音频文件识别 (P7.5 之后不写脚本也能用非 WAV 解码); P7.5 开工时登记. 状态: 1.2.0 第 5 项, 排在目录 v2 之后 (附录 D Q26), 在 P7.8 实施 (D110-D116) | P7.5 完成 |
 
@@ -891,9 +892,9 @@ P5.6 留下的缺口 (不改宿主与 3-Stove Agent 仓库, 由各自的会话�
 评估门: 先评估再拍板, no-go 或超过 2 周则留 P7.2 候选表, 1.4.0 不等 (D167).
 
 - [x] (评估) P9.4.1 可行性评估 (约 1 周, 上限 2 周): 上游 sherpa-onnx 的 QNN 支持范围与版本 (`k2-fsa.github.io/sherpa/onnx/qnn/`), 预编译 AAR / jniLibs 是否可直接用 (自行编译仍是非目标, 必须自编译时请维护者拍板), QNN 运行库再分发许可, QNN 模型与 SoC / HTP 架构的绑定关系, 测试机 SoC 核对 (XQ-DQ72, OnePlus OPD2413; XQ-AT72 与 G8441 不满足), 一个识别模型 (SenseVoice 或 zipformer) 在满足条件的真机上 CPU 与 NPU 的延迟 / RTF / 功耗 (battery 30 分钟, 同 P8.1 方法) 与 APK / 模型体积增量; 结论写 `docs/development/npu-qnn-evaluation.md`. 完成 (2026-11-02, 用时 1 天): 文档已入库, 结论建议 no-go. 上游 v2.0.1 Release 无 QNN AAR / jniLibs; 唯一的预编译 QNN JNI 在 demo APK 里且不含 TTS, 要识别走 NPU 又保留 TTS 必须自编译 (未编译). 许可: 只许随应用以目标码分发, 不得单独分发, QTI 可无因撤销; 与现用 1.13.8 的 GPL 打包冲突 (sherpa-onnx 2.0.0 已移除 eSpeak NG, Q138). 实测小米 SM8475 (v69, shell 下 harness, SenseVoice 2024-07-17): 20 s 模型约 240 ms / 次且与语音长度无关, CPU 53 ms (1 s) 到 583 ms (17.6 s), 盈亏点约 8 s; 四段录音混合 RTF 0.034 -> 0.027, 进程 CPU 时间 117.9 s -> 12.8 s (9.2 倍); 首次加载 105.7 s, 峰值 1.89 GB; `mixed-zh-en` 文本明显变差. 体积: APK +20 到 +51 MB (现 15.2 MB), 模型下载 162 MB, 设备占用约 490 MB. 真实功耗未实测: USB 供电且电量 100%, 电量计不动, 估算不含 NPU, shell 读不了电源节点. OnePlus SM8750P 未实测 (P6.2 占用), XQ-DQ72 未核对 (远程 adb 不通).
-- [ ] (拍板) P9.4.2 用 AskUserQuestion 请维护者 go / no-go (推荐项在前, 带实测数字); no-go 或超期: 本节余下条目标 "未执行 (原因)", P7.2 候选表更新, 1.4.0 照常进入 P9.5.
-- [ ] (插件) P9.4.3 (go 时) 实施: QNN 运行时接入 (单独 ABI 分包或按需下载, 由选择题定), 目录新条目进 Shared-Assets `speech-models/pending/v4` (只本地; 签名与 Release `speech-models-v4` 为维护者待办, D127 做法), 设备能力探测与 CPU 回退, 设置开关, 十语言文案; 真机实测, 非 Qualcomm / 旧 SoC 回归 (G8441, AVD).
-- [ ] (文档) P9.4.4 (go 时) README / changelog / 文档站 / d.ts (如有脚本 API); prepush 后推送不打 tag.
+- [x] (拍板) P9.4.2 用 AskUserQuestion 请维护者 go / no-go (推荐项在前, 带实测数字); no-go 或超期: 本节余下条目标 "未执行 (原因)", P7.2 候选表更新, 1.4.0 照常进入 P9.5. 完成 (2026-11-02): 维护者选 no-go (推荐项), Q137, D177; P7.2 候选表已更新, 1.4.0 照常进入 P9.5, 无目录改动, 不需要 `speech-models-v4`.
+- [ ] 未执行 (no-go, D177). (插件) P9.4.3 (go 时) 实施: QNN 运行时接入 (单独 ABI 分包或按需下载, 由选择题定), 目录新条目进 Shared-Assets `speech-models/pending/v4` (只本地; 签名与 Release `speech-models-v4` 为维护者待办, D127 做法), 设备能力探测与 CPU 回退, 设置开关, 十语言文案; 真机实测, 非 Qualcomm / 旧 SoC 回归 (G8441, AVD).
+- [ ] 未执行 (no-go, D177; 没有用户可见改动, README 与 changelog 不写). (文档) P9.4.4 (go 时) README / changelog / 文档站 / d.ts (如有脚本 API); prepush 后推送不打 tag.
 
 ### P9.5 1.4.0 发布
 
@@ -1277,6 +1278,7 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q134 | 倍速的保存口径 | (a) 页面存活期 (推荐); (b) 写偏好 | 已定 (a) (维护者 2026-10-31, 推荐项), 见 D169 |
 | Q135 | 读回的记录要能播放, 是否改 D110 的 "不申请持久授权" | (a) 只持有最近 1 个文件的持久读取授权, 换文件 / 清除时释放 (推荐); (b) 不改, 按返回再进就不能播放 | 已定 (a) (维护者 2026-10-31, 推荐项), 见 D170 |
 | Q136 | Node.js / Bun 声明的 `ModelInfo` 何时补 `updateAvailable` / `latestVersionCode` (P9.3.2) | 这两份 d.ts 由两个 Runtime 仓库生成 (`sync-runtime-declarations.mjs` 按摘要校验, 不能手改), Rhino 声明与文档站已补. (a) 随这两个 Runtime 的下一个版本补, 改源文件 (Node `docs/nodejs/types/autojs6-node/speech.d.ts`, Bun `host-client.d.mts`) 后同步 (推荐, 已先行); (b) 现在开一张小卡改两个 Runtime 仓库, 同步 d.ts 与 Ace | 已定 (b) (维护者 2026-11-02): 现在开小卡 3-macaw-23-q136-decl 改 Node / Bun Runtime 声明并同步 d.ts 与 Ace. 不影响运行: 宿主, Node, Bun 的源码都没有逐字段映射, 字段应当随模型对象传到脚本 (Node / Bun 未实测), 缺的只是类型提示. 先例: Q68 的 punctuation 说明同样留到运行时插件下次发版. 工作量: 两个 Runtime 仓库各一笔 (Bun 的声明在 assets 内, 要递增构建号), d.ts 同步一笔, Ace 同步一笔 |
+| Q137 | NPU 加速 (QNN) 的评估门结果 (P9.4.2) | (a) no-go, 留 P7.2 候选, 1.4.0 不等 (推荐); (b) go: 1.4.0 后做 ASR 专用的独立伴侣 APK, 用 demo 的预编译 JNI, 预计 3 - 5 周; (c) go: 进主 APK, 先迁 sherpa-onnx 2.0.x 再自编译, 工期未估 | 已定 (a) (维护者 2026-11-02, 推荐项), 见 D177 |
 | Q138 | sherpa-onnx 2.0.x 已移除 eSpeak NG, Q9 的重新评估条件已触发 (P9.4.1 发现) | 上游 #3731 于 2026-10-20 关闭, v2.0.0 于 2026-10-23 发布 (changelog `#4055`). 迁移可去掉 APK 的 GPL 传播与对应源码附件, 但 Piper / Kokoro 要改用 lexicon, 目录会变, 是破坏性升级, 影响面未评估. (a) 1.4.0 不动, 发布后单独立项评估 (推荐, 已先行); (b) 现在评估, 1.4.0 等它 | 待决. 影响 Q9, D32, `THIRD_PARTY_NOTICES.md`, TTS 目录; 不影响 P9.5. 改选 (b) 的返工: 无代码改动, 但 1.4.0 发布推迟, 工期未估 |
 
 ---

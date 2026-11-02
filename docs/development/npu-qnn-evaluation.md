@@ -18,7 +18,7 @@ engineer's reading, not legal advice.
 | Size | APK +20 to +51 MB (15.2 MB today), plus 162 MB model download that takes about 490 MB on the device (239 MB for the CPU model) |
 | Who benefits | Only SM8350 and newer flagships, which already run at 20 to 30 times real time on the CPU. The devices that struggle (G8441 RTF 0.330, Redmi 0.250) cannot use QNN |
 
-Recommendation: no-go for 1.4.0, keep it as a P7.2 candidate. See "Conclusion".
+Decision: no-go for 1.4.0, kept as a P7.2 candidate (the maintainer on 2026-11-02, Q137, D177). See "Conclusion".
 
 ## Upstream support
 
@@ -239,7 +239,7 @@ resident wake word, the one load that runs for hours, cannot use the NPU.
 
 ## Conclusion
 
-No-go for 1.4.0. Reasons, strongest first:
+No-go for 1.4.0 (D177). Reasons, strongest first:
 
 1. **It cannot ship the simple way.** Recognition on the NPU and TTS in one JNI means building sherpa-onnx ourselves, and
    today's package conflicts with the GPL-3.0-or-later. Without a build of our own, it takes a separate companion APK;
