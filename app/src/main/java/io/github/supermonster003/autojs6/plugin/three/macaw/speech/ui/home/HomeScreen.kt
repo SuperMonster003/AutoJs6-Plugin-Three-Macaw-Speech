@@ -169,11 +169,12 @@ private fun ScrollTo(listState: LazyListState, controller: HomeController, kind:
     val groups = controller.groups
     LaunchedEffect(kind, groups.isNotEmpty()) {
         if (kind == null || done || groups.isEmpty()) return@LaunchedEffect
-        // Items: the status card, the offline notice when shown, then one header and the rows of every group.
+        // Items: the status card, the offline notice when shown, then one header, the explanation if any and the rows of every group.
         var index = if (controller.networkAvailable) 1 else 2
         for (group in groups) {
             if (group.kind == kind) break
             index += 1 + group.rows.size
+            if (HomeTexts.kindAbout(group.kind) != null) index++
         }
         listState.scrollToItem(index)
         done = true

@@ -5,6 +5,7 @@ import android.os.Looper
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -116,12 +117,12 @@ class HomeScreenDeviceTest {
         noticeKey = "speech_model_license_non_commercial", noticeUrl = null, speakers = 1, sampleRate = 22050, source = ModelStore.SOURCE_CATALOG,
     )
 
-    private fun show(backend: ModelBackend, environment: FakeEnvironment): HomeController {
+    private fun show(backend: ModelBackend, environment: FakeEnvironment, scrollToKind: String? = null): HomeController {
         val controller = HomeController(backend, OperationTracker { main.post(it) }, environment, { io.execute(it) }, { main.post(it) })
         controller.networkAvailable = environment.online
         compose.setContent {
             MacawTheme(MacawPalette.resolve(HostAppearance("en", dark = false, primary = -0x2153, accent = -0x2153))) {
-                HomeScreen(controller, HomeActions())
+                HomeScreen(controller, HomeActions(), scrollToKind)
             }
         }
         controller.refresh()
@@ -182,6 +183,17 @@ class HomeScreenDeviceTest {
         show(FakeBackend(emptyList()), FakeEnvironment())
         compose.onNodeWithTag("macaw.emptyState").assertIsDisplayed()
         log("home empty catalog emptyState=shown")
+    }
+
+    @Test
+    fun theSystemEngineOpensTheListAtTheSynthesisGroup() {
+        // The punctuation group above has an explanation, and the rows below leave room to bring the header to the top.
+        val above = (1..6).map { entry("asr.$it", "asr") } + entry("punct.a", "punct") + (1..6).map { entry("kws.$it", "kws") }
+        show(FakeBackend(above + (1..12).map { entry("tts.$it", "tts") }), FakeEnvironment(), scrollToKind = "tts")
+        val list = compose.onNodeWithTag("macaw.home.list").getUnclippedBoundsInRoot().top
+        val header = compose.onNodeWithTag("macaw.home.group.tts").getUnclippedBoundsInRoot().top
+        assertEquals("the header of the group is the first item", list.value, header.value, 1f)
+        log("home scroll tts header=${header.value} list=${list.value}")
     }
 
     @Test
