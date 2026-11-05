@@ -4,6 +4,13 @@
 
 ******
 
+# v1.5.0
+
+###### 2026/11/05
+
+* `Note` L'export et l'import des réglages avec AutoJs6 demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée); avec une version plus ancienne d'AutoJs6, cette version fonctionne comme la 1.4.0
+* `Fonctionnalité` Les réglages du plugin peuvent être exportés et importés avec ceux d'AutoJs6, si bien qu'un nouveau téléphone ou une réinstallation n'oblige plus à tout régler de nouveau: sensibilité de fin de phrase, détection de l'activité vocale, débit, libération des modèles inactifs, téléchargements sur les réseaux facturés à l'usage, locuteur et voix choisis pour chaque modèle, micro flottant et touche de déclenchement, mots de réveil et options du mot de réveil permanent, apparence (langue, mode sombre, couleur du thème) et recherche automatique des mises à jour. Les modèles, les voix enregistrées et les interrupteurs de fonctions comme le mot de réveil permanent ou la saisie vocale n'en font pas partie: téléchargez-les ou réactivez-les sur le nouveau téléphone. Les réglages importés s'appliquent tout de suite; si Android ne laisse pas le plugin démarrer le mot de réveil permanent ou le micro flottant en arrière-plan, ils s'appliquent à la prochaine ouverture du plugin
+
 # v1.4.0
 
 ###### 2026/11/02

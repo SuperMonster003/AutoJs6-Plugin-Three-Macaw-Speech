@@ -395,6 +395,13 @@ Les plans, décisions de conception et l'avancement sont suivis sous forme de li
 
 ******
 
+#### v1.5.0
+
+_2026/11/05_
+
+- `Note` L'export et l'import des réglages avec AutoJs6 demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée); avec une version plus ancienne d'AutoJs6, cette version fonctionne comme la 1.4.0
+- `Fonctionnalité` Les réglages du plugin peuvent être exportés et importés avec ceux d'AutoJs6, si bien qu'un nouveau téléphone ou une réinstallation n'oblige plus à tout régler de nouveau: sensibilité de fin de phrase, détection de l'activité vocale, débit, libération des modèles inactifs, téléchargements sur les réseaux facturés à l'usage, locuteur et voix choisis pour chaque modèle, micro flottant et touche de déclenchement, mots de réveil et options du mot de réveil permanent, apparence (langue, mode sombre, couleur du thème) et recherche automatique des mises à jour. Les modèles, les voix enregistrées et les interrupteurs de fonctions comme le mot de réveil permanent ou la saisie vocale n'en font pas partie: téléchargez-les ou réactivez-les sur le nouveau téléphone. Les réglages importés s'appliquent tout de suite; si Android ne laisse pas le plugin démarrer le mot de réveil permanent ou le micro flottant en arrière-plan, ils s'appliquent à la prochaine ouverture du plugin
+
 #### v1.4.0
 
 _2026/11/02_
@@ -423,26 +430,6 @@ _2026/10/30_
 - `Fonctionnalité` Les scripts peuvent faire les mêmes analyses avec speech.diarize, speech.detectLanguage et speech.tag (et leurs versions ...Async qui renvoient une Promise), avec suivi de la progression; trois nouveaux outils du plugin, speech_diarize, speech_detect_language et speech_tag, le font aussi. Un fichier peut durer jusqu'à 30 minutes (10 minutes pour speech_diarize); une seule analyse tourne à la fois et les autres attendent leur tour
 - `Correctif` Les téléchargements de modèles fonctionnent de nouveau sur Android 7.0: le catalogue et les modèles sont récupérés depuis GitHub, dont les certificats sont désormais émis sous un certificat racine (ISRG Root X1, de Let's Encrypt) qu'Android 7.0 ne possède pas, si bien que chaque téléchargement et chaque actualisation du catalogue échouait avec une erreur de certificat. Le plugin embarque maintenant ce certificat racine et l'utilise avec ceux du système; Android 7.1 et les versions suivantes l'ont déjà et n'étaient pas concernés
 - `Correctif` Sur certains téléphones, la taille des modèles et des fichiers affichait un grand espace entre le nombre et l'unité (quand la langue de l'interface n'avait pas de région, comme l'anglais); elle s'affiche maintenant normalement
-
-#### v1.2.0
-
-_2026/10/23_
-
-- `Note` Nouveau mot de réveil permanent, désactivé par défaut: une fois activé, il écoute en continu le mot de réveil sur l'appareil, le voyant du micro reste allumé, une notification reste affichée et la batterie s'use plus vite (voir le README pour une mesure de 30 minutes écran éteint). Il est conseillé de l'utiliser avec "Durée d'écoute" ou "Écouter uniquement pendant la charge"
-- `Note` La reconnaissance d'audio autre que WAV depuis les scripts et les quatre outils du plugin demandent la version finale d'AutoJs6 6.8.0 ou ultérieure; avec un AutoJs6 plus ancien, les scripts ne reconnaissent toujours que le WAV. Le mot de réveil permanent, les nouveaux modèles, la ponctuation automatique et l'onglet "Fichier" s'utilisent dans le plugin lui-même et ne dépendent pas de la version d'AutoJs6
-- `Note` Nouvelles autorisations: wakelock (seulement pendant qu'Essayer reconnaît un fichier, 60 minutes au plus, pour que la reconnaissance continue écran éteint) et service de premier plan de traitement multimédia (depuis Android 15, pendant la reconnaissance d'un fichier, avec la progression dans une notification)
-- `Fonctionnalité` Mot de réveil permanent (Paramètres > Mot de réveil permanent): dire un mot de réveil ("小鹦小鹦" et "Hey Macaw" par défaut; modifiables, avec une sensibilité élevée, moyenne ou faible) ouvre le même panneau de dictée que l'assistant numérique; écran éteint ou verrouillé, l'écran s'allume, et le déverrouillage n'est demandé qu'avant l'envoi ou la copie
-- `Fonctionnalité` Un panneau ouvert par le mot de réveil lit le texte reconnu à voix haute, avec une voix de 3-Macaw Speech de cette langue s'il y en a une, sinon avec la voix du système; cela se désactive dans les paramètres
-- `Fonctionnalité` Durée d'écoute (désactiver après 10, 30 ou 60 minutes, ou toujours active) et Écouter uniquement pendant la charge (pause une fois débranché, reprise une fois rebranché), les mêmes options que dans 3-Stove Agent
-- `Fonctionnalité` Si 3-Macaw Speech n'est pas l'assistant numérique par défaut, l'activation du mot de réveil permanent demande une fois l'autorisation de se superposer aux autres applications; sans elle, un mot de réveil entendu affiche une notification "Appuyer pour parler" qui ouvre le panneau
-- `Fonctionnalité` Quand un script, une autre application ou un autre déclencheur de ce plugin utilise le micro, le mot de réveil permanent s'efface et reprend l'écoute une fois qu'ils ont terminé
-- `Fonctionnalité` Une seule écoute permanente à la fois entre 3-Stone AI, 3-Stove Agent et 3-Macaw Speech; si une autre est active, il vous est demandé de la désactiver d'abord et vous pouvez ouvrir directement ses paramètres
-- `Fonctionnalité` Aucun enregistrement ne démarre seul après un redémarrage ou une mise à jour: tant que l'interrupteur est activé, une notification "Appuyez pour reprendre le mot de réveil permanent" apparaît, et ouvrir l'écran d'accueil ou les paramètres le reprend aussi
-- `Fonctionnalité` La reconnaissance de fichiers audio (speech.recognize, speech.detectVoice) accepte, en plus du WAV, les formats courants MP3, AAC (y compris M4A), Ogg (Vorbis, Opus), FLAC et AMR, ainsi que le son des fichiers vidéo (MP4, WebM, etc.); la limite reste de 200 Mo ou 30 minutes (nécessite AutoJs6 6.8.0 ou ultérieur; les versions antérieures n'acceptent que le WAV)
-- `Fonctionnalité` Quatre outils du plugin (AutoJs6 6.8.0 ou ultérieur): speech_listen écoute une phrase et renvoie le texte, speech_speak lit à voix haute, speech_transcribe transcrit un fichier audio du téléphone et speech_synthesize synthétise un texte dans un fichier WAV ou M4A. Le plugin MCP Server s'en sert pour qu'un assistant IA sur un ordinateur écoute et parle à travers le téléphone, 3-Stove Agent les appelle directement sur le téléphone et les scripts peuvent les appeler avec plugins.tools; quand l'enregistrement ne peut pas commencer tout de suite, l'écoute affiche d'abord sur le téléphone une notification "Appuyer pour parler" et commence quand on appuie dessus
-- `Fonctionnalité` Davantage de modèles à télécharger: reconnaissance en continu pour le français, le russe et le coréen, et voix Piper pour le français, l'espagnol, l'allemand et le russe; les voix Piper et le modèle coréen sont réservés à un usage non commercial et affichent leur licence avant le téléchargement, et le modèle coréen n'est téléchargé que depuis l'adresse amont
-- `Fonctionnalité` Ponctuation automatique: après le téléchargement d'un modèle de ponctuation depuis le nouveau groupe "Ponctuation" de l'écran d'accueil, le texte chinois et anglais reconnu par les modèles en continu reçoit virgules, points et points d'interrogation, et l'anglais retrouve ses majuscules; SenseVoice ajoute sa propre ponctuation et n'est pas modifié; les scripts peuvent toujours passer punctuation: false pour retirer toute la ponctuation
-- `Fonctionnalité` Nouvel onglet "Fichier" dans Essayer: choisissez un fichier audio ou vidéo (MP3, M4A, WAV et autres, jusqu'à 200 Mo et 30 minutes) pour obtenir en texte ce qui y est dit sans écrire de script, en segments horodatés que vous pouvez copier ou enregistrer en texte brut ou en sous-titres SRT; le modèle, la langue et la ponctuation automatique se choisissent dans l'onglet; la reconnaissance continue quand vous quittez l'écran ou l'éteignez, et une notification affiche la progression avec un bouton d'annulation; le dernier résultat est toujours là à la prochaine ouverture de l'onglet
 
 ##### Pour plus d'historique des versions
 

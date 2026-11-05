@@ -6,8 +6,11 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFil
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles.children
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentNotifications
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.transfer.SettingsTransferProvider
+import org.autojs.plugin.common.api.AutoJs6PluginSettingsTransferContract
 import org.autojs.plugin.common.api.PluginActions
 import org.autojs.plugin.common.api.PluginCapabilityKeys
+import org.autojs.plugin.common.api.PluginSettingsTransferProvider
 import org.autojs.plugin.speech.api.SpeechPluginActions
 import org.autojs.plugin.tool.api.PluginToolContract
 import org.junit.Assert.assertEquals
@@ -83,17 +86,36 @@ class ManifestContractTest {
     }
 
     @Test
-    fun `application meta-data names the wake activity, the author and the page alignment`() {
+    fun `application meta-data names the wake activity, the author, the page alignment and the settings transfer`() {
         val metaData = application.children("meta-data").associate { it.android("name") to it.android("value") }
         assertEquals(
             mapOf(
                 "org.autojs.plugin.contract.NATIVE_PAGE_ALIGNMENT" to "16384",
                 "org.autojs.plugin.WAKE_ACTIVITY" to ".WakeActivity",
                 "org.autojs.plugin.info.AUTHOR" to "@string/plugin_author",
+                "org.autojs.plugin.contract.SETTINGS_TRANSFER" to "1",
             ),
             metaData,
         )
         assertEquals(PluginCapabilityKeys.NATIVE_PAGE_ALIGNMENT, "org.autojs.plugin.contract.NATIVE_PAGE_ALIGNMENT")
+        assertEquals(AutoJs6PluginSettingsTransferContract.META_DATA_SETTINGS_TRANSFER, "org.autojs.plugin.contract.SETTINGS_TRANSFER")
+        assertEquals(AutoJs6PluginSettingsTransferContract.PROTOCOL_VERSION.toString(), metaData.getValue(AutoJs6PluginSettingsTransferContract.META_DATA_SETTINGS_TRANSFER))
+    }
+
+    @Test
+    fun `the settings transfer provider follows contract v1 and is protected by the plugin permission`() {
+        // Roadmap P10.1, host settings roadmap P18.1 (D26): AutoJs6 finds the provider by <package>.autojs6.settings.
+        val provider = application.children("provider").single()
+        assertEquals(".transfer.SettingsTransferProvider", provider.android("name"))
+        assertEquals("$" + "{applicationId}" + AutoJs6PluginSettingsTransferContract.AUTHORITY_SUFFIX, provider.android("authorities"))
+        assertEquals("true", provider.android("exported"))
+        assertEquals(AutoJs6PluginSettingsTransferContract.PLUGIN_PERMISSION, provider.android("permission"))
+        assertEquals(PLUGIN_PERMISSION, AutoJs6PluginSettingsTransferContract.PLUGIN_PERMISSION)
+        assertNull(provider.androidOrNull("readPermission"))
+        assertNull(provider.androidOrNull("writePermission"))
+        assertNull(provider.androidOrNull("process"))
+        assertTrue(provider.children("intent-filter").isEmpty() && provider.children("meta-data").isEmpty())
+        assertTrue(PluginSettingsTransferProvider::class.java.isAssignableFrom(SettingsTransferProvider::class.java))
     }
 
     @Test
@@ -563,7 +585,7 @@ class ManifestContractTest {
             setOf(ASSISTANT, ASSISTANT_SESSION),
             unprotected.filter { it.androidOrNull("permission") == BIND_VOICE_INTERACTION }.map { it.android("name") }.toSet(),
         )
-        assertTrue("no provider is declared", application.children("provider").isEmpty())
+        assertEquals("the only provider is the settings transfer provider", listOf(".transfer.SettingsTransferProvider"), application.children("provider").map { it.android("name") })
         assertEquals("only the widget provider is an exported receiver", listOf(WIDGET), application.children("receiver").filter { it.android("exported") == "true" }.map { it.android("name") })
     }
 

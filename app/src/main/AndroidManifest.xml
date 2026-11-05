@@ -88,6 +88,11 @@
             android:name="org.autojs.plugin.info.AUTHOR"
             android:value="@string/plugin_author" />
 
+        <!-- AutoJs6 settings transfer contract v1 (roadmap P10.1, host settings roadmap P18.1): see the provider below. -->
+        <meta-data
+            android:name="org.autojs.plugin.contract.SETTINGS_TRANSFER"
+            android:value="1" />
+
         <activity
             android:name=".WakeActivity"
             android:excludeFromRecents="true"
@@ -612,6 +617,16 @@
         </service>
 
 
+        <!--
+            Settings transfer (roadmap P10.1, host settings roadmap P18.1): AutoJs6 exports and imports the plugin's settings
+            through call() of this provider, found by the authority <package>.autojs6.settings and the meta-data above. The
+            plugin permission guards both reading and writing; the base class checks the caller as well.
+        -->
+        <provider
+            android:name=".transfer.SettingsTransferProvider"
+            android:authorities="${applicationId}.autojs6.settings"
+            android:exported="true"
+            android:permission="org.autojs.permission.PLUGIN" />
     </application>
 
 </manifest>

@@ -395,6 +395,13 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 ******
 
+#### v1.5.0
+
+_2026/11/05_
+
+- `Aviso` Exportar e importar los ajustes junto con AutoJs6 requiere AutoJs6 6.8.1 o posterior (aún no publicada); con una versión anterior de AutoJs6, esta versión funciona igual que la 1.4.0
+- `Función` Los ajustes del plugin se pueden exportar e importar junto con los de AutoJs6, así que un teléfono nuevo o una reinstalación ya no obliga a configurarlos uno por uno: sensibilidad de fin de frase, detección de actividad de voz, velocidad, liberación de modelos inactivos, descargas en redes de uso medido, el hablante y la voz elegidos para cada modelo, el micrófono flotante y la tecla de activación, las palabras de activación y opciones de la palabra de activación permanente, la apariencia (idioma, modo oscuro, color del tema) y la búsqueda automática de actualizaciones. Los modelos, las voces registradas y los interruptores de funciones como la palabra de activación permanente o la entrada de voz no se incluyen: descárguelos o actívelos de nuevo en el teléfono nuevo. Los ajustes importados se aplican al instante; si Android no deja que el plugin inicie la palabra de activación permanente o el micrófono flotante en segundo plano, se aplican la próxima vez que se abra el plugin
+
 #### v1.4.0
 
 _2026/11/02_
@@ -423,26 +430,6 @@ _2026/10/30_
 - `Función` Los scripts pueden hacer los mismos análisis con speech.diarize, speech.detectLanguage y speech.tag (y sus versiones ...Async que devuelven una Promise), con informes de progreso; tres nuevas herramientas del complemento, speech_diarize, speech_detect_language y speech_tag, también los hacen. Un archivo puede durar hasta 30 minutos (10 minutos para speech_diarize); se hace un análisis a la vez y los demás esperan su turno
 - `Corrección` Las descargas de modelos vuelven a funcionar en Android 7.0: el catálogo y los modelos se obtienen de GitHub, cuyos certificados ahora se emiten bajo un certificado raíz (ISRG Root X1, de Let's Encrypt) que Android 7.0 no tiene, así que cada descarga y cada actualización del catálogo fallaba con un error de certificado. El plugin ahora incluye ese certificado raíz y lo usa junto con los del sistema; Android 7.1 y posteriores ya lo tienen y no estaban afectados
 - `Corrección` En algunos teléfonos, el tamaño de los modelos y archivos mostraba un gran espacio entre el número y la unidad (cuando el idioma de la interfaz no tenía región, como el inglés); ahora se muestra con normalidad
-
-#### v1.2.0
-
-_2026/10/23_
-
-- `Aviso` Nueva palabra de activación permanente, desactivada por defecto: mientras está activa escucha la palabra de activación en el dispositivo, el indicador del micrófono sigue encendido, hay una notificación fija y la batería se gasta más rápido (consulta el README para una medición de 30 minutos con la pantalla apagada). Se recomienda usarla con "Tiempo de escucha" o "Escuchar solo mientras se carga"
-- `Aviso` Reconocer audio que no sea WAV desde scripts y las cuatro herramientas del complemento requieren la versión final de AutoJs6 6.8.0 o posterior; con un AutoJs6 anterior, los scripts siguen reconociendo solo WAV. La palabra de activación permanente, los nuevos modelos, la puntuación automática y la pestaña "Archivo" se usan dentro del complemento y no dependen de la versión de AutoJs6
-- `Aviso` Nuevos permisos: bloqueo de activación (solo mientras Probar reconoce un archivo, como máximo 60 minutos, para que el reconocimiento siga con la pantalla apagada) y un servicio en primer plano de procesamiento multimedia (desde Android 15, mientras se reconoce un archivo, con el progreso en una notificación)
-- `Función` Palabra de activación permanente (Ajustes > Palabra de activación permanente): al decir una palabra de activación ("小鹦小鹦" y "Hey Macaw" por defecto; editables, con sensibilidad alta, media o baja) se abre el mismo panel de dictado que con el asistente digital; con la pantalla apagada o bloqueada la enciende, y solo hay que desbloquear antes de enviar o copiar
-- `Función` Un panel abierto por la palabra de activación lee en voz alta el texto reconocido, con una voz de 3-Macaw Speech de ese idioma si la hay o, si no, con la voz del sistema; se puede desactivar en los ajustes
-- `Función` Tiempo de escucha (desactivar tras 10, 30 o 60 minutos, o siempre activa) y Escuchar solo mientras se carga (se pausa al desconectar el cargador y continúa al volver a conectarlo), las mismas opciones que en 3-Stove Agent
-- `Función` Si 3-Macaw Speech no es el asistente digital predeterminado, al activar la palabra de activación permanente se pide una vez el permiso para mostrarse sobre otras apps; sin él, al oír la palabra de activación aparece una notificación "Toca para hablar" que abre el panel
-- `Función` Cuando un script, otra app u otra forma de activación de este plugin usa el micrófono, la palabra de activación permanente se aparta y vuelve a escuchar cuando terminan
-- `Función` Solo puede haber una escucha permanente a la vez entre 3-Stone AI, 3-Stove Agent y 3-Macaw Speech; si otra está activa, se te pide desactivarla primero y puedes abrir sus ajustes directamente
-- `Función` Tras un reinicio o una actualización no se graba nada por sí solo: con el interruptor activado aparece una notificación "Toca para reanudar la palabra de activación permanente", y abrir la pantalla de inicio o los ajustes también la reanuda
-- `Función` El reconocimiento de archivos de audio (speech.recognize, speech.detectVoice) admite, además de WAV, formatos comunes como MP3, AAC (incluido M4A), Ogg (Vorbis, Opus), FLAC y AMR, así como el sonido de archivos de vídeo (MP4, WebM y otros); el límite sigue siendo 200 MB o 30 minutos (requiere AutoJs6 6.8.0 o posterior; las versiones anteriores solo aceptan WAV)
-- `Función` Cuatro herramientas del complemento (AutoJs6 6.8.0 o posterior): speech_listen escucha una frase y devuelve el texto, speech_speak lee en voz alta, speech_transcribe transcribe un archivo de audio del teléfono y speech_synthesize sintetiza texto en un archivo WAV o M4A. El complemento MCP Server las usa para que un asistente de IA en el ordenador escuche y hable a través del teléfono, 3-Stove Agent las llama directamente en el teléfono y los scripts pueden llamarlas con plugins.tools; cuando no se puede grabar enseguida, la escucha muestra primero en el teléfono una notificación "Toca para hablar" y empieza al tocarla
-- `Función` Más modelos para descargar: reconocimiento en streaming para francés, ruso y coreano, y voces Piper para francés, español, alemán y ruso; las voces Piper y el modelo coreano son solo para uso no comercial y muestran su licencia antes de la descarga, y el modelo coreano se descarga solo desde la dirección original
-- `Función` Puntuación automática: después de descargar un modelo de puntuación desde el nuevo grupo "Puntuación" de la pantalla de inicio, el texto en chino e inglés que reconocen los modelos en streaming recibe comas, puntos y signos de interrogación, y el inglés recupera las mayúsculas; SenseVoice añade su propia puntuación y no se modifica; los scripts pueden seguir pasando punctuation: false para quitar toda la puntuación
-- `Función` Nueva pestaña "Archivo" en Probar: elige un archivo de audio o vídeo (MP3, M4A, WAV y más, hasta 200 MB y 30 minutos) y obtén como texto lo que se dice en él sin escribir un script, en segmentos con sus tiempos que puedes copiar o guardar como texto plano o subtítulos SRT; el modelo, el idioma y la puntuación automática se eligen en la pestaña; el reconocimiento sigue al salir de la pantalla o apagarla, y una notificación muestra el progreso con un botón para cancelar; el último resultado sigue ahí la próxima vez que abras la pestaña
 
 ##### Para más historial de versiones
 

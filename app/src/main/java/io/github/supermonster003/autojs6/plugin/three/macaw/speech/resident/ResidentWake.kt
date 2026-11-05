@@ -155,15 +155,20 @@ internal object ResidentWake {
     /** What the wake session of [settings] runs with. zh-CN: [settings] 的唤醒会话使用的省电做法. */
     fun power(settings: ResidentSettings): WakePower = powerOverride ?: ResidentPower.of(settings.powerSaving)
 
-    /** Wake words, sensitivity or power saving changed: a running service reopens its wake session. zh-CN: 唤醒词, 灵敏度或省电模式已改: 运行中的服务重开唤醒会话. */
-    fun restart(context: Context) {
-        if (enabled(context) && ResidentWakeService.running != null) start(context, ResidentWakeService.ACTION_RESTART)
-    }
+    /**
+     * Wake words, sensitivity or power saving changed: a running service reopens its wake session. False only when Android
+     * refused to deliver it (the settings import reports that as `restartNeeded`).
+     * zh-CN: 唤醒词, 灵敏度或省电模式已改: 运行中的服务重开唤醒会话. 仅当 Android 拒绝送达时为 false (设置导入将其报告为 `restartNeeded`).
+     */
+    fun restart(context: Context): Boolean =
+        !(enabled(context) && ResidentWakeService.running != null) || start(context, ResidentWakeService.ACTION_RESTART)
 
-    /** The listening time or the power rule changed: a running service follows them. zh-CN: 监听时长或电源规则已改: 运行中的服务随之调整. */
-    fun refresh(context: Context) {
-        if (enabled(context) && ResidentWakeService.running != null) start(context, ResidentWakeService.ACTION_REFRESH)
-    }
+    /**
+     * The listening time or the power rule changed: a running service follows them. False as for [restart].
+     * zh-CN: 监听时长或电源规则已改: 运行中的服务随之调整. false 的含义同 [restart].
+     */
+    fun refresh(context: Context): Boolean =
+        !(enabled(context) && ResidentWakeService.running != null) || start(context, ResidentWakeService.ACTION_REFRESH)
 
     /** The options of the wake session (D70): one Bundle per keyword, the threshold of the sensitivity. zh-CN: 唤醒会话的选项. */
     fun options(settings: ResidentSettings): Bundle = Bundle().apply {
@@ -222,7 +227,8 @@ internal class ResidentPreferences(context: Context) {
     @Synchronized
     fun update(transform: (ResidentSettings) -> ResidentSettings): ResidentSettings = transform(read()).also(::write)
 
-    private companion object {
+    /** The file and keys, also listed by the settings transfer (`transfer/MacawSettingsTransfer`). zh-CN: 文件与键名, 设置迁移也列出它们. */
+    internal companion object {
         const val FILE = "resident-wake"
         const val KEY_KEYWORDS = "keywords"
         const val KEY_SENSITIVITY = "sensitivity"

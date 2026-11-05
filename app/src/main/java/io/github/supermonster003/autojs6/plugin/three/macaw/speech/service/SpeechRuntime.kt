@@ -468,6 +468,9 @@ internal class SpeechRuntime private constructor(val context: Context) {
         @Volatile
         private var instance: SpeechRuntime? = null
 
+        /** The runtime when one exists, without creating it (the settings import). zh-CN: 已存在的运行时, 不创建 (设置导入用). */
+        internal val existing: SpeechRuntime? get() = instance
+
         fun get(context: Context): SpeechRuntime = instance ?: synchronized(this) {
             instance ?: SpeechRuntime(context.applicationContext).also { instance = it }
         }

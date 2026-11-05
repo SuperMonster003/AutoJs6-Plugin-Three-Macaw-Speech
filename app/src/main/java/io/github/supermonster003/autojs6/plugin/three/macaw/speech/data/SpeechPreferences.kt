@@ -105,7 +105,8 @@ class SpeechPreferences(context: Context) {
         preferences.edit().apply(block).apply()
     }
 
-    private companion object {
+    /** The file and keys, also listed by the settings transfer (`transfer/MacawSettingsTransfer`). zh-CN: 文件与键名, 设置迁移也列出它们. */
+    internal companion object {
         const val FILE = "speech-preferences"
         const val KEY_ENDPOINT = "endpointMillis"
         const val KEY_VAD = "vad"

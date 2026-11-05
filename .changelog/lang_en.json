@@ -5,6 +5,15 @@
   "changelog_label_improvement": "Improvement",
   "changelog_label_dependency": "Dependency",
   "$data": {
+    "v1.5.0": {
+      "released_date": "2026/11/05",
+      "hint": [
+        "Exporting and importing the settings together with AutoJs6 needs AutoJs6 6.8.1 or later (not released yet); with an earlier AutoJs6 this version works like 1.4.0"
+      ],
+      "feature": [
+        "The plugin's settings can be exported and imported together with AutoJs6's settings, so a new phone or a reinstall does not need them set again one by one: endpoint sensitivity, voice activity detection, speed, releasing idle models, downloads on metered networks, the speaker and voice chosen for each model, the floating microphone and the trigger key, the wake words and options of the resident wake word, the appearance (language, dark mode, theme color) and automatic update checks. Models, enrolled voices and the switches of features such as the resident wake word and the voice input are not included; download or turn them on again on the new phone. Imported settings apply at once; if Android does not let the plugin start the resident wake word or the floating microphone in the background, they apply the next time the plugin opens"
+      ]
+    },
     "v1.4.0": {
       "released_date": "2026/11/02",
       "hint": [

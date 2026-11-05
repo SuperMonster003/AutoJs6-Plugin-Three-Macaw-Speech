@@ -103,12 +103,14 @@ internal class AppUpdateStore(private val storage: Storage, private val clock: (
 
     companion object {
         val INTERVAL_MILLIS: Long = TimeUnit.HOURS.toMillis(12)
-        private const val KEY_AUTOMATIC = "automatic-checks"
+        /** The file and the key the settings transfer lists (`transfer/MacawSettingsTransfer`). zh-CN: 设置迁移列出的文件与键名. */
+        internal const val FILE = "app-update-settings"
+        internal const val KEY_AUTOMATIC = "automatic-checks"
         private const val KEY_IGNORED = "ignored-tags"
         private const val KEY_LAST_ATTEMPT = "last-automatic-attempt"
 
         fun of(context: Context): AppUpdateStore {
-            val preferences = context.applicationContext.getSharedPreferences("app-update-settings", Context.MODE_PRIVATE)
+            val preferences = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
             return AppUpdateStore(object : Storage {
                 override fun getBoolean(key: String, default: Boolean) = preferences.getBoolean(key, default)
                 override fun putBoolean(key: String, value: Boolean) = preferences.edit().putBoolean(key, value).apply()

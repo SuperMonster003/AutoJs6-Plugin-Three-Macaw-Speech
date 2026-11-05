@@ -5,6 +5,15 @@
   "changelog_label_improvement": "Mejora",
   "changelog_label_dependency": "Dependencia",
   "$data": {
+    "v1.5.0": {
+      "released_date": "2026/11/05",
+      "hint": [
+        "Exportar e importar los ajustes junto con AutoJs6 requiere AutoJs6 6.8.1 o posterior (aún no publicada); con una versión anterior de AutoJs6, esta versión funciona igual que la 1.4.0"
+      ],
+      "feature": [
+        "Los ajustes del plugin se pueden exportar e importar junto con los de AutoJs6, así que un teléfono nuevo o una reinstalación ya no obliga a configurarlos uno por uno: sensibilidad de fin de frase, detección de actividad de voz, velocidad, liberación de modelos inactivos, descargas en redes de uso medido, el hablante y la voz elegidos para cada modelo, el micrófono flotante y la tecla de activación, las palabras de activación y opciones de la palabra de activación permanente, la apariencia (idioma, modo oscuro, color del tema) y la búsqueda automática de actualizaciones. Los modelos, las voces registradas y los interruptores de funciones como la palabra de activación permanente o la entrada de voz no se incluyen: descárguelos o actívelos de nuevo en el teléfono nuevo. Los ajustes importados se aplican al instante; si Android no deja que el plugin inicie la palabra de activación permanente o el micrófono flotante en segundo plano, se aplican la próxima vez que se abra el plugin"
+      ]
+    },
     "v1.4.0": {
       "released_date": "2026/11/02",
       "hint": [

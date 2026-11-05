@@ -8,7 +8,7 @@
 #   (roadmap D21, introduced at 1d6280bf8); only SpeechPluginIds.class differs from the 2026-10-16 artifact.
 format=1
 common-plugin-api.file=common-plugin-api.aar
-common-plugin-api.sha256=ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a
+common-plugin-api.sha256=3597b6f92e3111c55d21abef04764b595fed6c9e0d854042a949651f3458c9fa
 speech-api.file=speech-api.aar
 speech-api.sha256=e363b32ecb84d9aff9e73b5716a2681bbb740bace324c1ec178310bd76eadd61
 plugin-tool-api.file=plugin-tool-api.aar
@@ -31,3 +31,9 @@ plugin-tool-api.sha256=8bce82dd2c9811fa689f6b2c7b3926262cf3a756d78569ef4b19e1af2
 # :plugin-api:speech-api:assembleRelease in a clean clone. The reserved diarizeFile, detectLanguage and tagAudio calls are documented
 # (same transactions), SpeechContract gains ANALYSIS_TIMEOUT_MS, SpeechLimits the analysis ceilings, SpeechOptionKeys and
 # SpeechResultKeys the analysis keys. Only classes.jar differs from the artifact of c31ea30ee (2d45a5e71b1222cebda5b8673cc4d3f5d30dc07258e5ffbbe568db4076e0ccb5).
+
+# Plugin settings transfer (roadmap P10.1, host settings roadmap P18.1, contract v1): common-plugin-api 1.1.0 release AAR
+# (unsigned) from host commit 8fe6d154f9 (2026-11-05), staged by :plugin-api:common-plugin-api:mavenCentralBundle. It adds
+# AutoJs6PluginSettingsTransferContract, PluginSettingsTransferProvider, SharedPreferencesSettingsTransfer and
+# PluginSettingsTransferException and replaces the artifact of host snapshot 6c151c900e (ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a).
+# plugin-tool-api.aar is byte-identical to the plugin-tool-api 1.1.0 release staged by the same commit (same version rule, host Q56).

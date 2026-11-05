@@ -103,9 +103,11 @@ internal data class AppearancePreferences(
         const val LIGHT = "light"
         const val DARK = "dark"
         private const val OPAQUE = -0x1000000
-        private const val KEY_LANGUAGE = "language"
-        private const val KEY_DARK_MODE = "darkMode"
-        private const val KEY_COLOR = "color"
+        /** The file and keys, also listed by the settings transfer (`transfer/MacawSettingsTransfer`). zh-CN: 文件与键名, 设置迁移也列出它们. */
+        internal const val FILE = "app-appearance"
+        internal const val KEY_LANGUAGE = "language"
+        internal const val KEY_DARK_MODE = "darkMode"
+        internal const val KEY_COLOR = "color"
         val LANGUAGES = listOf(FOLLOW_HOST, FOLLOW_SYSTEM, "zh-Hans", "zh-Hant-HK", "zh-Hant-TW", "en", "fr", "es", "ja", "ko", "ru", "ar")
         val DARK_MODES = listOf(FOLLOW_HOST, FOLLOW_SYSTEM, LIGHT, DARK)
 
@@ -125,7 +127,7 @@ internal data class AppearancePreferences(
             return read(context).resolve(host, language, system.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES)
         }
 
-        private fun file(context: Context) = context.applicationContext.getSharedPreferences("app-appearance", Context.MODE_PRIVATE)
+        private fun file(context: Context) = context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE)
     }
 }
 
