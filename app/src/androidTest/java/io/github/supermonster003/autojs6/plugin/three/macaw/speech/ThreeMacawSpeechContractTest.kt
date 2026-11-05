@@ -278,6 +278,8 @@ class ThreeMacawSpeechContractTest {
                 ThreeMacawSpeechService::class.java.name,
                 // Roadmap P7.6.1 (D88): the plugin tool service AutoJs6 binds.
                 "$PACKAGE.tool.SpeechToolService",
+                // Roadmap P10.1 (D182): the settings transfer provider AutoJs6 queries.
+                "$PACKAGE.transfer.SettingsTransferProvider",
             ),
             own.map { it.first }.toSet(),
         )
