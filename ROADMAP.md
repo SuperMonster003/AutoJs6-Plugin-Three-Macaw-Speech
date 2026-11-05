@@ -216,6 +216,19 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D180 | 1.4.0 的冒烟机 (Q140, 维护者 2026-11-02 在调度会话选推荐项) | release 候选包与 E5 正式包都在 XQ-AT72 (现装 1.3.0 正式包 162) 上冒烟 (D119), 从 162 直接升级, 不卸载, 顺带验证 1.3.0 -> 1.4.0 的正式包升级路径 (目录 v3, 已装模型, 声纹库, 试听缓存保留), 覆盖 162; 需要时可从 1.3.0 Release 重装. API 35 16 KB AVD 照常另跑. 这解除了 P9.1 时 "XQ-AT72 保留正式包不测" 的选择. 未选: 保留 162 改用 G8441 + OnePlus (两台要卸调试包重装, 不测升级路径); 冒烟前再问. | P9.5.4, P9.5.5 |
 | D181 | (派生, P9.5 子会话) 模型安装的进度分两段显示 (维护者 2026-11-02 在 XQ-AT72 手工检查时提出) | 现象: 81 MB 的模型下载时总量显示 162 MB, 前 81 MB 是下载, 后 81 MB 是解包 (镜像归档未压缩, `onProgress` 的 total = 归档大小 + 安装大小, 1.0.0 起如此). 改法: 界面与通知分两段, 各自从 0 到 100 %: 下载按模型列出的大小显示 "x / 81 MB (p%)", 解包只显示 "正在安装 (p%)" (`InstallProgress`, 新字符串 `model_progress_installing` 十语言); 进度条在两段之间重新开始. `ModelInstaller` 的回调多带解包字节数, `OperationListener` 增加带默认实现的四参数 `onProgress` (只有界面的 `OperationTracker` 用), 通知走 `ModelManager.Activity.unpackBytes`. 导入的复制阶段没有解包字节, 仍是一段. 脚本与工具的 `onProgress(done, total)` 不变 (见 Q141). | P9.5.3 |
 | D182 | (派生, 宿主设置路线图 P18.1 子会话 settings-p18) 设置迁移的覆盖范围 (宿主 Q62, 按推荐项先行) | 宿主 D24 只写了 `SpeechPreferences` 与 `TriggerPreferences`; 设置页上的用户选择还在另外三个文件里, 一并导出: `resident-wake` (唤醒词, 灵敏度, 监听时长, 只在充电时, 朗读, 省电, 只听主人), `app-appearance` (语言, 深色模式, 主题色), `app-update-settings` 的 `automatic-checks`. 不导出: 组件状态 (常驻唤醒, 语音输入, 耳机, 启动器图标的开关), 本机记录 (`notificationsAsked`, `tryoutFileAction`, `tryoutFileLyrics`, `deadline`, `ignored-tags`, `last-automatic-attempt`), 模型, 目录缓存, 声纹. 未选: 只导出两个文件 (改选约 40 行代码与测试). | P10.1 |
+| D183 | 1.6.0 立项与分卡 (Q142, Q146, Q152, 维护者 2026-11-05 在调度会话选推荐项) | 1.5.0 (P10) 只含设置迁移, 由 settings 调度会话的试点发版卡发版; feedback-680 的 F9 / F10 另立 1.6.0 (P11), 五张卡依次进行: P11.1 诊断 + 契约 v3 + 宿主脚本 API, P11.2 F9, P11.3 F10, P11.4 仲裁 + 四仓库文档, P11.5 发布; 全部在 tag v1.5.0 打出后开工 (共用 checkout, 两个会话不同时改 ROADMAP 与 changelog) | P11.1 开工前 |
+| D184 | F9 启动慢的方案 (Q143, 推荐项) | 脚本 `speech.prepare(options)` / `prepareAsync` 预热引擎 + `listen` / `wake` 选项 `keepLoaded` (true 或分钟数) + 设置页空闲释放加 "不释放" 档; 默认空闲 5 分钟不变 (D39); 进契约 v3; P11.1.1 先把 7 - 8 s 分解为宿主绑定 / 插件进程冷启动 / 引擎加载 / 麦克风启动, 预热只覆盖引擎加载, 其他段占大头时另登记待决 | P11.2 开工前 |
+| D185 | 预热租约的归属 (Q151, 推荐项) | `prepare` 与 `keepLoaded` 是调用脚本持有的租约: 持有期间引擎不走空闲释放; 脚本退出, `speech.release()` 或 binder 死亡即归还, 回到设置的空闲规则; 跨脚本常驻用设置页 "不释放" 档; 同一引擎多租约计数 | P11.2 开工前 |
+| D186 | F10 常驻唤醒的扩展 (Q144, 维护者选非推荐项 "再加脚本 API") | 每个常驻唤醒词一个动作: 打开弹层 (现状), 运行脚本 (路径 + 参数), 发系统广播, 只通知; 加 PLUGIN 权限保护的广播接口; 宿主脚本 API `speech.resident` (读写唤醒词与动作, 开关, `on('hit')`) | P11.3 开工前 |
+| D187 | "运行脚本" 动作的入口 (Q148, 推荐项) | 宿主 6.8.1 增加受 `org.autojs.permission.PLUGIN` 保护的后台脚本执行入口 (现有 `ScriptExecutionIntentService` 未导出, 由 `ScriptIntents.handleIntent` 处理; 导出它加权限, 新增服务, 还是绑定式 AIDL, 由 P11.3 子会话按 Android 12 - 15 后台限制实测后定并登记), extras 带脚本路径与 execArgv (keyword, matchedText, source); 旧宿主 (< 6.8.1) 回退 `RunIntentActivity` + D71 弹层流程, 不能从后台启动时发通知 | P11.3 开工前 |
+| D188 | 常驻唤醒词上限 (Q149, 推荐项) | 5 -> 10 条 (`ResidentRules.MAX_KEYWORDS`), 每条 1 - 32 字符不变 (D70); 验收: 10 词的误唤醒 / 命中率对照 P7.4.7 用例, 息屏 CPU 对照 P7.4.8 / P8.1 的 XQ-DQ72 基线 | P11.3 开工前 |
+| D189 | `speech.resident` 含开关, 尽力而为 (Q150, 推荐项) | `enable()` 前按 D78 检查 (麦克风权限, 唤醒模型, 可用性), 不满足抛带 code 的异常; Android 12+ 拒绝从后台启动前台服务时返回 `{ started: false, restartNeeded: true }` 并记下开关, 下次打开插件或点 "点此恢复" 通知 (D74) 时生效, 与 P10.1.2 导入一致; `disable()` 立即停; `enabled` 读当前开关 | P11.3 开工前 |
+| D190 | 脚本 wake 与常驻唤醒的仲裁 (Q145, 维护者选非推荐项 "两者都做") | 文档加 "会话仲裁" 一节 (谁让谁, SESSION_BUSY 何时出现, thenListen / close / background 的用法, 推荐常驻唤醒 "运行脚本" 动作替代长驻 `speech.wake`); `speech.wake({ background: true })`: `SessionTable` 后台持有者槽从 1 个改为多个, 常驻唤醒与后台脚本唤醒同一 FIFO 队列, 任何麦克风会话到来时全部让出 (暂停, 不给新会话 SESSION_BUSY), 该会话结束后按 FIFO 恢复, 脚本收到 paused / resumed 事件; 非 background 脚本唤醒行为不变 (D57); 选项键进契约 v3 | P11.4 开工前 |
+| D191 | 1.6.0 发布策略 (Q147, 推荐项) | 做完即发, 不等 6.8.1 公开; 最低宿主仍 5456 (D118); changelog 提示 "脚本 API (prepare / keepLoaded / background / resident) 需要 AutoJs6 6.8.1 或更高", 1.5.0 的提示保留; 新脚本 API 在本地 6.8.1 debug 宿主验证; versionCode 由 CI 续 177 之后 | P11.5 开工前 |
+| D192 | (派生, 调度会话 2026-11-05) 新脚本 API 的形式 | `speech.prepare` 同步 + `speech.prepareAsync` 返回 Promise (与 recognize / synthesize / models.install 同, 附录 B); `speech.resident.*` 同步, `on('hit', fn)` / `off(fn)` 与 listen 会话的事件风格一致; 参数与错误 code 草案写进附录 B / C, 由 P11.1 定稿 | P11.1 开工前 |
+| D193 | (派生, 调度会话 2026-11-05) 功能名协商 | 契约 v3 的 AIDL 方法与选项键在 P11.1 一次到位 (D136 只追加); 功能名 `speechPrepare` / `speechResident` / `speechBackgroundWake` 分别由 P11.2 / P11.3 / P11.4 实现后才写进 `speechFeatures`; 宿主脚本 API 对未声明功能的插件抛 `FEATURE_UNAVAILABLE` (或 D27 现有同义 code), 不崩不等待 | P11.1 开工前 |
+| D194 | (派生, 调度会话 2026-11-05) 命中的投递 | 脚本 `on('hit')` 经 AIDL 观察者回调 (不经系统广播), 事件 `{ keyword, matchedText?, action, timeMillis }`, 无论该词动作为何都投递; "发系统广播" 动作面向宿主广播型任务与第三方: action `org.autojs.plugin.speech.action.RESIDENT_HIT`, extras keyword / matchedText / timeMillis, 显式发给宿主包, 是否同时发隐式广播由 P11.3 按 Android 8+ 限制评估后定 | P11.3 开工前 |
+| D195 | (派生, 调度会话 2026-11-05) 逐词动作进设置迁移 | `resident-wake` store 升级 (新键或新 store 由 P11.3 定), 10 条上限与动作一起导出; 导入 1.5.0 的旧格式 (每行一个词, 无动作) 仍可, 旧词默认动作 "打开弹层"; P10.1 的导入宽松规则与单测同步 | P11.3 开工前 |
 
 ---
 
@@ -414,6 +427,8 @@ tools/speech-model-distribution/{prepare_sources.py, build_catalog.py, verify_ca
 | P7 | 1.1.0 / 1.2.0 | 1.1.0: P7.1 触发式入口 (D58-D65, D68); 1.2.0 (维护者 2026-10-21 选定四项, 2026-10-22 加第 5 项, 依次进行): P7.4 常驻唤醒 (D66 / D67, D69-D80), P7.5 非 WAV 解码 (D81-D86), P7.6 MCP 工具 (D87-D101), P7.7 目录 v2 (D102-D109), 试听试说页识别文件; 其余候选见 P7.2 | 1.1.0 / 1.2.0 已发布, 剩 P7.1 的 D67 其他插件条目 (3-Stone AI P6-4 等宿主 6.8.0 公开); 其余候选 2026-10-24 转 P8 (1.3.0) 或留 P7.2 候选表 (P7.1 插件条目已完成, 含 D65 改定, 弹层开头丢字修复与 D68; 1.1.0 已于 2026-10-21 发布 (tag `v1.1.0` = `8fdf6d8`, versionCode 81, 索引 81.json / `9848127`), 见 P7.3; 剩 P7.1 的 D67 其他插件条目; 1.2.0 第 1 项 P7.4 已完成 (2026-10-21, 推送至 `5591ac9`); 第 2 项非 WAV 解码 P7.5 已完成 (2026-10-22, 推送至 `5d93fcc`, D81-D86, Q25 已定 (a)); 第 3 项 MCP 工具 P7.6 已完成 (D87-D101); 第 4 项目录 v2 P7.7 已完成 (D102-D109); 第 5 项试听试说页识别文件 P7.8 已完成 (2026-10-23, 推送至 `0003dcf`, D110-D116); 1.2.0 已于 2026-10-23 发布 (tag `v1.2.0` = `31998a0`, versionCode 140, 索引 140.json / `e757e85`), 见 P7.9 (D117-D119)) |
 | P8 | 1.3.0 | 维护者 2026-10-24 经调度会话三轮选择题选定四项, 依次进行 (D120): P8.1 常驻唤醒降耗 (省电模式, D123), P8.2 更多语言模型 (D124, D127), P8.3 宿主契约 v2 + 说话人识别 (D121, D122, D125), P8.4 说话人分离 / 语种识别 / 音频事件标签 (D126), P8.5 1.3.0 发布; NPU 加速不纳入, 留 P7.2 候选表 | 已发布 (2026-10-30, tag `v1.3.0` = `b426dd9`, versionCode 162, 索引 `1696c50`; 2026-10-24 立项, P8.1 - P8.4 于 2026-10-29 完成, P8.5 于 2026-10-30 完成; 1.4.0 候选见 D161 / D162; 调度看板 `D:/idea-projects/.claude/boards/3-macaw.md`, 附录 D Q69 - Q76) |
 | P9 | 1.4.0 | 维护者 2026-10-30 经调度会话三轮选择题选定四项, 依次进行 (D163): P9.1 按语句判语种 (D161, D165), P9.2 文件页音频试听 (D162, D164), P9.3 模型更新提示 (D158, D166), P9.4 NPU 加速评估 (D167, 评估门), P9.6 sherpa-onnx 2.0.x 迁移评估门 (D178, 2026-11-02 增加, 在 P9.5 之前执行), P9.5 1.4.0 发布 | 已发布 (2026-11-02, tag `v1.4.0` = `feebf11`, versionCode 175, 索引 `ff0d532`; 2026-10-30 立项, NPU 与 sherpa-onnx 2.0.x 两个评估门 no-go (D177, D179); 调度看板 `D:/idea-projects/.claude/boards/3-macaw.md`, 附录 D Q124 - Q141) |
+| P10 | 1.5.0 | 宿主设置路线图第二期试点 P18.1 (D182): P10.1 设置迁移契约 v1 (provider, 四个 store, 导入宽松与即时跟随), 由 settings 调度会话分配 (子会话 settings-p18) | P10.1.1 - P10.1.4 已完成 (2026-11-05, `98b7456`); P10.1.5 发版由 settings 调度会话在宿主 P19.1 之后安排 |
+| P11 | 1.6.0 | 宿主 feedback-680 的 F9 / F10, 维护者 2026-11-05 经调度会话三轮选择题选定 (D183 - D195, Q142 - Q152): P11.1 诊断 + 契约 v3 + 宿主脚本 API, P11.2 引擎预热与保留 (F9), P11.3 常驻唤醒逐词动作与 speech.resident (F10), P11.4 会话仲裁与四仓库文档, P11.5 发布; 全部在 tag v1.5.0 之后开工 | 立项 (2026-11-05), 待 tag v1.5.0 |
 
 依赖顺序:
 
@@ -426,6 +441,9 @@ P0 (骨架 + AAR)
              -> P6 (文档, 发布)         依赖 P1-P5 全部通过与 P2.5 的 speech-models-v1 发布
                  -> P7 (1.1.0 / 1.2.0)
                      -> P8 (1.3.0)        P8.1 / P8.2 相互独立但按 D120 依次; P8.4 依赖 P8.3 的契约 v2 与说话人嵌入模型; P8.5 依赖 P8.1 - P8.4 与 Shared-Assets 的 v3 签名 (D127)
+                         -> P9 (1.4.0)        四项依次 (D163), P9.6 评估门在 P9.5 之前
+                             -> P10 (1.5.0)   只含设置迁移 (宿主 P18.1), 发版在宿主 P19.1 之后
+                                 -> P11 (1.6.0) 开工门: tag v1.5.0; P11.1 -> P11.2 -> P11.3 -> P11.4 -> P11.5 依次 (后三张都依赖 P11.1 的契约 v3 与宿主 API, 共用 checkout 不并行)
 ```
 
 发布门禁 (每个阶段的 "(发布)" 条目都指向本清单):
@@ -948,6 +966,49 @@ P9.6 已定 no-go (D179): 不等迁移, sherpa-onnx 仍为 1.13.8.
 
 ---
 
+## P11: 1.6.0
+
+范围: 宿主 feedback-680 路线图 (宿主 `docs/feedback-680/ROADMAP.md`, 其 D2 把 F9 / F10 转交本插件) 的两条反馈: F9 宿主后台久置后 `speech.listen` 首次启动要 7 - 8 s (引擎空闲 5 分钟释放, D30 / D39, 没有预热手段); F10 常驻唤醒词只能在设置页改 (上限 5), 命中动作只有弹层 / 通知 / 忽略, 脚本 `speech.wake` 长驻时 `listen` 得到 SESSION_BUSY. 维护者 2026-11-05 经调度会话 (看板 `D:/idea-projects/.claude/boards/3-macaw.md`) 三轮选择题选定 (附录 D Q142 - Q152, 决策 D183 - D195): 五张卡依次进行, 每张一个子会话, 共用 checkout. 1.5.0 (P10) 只含设置迁移, 由 settings 调度会话发版; 本节所有条目在 tag `v1.5.0` 打出后才开工 (D183), 子会话开工前核对 `git tag --list v1.5.0` 非空且 `VERSION_NAME` 已是 1.5.0. 契约升到 v3 (D136: 只追加键, 值与 AIDL 方法), 宿主侧改动随 6.8.1 只本地提交; 发布不等 6.8.1 公开 (D191), 最低宿主仍 5456 (D118), 新脚本 API 在旧宿主上不存在, changelog 提示写明.
+
+设备: 插件侧真机验证用 G8441 (API 28), OnePlus 63751f63 (Android 15, ColorOS), XQ-DQ72 (常驻唤醒 CPU 基线机; 其上 debug 宿主会因 ART JIT 缺陷 ANR, 不用它验证宿主脚本 API), Redmi 22120RN86C (P10.1 真机); 宿主 6.8.1 debug 包装 G8441 与 OnePlus; AVD API 24 (最低宿主) 与 API 35 (后台启动限制); XQ-AT72 保持正式包, 只在 P11.5 做升级冒烟 (D180 惯例). 需要维护者在手机上确认的对话框 (麦克风, 悬浮窗, 通知权限) 停下来说明, 不代为点击.
+
+### P11.1 诊断, 契约 v3 与宿主脚本 API (D183, D184, D192, D193)
+
+- [ ] (诊断) P11.1.1 复现 F9 并分解耗时: 宿主与插件后台 >= 10 分钟 (以及 `am kill` 插件进程, 两种起点) 后脚本 `speech.listen` 首次启动, 用 logcat 时间戳拆成四段: 宿主绑定 (bindService -> onServiceConnected), 插件进程冷启动 (Application.onCreate -> binder 就绪), 引擎加载 (模型读入 -> 识别器可用), 麦克风启动与会话建立 (openSession -> ready 事件); 至少两台真机 (G8441 + OnePlus) 各 3 次, 热态 (刚用过) 对照各 3 次. 结果写进附录 F 新表 "F9 启动耗时基线", 结论写明预热 (D184 只覆盖引擎加载) 能省多少; 绑定或冷启动占大头时登记待决 (例如常驻唤醒开着时进程常在, 是否建议用户以此替代).
+- [ ] (契约) P11.1.2 契约 v3: `SpeechContract.CONTRACT_VERSION` = 3 (宿主 `plugin-api/speech-api`) 与插件 `MAX_CONTRACT_VERSION` 同步; AIDL 追加 `prepare(options, callback)` -> leaseId, `release(leaseId)`, `getResident()` -> Bundle, `setResident(Bundle)` -> Bundle, `setResidentEnabled(boolean)` -> Bundle (含 started / restartNeeded), `registerResidentObserver(observer)` / `unregisterResidentObserver(observer)`; 选项键追加 `keepLoaded` (listen / wake, boolean 或 int 分钟), `background` (wake, boolean); 功能名追加 `speechPrepare`, `speechResident`, `speechBackgroundWake` (D193: 本卡只声明常量, 不写进 `speechFeatures`); 错误 code 追加 `FEATURE_UNAVAILABLE`, `RESIDENT_UNAVAILABLE`, `LEASE_NOT_FOUND` (名称由子会话按 D27 现有命名定). 插件 binder 接上新方法: 功能未实现时返回 `FEATURE_UNAVAILABLE`; 对 v2 宿主忽略新选项键. 附录 C 与宿主协议文档同步.
+- [ ] (宿主) P11.1.3 宿主脚本 API (`Speech.kt`, `SpeechScriptArguments.kt`, 只本地提交): `speech.prepare(options)` 同步 + `speech.prepareAsync(options)` (options: model / language / kind, 省略时按 listen 的默认模型), 返回 `{ leaseId, modelId, loadMillis }`; `speech.release(leaseId?)` (省略时归还本脚本全部租约); `listen` / `wake` 选项 `keepLoaded` 与 `background` 透传; `speech.resident` 对象: `get()`, `set(config)`, `enable()`, `disable()`, `enabled` 属性, `on('hit', fn)` / `off(fn)`; 脚本退出时归还租约并注销观察者 (D185); 绑定到 v2 插件 (1.5.0 正式包) 或功能未声明时抛 `FEATURE_UNAVAILABLE` 异常, 不崩不等待 (D193); 按宿主 api-coverage 路线图的规则把新函数登记进矩阵. d.ts 草案先写进附录 B, 四仓库同步在 P11.4.2.
+- [ ] (测试) P11.1.4 插件 JVM: 契约常量, 协商 (v2 / v3 宿主), 新选项键解析, 功能未实现时的返回; 宿主单测按惯例. 6.8.1 debug 宿主装 G8441 与 OnePlus: 对 v3 插件 debug 包调 `speech.prepare()` / `speech.resident.get()` 得到 `FEATURE_UNAVAILABLE` (本卡尚未实现功能), 对 1.5.0 正式包同样得到明确异常; `speech.listen` 等旧 API 不受影响 (现有设备测试类通过). 插件 `VERSION_NAME` 改 1.6.0 (同 D130), changelog 1.6.0 十语言条目占位 (日期占位, 发版时改). 插件本地提交并推送 (Macaw 仓库可随时推送, 不打 tag), 宿主只本地提交.
+
+### P11.2 引擎预热与保留 (F9, D184, D185)
+
+- [ ] (插件) P11.2.1 `prepare` 实现: 按 options 把引擎 (识别 / 唤醒 / TTS, 哪些类型由子会话定并登记) 加载进 `EngineCache` 并发放租约; 租约按调用方 (binder 身份 + leaseId) 记账, 持有期间不走 `idleMillis` 释放; `release`, 脚本退出 (宿主侧调 release) 或 binder 死亡即归还; 同一引擎多租约计数; 重复 `prepare` 同模型复用已加载引擎并立即返回. 实现后把 `speechPrepare` 写进 `speechFeatures`.
+- [ ] (插件) P11.2.2 `keepLoaded` 选项: listen / wake 会话附带租约, `true` = 直到脚本退出, 数字 = 会话结束后再保留 N 分钟 (范围与上限由子会话定并登记, 建议 1 - 1440), 到期或脚本退出归还; 设置页 "空闲释放" 加 "不释放" 档 (`SpeechPreferences` 选项 1 / 5 / 15 / 30 / 不释放, 默认仍 5; 迁移契约 `idleMinutes` 用 0 表示不释放, P10.1 导入宽松规则与 `MacawSettingsTransferTest` 同步); 十语言文案 (说明写明内存占用).
+- [ ] (测试) P11.2.3 JVM: 租约计数, 到期, 脚本退出 / binder 死亡归还, 设置档位, 迁移往返; 真机 (P11.1.1 同两台) 复测同场景: 脚本开头 `speech.prepare()` 后首次 `listen` 的启动耗时, `keepLoaded: true` 后台 10 分钟再 `listen` 的耗时, "不释放" 档后台 30 分钟再 `listen` 的耗时, 与 P11.1.1 基线并列写进附录 F; "不释放" 档插件进程 PSS (`dumpsys meminfo`) 记录不设门槛. 验收: 预热后首次 `listen` 的启动耗时不超过 P11.1.1 基线中 "麦克风启动与会话建立" 段的 1.5 倍 (阈值由子会话按实测调整并登记派生决策); 现有设备测试类通过; 附录 B 草案更新; 本地提交并推送.
+
+### P11.3 常驻唤醒逐词动作与 speech.resident (F10, D186 - D189, D194, D195)
+
+- [ ] (插件) P11.3.1 逐词动作: 每个唤醒词一个动作: 打开弹层 (现状 `HitRoute.OPEN`, 旧词默认), 运行脚本 (脚本路径 + 可选参数字符串), 发系统广播, 只通知 (`NOTIFY`); 设置页唤醒词从多行文本改为列表逐条编辑 (词, 动作, 脚本路径的选择方式由子会话定), 上限 `ResidentRules.MAX_KEYWORDS` 5 -> 10 (D188), 每条 1 - 32 字符不变 (D70); 存储格式升级并兼容读回 1.5.0 的每行一词格式; 设置迁移 `resident-wake` store 同步 (D195), 导入宽松规则与单测更新; 十语言文案.
+- [ ] (宿主 + 插件) P11.3.2 "运行脚本" 动作 (D187): 宿主 6.8.1 增加受 `org.autojs.permission.PLUGIN` 保护的后台脚本执行入口 (导出 `ScriptExecutionIntentService` 并加权限, 新增服务, 或绑定式 AIDL; 子会话按 Android 12 - 15 的后台服务 / 前台服务启动限制实测后定并登记派生决策), extras: 脚本路径, execArgv (keyword, matchedText, source = "resident-wake"); 插件在 `ResidentWakeService.route()` 按宿主版本走新入口, 旧宿主回退 `RunIntentActivity` + D71 弹层流程, 不能从后台启动时发 "点击运行" 通知 (D74 样式); 宿主只本地提交.
+- [ ] (插件) P11.3.3 "发系统广播" 动作 (D194): action `org.autojs.plugin.speech.action.RESIDENT_HIT`, extras keyword / matchedText / timeMillis, 显式发给宿主包 (供宿主广播型任务); 是否同时发隐式广播由子会话按 Android 8+ 隐式广播限制评估后定并登记; 文档写宿主广播型任务的接法.
+- [ ] (插件) P11.3.4 `speech.resident` 的插件侧 (D189, D194): `getResident` / `setResident` (整体替换, 按 P11.3.1 规则校验, 不合法返回带 code 的错误), `setResidentEnabled` (开启前 D78 检查; 后台启动被拒时返回 `{ started: false, restartNeeded: true }` 并记下开关, 下次打开插件或点 "点此恢复" 通知时生效, 与 P10.1.2 同一条路径; 关闭立即停), 观察者回调投递命中 `{ keyword, matchedText?, action, timeMillis }` (无论动作为何); 实现后把 `speechResident` 写进 `speechFeatures`.
+- [ ] (测试) P11.3.5 JVM: 10 条规则, 存储升级与旧格式读回, 动作路由, 迁移键, 校验错误; 真机: 10 词误唤醒 / 命中率对照 P7.4.7 用例 (同样的素材与设备), 息屏 30 分钟 CPU 对照 P7.4.8 / P8.1 的 XQ-DQ72 基线 (10 词与 5 词各一次, 省电模式开), API 35 AVD 与 OnePlus 验证后台启动被拒路径 (started = false + 通知 + 下次打开生效), "运行脚本" 在 6.8.1 debug 宿主后台与锁屏下各 3 次成功, 旧宿主回退路径在装 6.8.0 公开版的设备上验证一次, 广播型任务接到广播一次; 脚本 `speech.resident.set / enable / on('hit')` 在 6.8.1 debug 宿主端到端; README / changelog 条目; 本地提交并推送.
+
+### P11.4 会话仲裁与四仓库文档同步 (D190, D191)
+
+- [ ] (插件) P11.4.1 `speech.wake({ background: true })` (D190): `SessionTable` 后台持有者槽从 1 个改为多个, 常驻唤醒与后台脚本唤醒同一 FIFO 队列; 任何麦克风会话 (listen, 前台 wake, 插件界面) 到来时全部让出 (暂停录音与唤醒检测, 不给新会话 SESSION_BUSY), 该会话结束后按 FIFO 恢复; 脚本收到 `paused` / `resumed` 事件 (附 reason); `thenListen` 命中后转 listen 时视为前台会话 (子会话确认并登记); 非 background 脚本唤醒行为不变 (D57); 实现后把 `speechBackgroundWake` 写进 `speechFeatures`.
+- [ ] (文档) P11.4.2 文档站 `speech.md` 加 "会话仲裁" 一节 (表格: 常驻唤醒 / 后台脚本唤醒 / 前台脚本唤醒 / listen / 插件界面, 谁让谁与恢复顺序; SESSION_BUSY 何时出现与处理: `thenListen`, `close()`, `background: true`; 推荐常驻唤醒 "运行脚本" 动作替代长驻 `speech.wake`), 同步 "唤醒会话的临时接管" 一节; 1.6.0 全部新 API (prepare / prepareAsync / release / keepLoaded / background / resident) 同步四仓库: 文档站, d.ts (AutoJs6-TypeScript-Declarations), Ace 补全, Offline Docs; 顺带补 Q141 的 "total 含解包" 一句; 只本地提交, 只提交自己的 hunk (文档站 `--check` 因他人条目失败只记录).
+- [ ] (测试) P11.4.3 JVM 仲裁表 (多后台持有者, FIFO, 让出 / 恢复, 事件); 真机两台: 常驻唤醒开 + 脚本 `wake({ background: true })` + 脚本 `listen` 交错 (脚本化用例进现有设备测试类), 恢复顺序正确, 无 SESSION_BUSY 误报, 命中率不低于前台 wake; 文档与附录 B 一致; 本地提交并推送.
+
+### P11.5 1.6.0 发布 (D191, 发布门禁 R1 - R5)
+
+- [ ] (发布) P11.5.1 changelog 十语言定稿 (功能: 引擎预热与保留; 常驻唤醒逐词动作, 10 条上限, 运行脚本与广播; 后台唤醒自动让出与恢复; 脚本 API `speech.prepare` / `speech.resident`; 提示: 脚本 API 需要 AutoJs6 6.8.1 或更高; 1.5.0 的提示保留), 日期改为发布当日; README 十语言功能与脚本示例; `VERSION_BUILD` 按 R1.
+- [ ] (发布) P11.5.2 release 候选包冒烟 (D180 惯例): XQ-AT72 从 1.5.0 正式包直接升级到候选包, 核对常驻唤醒词存储升级 (旧词保留, 动作为打开弹层), 设置, 模型与声纹库保留, `speech.listen` / 常驻唤醒 / 预热各通过一次; G8441 与 OnePlus 换装 release 包跑脚本 API 冒烟 (6.8.1 debug 宿主); 附录 F 设备矩阵更新.
+- [ ] (发布) P11.5.3 `prepush_check.py` 通过, 推送, 轻量 tag `v1.6.0`, CI Release 产物与 `SHA256SUMS` 核对, 官方索引登记 (注意并发: 变基后用自己的生成文件逐条比对再推), 阶段总览与看板状态更新; 宿主与文档四仓库的本地提交清单列给维护者.
+
+验收状态: 立项 (2026-11-05), 待 tag `v1.5.0`.
+
+---
+
 ## 附录 A. 1.0.0 精选模型目录 (D10, D11)
 
 上游归档体积为 2026-10-16 从 sherpa-onnx GitHub Release 资源实测 (`tar.bz2`, 多数含 fp32 与 int8 两套及测试 wav); 镜像重打包只含所需精度与文件, "安装后" 与 "镜像" 为 P2.2 实测 (2026-10-16, Shared-Assets `c7d1adf`; SenseVoice 与中文流式 2025 两行按同日两项维护者决定由 `89f04a6` 更新). 表中体积单位 MB 均按 1048576 字节计. 目录 ID 已于 P2.2 定稿, 许可结论与证据见 Shared-Assets `speech-models/audits/license-audit-v1.json`.
@@ -1320,7 +1381,18 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q138 | sherpa-onnx 2.0.x 已移除 eSpeak NG, Q9 的重新评估条件已触发 (P9.4.1 发现) | 上游 #3731 于 2026-10-20 关闭, v2.0.0 于 2026-10-23 发布 (changelog `#4055`). 迁移可去掉 APK 的 GPL 传播与对应源码附件, 但 Piper / Kokoro 要改用 lexicon, 目录会变, 是破坏性升级, 影响面未评估. (a) 1.4.0 不动, 发布后单独立项评估 (推荐, 已先行); (b) 现在评估, 1.4.0 等它 | 已定 (b) (维护者 2026-11-02 在调度会话选: 现在评估, 1.4.0 等它; 评估不设时限 (非推荐项); go 则迁移进 1.4.0), 见 D178, 评估门 P9.6. 影响 Q9, D32, `THIRD_PARTY_NOTICES.md`, TTS 目录, P9.5 |
 | Q139 | sherpa-onnx 2.0.x 迁移 go / no-go (P9.6.2) | (a) no-go, 留 1.13.8, 1.4.0 直接进 P9.5, P7.2 留候选 (推荐); (b) go, 全语言保留: eSpeak 生成词表 + 7 语言文本规整 + 目录 v4, 13 - 19 会话日; (c) go, 只留中英文: 撤下其他语言的模型, 8 - 10 会话日; (d) go, 另做 GPL 音素 APK: 主 APK 脱离 GPL, 中文以外的语音要多装一个 APK, 10 - 14 会话日 | 已定 (a) (维护者 2026-11-02 选推荐项), 见 D179 |
 | Q140 | P9.5 的冒烟机 (D119 原定 XQ-AT72, 而 P9.1 时维护者要求它保留 1.3.0 正式包) | (a) XQ-AT72 升到 1.4.0, 候选包与正式包都在它上冒烟, 顺带验证升级路径 (推荐); (b) XQ-AT72 保留 162, 改用 G8441 + OnePlus; (c) 冒烟前再问 | 已定 (a) (维护者 2026-11-02 在调度会话选推荐项), 见 D180 |
-| Q141 | 脚本 `speech.models.install` 的 `onProgress(done, total)` 是否也改 (D181 只改了界面与通知; 脚本的 total 仍是下载 + 解包的合计, 81 MB 的模型报 162 MB) | (a) 不改, 分数仍然准确, 已有脚本不受影响, 文档在下次同步时补一句 "total 含解包" (推荐, 已先行); (b) 脚本只报下载字节: 解包期间进度停在 100 %, 要改宿主或契约语义, 随 6.8.0 | 待定 (不阻塞 1.4.0; 改选 (b) 的返工: 插件 binder 约 10 行, 文档与 d.ts 各一句, 影响已写脚本的进度条) |
+| Q141 | 脚本 `speech.models.install` 的 `onProgress(done, total)` 是否也改 (D181 只改了界面与通知; 脚本的 total 仍是下载 + 解包的合计, 81 MB 的模型报 162 MB) | (a) 不改, 分数仍然准确, 已有脚本不受影响, 文档在下次同步时补一句 "total 含解包" (推荐, 已先行); (b) 脚本只报下载字节: 解包期间进度停在 100 %, 要改宿主或契约语义, 随 6.8.0 | 已定 (a) (2026-11-02 维护者在调度会话选推荐项; 文档 'total 含解包' 一句随 P11.4.2 补) (改选 (b) 的返工: 插件 binder 约 10 行, 文档与 d.ts 各一句, 影响已写脚本的进度条) |
+| Q142 | 宿主 feedback-680 D2 转交的 F9 / F10 放哪个版本 (1.5.0 只有 P10.1, 发版由 settings 调度会话安排) | (a) 另立 1.6.0, 1.5.0 保持只含 P10.1, 本会话写 roadmap P11 并本地提交, 实施卡在 tag v1.5.0 后启动 (推荐); (b) 并入 1.5.0, 等两条反馈做完一起发; (c) 暂缓, 等 6.8.1 公开再立项 | 已定 (a) (2026-11-05 维护者在调度会话选推荐项, D183) |
+| Q143 | F9 `speech.listen` 后台久置后首次启动 7 - 8 s 的方案 | (a) 脚本 API `speech.prepare` 预热 + `keepLoaded` 选项 + 设置 "不释放" 档, 默认 5 分钟不变, 契约 v3, 子会话先分解耗时 (推荐); (b) 只加设置档, 不动契约; (c) 默认空闲改长 (30 分钟), 不加 API | 已定 (a) (2026-11-05, D184) |
+| Q144 | F10 常驻唤醒的扩展范围 | (a) 只在设置页做逐词动作 (弹层 / 运行脚本 / 广播 / 只通知) + PLUGIN 权限广播接口 (推荐); (b) 再加宿主脚本 API `speech.resident` (读写词与动作, `on('hit')`); (c) 暂缓 | 已定 (b) (2026-11-05 维护者选非推荐项, D186) |
+| Q145 | 脚本 `speech.wake` 长驻与常驻唤醒 / `listen` 的仲裁 | (a) 只补文档 (SESSION_BUSY, thenListen / close, 推荐常驻唤醒运行脚本动作) (推荐); (b) 只做 `speech.wake({ background: true })` 自动让出与恢复; (c) 两者都做 | 已定 (c) (2026-11-05 维护者选非推荐项, D190) |
+| Q146 | 1.6.0 分卡方式 | (a) 契约卡先行, 共 5 张: P11.1 诊断 + 契约 v3 + 宿主脚本 API, P11.2 F9, P11.3 F10, P11.4 仲裁 + 四仓库文档, P11.5 发布, 依次进行 (推荐); (b) 按反馈分两张大卡 + 发布卡; (c) 一张卡全做 | 已定 (a) (2026-11-05, D183) |
+| Q147 | 发布是否等宿主 6.8.1 公开 (新脚本 API 只在 6.8.1 存在) | (a) 不等, 做完即发, changelog 提示 "脚本 API 需要 AutoJs6 6.8.1 或更高", 最低宿主仍 5456 (推荐); (b) 等 6.8.1 公开后再发 | 已定 (a) (2026-11-05, D191) |
+| Q148 | "运行脚本" 动作怎样在后台启动宿主脚本 | (a) 宿主 6.8.1 加 PLUGIN 权限保护的服务入口 (路径 + execArgv), 旧宿主回退 `RunIntentActivity` + D71 弹层 (推荐); (b) 只用 `RunIntentActivity` (从后台起活动受限); (c) 只支持 6.8.1+ | 已定 (a) (2026-11-05, D187) |
+| Q149 | 常驻唤醒词上限 (现 5) | (a) 10 条, 验收看误唤醒 / 命中率与息屏 CPU (推荐); (b) 保持 5; (c) 20 条 | 已定 (a) (2026-11-05, D188) |
+| Q150 | 脚本 API `speech.resident` 是否含常驻唤醒开关 (Android 12+ 从后台启动前台服务可能被拒) | (a) 含开关, 尽力而为: 被拒时返回 started = false 并记下开关, 下次打开插件或点通知时生效 (同 P10.1.2 / D74) (推荐); (b) 只读写词与动作, 开关只在设置页 | 已定 (a) (2026-11-05, D189) |
+| Q151 | `speech.prepare` / `keepLoaded` 保留的引擎在脚本退出后怎么处理 | (a) 租约随脚本: 退出, `release()` 或 binder 死亡即归还, 跨脚本常驻用设置 "不释放" 档 (推荐); (b) 全局生效直到进程结束或另一脚本 release | 已定 (a) (2026-11-05, D185) |
+| Q152 | P11.1 契约卡的启动时机 (1.5.0 发版卡会改 ROADMAP 与 changelog, 共用 checkout) | (a) 等 tag v1.5.0 打出后再启动五张卡, 零冲突, 最多晚约一天 (推荐); (b) 现在启动, 只碰宿主仓库, 插件侧勾选等 v1.5.0 后补 | 已定 (a) (2026-11-05, D183) |
 
 ---
 
