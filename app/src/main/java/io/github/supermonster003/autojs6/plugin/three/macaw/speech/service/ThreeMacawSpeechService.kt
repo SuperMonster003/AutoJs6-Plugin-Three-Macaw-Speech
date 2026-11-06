@@ -434,20 +434,25 @@ internal class SpeechPluginBinder(
         SpeechBundles.answer(SpeechContract.CALL_VERSION_3)
     }
 
-    override fun getResident(query: Bundle?): Bundle = residentCall(query, "getResident")
+    // The resident wake words (feature speechResident) since P11.3.4: see [SpeechResidentCalls].
+    // zh-CN: 常驻唤醒词 (功能 speechResident) 自 P11.3.4 起实现: 见 [SpeechResidentCalls].
 
-    override fun setResident(config: Bundle?): Bundle = residentCall(config, "setResident")
+    override fun getResident(query: Bundle?): Bundle = residentCall(query) { residentCalls.get() }
 
-    override fun setResidentEnabled(request: Bundle?): Bundle = residentCall(request, "setResidentEnabled")
+    override fun setResident(config: Bundle?): Bundle = residentCall(config) { residentCalls.set(config) }
 
-    override fun registerResidentObserver(request: Bundle?, observer: ISpeechResidentObserver?): Bundle = residentCall(request, "registerResidentObserver")
+    override fun setResidentEnabled(request: Bundle?): Bundle = residentCall(request) { residentCalls.setEnabled(request) }
 
-    /** Nothing is registered (see [registerResidentObserver]). zh-CN: 没有注册任何东西 (见 [registerResidentObserver]). */
-    override fun unregisterResidentObserver(observer: ISpeechResidentObserver?) = Unit
+    override fun registerResidentObserver(request: Bundle?, observer: ISpeechResidentObserver?): Bundle = residentCall(request) { residentCalls.register(observer) }
 
-    private fun residentCall(request: Bundle?, call: String): Bundle = answering(SpeechContract.CALL_VERSION_3) {
+    /** An unknown observer is no error. zh-CN: 未知观察者不报错. */
+    override fun unregisterResidentObserver(observer: ISpeechResidentObserver?) = residentCalls.unregister(observer)
+
+    private val residentCalls by lazy { SpeechResidentCalls(context) }
+
+    private inline fun residentCall(request: Bundle?, block: () -> Bundle): Bundle = answering(SpeechContract.CALL_VERSION_3) {
         checkContract(request, SpeechContract.CALL_VERSION_3)
-        unavailable(SpeechContract.FEATURE_RESIDENT, call)
+        block()
     }
 
     /**

@@ -27,6 +27,7 @@ internal object ResidentNotifications {
     const val SPEAK_ID = 0x5253
     const val STOPPED_ID = 0x5254
     const val RESUME_ID = 0x5255
+    const val RUN_ID = 0x5256
     private const val LISTENING_CHANNEL = "resident_wake"
     private const val SPEAK_CHANNEL = "resident_wake_speak"
     private const val ALERT_CHANNEL = "resident_wake_alerts"
@@ -39,6 +40,7 @@ internal object ResidentNotifications {
     private const val REQUEST_CONTINUE = 0x5262
     private const val REQUEST_SPEAK = 0x5263
     private const val REQUEST_RESUME = 0x5264
+    private const val REQUEST_RUN = 0x5265
 
     /** [PAUSED]: unplugged with "only while charging"; [BLOCKED]: waits for a tap (D76). zh-CN: [PAUSED]: 未充电暂停; [BLOCKED]: 等待点按 (D76). */
     enum class State { LOADING, WAITING, PAUSED, BLOCKED }
@@ -135,6 +137,50 @@ internal object ResidentNotifications {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .build()
         runCatching { manager(context)?.notify(SPEAK_ID, notification) }
+    }
+
+    /**
+     * "Tap to run" (roadmap D222): an older AutoJs6 runs scripts through its `RunIntentActivity` only, which the plugin
+     * may not start from the background; a tap runs [run]. Gone after a minute, like "Tap to speak".
+     * zh-CN: "点击运行" (路线图 D222): 较旧的 AutoJs6 只能经其 `RunIntentActivity` 运行脚本, 插件无法从后台启动它; 点按即运行 [run]. 与 "点此说话"
+     * 一样一分钟后撤销.
+     */
+    fun run(context: Context, run: Intent, rule: ResidentRule) {
+        channel(context, SPEAK_CHANNEL)
+        val open = PendingIntent.getActivity(context, REQUEST_RUN, run, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val text = context.getString(R.string.resident_run_text, rule.keyword, rule.script.orEmpty().substringAfterLast('/'))
+        val notification = NotificationCompat.Builder(context, SPEAK_CHANNEL)
+            .setSmallIcon(R.drawable.ic_mic_24)
+            .setContentTitle(context.getString(R.string.resident_run_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .setTimeoutAfter(SPEAK_TIMEOUT_MILLIS)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .build()
+        runCatching { manager(context)?.notify(RUN_ID, notification) }
+    }
+
+    /**
+     * AutoJs6 did not run the script of [keyword] (missing file, not answered); a tap opens the settings.
+     * zh-CN: AutoJs6 没有运行 [keyword] 的脚本 (文件不存在, 未应答); 点按打开设置.
+     */
+    fun scriptFailed(context: Context, keyword: String) {
+        channel(context, ALERT_CHANNEL)
+        val text = context.getString(R.string.resident_script_failed_text, keyword)
+        val notification = NotificationCompat.Builder(context, ALERT_CHANNEL)
+            .setSmallIcon(R.drawable.ic_mic_24)
+            .setContentTitle(context.getString(R.string.resident_script_failed_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setContentIntent(settings(context))
+            .setAutoCancel(true)
+            .setCategory(NotificationCompat.CATEGORY_ERROR)
+            .build()
+        runCatching { manager(context)?.notify(RUN_ID, notification) }
     }
 
     /**

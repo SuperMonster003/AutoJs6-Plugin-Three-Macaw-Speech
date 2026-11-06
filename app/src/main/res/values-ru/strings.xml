@@ -203,6 +203,10 @@
     <string name="resident_paused">Приостановлено без зарядки; продолжится после подключения питания</string>
     <string name="resident_resume_text">Нажмите, чтобы возобновить постоянное ожидание слова активации</string>
     <string name="resident_resume_title">Постоянное ожидание слова активации приостановлено</string>
+    <string name="resident_run_text">Слово активации \"%1$s\": %2$s</string>
+    <string name="resident_run_title">Нажмите, чтобы запустить скрипт</string>
+    <string name="resident_script_failed_text">AutoJs6 не запустил скрипт слова \"%1$s\". Проверьте, что файл существует и AutoJs6 установлен.</string>
+    <string name="resident_script_failed_title">Скрипт слова активации не запустился</string>
     <string name="resident_sensitivity_high">Высокая: срабатывает легче</string>
     <string name="resident_sensitivity_low">Низкая: меньше ложных срабатываний</string>
     <string name="resident_sensitivity_medium">Средняя</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">Удалить остатки загрузок и прерванные установки</string>
     <string name="settings_release_history_summary">Открыть историю выпусков, встроенную в плагин</string>
     <string name="settings_resident">Слушать слово активации</string>
+    <string name="settings_resident_action_broadcast">Отправить широковещательное сообщение</string>
+    <string name="settings_resident_action_notify">Только уведомить</string>
+    <string name="settings_resident_action_open">Открыть панель диктовки</string>
+    <string name="settings_resident_action_script">Запустить скрипт</string>
     <string name="settings_resident_charging">Слушать только во время зарядки</string>
     <string name="settings_resident_charging_note">Приостанавливается при отключении питания и продолжается после подключения</string>
     <string name="settings_resident_conflict">%1$s уже слушает постоянно, сначала выключите это там</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">Постоянное ожидание слова активации</string>
     <string name="settings_resident_keywords">Слова активации</string>
     <string name="settings_resident_keywords_invalid">Проверьте количество, длину и повторы слов активации</string>
-    <string name="settings_resident_keywords_note">По одному в строке, от 1 до %1$d, каждое не длиннее %2$d символов. Китайские слова распознаются по пиньиню, английские должны быть в словаре модели.</string>
+    <string name="settings_resident_keywords_note">До %1$d слов активации, каждое не длиннее %2$d символов, без повторов; у каждого своё действие. Китайские слова распознаются по пиньиню, английские должны быть в словаре модели.</string>
     <string name="settings_resident_keywords_unspellable">Модель слов активации не может записать %1$s, выберите другое слово</string>
     <string name="settings_resident_microphone">Сначала разрешите 3-Macaw Speech доступ к микрофону</string>
     <string name="settings_resident_no_recognition_model">Сначала установите модель распознавания речи</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">Запускает модель слова активации, только когда слышит речь или другой звук, а в тишине нет, поэтому расходует меньше заряда. Очень тихо сказанное слово активации может быть пропущено</string>
     <string name="settings_resident_read_aloud">Зачитывать текст</string>
     <string name="settings_resident_read_aloud_summary">Когда панель открыта словом активации, распознанный текст зачитывается голосом 3-Macaw Speech для этого языка, а если его нет, голосом системы</string>
+    <string name="settings_resident_rule_action">Действие</string>
+    <string name="settings_resident_rule_add">Добавить слово активации</string>
+    <string name="settings_resident_rule_arguments">Аргументы (необязательно)</string>
+    <string name="settings_resident_rule_keyword">Слово активации</string>
+    <string name="settings_resident_rule_remove">Удалить</string>
+    <string name="settings_resident_rule_script">Путь к скрипту</string>
+    <string name="settings_resident_rule_script_invalid">Введите абсолютный путь, начинающийся с /</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 и новее запускает скрипт в фоне. Более ранние версии открывают его так же, как панель диктовки, а если это запрещено, показывают уведомление \"Нажмите, чтобы запустить скрипт\". Скрипт получает слово активации из execArgv.</string>
+    <string name="settings_resident_rule_script_pick">Выбрать файл</string>
+    <string name="settings_resident_rule_script_unsupported">Путь к этому файлу недоступен. Выберите файл во внутренней памяти или на SD-карте либо введите абсолютный путь</string>
     <string name="settings_resident_sensitivity">Чувствительность активации</string>
     <string name="settings_resident_speakers">Говорящие</string>
     <string name="settings_resident_speakers_count">Записано: %1$d</string>

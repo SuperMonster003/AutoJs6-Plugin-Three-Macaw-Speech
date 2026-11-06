@@ -2,7 +2,7 @@
 
     py .python/device_contract_v3_check.py <serial> v3      a 1.6.0 build that speaks version 3 but declares none of its features
     py .python/device_contract_v3_check.py <serial> v2      a plugin of contract version 2 (1.5.0 and earlier)
-    py .python/device_contract_v3_check.py <serial> prepare a 1.6.0 build that declares speechPrepare only (P11.2)
+    py .python/device_contract_v3_check.py <serial> prepare a 1.6.0 build that declares speechPrepare and speechResident (P11.2, P11.3)
 
 Every version 3 call must fail at once with FEATURE_UNAVAILABLE and a message that names the missing feature (v3) or the
 two contract versions (v2): speech.prepare / prepareAsync, the speech.resident methods and `on('hit')`, and listen / wake
@@ -15,7 +15,9 @@ Mode `prepare` (roadmap P11.2, D202 - D204): prepare / prepareAsync answer `{ le
 streaming model, the default listen model and the default wake model), a second prepare of the same model reuses the
 engines (loadMillis 0, a new lease), release(id) answers true once and then false, the 16 leases of D197 / D203 end in
 LIMIT_EXCEEDED and release() answers 16, a keepLoaded listen session's ready event carries a lease that release(id)
-returns, and the resident methods and `background` still fail with FEATURE_UNAVAILABLE.
+returns, and `background` still fails with FEATURE_UNAVAILABLE. The resident methods answer since P11.3 (speechResident):
+`resident.get()` returns `{ enabled, rules }` and `enabled` a boolean; the switch itself is not touched here
+(device_resident_actions.py covers enable / set / on('hit')).
 
 The script starts through AutoJs6's RunIntentActivity (see device_host_scripts.py) and writes a JSON result to shared
 storage. Output: one line per item and the host and plugin versions, no transcript. Unlock the device first.
@@ -115,7 +117,6 @@ try {
     probe("release()", function () { return speech.release(); });
     probe("release() empty", function () { return speech.release(); });
     probe("resident.get", function () { return speech.resident.get(); });
-    probe("resident.enable", function () { return speech.resident.enable(); });
     probe("resident.enabled", function () { return speech.resident.enabled; });
     probe("resident.off", function () { return speech.resident.off("hit"); });
     probe("wake background", function () { var s = speech.wake(["hello macaw"], { background: true }); s.stop(); return "opened"; });
@@ -143,9 +144,9 @@ try {
 """
 
 # Mode `prepare`: a build that declares speechPrepare (P11.2) but not yet speechResident / speechBackgroundWake.
-PREPARE_UNAVAILABLE = {"resident.get": "speechResident", "resident.enable": "speechResident", "wake background": "speechBackgroundWake"}
+PREPARE_UNAVAILABLE = {"wake background": "speechBackgroundWake"}
 PREPARE_RETURNS = {"release(id)": "true", "release(id) again": "false", "release(id) unknown": "false", "release() empty": "0",
-                   "resident.enabled": "false", "resident.off": "undefined", "wake keepLoaded": '"opened"',
+                   "resident.enabled": ("false", "true"), "resident.off": "undefined", "wake keepLoaded": '"opened"',
                    "release(keepLoaded)": "true", "release() at the end": ("1", "2")}
 # At the end the prepareAsync lease is held, and the lease of "wake keepLoaded" (5 minutes) too when that session
 # reached ready before its stop arrived (D204: the lease is given with the ready event), so 1 or 2.
@@ -204,7 +205,7 @@ def check_prepare(r):
         print(f"    {'PASS' if ok else 'FAIL'} {name}: {detail}")
 
     features = (r.get("features") or "").split(",")
-    report(r.get("contractVersion") == 3 and "speechPrepare" in features and "speechResident" not in features
+    report(r.get("contractVersion") == 3 and "speechPrepare" in features and "speechResident" in features
            and "speechBackgroundWake" not in features, "features", f"contractVersion {r.get('contractVersion')}, {r.get('features')}")
     answers = {name: lease(values.get(name)) for name in ("prepare", "prepare again", "prepare default", "prepare kws", "prepareAsync")}
     for name, answer in answers.items():
@@ -221,6 +222,9 @@ def check_prepare(r):
     report(codes.get("release()") == "returned" and values.get("release()") == "16", "release() of 16 leases", values.get("release()", codes.get("release()")))
     for name, feature in PREPARE_UNAVAILABLE.items():
         report(codes.get(name) == "FEATURE_UNAVAILABLE" and f'"{feature}"' in messages.get(name, ""), name, f"{codes.get(name)} in {millis.get(name)} ms")
+    resident = values.get("resident.get") or ""
+    report(codes.get("resident.get") == "returned" and '"rules"' in resident and '"enabled"' in resident, "resident.get",
+           resident[:120] if codes.get("resident.get") == "returned" else codes.get("resident.get"))
     for name, value in PREPARE_RETURNS.items():
         report(codes.get(name) == "returned" and values.get(name) in (value if isinstance(value, tuple) else (value,)), name, values.get(name) if codes.get(name) == "returned" else codes.get(name))
     for name, code in ARGUMENTS.items():

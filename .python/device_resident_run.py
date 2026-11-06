@@ -41,6 +41,10 @@ Power saving (roadmap P8.1): `--power off|gate|vad|step|both` picks a measured v
 decides, which `--power-saving on|off` sets (on by default, D123). `phone --hit-rate <plays>` adds the hit count at the
 full and at a quarter of the level, and the late hits (ResidentWakeDeviceTest#theWakeWordIsCountedAtTwoLevels).
 
+Roadmap P11.3.5 (D188): `--keywords <n>` listens for n wake words (1 to 10) in `phone` (the keyword of the recording
+first, then other words of KeywordSpottingDeviceTest) and `battery` (the two default words, then the debug switch's list);
+the defaults come back at the end.
+
 `background` and `battery` switch through the debug build's ResidentDebugActivity (adb only, DUMP permission), because an
 instrumented process keeps a foreground state of its own; nothing is tapped.
 
@@ -170,6 +174,8 @@ def power_arguments(options):
         arguments.append(f"macawPowerSaving={'true' if options['power_saving'] == 'on' else 'false'}")
     if options.get("hit_rate"):
         arguments.append(f"macawHitRate={options['hit_rate']}")
+    if options.get("keywords"):
+        arguments.append(f"macawKeywords={options['keywords']}")
     return arguments
 
 
@@ -358,7 +364,7 @@ def estimated_mah(serial):
     return float(match.group(1)) if match else None
 
 
-def battery_period(serial, minutes, resident_on, power=None, power_saving=None):
+def battery_period(serial, minutes, resident_on, power=None, power_saving=None, keywords=None):
     """
     One screen-off period on battery as batterystats sees it (`dumpsys battery unplug`); answers (mAh, CPU seconds). On:
     "only while charging" off, or the unplug pauses the session, and no time limit; [power] a measured variant of P8.1.1
@@ -369,6 +375,8 @@ def battery_period(serial, minutes, resident_on, power=None, power_saving=None):
         extras = ["--es", "power", power or "setting"]
         if power_saving:
             extras += ["--ez", "powerSaving", "true" if power_saving == "on" else "false"]
+        if keywords:
+            extras += ["--ei", "keywordCount", str(keywords)]
         debug_switch(serial, "--es", "resident", "on", "--ez", "chargingOnly", "false", "--es", "duration", "always", *extras)
         time.sleep(10)
         if service_state(serial) != (True, True):
@@ -400,21 +408,21 @@ def battery_period(serial, minutes, resident_on, power=None, power_saving=None):
         print(f"    busiest threads: {busiest(threads, threads_after)}")
     if resident_on:
         mode, gate = power_lines(serial, since)
-        print(f"    power {power or 'setting'}: {mode}" + (f"; {gate}" if gate else ""))
+        print(f"    power {power or 'setting'}: {mode}" + (f"; {gate}" if gate else "") + f"; wake words {keywords or 'unchanged'}")
     if resident_on and live is not False:
         print(f"{label(serial)}: battery FAIL: the resident wake word did not record to the end")
         return None
     return mah, used
 
 
-def battery(serial, minutes, on_only=False, power=None, power_saving=None):
+def battery(serial, minutes, on_only=False, power=None, power_saving=None, keywords=None):
     """D73 / P7.4.8: off first (the baseline), then on; the switch goes off and the options back to their defaults at the end."""
     adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
     try:
         off = None if on_only else battery_period(serial, minutes, False)
-        on = battery_period(serial, minutes, True, power, power_saving)
+        on = battery_period(serial, minutes, True, power, power_saving, keywords)
     finally:
-        debug_switch(serial, "--es", "resident", "off", *DEFAULT_OPTIONS)
+        debug_switch(serial, "--es", "resident", "off", *DEFAULT_OPTIONS, *(("--ei", "keywordCount", "2") if keywords else ()))
         adb(serial, "shell", "dumpsys", "battery", "reset", check=False)
     ok = (on_only or off is not None) and on is not None
     print(f"{label(serial)}: battery {'PASS' if ok else 'FAIL'} (off {off}, on {on})")
@@ -424,7 +432,7 @@ def battery(serial, minutes, on_only=False, power=None, power_saving=None):
 def options_of(argv):
     """--power / --power-saving / --hit-rate (roadmap P8.1) and the remaining positional arguments, or None when invalid."""
     options, rest = {}, []
-    names = {"--power": "power", "--power-saving": "power_saving", "--hit-rate": "hit_rate"}
+    names = {"--power": "power", "--power-saving": "power_saving", "--hit-rate": "hit_rate", "--keywords": "keywords"}
     items = iter(argv)
     for item in items:
         if item in names:
@@ -432,7 +440,7 @@ def options_of(argv):
         else:
             rest.append(item)
     if options.get("power") not in (None, *POWER_VARIANTS) or options.get("power_saving") not in (None, "on", "off") \
-            or not (options.get("hit_rate") or "1").isdigit():
+            or not (options.get("hit_rate") or "1").isdigit() or not 1 <= int(options.get("keywords") or "1") <= 10:
         return None, rest
     return options, rest
 
@@ -448,7 +456,8 @@ def main(argv):
     if action == "gate":
         return 0 if gate(serial, int(argv[2]) if len(argv) > 2 else 3) else 1
     if action == "battery":
-        return 0 if battery(serial, int(argv[2]) if len(argv) > 2 else 30, "on" in argv[3:], options.get("power"), options.get("power_saving")) else 1
+        return 0 if battery(serial, int(argv[2]) if len(argv) > 2 else 30, "on" in argv[3:], options.get("power"), options.get("power_saving"),
+                            options.get("keywords")) else 1
     if action == "phone":
         return 0 if phone(serial, options) else 1
     return 0 if {"avd": avd, "stove": stove, "background": background}[action](serial) else 1

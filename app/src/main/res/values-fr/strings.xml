@@ -203,6 +203,10 @@
     <string name="resident_paused">En pause hors charge; reprend une fois l\'appareil branché</string>
     <string name="resident_resume_text">Appuyez pour reprendre le mot de réveil permanent</string>
     <string name="resident_resume_title">Le mot de réveil permanent est en pause</string>
+    <string name="resident_run_text">Mot de réveil \"%1$s\": %2$s</string>
+    <string name="resident_run_title">Appuyer pour exécuter le script</string>
+    <string name="resident_script_failed_text">AutoJs6 n\'a pas exécuté le script de \"%1$s\". Vérifiez que le fichier existe et qu\'AutoJs6 est installé.</string>
+    <string name="resident_script_failed_title">Le script d\'un mot de réveil ne s\'est pas exécuté</string>
     <string name="resident_sensitivity_high">Élevée: se réveille plus facilement</string>
     <string name="resident_sensitivity_low">Faible: moins de faux réveils</string>
     <string name="resident_sensitivity_medium">Moyenne</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">Supprimer les restes de téléchargement et les installations interrompues</string>
     <string name="settings_release_history_summary">Lire l\'historique des versions inclus dans le plugin</string>
     <string name="settings_resident">Écouter le mot de réveil</string>
+    <string name="settings_resident_action_broadcast">Envoyer une diffusion</string>
+    <string name="settings_resident_action_notify">Notifier seulement</string>
+    <string name="settings_resident_action_open">Ouvrir le panneau de dictée</string>
+    <string name="settings_resident_action_script">Exécuter un script</string>
     <string name="settings_resident_charging">Écouter uniquement pendant la charge</string>
     <string name="settings_resident_charging_note">Se met en pause une fois débranché et reprend une fois rebranché</string>
     <string name="settings_resident_conflict">%1$s écoute déjà en permanence; désactivez-le d\'abord là-bas</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">Mot de réveil permanent</string>
     <string name="settings_resident_keywords">Mots de réveil</string>
     <string name="settings_resident_keywords_invalid">Vérifiez le nombre, la longueur et les doublons des mots de réveil</string>
-    <string name="settings_resident_keywords_note">Un par ligne, de 1 à %1$d, chacun de %2$d caractères au plus. Le chinois est reconnu par le pinyin, les mots anglais doivent figurer dans le dictionnaire du modèle.</string>
+    <string name="settings_resident_keywords_note">Jusqu\'à %1$d mots de réveil de %2$d caractères au plus, sans doublon; chacun a sa propre action. Le chinois est reconnu par le pinyin, les mots anglais doivent figurer dans le dictionnaire du modèle.</string>
     <string name="settings_resident_keywords_unspellable">Le modèle de mots de réveil ne sait pas épeler %1$s; choisissez un autre mot</string>
     <string name="settings_resident_microphone">Autorisez d\'abord le micro pour 3-Macaw Speech</string>
     <string name="settings_resident_no_recognition_model">Installez d\'abord un modèle de reconnaissance vocale</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">N\'exécute le modèle du mot de réveil que lorsqu\'il entend une voix ou un autre son, jamais dans le silence, ce qui use moins la batterie. Un mot de réveil prononcé très bas peut être manqué</string>
     <string name="settings_resident_read_aloud">Lire le texte à voix haute</string>
     <string name="settings_resident_read_aloud_summary">Quand le mot de réveil ouvre le panneau, le texte reconnu est lu à voix haute avec une voix de 3-Macaw Speech de cette langue, sinon avec la voix du système</string>
+    <string name="settings_resident_rule_action">Action</string>
+    <string name="settings_resident_rule_add">Ajouter un mot de réveil</string>
+    <string name="settings_resident_rule_arguments">Arguments (facultatif)</string>
+    <string name="settings_resident_rule_keyword">Mot de réveil</string>
+    <string name="settings_resident_rule_remove">Supprimer</string>
+    <string name="settings_resident_rule_script">Chemin du script</string>
+    <string name="settings_resident_rule_script_invalid">Saisissez un chemin absolu commençant par /</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 ou ultérieur exécute le script en arrière-plan. Les versions antérieures l\'ouvrent comme le panneau de dictée, ou publient \"Appuyer pour exécuter le script\" si ce n\'est pas permis. Le script lit le mot de réveil dans execArgv.</string>
+    <string name="settings_resident_rule_script_pick">Choisir un fichier</string>
+    <string name="settings_resident_rule_script_unsupported">Le chemin de ce fichier est indisponible. Choisissez un fichier du stockage interne ou d\'une carte SD, ou saisissez un chemin absolu</string>
     <string name="settings_resident_sensitivity">Sensibilité du réveil</string>
     <string name="settings_resident_speakers">Locuteurs</string>
     <string name="settings_resident_speakers_count">Enregistrés: %1$d</string>

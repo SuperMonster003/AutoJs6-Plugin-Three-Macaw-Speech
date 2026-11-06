@@ -203,6 +203,10 @@
     <string name="resident_paused">En pausa sin carga; continúa al conectar el cargador</string>
     <string name="resident_resume_text">Toca para reanudar la palabra de activación permanente</string>
     <string name="resident_resume_title">La palabra de activación permanente está en pausa</string>
+    <string name="resident_run_text">Palabra de activación \"%1$s\": %2$s</string>
+    <string name="resident_run_title">Toca para ejecutar el script</string>
+    <string name="resident_script_failed_text">AutoJs6 no ejecutó el script de \"%1$s\". Comprueba que el archivo existe y que AutoJs6 está instalado.</string>
+    <string name="resident_script_failed_title">El script de una palabra de activación no se ejecutó</string>
     <string name="resident_sensitivity_high">Alta: se activa con más facilidad</string>
     <string name="resident_sensitivity_low">Baja: menos activaciones falsas</string>
     <string name="resident_sensitivity_medium">Media</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">Eliminar restos de descargas e instalaciones interrumpidas</string>
     <string name="settings_release_history_summary">Leer el historial de versiones incluido en el complemento</string>
     <string name="settings_resident">Escuchar la palabra de activación</string>
+    <string name="settings_resident_action_broadcast">Enviar una difusión</string>
+    <string name="settings_resident_action_notify">Solo notificar</string>
+    <string name="settings_resident_action_open">Abrir el panel de dictado</string>
+    <string name="settings_resident_action_script">Ejecutar un script</string>
     <string name="settings_resident_charging">Escuchar solo mientras se carga</string>
     <string name="settings_resident_charging_note">Se pausa al desconectar el cargador y continúa al volver a conectarlo</string>
     <string name="settings_resident_conflict">%1$s ya está escuchando de forma permanente; desactívalo allí primero</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">Palabra de activación permanente</string>
     <string name="settings_resident_keywords">Palabras de activación</string>
     <string name="settings_resident_keywords_invalid">Revisa el número, la longitud y las repeticiones de las palabras de activación</string>
-    <string name="settings_resident_keywords_note">Una por línea, de 1 a %1$d, cada una de hasta %2$d caracteres. El chino se reconoce por pinyin; las palabras en inglés deben estar en el diccionario del modelo.</string>
+    <string name="settings_resident_keywords_note">Hasta %1$d palabras de activación de %2$d caracteres como máximo, sin repeticiones; cada una tiene su propia acción. El chino se reconoce por pinyin; las palabras en inglés deben estar en el diccionario del modelo.</string>
     <string name="settings_resident_keywords_unspellable">El modelo de palabras de activación no puede deletrear %1$s; usa otra palabra</string>
     <string name="settings_resident_microphone">Permite primero el micrófono a 3-Macaw Speech</string>
     <string name="settings_resident_no_recognition_model">Instala primero un modelo de reconocimiento de voz</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">Solo ejecuta el modelo de la palabra de activación cuando oye voz u otro sonido, no en silencio, por lo que gasta menos batería. Una palabra de activación dicha muy bajo puede pasar desapercibida</string>
     <string name="settings_resident_read_aloud">Leer el texto en voz alta</string>
     <string name="settings_resident_read_aloud_summary">Cuando la palabra de activación abre el panel, el texto reconocido se lee en voz alta con una voz de 3-Macaw Speech de ese idioma o, si no la hay, con la voz del sistema</string>
+    <string name="settings_resident_rule_action">Acción</string>
+    <string name="settings_resident_rule_add">Añadir palabra de activación</string>
+    <string name="settings_resident_rule_arguments">Argumentos (opcional)</string>
+    <string name="settings_resident_rule_keyword">Palabra de activación</string>
+    <string name="settings_resident_rule_remove">Eliminar</string>
+    <string name="settings_resident_rule_script">Ruta del script</string>
+    <string name="settings_resident_rule_script_invalid">Escribe una ruta absoluta que empiece por /</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 o posterior ejecuta el script en segundo plano. Las versiones anteriores lo abren como el panel de dictado, o muestran \"Toca para ejecutar el script\" si no está permitido. El script lee la palabra de activación de execArgv.</string>
+    <string name="settings_resident_rule_script_pick">Elegir archivo</string>
+    <string name="settings_resident_rule_script_unsupported">No se puede obtener la ruta de este archivo. Elige un archivo del almacenamiento interno o de una tarjeta SD, o escribe una ruta absoluta</string>
     <string name="settings_resident_sensitivity">Sensibilidad de activación</string>
     <string name="settings_resident_speakers">Hablantes</string>
     <string name="settings_resident_speakers_count">Registrados: %1$d</string>

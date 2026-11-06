@@ -110,7 +110,8 @@ class ResidentWakeService : Service() {
             return START_NOT_STICKY
         }
         // startForegroundService needs startForeground first, even when the service stops right away.
-        if (!promote()) return START_NOT_STICKY
+        val background = intent?.action == ACTION_BACKGROUND_START
+        if (!promote(background)) return START_NOT_STICKY
         if (stopping) {
             // A start that reached an instance on its way down.
             ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -123,6 +124,11 @@ class ResidentWakeService : Service() {
                 visible = true
                 if (started) apply(reopen = true) else start()
             }
+            ACTION_BACKGROUND_START -> {
+                // speech.resident.enable() of a script (roadmap D189, D227): not a visible state, so D76 watches the microphone.
+                if (!started) visible = false
+                start()
+            }
             else -> {
                 visible = true
                 start()
@@ -132,14 +138,19 @@ class ResidentWakeService : Service() {
         return START_NOT_STICKY
     }
 
-    private fun promote(): Boolean = try {
+    private fun promote(background: Boolean): Boolean = try {
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE else 0
         ServiceCompat.startForeground(this, ResidentNotifications.LISTENING_ID, ResidentNotifications.listening(this, state, keyword, deadline), type)
+        ResidentStarts.report(true)
         true
     } catch (e: Exception) {
         // SecurityException (no RECORD_AUDIO, or not started from a visible state on API 34+) or a refused start (API 31+).
         Log.w(TAG, "The resident wake word service was refused: $e")
-        if (!stopping) ResidentNotifications.stopped(this, ResidentStop.MICROPHONE, null)
+        ResidentStarts.report(false)
+        if (!stopping) {
+            // A script's enable() keeps the switch on and reminds "tap to resume" (D189, D74); a visible start names the microphone.
+            if (background && ResidentWake.enabled(this)) ResidentNotifications.resume(this) else ResidentNotifications.stopped(this, ResidentStop.MICROPHONE, null)
+        }
         stopping = true
         stopSelf()
         false
@@ -263,8 +274,9 @@ class ResidentWakeService : Service() {
      * zh-CN: 打开 "只听主人" 时 (路线图 D135, D139), 命中前的音频须与已注册的说话人相符; 被拒的命中什么也不打开. 无法检查 (没有说话人模型或声纹) 或检查失败时
      * 命中照常放行.
      */
-    private fun onHit() {
-        if (!preferences.read().onlyEnrolled) return route()
+    private fun onHit(spotted: String?) {
+        val time = System.currentTimeMillis()
+        if (!preferences.read().onlyEnrolled) return route(spotted, time)
         val window = tail.last(AudioInput.samples(GATE_WINDOW_MILLIS).toInt())
         val gen = generation
         checks.execute {
@@ -275,22 +287,48 @@ class ResidentWakeService : Service() {
             val passed = match == null || match.matched
             val outcome = if (match == null) "not run" else if (passed) "passed" else "rejected"
             Log.i(TAG, "Speaker check $outcome in ${SystemClock.elapsedRealtime() - started} ms")
-            main.post { if (passed && gen == generation && !stopping) route() }
+            main.post { if (passed && gen == generation && !stopping) route(spotted, time) }
         }
     }
 
-    private fun route() {
-        val route = HitRoute.of(SheetVisibility.visible, MacawVoiceInteractionService.isActive(this), ResidentWake.overlayGranted(this), Build.VERSION.SDK_INT)
-        Log.i(TAG, "Wake word hit: ${route.name.lowercase()}")
+    /**
+     * Acts on a hit of the wake word [spotted] by the action of its rule (roadmap P11.3, D186, D187, D194): the sheet,
+     * "Tap to speak", a script of AutoJs6 or the hit broadcast; every hit acted on also reaches the observers of
+     * `speech.resident.on("hit")` (D226). The recognized text is never logged.
+     * zh-CN: 按规则的动作处理唤醒词 [spotted] 的命中 (路线图 P11.3, D186, D187, D194): 弹层, "点此说话", AutoJs6 的脚本或命中广播; 每个被执行的命中
+     * 也投递给 `speech.resident.on("hit")` 的观察者 (D226). 从不记录识别文字.
+     */
+    private fun route(spotted: String?, time: Long) {
+        val rule = ResidentRules.ruleOf(preferences.read().rules, spotted) ?: ResidentRule(spotted ?: keyword)
+        val canOpen = HitRoute.canOpen(MacawVoiceInteractionService.isActive(this), ResidentWake.overlayGranted(this), Build.VERSION.SDK_INT)
+        val hostReceiver = rule.action == ResidentAction.SCRIPT && ResidentHost.hasRunReceiver(this)
+        val step = HitStep.of(rule.action, SheetVisibility.visible, canOpen, hostReceiver)
+        Log.i(TAG, "Wake word hit: ${rule.action.id} -> ${step.name.lowercase()}")
         hits++
-        when (route) {
-            HitRoute.IGNORE -> Unit
-            HitRoute.OPEN -> runCatching { AssistantEntry.open(this, TriggerSource.WAKE) }.onFailure {
+        if (step == HitStep.IGNORE) return
+        val hit = ResidentHit(rule.keyword, spotted, rule.action, time)
+        lastHit = hit
+        ResidentObservers.deliver(hit)
+        when (step) {
+            HitStep.IGNORE -> Unit
+            HitStep.OPEN_SHEET -> runCatching { AssistantEntry.open(this, TriggerSource.WAKE) }.onFailure {
                 Log.w(TAG, "The sheet could not open: $it")
                 ResidentNotifications.speak(this)
             }
-            HitRoute.NOTIFY -> ResidentNotifications.speak(this)
+            HitStep.SPEAK_NOTICE -> ResidentNotifications.speak(this)
+            HitStep.RUN_HOST -> ResidentHost.run(this, hit, rule) { ResidentNotifications.scriptFailed(this, rule.keyword) }
+            HitStep.RUN_ACTIVITY -> runCatching { startActivity(ResidentHost.runIntent(hit, rule)) }.onFailure {
+                Log.w(TAG, "RunIntentActivity could not start: ${it.javaClass.simpleName}")
+                ResidentNotifications.run(this, ResidentHost.runIntent(hit, rule), rule)
+            }
+            HitStep.RUN_NOTICE -> ResidentNotifications.run(this, ResidentHost.runIntent(hit, rule), rule)
+            HitStep.BROADCAST -> ResidentHost.broadcast(this, hit)
         }
+    }
+
+    /** Debug builds: a hit of [keyword] as if the spotter had reported it. zh-CN: 调试构建: 模拟检测器报告 [keyword] 的命中. */
+    internal fun injectHit(keyword: String) {
+        if (!stopping && started) onHit(keyword)
     }
 
     private fun notifyState() {
@@ -328,7 +366,10 @@ class ResidentWakeService : Service() {
             notifyState()
         }
 
-        override fun onWake(hit: Bundle?) = post { onHit() }
+        override fun onWake(hit: Bundle?) {
+            val spotted = hit?.getString(SpeechResultKeys.KEYWORD)
+            post { onHit(spotted) }
+        }
 
         override fun onPaused(info: Bundle?) = Unit
 
@@ -367,6 +408,9 @@ class ResidentWakeService : Service() {
         const val ACTION_TURN_OFF = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.action.RESIDENT_TURN_OFF"
         const val ACTION_RESTART = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.action.RESIDENT_RESTART"
 
+        /** A start from `speech.resident.enable()`, not a visible state (D189, D227). zh-CN: 来自 `speech.resident.enable()` 的启动, 不是可见状态. */
+        const val ACTION_BACKGROUND_START = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.action.RESIDENT_BACKGROUND_START"
+
         /** The listening time or the power rule changed; handled like a visible start. zh-CN: 监听时长或电源规则已改; 按可见启动处理. */
         const val ACTION_REFRESH = "io.github.supermonster003.autojs6.plugin.three.macaw.speech.action.RESIDENT_REFRESH"
 
@@ -375,9 +419,17 @@ class ResidentWakeService : Service() {
         /** The running service (main thread). zh-CN: 运行中的服务 (主线程). */
         internal val running: ResidentWakeService? get() = current?.get()?.takeIf { !it.stopping }
 
+        /** A service runs and is in the foreground; any thread (a snapshot). zh-CN: 有服务在前台运行; 任意线程 (快照). */
+        internal val isRunning: Boolean get() = current?.get()?.let { !it.stopping && it.started } == true
+
         /** Hits since the process started, for device tests. zh-CN: 进程启动以来的命中次数, 供设备测试使用. */
         @Volatile
         internal var hits = 0
+            private set
+
+        /** The last hit acted on, for device tests. zh-CN: 最近一次被执行的命中, 供设备测试使用. */
+        @Volatile
+        internal var lastHit: ResidentHit? = null
             private set
 
         /** The state of the running service, for device tests. zh-CN: 运行中服务的状态, 供设备测试使用. */

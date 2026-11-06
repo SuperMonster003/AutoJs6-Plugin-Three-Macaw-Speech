@@ -2,7 +2,10 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.transfer
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentAction
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentRule
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.appearance.AppearancePreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateStore
@@ -22,6 +25,7 @@ import org.autojs.plugin.common.api.AutoJs6PluginSettingsTransferContract as Con
 class MacawSettingsTransferTest {
 
     private val keywords = listOf("Hey Macaw", "Hello Parrot").joinToString(ResidentPreferences.LINE)
+    private val rules = ResidentRules.encode(listOf(ResidentRule("Hey Macaw"), ResidentRule("Hello Parrot", ResidentAction.SCRIPT, "/sdcard/Scripts/parrot.js", "--fast")))
 
     private fun files(vararg initial: Pair<String, Map<String, Any>>): Map<String, FakeSharedPreferences> {
         val given = initial.toMap()
@@ -55,6 +59,7 @@ class MacawSettingsTransferTest {
         ),
         ResidentPreferences.FILE to mapOf(
             ResidentPreferences.KEY_KEYWORDS to keywords,
+            ResidentPreferences.KEY_RULES to rules,
             ResidentPreferences.KEY_SENSITIVITY to "high",
             ResidentPreferences.KEY_DURATION to "always",
             ResidentPreferences.KEY_CHARGING to true,
@@ -80,7 +85,7 @@ class MacawSettingsTransferTest {
         val exported = transfer(stored()).exportSettings()
 
         assertEquals(MacawSettingsTransfer.STORE_NAMES.toSet(), exported.settings.keys().asSequence().toSet())
-        assertEquals(22, exported.entries)
+        assertEquals(23, exported.entries)
         assertFalse("nothing in the document is a secret", exported.sensitive)
 
         val speech = exported.settings.getJSONObject(SpeechPreferences.FILE)
@@ -149,6 +154,7 @@ class MacawSettingsTransferTest {
             .put(
                 ResidentPreferences.FILE, JSONObject()
                     .put(ResidentPreferences.KEY_KEYWORDS, entry(Contract.TYPE_STRING, listOf("Macaw", "macaw").joinToString(ResidentPreferences.LINE)))
+                    .put(ResidentPreferences.KEY_RULES, entry(Contract.TYPE_STRING, "[{\"keyword\":\"a\",\"action\":\"script\"}]"))
                     .put(ResidentPreferences.KEY_SENSITIVITY, entry(Contract.TYPE_STRING, "extreme"))
                     .put(ResidentPreferences.KEY_DURATION, entry(Contract.TYPE_STRING, "30"))
                     .put(ResidentPreferences.KEY_DEADLINE, entry(Contract.TYPE_LONG, 1L)),
@@ -163,9 +169,9 @@ class MacawSettingsTransferTest {
 
         // future-store 2, a store that is not an object 1, speech 7 (idle 7, speed 3.0, metered as int, the
         // notification record, an empty speaker family name, a negative speaker, an entry that is not an object),
-        // trigger 2, resident 3, appearance 1.
-        // zh-CN: 未知 store 2, 非对象 store 1, speech 7, trigger 2, resident 3, appearance 1.
-        assertEquals(16, imported.skipped)
+        // trigger 2, resident 4 (repeated words, a script rule without a path, the sensitivity, the deadline), appearance 1.
+        // zh-CN: 未知 store 2, 非对象 store 1, speech 7, trigger 2, resident 4, appearance 1.
+        assertEquals(17, imported.skipped)
         assertEquals(5, imported.written)
         assertEquals(
             mapOf("unrelated" to "kept here", SpeechPreferences.KEY_VAD to true, SpeechPreferences.KEY_ENDPOINT to 600L, "voice.vits-zh" to "vits-zh-aishell3"),

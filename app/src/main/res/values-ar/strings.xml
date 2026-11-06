@@ -203,6 +203,10 @@
     <string name="resident_paused">متوقف مؤقتا لأن الجهاز لا يشحن; يستأنف عند توصيل الشاحن</string>
     <string name="resident_resume_text">انقر لاستئناف كلمة التنبيه الدائمة</string>
     <string name="resident_resume_title">كلمة التنبيه الدائمة متوقفة مؤقتا</string>
+    <string name="resident_run_text">كلمة التنبيه \"%1$s\": %2$s</string>
+    <string name="resident_run_title">انقر لتشغيل النص البرمجي</string>
+    <string name="resident_script_failed_text">لم يشغل AutoJs6 النص البرمجي لـ \"%1$s\". تحقق من وجود الملف ومن تثبيت AutoJs6.</string>
+    <string name="resident_script_failed_title">لم يعمل النص البرمجي لكلمة التنبيه</string>
     <string name="resident_sensitivity_high">عالية: تستيقظ بسهولة أكبر</string>
     <string name="resident_sensitivity_low">منخفضة: تنبيهات خاطئة أقل</string>
     <string name="resident_sensitivity_medium">متوسطة</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">حذف بقايا التنزيلات وعمليات التثبيت المتقطعة</string>
     <string name="settings_release_history_summary">قراءة سجل الإصدارات المضمن في الإضافة</string>
     <string name="settings_resident">الاستماع إلى كلمة التنبيه</string>
+    <string name="settings_resident_action_broadcast">إرسال بث</string>
+    <string name="settings_resident_action_notify">إشعار فقط</string>
+    <string name="settings_resident_action_open">فتح لوحة الإملاء</string>
+    <string name="settings_resident_action_script">تشغيل نص برمجي</string>
     <string name="settings_resident_charging">الاستماع أثناء الشحن فقط</string>
     <string name="settings_resident_charging_note">يتوقف مؤقتا عند فصل الشاحن ويستأنف عند توصيله مجددا</string>
     <string name="settings_resident_conflict">⁨%1$s⁩ يستمع بشكل دائم بالفعل; أوقفه هناك أولا</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">كلمة التنبيه الدائمة</string>
     <string name="settings_resident_keywords">كلمات التنبيه</string>
     <string name="settings_resident_keywords_invalid">تحقق من عدد كلمات التنبيه وطولها وتكرارها</string>
-    <string name="settings_resident_keywords_note">واحدة في كل سطر, من 1 إلى %1$d, كل منها حتى %2$d حرفا. يتم التعرف على الصينية عبر البينيين, ويجب أن تكون الكلمات الإنجليزية في قاموس النموذج.</string>
+    <string name="settings_resident_keywords_note">حتى %1$d من كلمات التنبيه, كل منها حتى %2$d حرفا, دون تكرار; ولكل منها إجراء خاص. يتم التعرف على الصينية عبر البينيين, ويجب أن تكون الكلمات الإنجليزية في قاموس النموذج.</string>
     <string name="settings_resident_keywords_unspellable">لا يستطيع نموذج كلمات التنبيه تهجئة ⁨%1$s⁩; استخدم كلمة أخرى</string>
     <string name="settings_resident_microphone">اسمح أولا لـ ⁨3-Macaw Speech⁩ باستخدام الميكروفون</string>
     <string name="settings_resident_no_recognition_model">ثبّت أولا نموذجا للتعرف على الكلام</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">لا يشغل نموذج كلمة التنبيه إلا عند سماع كلام أو صوت آخر, ولا يشغله في الهدوء, لذا يستهلك بطارية أقل. قد لا يتم التقاط كلمة التنبيه إذا قيلت بصوت خافت جدا</string>
     <string name="settings_resident_read_aloud">قراءة النص بصوت عال</string>
     <string name="settings_resident_read_aloud_summary">عندما تفتح كلمة التنبيه اللوحة تتم قراءة النص الذي تم التعرف عليه بصوت من ⁨3-Macaw Speech⁩ لتلك اللغة, وإلا بصوت النظام</string>
+    <string name="settings_resident_rule_action">الإجراء</string>
+    <string name="settings_resident_rule_add">إضافة كلمة تنبيه</string>
+    <string name="settings_resident_rule_arguments">الوسائط (اختياري)</string>
+    <string name="settings_resident_rule_keyword">كلمة التنبيه</string>
+    <string name="settings_resident_rule_remove">حذف</string>
+    <string name="settings_resident_rule_script">مسار النص البرمجي</string>
+    <string name="settings_resident_rule_script_invalid">أدخل مسارا مطلقا يبدأ بـ /</string>
+    <string name="settings_resident_rule_script_note">يشغل AutoJs6 6.8.1 أو أحدث النص البرمجي في الخلفية. أما الإصدارات الأقدم فتفتحه مثل لوحة الإملاء, أو ترسل إشعار \"انقر لتشغيل النص البرمجي\" إذا لم يكن ذلك مسموحا. يقرأ النص البرمجي كلمة التنبيه من execArgv.</string>
+    <string name="settings_resident_rule_script_pick">اختيار ملف</string>
+    <string name="settings_resident_rule_script_unsupported">تعذر الحصول على مسار هذا الملف. اختر ملفا من وحدة التخزين الداخلية أو بطاقة SD, أو أدخل مسارا مطلقا</string>
     <string name="settings_resident_sensitivity">حساسية التنبيه</string>
     <string name="settings_resident_speakers">المتحدثون</string>
     <string name="settings_resident_speakers_count">المسجلون: %1$d</string>

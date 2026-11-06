@@ -6,13 +6,17 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.DocumentsContract
 import android.provider.Settings
 import android.util.Log
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,21 +24,27 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
@@ -53,6 +63,10 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsV
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.HitRoute
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentAction
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentRule
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentRules
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentScriptPaths
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ListeningDuration
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentAvailability
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentKeywords
@@ -130,6 +144,32 @@ import java.util.concurrent.Executors
  */
 class SettingsActivity : StandaloneActivity() {
 
+    /**
+     * One row of the wake word dialog: the typed text, kept as typed until it is saved. [id] keeps the row's state when
+     * rows above it go away.
+     * zh-CN: 唤醒词对话框中的一行: 保存前保持输入原样. [id] 使上方的行被删除时本行状态不变.
+     */
+    private data class RuleDraft(
+        val keyword: String = "",
+        val action: ResidentAction = ResidentAction.OPEN,
+        val script: String = "",
+        val arguments: String = "",
+        val id: Long = nextDraftId++,
+    ) {
+        fun rule(): ResidentRule = ResidentRule(
+            keyword = keyword.trim(),
+            action = action,
+            script = script.trim().takeIf { action == ResidentAction.SCRIPT },
+            arguments = arguments.takeIf { action == ResidentAction.SCRIPT && it.isNotEmpty() },
+        )
+
+        companion object {
+            private var nextDraftId = 0L
+
+            fun of(rule: ResidentRule) = RuleDraft(rule.keyword, rule.action, rule.script.orEmpty(), rule.arguments.orEmpty())
+        }
+    }
+
     private enum class Dialog {
         LANGUAGE, DARK_MODE, THEME_COLOR, LAUNCHER_ICON, ASR_MODEL, ENDPOINT, TTS_MODEL, SPEAKER, SPEED, VOICE_LANGUAGE, VOICE,
         IDLE, RECYCLE, IGNORED, TILE_STEPS, WIDGET_STEPS, KEY_SERVICE, KEY_GESTURE,
@@ -191,6 +231,13 @@ class SettingsActivity : StandaloneActivity() {
 
     /** Roadmap D78: asked once; the switch turns on whatever the answer. zh-CN: 只问一次; 无论结果都继续开启. */
     private val residentNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { askResidentOverlay() }
+
+    /** The rows of the wake word dialog while it is open (P11.3.1). zh-CN: 唤醒词对话框打开期间的行. */
+    private val ruleDrafts = mutableStateListOf<RuleDraft>()
+
+    /** The row whose script file is being picked (D224). zh-CN: 正在选择脚本文件的行 (D224). */
+    private var pickingRow: Int? = null
+    private val scriptPicker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> picked(uri) }
 
     private val outcomes: (OperationTracker.Outcome) -> Unit = { outcome ->
         val kind = outcome.operation.kind
@@ -1001,42 +1048,49 @@ class SettingsActivity : StandaloneActivity() {
     }
 
     /**
-     * Roadmap D70: the wake words, one per line; a list that breaks the rules cannot be saved, and a word the wake word
-     * model cannot spell (D18) is named before anything is saved.
-     * zh-CN: 路线图 D70: 唤醒词, 每行一个; 不合规则的列表不能保存, 唤醒词模型无法拼写的词 (D18) 在保存前指出.
+     * Roadmap D70, D186, D188 (P11.3.1): the wake words as a list, each with its action; a "script" row takes an absolute
+     * path, typed or picked ([pickScript], D224), and optional arguments. A list that breaks the rules cannot be saved,
+     * and a word the wake word model cannot spell (D18) is named before anything is saved.
+     * zh-CN: 路线图 D70, D186, D188 (P11.3.1): 唤醒词列表, 每个词带动作; "运行脚本" 的行需要绝对路径 (输入或经 [pickScript] 选择, D224) 与可选参数.
+     * 不合规则的列表不能保存, 唤醒词模型无法拼写的词 (D18) 在保存前指出.
      */
     @Composable
     private fun KeywordsDialog() {
-        val current = remember { ResidentPreferences(this).read().keywords }
-        var text by rememberSaveable { mutableStateOf(current.joinToString(System.lineSeparator())) }
+        LaunchedEffect(Unit) {
+            if (ruleDrafts.isEmpty()) ruleDrafts.addAll(ResidentPreferences(this@SettingsActivity).read().rules.map(RuleDraft::of))
+        }
         var problem by remember { mutableStateOf<String?>(null) }
         var checking by remember { mutableStateOf(false) }
-        val parsed = ResidentKeywords.parse(text)
-        val invalid = stringResource(R.string.settings_resident_keywords_invalid)
+        val rules = ruleDrafts.map { it.rule() }
+        val valid = ruleDrafts.isNotEmpty() && ResidentRules.valid(rules)
+        val close = {
+            dialog = null
+            ruleDrafts.clear()
+        }
         MacawDialog(
             title = stringResource(R.string.settings_resident_keywords),
-            onDismissRequest = { dialog = null },
+            onDismissRequest = close,
             confirmText = stringResource(R.string.ui_dialog_confirm),
             onConfirm = {
-                val keywords = parsed ?: return@MacawDialog
+                if (!valid) return@MacawDialog
                 checking = true
                 val app = applicationContext
                 io.execute {
-                    val unspellable = ResidentWake.unspellable(app, keywords)
+                    val unspellable = ResidentWake.unspellable(app, rules.map { it.keyword })
                     main.post {
                         if (isDestroyed) return@post
                         checking = false
                         if (unspellable != null) {
                             problem = getString(R.string.settings_resident_keywords_unspellable, unspellable)
                         } else {
-                            dialog = null
-                            saveResident { it.copy(keywords = keywords) }
+                            close()
+                            saveResident { it.copy(rules = rules) }
                         }
                     }
                 }
             },
             dismissText = stringResource(R.string.ui_dialog_cancel),
-            confirmEnabled = parsed != null && !checking,
+            confirmEnabled = valid && !checking,
             tag = "macaw.dialog.residentKeywords",
         ) {
             Column(modifier = Modifier.padding(horizontal = DialogDefaults.contentPadding)) {
@@ -1045,20 +1099,128 @@ class SettingsActivity : StandaloneActivity() {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                val error = problem ?: invalid.takeIf { parsed == null }
+                ruleDrafts.forEachIndexed { index, draft ->
+                    key(draft.id) {
+                        RuleRow(index, draft) { next ->
+                            ruleDrafts[index] = next
+                            problem = null
+                        }
+                    }
+                }
+                if (ruleDrafts.size < ResidentKeywords.MAX_KEYWORDS) {
+                    TextButton(
+                        onClick = { ruleDrafts.add(RuleDraft()); problem = null },
+                        modifier = Modifier.testTag("macaw.dialog.residentKeywords.add"),
+                    ) { Text(stringResource(R.string.settings_resident_rule_add)) }
+                }
+                val error = problem ?: when {
+                    ruleDrafts.any { it.action == ResidentAction.SCRIPT && !ResidentRules.validScript(it.script.trim()) } -> stringResource(R.string.settings_resident_rule_script_invalid)
+                    !valid -> stringResource(R.string.settings_resident_keywords_invalid)
+                    else -> null
+                }
+                error?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(bottom = 8.dp).testTag("macaw.dialog.residentKeywords.error"))
+                }
+            }
+        }
+    }
+
+    /** One rule of [KeywordsDialog]. zh-CN: [KeywordsDialog] 中的一条规则. */
+    @Composable
+    private fun RuleRow(index: Int, draft: RuleDraft, onChange: (RuleDraft) -> Unit) {
+        var menu by remember { mutableStateOf(false) }
+        Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("macaw.dialog.residentKeywords.row.$index")) {
+            HorizontalDivider()
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
-                    value = text,
-                    onValueChange = { input ->
-                        text = input.take(KEYWORDS_INPUT_LIMIT)
-                        problem = null
-                    },
-                    isError = error != null,
-                    supportingText = error?.let { message -> { Text(message) } },
-                    minLines = 2,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 8.dp).testTag("macaw.dialog.residentKeywords.input"),
+                    value = draft.keyword,
+                    onValueChange = { onChange(draft.copy(keyword = it.take(KEYWORD_INPUT_LIMIT))) },
+                    label = { Text(stringResource(R.string.settings_resident_rule_keyword)) },
+                    singleLine = true,
+                    isError = !ResidentKeywords.validKeyword(draft.keyword.trim()),
+                    modifier = Modifier.weight(1f).padding(top = 8.dp).testTag("macaw.dialog.residentKeywords.keyword.$index"),
+                )
+                if (ruleDrafts.size > 1) {
+                    TextButton(onClick = { ruleDrafts.removeAt(index) }, modifier = Modifier.testTag("macaw.dialog.residentKeywords.remove.$index")) {
+                        Text(stringResource(R.string.settings_resident_rule_remove))
+                    }
+                }
+            }
+            Box {
+                TextButton(onClick = { menu = true }, modifier = Modifier.testTag("macaw.dialog.residentKeywords.action.$index")) {
+                    Text(stringResource(R.string.settings_resident_rule_action) + ": " + stringResource(actionLabel(draft.action)))
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    ResidentAction.entries.forEach { action ->
+                        DropdownMenuItem(
+                            text = { Text(stringResource(actionLabel(action))) },
+                            onClick = {
+                                menu = false
+                                onChange(draft.copy(action = action))
+                            },
+                            modifier = Modifier.testTag("macaw.dialog.residentKeywords.action.$index.${action.id}"),
+                        )
+                    }
+                }
+            }
+            if (draft.action == ResidentAction.SCRIPT) {
+                OutlinedTextField(
+                    value = draft.script,
+                    onValueChange = { onChange(draft.copy(script = it.take(ResidentRules.MAX_SCRIPT_CHARS))) },
+                    label = { Text(stringResource(R.string.settings_resident_rule_script)) },
+                    singleLine = true,
+                    isError = !ResidentRules.validScript(draft.script.trim()),
+                    modifier = Modifier.fillMaxWidth().testTag("macaw.dialog.residentKeywords.script.$index"),
+                )
+                TextButton(onClick = { pickScript(index) }, modifier = Modifier.testTag("macaw.dialog.residentKeywords.pick.$index")) {
+                    Text(stringResource(R.string.settings_resident_rule_script_pick))
+                }
+                OutlinedTextField(
+                    value = draft.arguments,
+                    onValueChange = { onChange(draft.copy(arguments = it.take(ResidentRules.MAX_ARGUMENTS_CHARS))) },
+                    label = { Text(stringResource(R.string.settings_resident_rule_arguments)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("macaw.dialog.residentKeywords.arguments.$index"),
+                )
+                Text(
+                    stringResource(R.string.settings_resident_rule_script_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
                 )
             }
         }
+    }
+
+    @StringRes
+    private fun actionLabel(action: ResidentAction): Int = when (action) {
+        ResidentAction.OPEN -> R.string.settings_resident_action_open
+        ResidentAction.SCRIPT -> R.string.settings_resident_action_script
+        ResidentAction.BROADCAST -> R.string.settings_resident_action_broadcast
+        ResidentAction.NOTIFY -> R.string.settings_resident_action_notify
+    }
+
+    /** D224: a picked file fills the path of row [index] when the external storage provider names one. zh-CN: 所选文件填入第 [index] 行的路径. */
+    private fun pickScript(index: Int) {
+        pickingRow = index
+        runCatching { scriptPicker.launch(arrayOf("*/*")) }.onFailure {
+            pickingRow = null
+            pendingMessage = getString(R.string.settings_resident_rule_script_unsupported)
+        }
+    }
+
+    private fun picked(uri: Uri?) {
+        val row = pickingRow ?: return
+        pickingRow = null
+        if (uri == null) return
+        val documentId = runCatching { DocumentsContract.getDocumentId(uri) }.getOrNull()
+        @Suppress("DEPRECATION")
+        val path = ResidentScriptPaths.fromDocument(uri.authority, documentId, Environment.getExternalStorageDirectory().absolutePath)
+        if (path == null) {
+            pendingMessage = getString(R.string.settings_resident_rule_script_unsupported)
+            return
+        }
+        ruleDrafts.getOrNull(row)?.let { ruleDrafts[row] = it.copy(script = path) }
     }
 
     // Actions -------------------------------------------------------------------------------------------------------
@@ -1283,8 +1445,8 @@ class SettingsActivity : StandaloneActivity() {
         /** A blank line between two paragraphs of a dialog message. zh-CN: 对话框消息两段之间的空行. */
         val PARAGRAPH: String = System.lineSeparator().repeat(2)
 
-        /** Enough for five wake words of 32 characters. zh-CN: 足够容纳 5 个 32 字符的唤醒词. */
-        const val KEYWORDS_INPUT_LIMIT = 400
+        /** Room for a wake word of 32 characters with spaces around it. zh-CN: 足够容纳一个 32 字符的唤醒词及其前后空白. */
+        const val KEYWORD_INPUT_LIMIT = 64
 
         val io = Executors.newSingleThreadExecutor { Thread(it, "MacawSettings").apply { isDaemon = true } }
         val main = Handler(Looper.getMainLooper())

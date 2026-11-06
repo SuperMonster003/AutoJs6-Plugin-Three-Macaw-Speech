@@ -58,7 +58,8 @@ class ResidentRulesTest {
         // Switching takes effect at once: the running wake session reopens with the other mode.
         assertTrue(defaults.reopensFor(defaults.copy(powerSaving = false)))
         assertTrue(defaults.copy(powerSaving = false).reopensFor(defaults))
-        assertTrue(defaults.reopensFor(defaults.copy(keywords = listOf("Hey Macaw"))))
+        assertTrue(defaults.reopensFor(defaults.withKeywords(listOf("Hey Macaw"))))
+        assertFalse("P11.3.1: another action applies at the next hit", defaults.reopensFor(defaults.copy(rules = defaults.rules.map { it.copy(action = ResidentAction.NOTIFY) })))
         assertTrue(defaults.reopensFor(defaults.copy(sensitivity = WakeSensitivity.HIGH)))
         assertFalse(defaults.reopensFor(defaults))
         assertFalse(defaults.reopensFor(defaults.copy(chargingOnly = true)))
@@ -113,8 +114,8 @@ class ResidentRulesTest {
         val newline = Char(10).toString()
         assertEquals(listOf("Hey Macaw", "OK Macaw"), ResidentKeywords.parse(listOf("  Hey Macaw ", "", "OK Macaw", "   ").joinToString(newline)))
         assertNull("at least one", ResidentKeywords.parse(" " + newline))
-        assertNull("at most five", ResidentKeywords.parse((1..6).joinToString(newline) { "word $it" }))
-        assertEquals(5, ResidentKeywords.parse((1..5).joinToString(newline) { "word $it" })?.size)
+        assertNull("D188: at most ten", ResidentKeywords.parse((1..11).joinToString(newline) { "word $it" }))
+        assertEquals(10, ResidentKeywords.parse((1..10).joinToString(newline) { "word $it" })?.size)
         assertNull("no repeats, case ignored", ResidentKeywords.parse("Hey Macaw" + newline + "hey macaw"))
         assertEquals(1, ResidentKeywords.parse("a".repeat(32))?.size)
         assertNull("at most 32 characters", ResidentKeywords.parse("a".repeat(33)))
@@ -122,7 +123,7 @@ class ResidentRulesTest {
         assertFalse("no characters beyond the BMP", ResidentKeywords.valid(listOf(String(Character.toChars(0x1F99C)))))
         assertFalse("no control characters", ResidentKeywords.valid(listOf("Hey" + Char(9) + "Macaw")))
         assertFalse("trimmed", ResidentKeywords.valid(listOf(" Hey Macaw")))
-        assertTrue(runCatching { ResidentSettings(keywords = emptyList()) }.isFailure)
+        assertTrue(runCatching { ResidentSettings(rules = emptyList()) }.isFailure)
     }
 
     @Test

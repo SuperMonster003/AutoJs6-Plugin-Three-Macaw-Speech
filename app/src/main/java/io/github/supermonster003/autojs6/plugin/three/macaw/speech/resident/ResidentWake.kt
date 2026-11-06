@@ -21,6 +21,10 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.Speec
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import org.autojs.plugin.speech.api.SpeechContract
 import org.autojs.plugin.speech.api.SpeechOptionKeys
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * The switch of the resident wake word (roadmap D75, the 3-Stone AI D31 convention): [ResidentWakeService] is enabled
@@ -123,6 +127,27 @@ internal object ResidentWake {
         return start(context)
     }
 
+    /**
+     * `speech.resident.enable()` of a script (roadmap D189, D227), off the main thread: the switch turns on and the
+     * service starts as from the background; true when Android let it into the foreground within [START_WAIT_MILLIS].
+     * Refused, the switch stays on and "tap to resume" reminds (D74): the next visible state starts it.
+     * zh-CN: 脚本的 `speech.resident.enable()` (路线图 D189, D227), 在主线程之外调用: 打开开关并以后台方式启动服务; Android 在 [START_WAIT_MILLIS] 内
+     * 让它进入前台时为 true. 被拒时开关保持开启并发 "点此恢复" 提醒 (D74): 下次可见时启动.
+     */
+    fun turnOnInBackground(context: Context): Boolean {
+        if (enabled(context) && ResidentWakeService.isRunning) return true
+        ResidentPreferences(context).update { it.turnedOn(System.currentTimeMillis()) }
+        setEnabled(context, true)
+        val started = ResidentStarts.await(START_WAIT_MILLIS) { start(context, ResidentWakeService.ACTION_BACKGROUND_START) }
+        if (!started) {
+            Log.i(TAG, "The resident wake word waits for a visible state")
+            ResidentNotifications.resume(context)
+        }
+        return started
+    }
+
+    const val START_WAIT_MILLIS = 3000L
+
     fun turnOff(context: Context) {
         runCatching { context.stopService(Intent(context, ResidentWakeService::class.java)) }
         setEnabled(context, false)
@@ -188,6 +213,34 @@ internal object ResidentWake {
 }
 
 /**
+ * Waits for the outcome of a service start (roadmap D227): the service reports whether Android let it into the
+ * foreground.
+ * zh-CN: 等待服务启动的结果 (路线图 D227): 服务报告 Android 是否允许它进入前台.
+ */
+internal object ResidentStarts {
+    private val waiters = CopyOnWriteArrayList<CompletableFuture<Boolean>>()
+
+    /** [start] false (refused at once) or no report within [millis] count as refused. zh-CN: [start] 返回 false 或超时都视为被拒. */
+    fun await(millis: Long, start: () -> Boolean): Boolean {
+        val waiter = CompletableFuture<Boolean>()
+        waiters += waiter
+        return try {
+            start() && waiter.get(millis, TimeUnit.MILLISECONDS)
+        } catch (_: TimeoutException) {
+            false
+        } catch (_: Exception) {
+            false
+        } finally {
+            waiters -= waiter
+        }
+    }
+
+    fun report(started: Boolean) {
+        waiters.forEach { it.complete(started) }
+    }
+}
+
+/**
  * The preferences of the resident wake word (roadmap D70, D77, D69), in the plugin's single process.
  * zh-CN: 常驻唤醒的偏好 (路线图 D70, D77, D69), 插件为单进程.
  */
@@ -197,9 +250,10 @@ internal class ResidentPreferences(context: Context) {
 
     /** A missing or invalid value means its default. zh-CN: 缺失或无效的值取默认值. */
     fun read(): ResidentSettings {
-        val keywords = preferences.getString(KEY_KEYWORDS, null)?.split(LINE)?.takeIf(ResidentKeywords::valid) ?: ResidentKeywords.DEFAULT
+        // D223: the rules, with the 1.5.0 word list deciding the words when the two disagree.
+        val rules = ResidentRules.merge(preferences.getString(KEY_KEYWORDS, null)?.split(LINE), ResidentRules.decode(preferences.getString(KEY_RULES, null)))
         return ResidentSettings(
-            keywords = keywords,
+            rules = rules,
             sensitivity = WakeSensitivity.of(preferences.getString(KEY_SENSITIVITY, null)),
             duration = ListeningDuration.of(preferences.getString(KEY_DURATION, null)),
             chargingOnly = preferences.getBoolean(KEY_CHARGING, false),
@@ -213,6 +267,8 @@ internal class ResidentPreferences(context: Context) {
     /** Written at once, so that the service started next reads it. zh-CN: 立即写入, 随后启动的服务读到的就是它. */
     fun write(value: ResidentSettings) {
         preferences.edit(commit = true) {
+            putString(KEY_RULES, ResidentRules.encode(value.rules))
+            // Kept for a downgrade to 1.5.0, which reads up to 5 words from it (D223).
             putString(KEY_KEYWORDS, value.keywords.joinToString(LINE))
             putString(KEY_SENSITIVITY, value.sensitivity.id)
             putString(KEY_DURATION, value.duration.id)
@@ -231,6 +287,9 @@ internal class ResidentPreferences(context: Context) {
     internal companion object {
         const val FILE = "resident-wake"
         const val KEY_KEYWORDS = "keywords"
+
+        /** The words with their actions since 1.6.0 (D223): a JSON array, see [ResidentRules.encode]. zh-CN: 1.6.0 起的词与动作 (D223). */
+        const val KEY_RULES = "rules"
         const val KEY_SENSITIVITY = "sensitivity"
         const val KEY_DURATION = "duration"
         const val KEY_CHARGING = "chargingOnly"

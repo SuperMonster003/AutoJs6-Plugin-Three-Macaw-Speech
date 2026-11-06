@@ -59,6 +59,8 @@
         <intent>
             <action android:name="org.autojs.plugin.speech.action.RESIDENT_LISTENER" />
         </intent>
+        <!-- Roadmap D221: whether AutoJs6 has the run receiver of the "Run script" action (6.8.1+). -->
+        <package android:name="org.autojs.autojs6" />
     </queries>
 
     <!-- The screens and the launcher entry are roadmap P5; the system TTS engine (roadmap P4.2) is below. -->

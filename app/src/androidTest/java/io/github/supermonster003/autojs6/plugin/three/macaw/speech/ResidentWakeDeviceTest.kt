@@ -31,6 +31,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPr
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ListeningDuration
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentNotifications
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPower
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentRule
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentSettings
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentStartActivity
@@ -118,7 +119,10 @@ class ResidentWakeDeviceTest {
         val speech = SpeechPreferences(context)
         savedAsked = speech.notificationsAsked
         speech.notificationsAsked = true
-        preferences.write(ResidentSettings(keywords = listOf(KEYWORD), readAloud = true, powerSaving = SpeechDevice.argument("macawPowerSaving") != "false"))
+        // Roadmap P11.3.5 (D188): `-e macawKeywords <n>` listens for n words (up to 10), the keyword of the recording first.
+        val count = SpeechDevice.argument("macawKeywords")?.toIntOrNull()?.coerceIn(1, OTHER_KEYWORDS.size + 1) ?: 1
+        val rules = (listOf(KEYWORD) + OTHER_KEYWORDS.take(count - 1)).map { ResidentRule(it) }
+        preferences.write(ResidentSettings(rules = rules, readAloud = true, powerSaving = SpeechDevice.argument("macawPowerSaving") != "false"))
         ResidentWake.powerOverride = ResidentPower.variant(power)
         AssistantDevice.setUpRoom()
     }
@@ -594,6 +598,13 @@ class ResidentWakeDeviceTest {
         /** The keyword of `kws-zh-6.wav` (TakeoverDeviceTest). zh-CN: `kws-zh-6.wav` 中的关键词. */
         const val KEYWORD = "\u6731\u4e3d\u6960"
         const val KEYWORD_AUDIO = "test-audio/kws-zh-6.wav"
+
+        /**
+         * The other words of a 10-word run (roadmap P11.3.5, D188): the keywords of KeywordSpottingDeviceTest that the model
+         * spells, none of them in `kws-zh-6.wav`.
+         * zh-CN: 10 词运行的其他词 (路线图 P11.3.5, D188): KeywordSpottingDeviceTest 中模型可拼写的关键词, 均不在 `kws-zh-6.wav` 中.
+         */
+        val OTHER_KEYWORDS = listOf("文森特卡索", "周望军", "蒋友伯", "女儿", "法国", "见面会", "落实", "LIGHT UP", "LOVELY CHILD")
         const val HIT_WAIT_MILLIS = 3_000L
         const val MAX_PLAYS = 3
 

@@ -2,6 +2,8 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import org.autojs.plugin.speech.api.SpeechErrorCodes
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.Locale
 
 /**
@@ -27,26 +29,177 @@ internal enum class WakeSensitivity(val id: String, val threshold: Float?) {
 }
 
 /**
- * The wake words (roadmap D70): 1 to 5, each 1 to 32 characters, no repeats; "xiao ying xiao ying" and "Hey Macaw" by
- * default, the counterparts of "xiao shi xiao shi" / "Hey Stone" (3-Stone AI) and "xiao lu xiao lu" / "Hey Stove"
+ * The wake words (roadmap D70, D188): 1 to 10, each 1 to 32 characters, no repeats; "xiao ying xiao ying" and "Hey Macaw"
+ * by default, the counterparts of "xiao shi xiao shi" / "Hey Stone" (3-Stone AI) and "xiao lu xiao lu" / "Hey Stove"
  * (3-Stove Agent). Whether the model can spell them is checked against the model when they are saved (D18).
- * zh-CN: 唤醒词 (路线图 D70): 1 到 5 条, 每条 1 到 32 个字符, 不重复; 默认 "小鹦小鹦" 与 "Hey Macaw", 与 3-Stone AI 的 "小石小石" / "Hey Stone"
- * 和 3-Stove Agent 的 "小炉小炉" / "Hey Stove" 同形. 模型能否拼写在保存时按模型核对 (D18).
+ * zh-CN: 唤醒词 (路线图 D70, D188): 1 到 10 条, 每条 1 到 32 个字符, 不重复; 默认 "小鹦小鹦" 与 "Hey Macaw", 与 3-Stone AI 的 "小石小石" /
+ * "Hey Stone" 和 3-Stove Agent 的 "小炉小炉" / "Hey Stove" 同形. 模型能否拼写在保存时按模型核对 (D18).
  */
 internal object ResidentKeywords {
-    const val MAX_KEYWORDS = 5
+    const val MAX_KEYWORDS = 10
     const val MAX_CHARACTERS = 32
     val DEFAULT = listOf("\u5c0f\u9e66\u5c0f\u9e66", "Hey Macaw")
 
     fun valid(keywords: List<String>): Boolean = keywords.size in 1..MAX_KEYWORDS &&
         keywords.map { it.lowercase(Locale.ROOT) }.distinct().size == keywords.size &&
-        keywords.all { keyword ->
-            keyword == keyword.trim() && keyword.codePointCount(0, keyword.length) in 1..MAX_CHARACTERS &&
-                keyword.none { Character.isISOControl(it) || it.isSurrogate() }
-        }
+        keywords.all(::validKeyword)
+
+    fun validKeyword(keyword: String): Boolean = keyword == keyword.trim() && keyword.codePointCount(0, keyword.length) in 1..MAX_CHARACTERS &&
+        keyword.none { Character.isISOControl(it) || it.isSurrogate() }
 
     /** The keywords of the settings field (one per line, blank lines ignored), or null when the list breaks a rule. zh-CN: 设置输入框中的唤醒词. */
     fun parse(text: String): List<String>? = text.lines().map { it.trim() }.filter { it.isNotEmpty() }.takeIf(::valid)
+}
+
+/**
+ * What a hit of one wake word does (roadmap D186, P11.3.1): [OPEN] opens the assistant sheet (the 1.5.0 behavior and the
+ * default of every older word), [SCRIPT] runs a script of AutoJs6 (D187), [BROADCAST] sends
+ * `org.autojs.plugin.speech.action.RESIDENT_HIT` to AutoJs6 (D194), [NOTIFY] only posts "Tap to speak". The ids are the
+ * contract's `SpeechContract.RESIDENT_ACTION_*`.
+ * zh-CN: 单个唤醒词命中后做什么 (路线图 D186, P11.3.1): [OPEN] 打开助理弹层 (1.5.0 的行为, 也是旧词的默认值), [SCRIPT] 运行 AutoJs6 的脚本 (D187),
+ * [BROADCAST] 向 AutoJs6 发送 `org.autojs.plugin.speech.action.RESIDENT_HIT` (D194), [NOTIFY] 只发 "点此说话" 通知. id 即契约的
+ * `SpeechContract.RESIDENT_ACTION_*`.
+ */
+internal enum class ResidentAction(val id: String) {
+    OPEN("open"),
+    SCRIPT("script"),
+    BROADCAST("broadcast"),
+    NOTIFY("notify"),
+    ;
+
+    companion object {
+        fun of(id: String?): ResidentAction? = entries.firstOrNull { it.id == id }
+    }
+}
+
+/**
+ * One wake word and its action (roadmap P11.3.1). [script] (an absolute path, D224) and the optional [arguments] (handed
+ * to the script as `execArgv.arguments`) belong to [ResidentAction.SCRIPT] only.
+ * zh-CN: 一个唤醒词及其动作 (路线图 P11.3.1). [script] (绝对路径, D224) 与可选的 [arguments] (作为 `execArgv.arguments` 交给脚本) 只属于
+ * [ResidentAction.SCRIPT].
+ */
+internal data class ResidentRule(
+    val keyword: String,
+    val action: ResidentAction = ResidentAction.OPEN,
+    val script: String? = null,
+    val arguments: String? = null,
+)
+
+/**
+ * Checks and stores the rules of the resident wake words (roadmap P11.3.1, D188, D223, D224). Pure Kotlin on `org.json`.
+ * zh-CN: 常驻唤醒规则的校验与存储格式 (路线图 P11.3.1, D188, D223, D224). 纯 Kotlin, 使用 `org.json`.
+ */
+internal object ResidentRules {
+    const val MAX_SCRIPT_CHARS = 1024
+    const val MAX_ARGUMENTS_CHARS = 1024
+
+    val DEFAULT: List<ResidentRule> get() = ResidentKeywords.DEFAULT.map { ResidentRule(it) }
+
+    /**
+     * Why [rules] cannot be stored, or null: the first problem with its contract code ([Problem.limit] for too many or too
+     * long, else `INVALID_OPTIONS`).
+     * zh-CN: [rules] 不能保存的原因, 或 null: 第一个问题及其契约 code ([Problem.limit] 表示超量或超长, 否则为 `INVALID_OPTIONS`).
+     */
+    fun problem(rules: List<ResidentRule>): Problem? {
+        if (rules.isEmpty()) return Problem(false, "at least one wake word is required")
+        if (rules.size > ResidentKeywords.MAX_KEYWORDS) return Problem(true, "at most ${ResidentKeywords.MAX_KEYWORDS} wake words, not ${rules.size}")
+        rules.forEachIndexed { i, rule ->
+            val label = "rules[$i]"
+            if (!ResidentKeywords.validKeyword(rule.keyword)) {
+                val long = rule.keyword.codePointCount(0, rule.keyword.length) > ResidentKeywords.MAX_CHARACTERS
+                return Problem(long, "$label.keyword must have 1 to ${ResidentKeywords.MAX_CHARACTERS} characters, no control characters and no surrounding spaces")
+            }
+            if (rule.action == ResidentAction.SCRIPT) {
+                val script = rule.script ?: return Problem(false, "$label.script is required for the \"script\" action")
+                if (script.length > MAX_SCRIPT_CHARS) return Problem(true, "$label.script exceeds $MAX_SCRIPT_CHARS characters")
+                if (!validScript(script)) return Problem(false, "$label.script must be an absolute path in one line")
+                rule.arguments?.let { arguments ->
+                    if (arguments.length > MAX_ARGUMENTS_CHARS) return Problem(true, "$label.arguments exceeds $MAX_ARGUMENTS_CHARS characters")
+                    if (arguments.contains(Char(0))) return Problem(false, "$label.arguments must not contain NUL")
+                }
+            } else if (rule.script != null || rule.arguments != null) {
+                return Problem(false, "$label.script and $label.arguments belong to the \"script\" action, not \"${rule.action.id}\"")
+            }
+        }
+        if (!ResidentKeywords.valid(rules.map { it.keyword })) return Problem(false, "the wake words must not repeat (case is ignored)")
+        return null
+    }
+
+    data class Problem(val limit: Boolean, val message: String)
+
+    fun valid(rules: List<ResidentRule>): Boolean = problem(rules) == null
+
+    /** An absolute path in one line. zh-CN: 单行的绝对路径. */
+    fun validScript(path: String): Boolean =
+        path.startsWith("/") && path.length in 2..MAX_SCRIPT_CHARS && path.trim() == path && path.none { Character.isISOControl(it) }
+
+    /** The `rules` preference (D223): a JSON array of `{ keyword, action, script?, arguments? }`. zh-CN: `rules` 偏好 (D223). */
+    fun encode(rules: List<ResidentRule>): String = JSONArray().apply {
+        rules.forEach { rule ->
+            put(
+                JSONObject().apply {
+                    put(KEY_KEYWORD, rule.keyword)
+                    put(KEY_ACTION, rule.action.id)
+                    rule.script?.let { put(KEY_SCRIPT, it) }
+                    rule.arguments?.let { put(KEY_ARGUMENTS, it) }
+                },
+            )
+        }
+    }.toString()
+
+    /** The rules of [text], or null when it is not a valid list. zh-CN: [text] 中的规则; 不是有效列表时为 null. */
+    fun decode(text: String?): List<ResidentRule>? {
+        if (text == null) return null
+        val array = runCatching { JSONArray(text) }.getOrNull() ?: return null
+        val rules = ArrayList<ResidentRule>(array.length())
+        for (i in 0 until array.length()) {
+            val item = array.opt(i) as? JSONObject ?: return null
+            val keyword = item.opt(KEY_KEYWORD) as? String ?: return null
+            val action = ResidentAction.of(item.opt(KEY_ACTION) as? String) ?: return null
+            val script = optionalString(item, KEY_SCRIPT) ?: return null
+            val arguments = optionalString(item, KEY_ARGUMENTS) ?: return null
+            rules += ResidentRule(keyword, action, script.value, arguments.value)
+        }
+        return rules.takeIf(::valid)
+    }
+
+    private class Optional(val value: String?)
+
+    /** Absent (or JSON null) as an empty [Optional], a string as its value, anything else as null. zh-CN: 缺失为空值, 字符串为其值, 其他为 null. */
+    private fun optionalString(item: JSONObject, key: String): Optional? = when (val value = item.opt(key)) {
+        null, JSONObject.NULL -> Optional(null)
+        is String -> Optional(value)
+        else -> null
+    }
+
+    /**
+     * The rules of the stored preferences (D223): [lines] (the 1.5.0 `keywords`, one per line) decides the words when it
+     * is valid and differs from [stored] (an imported 1.5.0 document, or a downgrade and upgrade), each word keeping the
+     * action [stored] gave it, a new one opening the sheet; otherwise [stored], else [lines], else the defaults.
+     * zh-CN: 存储偏好中的规则 (D223): [lines] (1.5.0 的 `keywords`, 每行一个) 有效且与 [stored] 不一致时 (导入了 1.5.0 的文档, 或降级后再升级) 由它
+     * 决定唤醒词, 每个词沿用 [stored] 给它的动作, 新词打开弹层; 否则用 [stored], 再否则用 [lines], 最后用默认值.
+     */
+    fun merge(lines: List<String>?, stored: List<ResidentRule>?): List<ResidentRule> {
+        val words = lines?.takeIf(ResidentKeywords::valid)
+        return when {
+            stored != null && (words == null || words == stored.map { it.keyword }) -> stored
+            words != null -> withKeywords(stored.orEmpty(), words)
+            else -> DEFAULT
+        }
+    }
+
+    /** [words] in order, each keeping the action of its old rule (case ignored), a new one opening the sheet. zh-CN: 按 [words] 顺序, 各词沿用旧规则的动作. */
+    fun withKeywords(rules: List<ResidentRule>, words: List<String>): List<ResidentRule> =
+        words.map { word -> rules.firstOrNull { it.keyword.equals(word, ignoreCase = true) }?.copy(keyword = word) ?: ResidentRule(word) }
+
+    /** The rule of a hit's keyword: exact first, then without case. zh-CN: 命中词对应的规则: 先精确, 再不区分大小写. */
+    fun ruleOf(rules: List<ResidentRule>, keyword: String?): ResidentRule? =
+        keyword?.let { word -> rules.firstOrNull { it.keyword == word } ?: rules.firstOrNull { it.keyword.equals(word, ignoreCase = true) } }
+
+    private const val KEY_KEYWORD = "keyword"
+    private const val KEY_ACTION = "action"
+    private const val KEY_SCRIPT = "script"
+    private const val KEY_ARGUMENTS = "arguments"
 }
 
 /**
@@ -78,7 +231,7 @@ internal enum class ListeningDuration(val id: String, val minutes: Int?) {
  * (只有已注册的说话人说出唤醒词才算命中).
  */
 internal data class ResidentSettings(
-    val keywords: List<String> = ResidentKeywords.DEFAULT,
+    val rules: List<ResidentRule> = ResidentRules.DEFAULT,
     val sensitivity: WakeSensitivity = WakeSensitivity.MEDIUM,
     val duration: ListeningDuration = ListeningDuration.ALWAYS,
     val chargingOnly: Boolean = false,
@@ -88,9 +241,15 @@ internal data class ResidentSettings(
     val onlyEnrolled: Boolean = false,
 ) {
     init {
-        require(ResidentKeywords.valid(keywords))
+        require(ResidentRules.valid(rules))
         require(deadline == null || deadline > 0)
     }
+
+    /** The wake words in order. zh-CN: 按顺序的唤醒词. */
+    val keywords: List<String> get() = rules.map { it.keyword }
+
+    /** Other words, each keeping its action (P11.3.1). zh-CN: 换词, 各词沿用其动作. */
+    fun withKeywords(words: List<String>): ResidentSettings = copy(rules = ResidentRules.withKeywords(rules, words))
 
     /** The listening time of a switch turned on at [now]. zh-CN: 在 [now] 打开开关时的监听时长. */
     fun turnedOn(now: Long): ResidentSettings = copy(deadline = duration.deadline(now))
@@ -245,6 +404,70 @@ internal enum class HitRoute {
 
         /** D71 / D78: turning the switch on asks once for the overlay permission when nothing else opens the sheet. zh-CN: 开启时询问一次悬浮窗权限. */
         fun askOverlay(assistantActive: Boolean, overlayGranted: Boolean, sdk: Int): Boolean = !canOpen(assistantActive, overlayGranted, sdk)
+    }
+}
+
+/**
+ * The script path of a file picked on the settings screen (roadmap D224): only the external storage provider names a
+ * file path (`primary:Scripts/a.js` on the primary volume, `1234-ABCD:a.js` on an SD card); any other document, or a
+ * folder, has none and the user types the path instead.
+ * zh-CN: 设置页所选文件的脚本路径 (路线图 D224): 只有外部存储提供方能给出文件路径 (主卷为 `primary:Scripts/a.js`, SD 卡为 `1234-ABCD:a.js`); 其他文档
+ * 或文件夹没有路径, 由用户直接输入.
+ */
+internal object ResidentScriptPaths {
+    const val EXTERNAL_STORAGE_AUTHORITY = "com.android.externalstorage.documents"
+
+    fun fromDocument(authority: String?, documentId: String?, primaryRoot: String): String? {
+        if (authority != EXTERNAL_STORAGE_AUTHORITY || documentId == null) return null
+        val volume = documentId.substringBefore(':', "")
+        val relative = documentId.substringAfter(':', "").trim('/')
+        if (volume.isEmpty() || relative.isEmpty() || volume.contains('/')) return null
+        val root = if (volume.equals("primary", ignoreCase = true)) primaryRoot.trimEnd('/') else "/storage/$volume"
+        return "$root/$relative".takeIf(ResidentRules::validScript)
+    }
+}
+
+/**
+ * The step a hit takes for the action of its wake word (roadmap P11.3.1 - P11.3.3, D187, D194, D220 - D222).
+ * zh-CN: 命中按其唤醒词的动作采取的步骤 (路线图 P11.3.1 - P11.3.3, D187, D194, D220 - D222).
+ */
+internal enum class HitStep {
+    /** The sheet is visible: its read-aloud text may hold any wake word, so no action runs (D79). zh-CN: 弹层可见: 其朗读的文字可能含任意唤醒词, 不执行动作. */
+    IGNORE,
+
+    /** Opens the sheet (D71). zh-CN: 打开弹层. */
+    OPEN_SHEET,
+
+    /** Posts "Tap to speak": the action [ResidentAction.NOTIFY], or an [ResidentAction.OPEN] that may not open a screen. zh-CN: 发 "点此说话". */
+    SPEAK_NOTICE,
+
+    /** AutoJs6 6.8.1+ runs the script through its PLUGIN receiver, from the background as well (D220). zh-CN: AutoJs6 6.8.1+ 经其 PLUGIN 接收器运行脚本. */
+    RUN_HOST,
+
+    /** An older AutoJs6: its `RunIntentActivity` opens the script, allowed like the sheet (D222). zh-CN: 较旧的 AutoJs6: 经 `RunIntentActivity` 运行. */
+    RUN_ACTIVITY,
+
+    /** An older AutoJs6 and no screen may open: "Tap to run" (D222, D74 style). zh-CN: 较旧的 AutoJs6 且不能打开界面: "点击运行" 通知. */
+    RUN_NOTICE,
+
+    /** Sends `RESIDENT_HIT` to AutoJs6 (D194, D225). zh-CN: 向 AutoJs6 发送 `RESIDENT_HIT`. */
+    BROADCAST,
+    ;
+
+    companion object {
+        /**
+         * [canOpen] is [HitRoute.canOpen]; [hostReceiver] tells whether AutoJs6 has the run receiver of D220 (D221).
+         * zh-CN: [canOpen] 即 [HitRoute.canOpen]; [hostReceiver] 表示 AutoJs6 是否有 D220 的运行接收器 (D221).
+         */
+        fun of(action: ResidentAction, sheetVisible: Boolean, canOpen: Boolean, hostReceiver: Boolean): HitStep = when {
+            sheetVisible -> IGNORE
+            action == ResidentAction.OPEN -> if (canOpen) OPEN_SHEET else SPEAK_NOTICE
+            action == ResidentAction.NOTIFY -> SPEAK_NOTICE
+            action == ResidentAction.BROADCAST -> BROADCAST
+            hostReceiver -> RUN_HOST
+            canOpen -> RUN_ACTIVITY
+            else -> RUN_NOTICE
+        }
     }
 }
 

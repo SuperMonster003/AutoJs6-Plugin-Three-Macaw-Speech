@@ -203,6 +203,10 @@
     <string name="resident_paused">充電していないため一時停止中; 電源につなぐと再開します</string>
     <string name="resident_resume_text">タップして常時ウェイクワードを再開</string>
     <string name="resident_resume_title">常時ウェイクワードを一時停止しました</string>
+    <string name="resident_run_text">ウェイクワード \"%1$s\": %2$s</string>
+    <string name="resident_run_title">タップしてスクリプトを実行</string>
+    <string name="resident_script_failed_text">AutoJs6 は \"%1$s\" のスクリプトを実行しませんでした. ファイルが存在し, AutoJs6 がインストールされているか確認してください.</string>
+    <string name="resident_script_failed_title">ウェイクワードのスクリプトが実行されませんでした</string>
     <string name="resident_sensitivity_high">高: 反応しやすい</string>
     <string name="resident_sensitivity_low">低: 誤反応が少ない</string>
     <string name="resident_sensitivity_medium">中</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">ダウンロードの残りと中断したインストールを削除します</string>
     <string name="settings_release_history_summary">プラグインに含まれるリリース履歴を表示します</string>
     <string name="settings_resident">ウェイクワードを待ち受ける</string>
+    <string name="settings_resident_action_broadcast">ブロードキャストを送信</string>
+    <string name="settings_resident_action_notify">通知のみ</string>
+    <string name="settings_resident_action_open">音声入力パネルを開く</string>
+    <string name="settings_resident_action_script">スクリプトを実行</string>
     <string name="settings_resident_charging">充電中のみ待ち受け</string>
     <string name="settings_resident_charging_note">電源を外すと一時停止し, つなぎ直すと再開します</string>
     <string name="settings_resident_conflict">%1$s が常時待ち受け中です. 先にそちらでオフにしてください</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">常時ウェイクワード</string>
     <string name="settings_resident_keywords">ウェイクワード</string>
     <string name="settings_resident_keywords_invalid">ウェイクワードの数, 長さ, 重複を確認してください</string>
-    <string name="settings_resident_keywords_note">1 行に 1 つ, 1 から %1$d 個まで, 各 %2$d 文字以内. 中国語はピンインで認識し, 英単語はモデルの辞書にあるものに限ります.</string>
+    <string name="settings_resident_keywords_note">最大 %1$d 個, 各 %2$d 文字以内, 重複不可. ウェイクワードごとに検出後の動作を設定できます. 中国語はピンインで認識し, 英単語はモデルの辞書にあるものに限ります.</string>
     <string name="settings_resident_keywords_unspellable">ウェイクワードのモデルは %1$s を綴れません. 別の言葉にしてください</string>
     <string name="settings_resident_microphone">先に 3-Macaw Speech にマイクを許可してください</string>
     <string name="settings_resident_no_recognition_model">先に音声認識モデルをインストールしてください</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">声やほかの音が聞こえたときだけウェイクワードのモデルを動かし, 静かなときは動かさないので電池の消費が減ります. ごく小さな声のウェイクワードは聞き逃すことがあります</string>
     <string name="settings_resident_read_aloud">認識した文字を読み上げる</string>
     <string name="settings_resident_read_aloud_summary">ウェイクワードで開いたパネルが認識した文字を読み上げます. その言語の 3-Macaw Speech の音声があればそれを, なければシステムの音声を使います</string>
+    <string name="settings_resident_rule_action">動作</string>
+    <string name="settings_resident_rule_add">ウェイクワードを追加</string>
+    <string name="settings_resident_rule_arguments">引数 (任意)</string>
+    <string name="settings_resident_rule_keyword">ウェイクワード</string>
+    <string name="settings_resident_rule_remove">削除</string>
+    <string name="settings_resident_rule_script">スクリプトのパス</string>
+    <string name="settings_resident_rule_script_invalid">/ で始まる絶対パスを入力してください</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 以降はスクリプトをバックグラウンドで実行します. それより前のバージョンでは音声入力パネルと同様に開き, 許可されない場合は \"タップしてスクリプトを実行\" 通知を出します. スクリプトは execArgv からウェイクワードを読み取れます.</string>
+    <string name="settings_resident_rule_script_pick">ファイルを選択</string>
+    <string name="settings_resident_rule_script_unsupported">このファイルのパスを取得できません. 内部ストレージか SD カードのファイルを選ぶか, 絶対パスを入力してください</string>
     <string name="settings_resident_sensitivity">ウェイク感度</string>
     <string name="settings_resident_speakers">話者</string>
     <string name="settings_resident_speakers_count">登録済み: %1$d</string>

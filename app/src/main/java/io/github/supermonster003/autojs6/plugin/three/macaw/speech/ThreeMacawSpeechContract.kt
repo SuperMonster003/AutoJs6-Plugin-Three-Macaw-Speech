@@ -77,12 +77,13 @@ internal object ThreeMacawSpeechContract {
      * zh-CN: 契约版本 2 增加 `speaker` (路线图 P8.3: 注册, 验证, 辨认, 列出, 删除) 与离线分析 `diarization`, `languageId`, `audioTagging`
      * (路线图 P8.4), 宿主只在商定版本 2 时才计入.
      * Contract version 3 adds `speechPrepare` (roadmap P11.2, D193: `prepare`, `release` and `keepLoaded` of the listen
-     * and wake sessions), which a host counts only when it agreed on version 3.
-     * zh-CN: 契约版本 3 增加 `speechPrepare` (路线图 P11.2, D193: `prepare`, `release` 与听写 / 唤醒会话的 `keepLoaded`), 宿主只在商定版本 3 时才计入.
+     * and wake sessions) and `speechResident` (roadmap P11.3.4: the resident wake words and their hits for scripts), which
+     * a host counts only when it agreed on version 3.
+     * zh-CN: 契约版本 3 增加 `speechPrepare` (路线图 P11.2, D193: `prepare`, `release` 与听写 / 唤醒会话的 `keepLoaded`) 与 `speechResident` (路线图 P11.3.4: 供脚本使用的常驻唤醒词及其命中), 宿主只在商定版本 3 时才计入.
      */
     val FEATURES: List<String> = listOf(
         "models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker", "diarization", "languageId", "audioTagging",
-        "speechPrepare",
+        "speechPrepare", "speechResident",
     )
 
     /**

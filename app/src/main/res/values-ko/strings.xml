@@ -203,6 +203,10 @@
     <string name="resident_paused">충전 중이 아니어서 일시 중지됨; 전원을 연결하면 계속합니다</string>
     <string name="resident_resume_text">탭하여 상시 호출어 다시 시작</string>
     <string name="resident_resume_title">상시 호출어가 일시 중지되었습니다</string>
+    <string name="resident_run_text">호출어 \"%1$s\": %2$s</string>
+    <string name="resident_run_title">탭하여 스크립트 실행</string>
+    <string name="resident_script_failed_text">AutoJs6가 \"%1$s\"의 스크립트를 실행하지 않았습니다. 파일이 있는지, AutoJs6가 설치되어 있는지 확인하세요.</string>
+    <string name="resident_script_failed_title">호출어 스크립트가 실행되지 않았습니다</string>
     <string name="resident_sensitivity_high">높음: 더 쉽게 호출됨</string>
     <string name="resident_sensitivity_low">낮음: 잘못 호출되는 일이 적음</string>
     <string name="resident_sensitivity_medium">보통</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">다운로드 잔여물과 중단된 설치 삭제</string>
     <string name="settings_release_history_summary">플러그인에 포함된 릴리스 기록 보기</string>
     <string name="settings_resident">호출어 듣기</string>
+    <string name="settings_resident_action_broadcast">브로드캐스트 전송</string>
+    <string name="settings_resident_action_notify">알림만</string>
+    <string name="settings_resident_action_open">받아쓰기 패널 열기</string>
+    <string name="settings_resident_action_script">스크립트 실행</string>
     <string name="settings_resident_charging">충전 중에만 듣기</string>
     <string name="settings_resident_charging_note">전원을 뽑으면 일시 중지하고 다시 연결하면 계속합니다</string>
     <string name="settings_resident_conflict">%1$s 앱이 상시 듣기 중입니다. 먼저 그 앱에서 끄세요</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">상시 호출어</string>
     <string name="settings_resident_keywords">호출어</string>
     <string name="settings_resident_keywords_invalid">호출어의 개수, 길이와 중복 여부를 확인하세요</string>
-    <string name="settings_resident_keywords_note">한 줄에 하나씩, 1개부터 %1$d개까지, 각각 %2$d자 이내. 중국어는 병음으로 인식하고, 영어 단어는 모델 사전에 있어야 합니다.</string>
+    <string name="settings_resident_keywords_note">최대 %1$d개, 각각 %2$d자 이내, 중복 불가. 호출어마다 감지 후 동작을 정할 수 있습니다. 중국어는 병음으로 인식하고, 영어 단어는 모델 사전에 있어야 합니다.</string>
     <string name="settings_resident_keywords_unspellable">%1$s: 호출어 모델이 표기할 수 없는 단어입니다. 다른 단어를 사용하세요</string>
     <string name="settings_resident_microphone">먼저 3-Macaw Speech에 마이크 권한을 허용하세요</string>
     <string name="settings_resident_no_recognition_model">먼저 음성 인식 모델을 설치하세요</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">말소리나 다른 소리가 들릴 때만 호출어 모델을 실행하고 조용할 때는 실행하지 않아 배터리를 덜 씁니다. 아주 작게 말한 호출어는 놓칠 수 있습니다</string>
     <string name="settings_resident_read_aloud">인식한 텍스트 읽어 주기</string>
     <string name="settings_resident_read_aloud_summary">호출어로 연 패널이 인식한 텍스트를 읽어 줍니다. 해당 언어의 3-Macaw Speech 음성이 있으면 그것을, 없으면 시스템 음성을 사용합니다</string>
+    <string name="settings_resident_rule_action">동작</string>
+    <string name="settings_resident_rule_add">호출어 추가</string>
+    <string name="settings_resident_rule_arguments">인수 (선택)</string>
+    <string name="settings_resident_rule_keyword">호출어</string>
+    <string name="settings_resident_rule_remove">삭제</string>
+    <string name="settings_resident_rule_script">스크립트 경로</string>
+    <string name="settings_resident_rule_script_invalid">/로 시작하는 절대 경로를 입력하세요</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 이상은 스크립트를 백그라운드에서 실행합니다. 이전 버전은 받아쓰기 패널처럼 열고, 허용되지 않으면 \"탭하여 스크립트 실행\" 알림을 보냅니다. 스크립트는 execArgv에서 호출어를 읽을 수 있습니다.</string>
+    <string name="settings_resident_rule_script_pick">파일 선택</string>
+    <string name="settings_resident_rule_script_unsupported">이 파일의 경로를 알 수 없습니다. 내부 저장소나 SD 카드의 파일을 선택하거나 절대 경로를 입력하세요</string>
     <string name="settings_resident_sensitivity">호출 감도</string>
     <string name="settings_resident_speakers">화자</string>
     <string name="settings_resident_speakers_count">등록됨: %1$d</string>

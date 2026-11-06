@@ -203,6 +203,10 @@
     <string name="resident_paused">Paused while not charging; continues when plugged in</string>
     <string name="resident_resume_text">Tap to resume the resident wake word</string>
     <string name="resident_resume_title">The resident wake word is paused</string>
+    <string name="resident_run_text">Wake word \"%1$s\": %2$s</string>
+    <string name="resident_run_title">Tap to run the script</string>
+    <string name="resident_script_failed_text">AutoJs6 did not run the script of \"%1$s\". Check that the file exists and that AutoJs6 is installed.</string>
+    <string name="resident_script_failed_title">The script of a wake word did not run</string>
     <string name="resident_sensitivity_high">High: wakes more easily</string>
     <string name="resident_sensitivity_low">Low: fewer false wakes</string>
     <string name="resident_sensitivity_medium">Medium</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">Delete download leftovers and interrupted installs</string>
     <string name="settings_release_history_summary">Read the release history included with the plugin</string>
     <string name="settings_resident">Listen for the wake word</string>
+    <string name="settings_resident_action_broadcast">Send a broadcast</string>
+    <string name="settings_resident_action_notify">Notify only</string>
+    <string name="settings_resident_action_open">Open the dictation sheet</string>
+    <string name="settings_resident_action_script">Run a script</string>
     <string name="settings_resident_charging">Listen only while charging</string>
     <string name="settings_resident_charging_note">Pauses when unplugged and continues when plugged in again</string>
     <string name="settings_resident_conflict">%1$s is already listening resident; turn it off there first</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">Resident wake word</string>
     <string name="settings_resident_keywords">Wake words</string>
     <string name="settings_resident_keywords_invalid">Check the number, length and repeats of the wake words</string>
-    <string name="settings_resident_keywords_note">One per line, 1 to %1$d; maximum length of each: %2$d. Chinese is recognized by pinyin; English words must be in the model\'s dictionary.</string>
+    <string name="settings_resident_keywords_note">Up to %1$d wake words of at most %2$d characters each, no repeats; each has its own action. Chinese is recognized by pinyin; English words must be in the model\'s dictionary.</string>
     <string name="settings_resident_keywords_unspellable">The wake word model cannot spell %1$s; use another word</string>
     <string name="settings_resident_microphone">Allow the microphone for 3-Macaw Speech first</string>
     <string name="settings_resident_no_recognition_model">Install a speech recognition model first</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">Runs the wake word model only while it hears speech or another sound, not in a quiet room, which uses less battery. A very soft wake word may be missed</string>
     <string name="settings_resident_read_aloud">Read the text aloud</string>
     <string name="settings_resident_read_aloud_summary">When the wake word opens the sheet, the recognized text is read aloud with a 3-Macaw Speech voice of its language, else with the system voice</string>
+    <string name="settings_resident_rule_action">Action</string>
+    <string name="settings_resident_rule_add">Add wake word</string>
+    <string name="settings_resident_rule_arguments">Arguments (optional)</string>
+    <string name="settings_resident_rule_keyword">Wake word</string>
+    <string name="settings_resident_rule_remove">Remove</string>
+    <string name="settings_resident_rule_script">Script path</string>
+    <string name="settings_resident_rule_script_invalid">Enter an absolute path starting with /</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 or later runs the script in the background. Older versions open it like the dictation sheet, or post \"Tap to run the script\" when that is not allowed. The script reads the wake word from execArgv.</string>
+    <string name="settings_resident_rule_script_pick">Choose file</string>
+    <string name="settings_resident_rule_script_unsupported">The path of this file is not available. Choose a file on the internal storage or an SD card, or type an absolute path</string>
     <string name="settings_resident_sensitivity">Wake sensitivity</string>
     <string name="settings_resident_speakers">Speakers</string>
     <string name="settings_resident_speakers_count">Enrolled: %1$d</string>

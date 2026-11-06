@@ -203,6 +203,10 @@
     <string name="resident_paused">未在充電, 已暫停; 接上電源後繼續</string>
     <string name="resident_resume_text">點此恢復常駐喚醒</string>
     <string name="resident_resume_title">常駐喚醒已暫停</string>
+    <string name="resident_run_text">喚醒詞 \"%1$s\": %2$s</string>
+    <string name="resident_run_title">點選執行腳本</string>
+    <string name="resident_script_failed_text">AutoJs6 沒有執行 \"%1$s\" 的腳本, 請檢查檔案是否存在, AutoJs6 是否已安裝.</string>
+    <string name="resident_script_failed_title">喚醒詞的腳本未執行</string>
     <string name="resident_sensitivity_high">高: 更容易喚醒</string>
     <string name="resident_sensitivity_low">低: 較少誤喚醒</string>
     <string name="resident_sensitivity_medium">中</string>
@@ -285,6 +289,10 @@
     <string name="settings_recycle_summary">刪除下載殘留與中斷的安裝</string>
     <string name="settings_release_history_summary">檢視外掛程式內建的發行歷史</string>
     <string name="settings_resident">監聽喚醒詞</string>
+    <string name="settings_resident_action_broadcast">發送系統廣播</string>
+    <string name="settings_resident_action_notify">只發通知</string>
+    <string name="settings_resident_action_open">開啟聽寫面板</string>
+    <string name="settings_resident_action_script">執行腳本</string>
     <string name="settings_resident_charging">只在充電時監聽</string>
     <string name="settings_resident_charging_note">拔掉電源時暫停, 接上後繼續</string>
     <string name="settings_resident_conflict">%1$s 正在常駐監聽, 需先在其中關閉</string>
@@ -292,7 +300,7 @@
     <string name="settings_resident_group">常駐喚醒</string>
     <string name="settings_resident_keywords">喚醒詞</string>
     <string name="settings_resident_keywords_invalid">請檢查喚醒詞的數量, 長度與是否重複</string>
-    <string name="settings_resident_keywords_note">每行一個, 1 到 %1$d 個, 每個至多 %2$d 個字元. 中文依拼音辨識, 英文單字須在模型字典中.</string>
+    <string name="settings_resident_keywords_note">最多 %1$d 個, 每個至多 %2$d 個字元, 不能重複; 每個喚醒詞可設定命中後的動作. 中文依拼音辨識, 英文單字須在模型字典中.</string>
     <string name="settings_resident_keywords_unspellable">喚醒詞模型無法拼寫 %1$s, 請換一個詞</string>
     <string name="settings_resident_microphone">請先授予 3-Macaw Speech 麥克風權限</string>
     <string name="settings_resident_no_recognition_model">請先安裝語音辨識模型</string>
@@ -304,6 +312,16 @@
     <string name="settings_resident_power_saving_summary">只在聽到說話聲或其他聲音時執行喚醒詞模型, 安靜時不執行, 更省電; 聲音很輕的喚醒詞可能聽不到</string>
     <string name="settings_resident_read_aloud">朗讀辨識文字</string>
     <string name="settings_resident_read_aloud_summary">由喚醒詞開啟的面板辨識出文字後朗讀出來; 有該語言的 3-Macaw Speech 語音時使用它, 否則使用系統語音</string>
+    <string name="settings_resident_rule_action">動作</string>
+    <string name="settings_resident_rule_add">新增喚醒詞</string>
+    <string name="settings_resident_rule_arguments">參數 (選填)</string>
+    <string name="settings_resident_rule_keyword">喚醒詞</string>
+    <string name="settings_resident_rule_remove">刪除</string>
+    <string name="settings_resident_rule_script">腳本路徑</string>
+    <string name="settings_resident_rule_script_invalid">請輸入以 / 開頭的絕對路徑</string>
+    <string name="settings_resident_rule_script_note">AutoJs6 6.8.1 或以上會在背景執行腳本; 較舊的版本會像聽寫面板一樣開啟它, 不允許時發出 \"點選執行腳本\" 通知. 腳本可從 execArgv 讀取喚醒詞.</string>
+    <string name="settings_resident_rule_script_pick">選擇檔案</string>
+    <string name="settings_resident_rule_script_unsupported">無法取得該檔案的路徑, 請選擇內部儲存空間或 SD 卡中的檔案, 或直接輸入絕對路徑</string>
     <string name="settings_resident_sensitivity">喚醒靈敏度</string>
     <string name="settings_resident_speakers">說話者</string>
     <string name="settings_resident_speakers_count">已註冊: %1$d</string>
