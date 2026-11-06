@@ -16,6 +16,16 @@ fail line per run and the key numbers, never a transcript.
                                                         the English recording through the speaker (volume as above),
                                                         then the "3-Stove Agent" button must open Stove's draft
                                                         (workbench or floating card); the home screen afterwards
+    py .python/device_assistant_run.py arbitration <serial>
+                                                        roadmap P11.4.3 (D190, D228 - D230): the three background wake
+                                                        cases of TakeoverDeviceTest (the resident wake word through its
+                                                        in-process entry, its switch untouched, beside a script's
+                                                        background session: pauses for a listen and a foreground wake,
+                                                        resumption in queue order, a thenListen round holding the
+                                                        microphone, hits per play against a foreground session;
+                                                        MACAW_PLAYS plays, 5 by default). Emulators: RECORD_AUDIO and
+                                                        the two models as for `avd`, the virtual room; phones: the
+                                                        speaker at MACAW_VOLUME_PERCENT, restored afterwards
 
 Tests: AssistantDeviceTest (the assist key, the two VOICE_COMMAND test targets of the test APK, editing, "Speak again",
 silence, "Copy text", the lock screen; with `stove` only the hand-over to 3-Stove Agent), RecognitionServiceDeviceTest
@@ -158,6 +168,26 @@ def phone(serial):
     return pull_screens(serial, None, ok)
 
 
+ARBITRATION = ("backgroundWakeSessionsPauseForAListenAndAWakeAndResumeInOrder", "aThenListenRoundOfABackgroundSessionHoldsTheMicrophone",
+               "aBackgroundWakeSessionHearsAsOftenAsAForegroundOne")
+
+
+def arbitration(serial):
+    """Roadmap P11.4.3: the background wake cases of TakeoverDeviceTest, in the virtual room on emulators."""
+    room = is_emulator(serial)
+    if room:
+        adb(serial, "shell", "pm", "grant", PACKAGE, "android.permission.RECORD_AUDIO", check=False)
+        if not run_test(serial, "SpeechModelSetupDeviceTest", ["macawModels=true", f"macawModelIds={MODELS}"]):
+            return False
+    original = None if room else raise_volume(serial)
+    adb(serial, "shell", "input", "keyevent", "KEYCODE_WAKEUP", check=False)
+    target = ",".join(f"{PACKAGE}.TakeoverDeviceTest#{name}" for name in ARBITRATION)
+    try:
+        return run_test(serial, target, ["macawTakeover=true", f"macawPlays={os.environ.get('MACAW_PLAYS', '5')}", *(["macawRoom=virtual"] if room else [])])
+    finally:
+        restore_volume(serial, original)
+
+
 def stove(serial):
     """E4: the assistant hands the text to 3-Stove Agent. The maintainer chose the assistant; nothing else is changed."""
     if not is_assistant(serial):
@@ -176,13 +206,13 @@ def stove(serial):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[0] not in ("avd", "phone", "stove"):
+    if len(argv) < 2 or argv[0] not in ("avd", "phone", "stove", "arbitration"):
         print(__doc__)
         return 2
     action, serial = argv
     if not install(serial):
         return 1
-    return 0 if {"avd": avd, "phone": phone, "stove": stove}[action](serial) else 1
+    return 0 if {"avd": avd, "phone": phone, "stove": stove, "arbitration": arbitration}[action](serial) else 1
 
 
 if __name__ == "__main__":

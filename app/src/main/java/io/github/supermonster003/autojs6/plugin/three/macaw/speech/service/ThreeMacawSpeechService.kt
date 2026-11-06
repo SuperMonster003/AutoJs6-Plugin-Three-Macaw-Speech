@@ -195,7 +195,8 @@ internal class SpeechPluginBinder(
         checks.resolved()
         val warnings = runtime.warnings(model, listen.language, listen.hotwords)
         val keep = keepLoaded(listen.keepLoaded)
-        val slot = reserveSlot(keep) { runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true) }
+        val reason = if (local != null) SessionTable.REASON_PLUGIN else SessionTable.REASON_LISTEN
+        val slot = reserveSlot(keep) { runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true, reason = reason) }
         checks.log("Dictation")
         try {
             val id = runtime.nextId(if (listen.isExternal) "external" else "listen")
@@ -267,7 +268,6 @@ internal class SpeechPluginBinder(
         tail: AudioTail? = null,
     ): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
-        if (wake.background) unavailable(SpeechContract.FEATURE_BACKGROUND_WAKE, "background")
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
         requireCallerMicrophone()
@@ -277,9 +277,14 @@ internal class SpeechPluginBinder(
         val buffer = runtime.keywordBuffer(keywordModel, wake.keywords)
         if (resident && wake.thenListen != null) invalid("The resident wake word has no thenListen round")
         val keep = keepLoaded(wake.keepLoaded)
-        val slot = reserveSlot(keep) { runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = resident) }
+        // Roadmap D190: a script's `background` session queues behind the resident wake word as a background holder.
+        val background = resident || wake.background && !takeover
+        val reason = if (takeover) SessionTable.REASON_PLUGIN else SessionTable.REASON_WAKE
+        val slot = reserveSlot(keep) {
+            runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = background, reason = reason, resident = resident)
+        }
         try {
-            val id = runtime.nextId(if (resident) "resident" else "wake")
+            val id = runtime.nextId(if (resident) "resident" else if (background) "wake-background" else "wake")
             return WakeBinder(runtime, slot, listener, listen, foreground = !resident, power = power, tail = tail, keep = keep) { events, listenEvents ->
                 WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
             }.also { it.open(keywordModel, buffer, listenModel) }
@@ -402,11 +407,11 @@ internal class SpeechPluginBinder(
 
     // Contract version 3 (roadmap P11, D183 - D195): leases and the resident wake words, the answers carrying version 3.
     // The leases (feature speechPrepare) are implemented since P11.2 ([SpeechPrepare], [EngineLeases], keepLoaded of the
-    // sessions); this build does not declare the resident wake words or the background wake session yet, so a host that
-    // checks the capabilities never calls those, and a call that comes anyway is refused with FEATURE_UNAVAILABLE (D193).
+    // sessions), the resident wake words (speechResident) since P11.3.4 and the background wake sessions
+    // (speechBackgroundWake, `background` of openWakeSession) since P11.4.1 (D190, D228, D229).
     // zh-CN: 契约版本 3 (路线图 P11, D183 - D195): 租约与常驻唤醒词, 应答带版本 3. 租约 (功能 speechPrepare) 自 P11.2 起实现 ([SpeechPrepare],
-    // [EngineLeases], 会话的 keepLoaded); 本构建尚未声明常驻唤醒词与后台唤醒会话, 因此检查能力的宿主不会调用它们, 仍然到来的调用以
-    // FEATURE_UNAVAILABLE 拒绝 (D193).
+    // [EngineLeases], 会话的 keepLoaded), 常驻唤醒词 (speechResident) 自 P11.3.4 起, 后台唤醒会话 (speechBackgroundWake, openWakeSession 的
+    // `background`) 自 P11.4.1 起 (D190, D228, D229).
 
     /**
      * Starts a prepare of the calling uid (roadmap P11.2.1, D203) and answers its operation id at once; see [SpeechPrepare].
@@ -454,14 +459,6 @@ internal class SpeechPluginBinder(
         checkContract(request, SpeechContract.CALL_VERSION_3)
         block()
     }
-
-    /**
-     * `FEATURE_UNAVAILABLE` for a [call] (or option) of contract version 3 whose [feature] this build does not declare
-     * (roadmap D193).
-     * zh-CN: 本构建未声明其 [feature] 的契约版本 3 调用 (或选项) [call] 的 `FEATURE_UNAVAILABLE` (路线图 D193).
-     */
-    private fun unavailable(feature: String, call: String): Nothing =
-        throw SpeechException(SpeechErrorCodes.FEATURE_UNAVAILABLE, "$call needs \"$feature\", which this build of 3-Macaw Speech does not offer")
 
     private fun recording(audio: ParcelFileDescriptor?, options: Bundle?): SpeakerRecognition.Recording.Descriptor = SpeakerRecognition.Recording.Descriptor(
         audio ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "An audio descriptor is required"),

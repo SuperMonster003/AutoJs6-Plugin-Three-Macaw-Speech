@@ -78,7 +78,10 @@ data class WakeOptions(
     val thenListen: ListenOptions? = null,
     /** `keepLoaded` of contract version 3 (roadmap D184): see [ListenOptions.keepLoaded]. zh-CN: 契约版本 3 的 `keepLoaded` (路线图 D184): 见 [ListenOptions.keepLoaded]. */
     val keepLoaded: Int? = null,
-    /** `background` of contract version 3 (roadmap D187). zh-CN: 契约版本 3 的 `background` (路线图 D187). */
+    /**
+     * `background` of contract version 3 (roadmap D190): the session queues as a background holder of [SessionTable].
+     * zh-CN: 契约版本 3 的 `background` (路线图 D190): 会话作为 [SessionTable] 的后台持有者排队.
+     */
     val background: Boolean = false,
 )
 

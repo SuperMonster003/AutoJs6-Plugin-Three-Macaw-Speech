@@ -23,18 +23,29 @@ import kotlin.concurrent.thread
  * capability, roadmap D22). One instance records once; [stop] ends the capture and releases the recorder and may be
  * called from any thread. [attribution] (API 31+) is the context the recording is attributed to: the caller of the
  * system recognition service (roadmap D56), whose `AttributionSource` the context carries. [frameSamples] is the read
- * step; the power saving mode of the resident wake word reads longer frames (roadmap P8.1, D128).
+ * step; the power saving mode of the resident wake word reads longer frames (roadmap P8.1, D128), and the recording the
+ * background holders share ([SharedCapture], roadmap D228) changes it while it records ([step]).
  * zh-CN: 插件自己的麦克风 (路线图 D6, D16, P3.1): `VOICE_RECOGNITION` 音源上的 `AudioRecord`, 16 kHz 单声道 PCM16, 在独立的采集线程上以 20 ms
  * 帧读取, [Listener.onAudio] 收到浮点采样. 两种方式判断被静音: 连续一秒的零采样, 或 `AudioRecordingConfiguration.isClientSilenced` (API 29+);
  * 每次变化通知一次 [Listener.onSilenced] (系统会静音没有麦克风能力的进程, 路线图 D22). 一个实例只录音一次; [stop] 结束采集并释放录音器, 可从
  * 任意线程调用. [attribution] (API 31+) 是录音所归属的 Context: 系统识别服务的调用方 (路线图 D56), 该 Context 携带其 `AttributionSource`.
- * [frameSamples] 是读取步长; 常驻唤醒的省电模式读取更长的帧 (路线图 P8.1, D128).
+ * [frameSamples] 是读取步长; 常驻唤醒的省电模式读取更长的帧 (路线图 P8.1, D128), 后台持有者共用的录音 ([SharedCapture], 路线图 D228) 在录音期间
+ * 调整它 ([step]).
  */
 class MicrophoneSource(
     private val listener: Listener,
     private val attribution: Context? = null,
     private val frameSamples: Int = FRAME_SAMPLES,
-) : AudioCapture {
+) : AudioCapture, SharedCapture.Steppable {
+
+    /** The read step in use; at most half of the recorder's buffer. zh-CN: 当前的读取步长; 至多为录音缓冲区的一半. */
+    @Volatile
+    private var readSamples = frameSamples
+    private var bufferSamples = frameSamples * 2
+
+    override fun step(frameSamples: Int) {
+        readSamples = frameSamples.coerceIn(1, maxOf(1, bufferSamples / 2))
+    }
 
     interface Listener {
         fun onAudio(samples: FloatArray)
@@ -88,6 +99,8 @@ class MicrophoneSource(
             throw SpeechException(SpeechErrorCodes.ENGINE_FAILED, "AudioRecord did not start recording; another app may hold the microphone")
         }
         record = recorder
+        bufferSamples = bufferBytes(minimum) / 2
+        step(readSamples)
         running = true
         Log.i(TAG, "Recording started")
         // The input in use, for the device runs: the headset's microphone of roadmap D68 comes once its audio link is up.
@@ -108,7 +121,7 @@ class MicrophoneSource(
 
     private fun capture(recorder: AudioRecord) {
         Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO)
-        val buffer = ShortArray(frameSamples)
+        val buffer = ShortArray(maxOf(frameSamples, bufferSamples / 2))
         val started = SystemClock.elapsedRealtime()
         var heard = false
         var zeroSamples = 0L
@@ -116,7 +129,7 @@ class MicrophoneSource(
         var lastCheck = SystemClock.elapsedRealtime()
         try {
             while (running) {
-                val count = recorder.read(buffer, 0, buffer.size)
+                val count = recorder.read(buffer, 0, minOf(readSamples, buffer.size))
                 if (!running) break
                 if (count < 0) {
                     listener.onFailure(SpeechException(SpeechErrorCodes.ENGINE_FAILED, "AudioRecord.read failed with $count"))

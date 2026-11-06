@@ -511,12 +511,13 @@ class ThreeMacawSpeechContractTest {
             SpeechContract.FEATURE_SPEAKER,
             // Roadmap P8.4 (D146 - D151): the offline analyses of contract version 2.
             SpeechContract.FEATURE_DIARIZATION, SpeechContract.FEATURE_LANGUAGE_ID, SpeechContract.FEATURE_AUDIO_TAGGING,
-            // Roadmap P11.2 (D193): the leases of contract version 3; P11.3.4: the resident wake words of scripts.
-            SpeechContract.FEATURE_PREPARE, SpeechContract.FEATURE_RESIDENT,
+            // Roadmap P11.2 (D193): the leases of contract version 3; P11.3.4: the resident wake words of scripts; P11.4.1
+            // (D190): the background wake sessions.
+            SpeechContract.FEATURE_PREPARE, SpeechContract.FEATURE_RESIDENT, SpeechContract.FEATURE_BACKGROUND_WAKE,
         )
 
         /** The version 3 features this build declares (roadmap D193). zh-CN: 本构建声明的版本 3 功能 (路线图 D193). */
-        val FEATURES_V3: Set<String> = setOf(SpeechContract.FEATURE_PREPARE, SpeechContract.FEATURE_RESIDENT)
+        val FEATURES_V3: Set<String> = SpeechContract.FEATURES_V3
 
         /** Action ids of the resident rules (roadmap P11.3.1). zh-CN: 常驻规则的动作 id (路线图 P11.3.1). */
         val RESIDENT_ACTIONS: Set<String> = setOf("open", "script", "broadcast", "notify")

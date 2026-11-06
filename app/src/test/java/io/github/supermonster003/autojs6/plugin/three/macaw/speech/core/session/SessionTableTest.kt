@@ -12,20 +12,31 @@ import org.junit.Test
 /**
  * Session admission (roadmap D16) and the takeover of a wake session by the plugin's own entries (D57): one microphone
  * holder, a takeover only from a holder that yields, at most one takeover, the holder resumed when the takeover ends,
- * and external sessions counted per uid.
+ * and external sessions counted per uid. Roadmap D190 / D229: background holders in one queue, all paused by any
+ * microphone session and resumed in queue order, a `thenListen` round as the microphone holder, the pause reasons.
  * zh-CN: 会话准入 (路线图 D16) 与插件自己入口对唤醒会话的接管 (D57): 只有一个麦克风持有者, 只能从愿意让出的持有者手中接管, 同时至多一个接管, 接管结束时
- * 恢复持有者, 外部会话按 uid 计数.
+ * 恢复持有者, 外部会话按 uid 计数. 路线图 D190 / D229: 后台持有者排成一个队列, 任何麦克风会话都让它们全部暂停并按队列顺序恢复, `thenListen` 轮次作为
+ * 麦克风持有者, 以及暂停原因.
  */
 class SessionTableTest {
 
-    private class FakeWake(var allow: Boolean = true) : SessionTable.Yielding {
+    private class FakeWake(var allow: Boolean = true, val name: String = "", val log: MutableList<String>? = null) : SessionTable.Yielding {
         var yields = 0
         var resumes = 0
+        val reasons = ArrayList<String>()
 
-        override fun yieldMicrophone(): Boolean = allow.also { if (it) yields++ }
+        override fun yieldMicrophone(reason: String): Boolean = allow.also {
+            if (it) {
+                yields++
+                reasons += "paused $reason"
+                log?.add("$name paused")
+            }
+        }
 
-        override fun resumeMicrophone() {
+        override fun resumeMicrophone(reason: String) {
             resumes++
+            reasons += "resumed $reason"
+            log?.add("$name resumed")
         }
     }
 
@@ -120,7 +131,6 @@ class SessionTableTest {
         table.yieldable(background, resident)
         assertTrue(table.backgroundListening)
         assertFalse("the background holder never counts as the microphone holder", table.microphoneInUse)
-        assertBusy("one background holder at a time") { table.reserve(1, microphone = true, background = true) }
         val script = table.reserve(10, microphone = true)
         assertEquals(1, resident.yields)
         assertFalse(table.backgroundListening)
@@ -181,6 +191,125 @@ class SessionTableTest {
         table.release(dictation)
         assertEquals(0, resident.resumes)
         assertFalse(table.backgroundListening)
+    }
+
+    @Test
+    fun `background holders pause together and resume in queue order`() {
+        // Roadmap D190: the resident wake word and script background sessions share one queue; a listen pauses all.
+        val log = ArrayList<String>()
+        val resident = FakeWake(name = "resident", log = log)
+        val first = FakeWake(name = "first", log = log)
+        val second = FakeWake(name = "second", log = log)
+        val slots = listOf(
+            table.reserve(1, microphone = true, background = true, resident = true) to resident,
+            table.reserve(10, microphone = true, background = true) to first,
+            table.reserve(11, microphone = true, background = true) to second,
+        ).onEach { (slot, wake) -> table.yieldable(slot, wake) }
+        assertEquals(listOf(1, 10, 11), table.backgroundHolders)
+        assertTrue(table.backgroundListening)
+        assertFalse("background holders never hold the microphone", table.microphoneInUse)
+        val listen = table.reserve(12, microphone = true)
+        assertEquals("no SESSION_BUSY for the listen; all pause in queue order", listOf("resident paused", "first paused", "second paused"), log)
+        assertFalse(table.backgroundListening)
+        log.clear()
+        table.release(listen)
+        assertEquals(listOf("resident resumed", "first resumed", "second resumed"), log)
+        assertEquals(listOf("paused listen", "resumed listen"), first.reasons)
+        assertTrue(table.backgroundListening)
+        slots.forEach { (slot, _) -> table.release(slot) }
+        assertEquals(emptyList<Int>(), table.backgroundHolders)
+    }
+
+    @Test
+    fun `pauses carry the category of the session that caused them`() {
+        val script = FakeWake()
+        val background = table.reserve(10, microphone = true, background = true)
+        table.yieldable(background, script)
+        table.release(table.reserve(11, microphone = true, reason = SessionTable.REASON_WAKE))
+        table.release(table.reserve(1000, microphone = true, takeover = true, reason = SessionTable.REASON_PLUGIN))
+        assertEquals(listOf("paused wake", "resumed wake", "paused plugin", "resumed plugin"), script.reasons)
+        // Reserved while a listen records: paused at once with the listen's category. zh-CN: 在听写录音时预留: 立即以听写的类别暂停.
+        val listen = table.reserve(12, microphone = true, reason = SessionTable.REASON_LISTEN)
+        val late = FakeWake()
+        table.yieldable(table.reserve(13, microphone = true, background = true), late)
+        assertEquals(listOf("paused listen"), late.reasons)
+        table.release(listen)
+        assertEquals(listOf("paused listen", "resumed listen"), late.reasons)
+        table.release(background)
+    }
+
+    @Test
+    fun `a foreground wake session and its takeover keep the background holders paused until both end`() {
+        val log = ArrayList<String>()
+        val background = FakeWake(name = "background", log = log)
+        val slot = table.reserve(10, microphone = true, background = true)
+        table.yieldable(slot, background)
+        val wake = FakeWake(name = "wake", log = log)
+        val holder = table.reserve(11, microphone = true, reason = SessionTable.REASON_WAKE)
+        table.yieldable(holder, wake)
+        val taker = table.reserve(1000, microphone = true, takeover = true, reason = SessionTable.REASON_PLUGIN)
+        table.release(taker)
+        table.release(holder)
+        assertEquals(listOf("background paused", "wake paused", "wake resumed", "background resumed"), log)
+        table.release(slot)
+    }
+
+    @Test
+    fun `a thenListen round of a background holder holds the microphone until it ends`() {
+        // Roadmap D229: the round is a dictation; others pause for it, and a listen meanwhile is SESSION_BUSY.
+        val resident = FakeWake()
+        val residentSlot = table.reserve(1, microphone = true, background = true, resident = true)
+        table.yieldable(residentSlot, resident)
+        val script = FakeWake()
+        val scriptSlot = table.reserve(10, microphone = true, background = true)
+        table.yieldable(scriptSlot, script)
+        assertTrue(table.startRound(scriptSlot))
+        assertTrue(table.startRound(scriptSlot))
+        assertEquals(listOf("paused listen"), resident.reasons)
+        assertEquals("the round holder itself never pauses", 0, script.yields)
+        assertTrue(table.microphoneInUse)
+        assertBusy("a listen during the round") { table.reserve(11, microphone = true) }
+        script.allow = false
+        assertBusy("a sheet never takes a round over") { table.reserve(1000, microphone = true, takeover = true) }
+        assertFalse("no round starts while another holds the microphone", table.startRound(residentSlot))
+        table.endRound(scriptSlot)
+        table.endRound(scriptSlot)
+        assertEquals(listOf("paused listen", "resumed listen"), resident.reasons)
+        assertFalse(table.microphoneInUse)
+        script.allow = true
+        // A holder that ends in its round frees the microphone too. zh-CN: 在轮次中结束的持有者同样释放麦克风.
+        assertTrue(table.startRound(scriptSlot))
+        table.release(scriptSlot)
+        assertFalse(table.microphoneInUse)
+        assertEquals(2, resident.resumes)
+        assertFalse("a released holder starts no round", table.startRound(scriptSlot))
+        table.release(residentSlot)
+    }
+
+    @Test
+    fun `a holder that cannot yield refuses the reservation and the ones paused before it record again`() {
+        val first = FakeWake()
+        val second = FakeWake(allow = false)
+        val third = FakeWake()
+        listOf(first, second, third).forEachIndexed { i, wake -> table.yieldable(table.reserve(10 + i, microphone = true, background = true), wake) }
+        assertBusy { table.reserve(20, microphone = true) }
+        assertEquals(listOf("paused listen", "resumed listen"), first.reasons)
+        assertEquals(0, third.yields)
+        assertTrue(table.backgroundListening)
+        assertFalse(table.microphoneInUse)
+    }
+
+    @Test
+    fun `script background sessions are limited and the resident wake word comes on top`() {
+        val slots = List(SessionTable.MAX_BACKGROUND_WAKE_SESSIONS) { table.reserve(10 + it, microphone = true, background = true) }
+        assertBusy { table.reserve(20, microphone = true, background = true) }
+        val resident = table.reserve(1, microphone = true, background = true, resident = true)
+        // A reopened resident session may overlap the old one while it ends. zh-CN: 重开的常驻会话可能与正在结束的旧会话短暂重叠.
+        val reopened = table.reserve(1, microphone = true, background = true, resident = true)
+        table.release(slots.first())
+        table.release(table.reserve(20, microphone = true, background = true))
+        (slots.drop(1) + resident + reopened).forEach(table::release)
+        assertEquals(emptyList<Int>(), table.backgroundHolders)
     }
 
     @Test

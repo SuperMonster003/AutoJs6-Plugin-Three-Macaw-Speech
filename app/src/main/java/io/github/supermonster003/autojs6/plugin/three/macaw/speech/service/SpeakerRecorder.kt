@@ -6,6 +6,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechEx
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCaptures
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioInput
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MicrophoneSource
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionTable
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
@@ -22,7 +23,7 @@ internal object SpeakerRecorder {
     fun record(context: Context, millis: Long, progress: (Float) -> Unit = {}, cancelled: () -> Boolean = { false }): FloatArray {
         val runtime = SpeechRuntime.get(context)
         runtime.requireMicrophone()
-        val slot = runtime.sessions.reserve(Process.myUid(), microphone = true, takeover = true)
+        val slot = runtime.sessions.reserve(Process.myUid(), microphone = true, takeover = true, reason = SessionTable.REASON_PLUGIN)
         try {
             val total = AudioInput.samples(millis).toInt()
             val buffer = FloatArray(total)

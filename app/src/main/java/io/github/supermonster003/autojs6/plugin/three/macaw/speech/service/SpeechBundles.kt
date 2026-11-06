@@ -122,6 +122,13 @@ internal object SpeechBundles {
         round?.let { putInt(SpeechResultKeys.ROUND, it) }
     }
 
+    /**
+     * `paused` / `resumed` of a background wake session (contract version 3, roadmap D190): the [reason] is the category
+     * of the session that paused it (`listen`, `wake`, `plugin`).
+     * zh-CN: 后台唤醒会话的 `paused` / `resumed` (契约版本 3, 路线图 D190): [reason] 是使其暂停的会话类别 (`listen`, `wake`, `plugin`).
+     */
+    fun pause(reason: String): Bundle = answer(SpeechContract.CALL_VERSION_3) { putString(SpeechResultKeys.REASON, reason) }
+
     fun wake(keyword: String, score: Float, timestampMillis: Long, round: Int?): Bundle = answer {
         putString(SpeechResultKeys.KEYWORD, keyword)
         putFloat(SpeechResultKeys.SCORE, score)

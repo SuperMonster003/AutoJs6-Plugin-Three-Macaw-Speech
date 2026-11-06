@@ -8,8 +8,10 @@ import android.os.Debug
 import android.os.ParcelFileDescriptor
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCaptures
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioFiles
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MonoAudio
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.SharedCapture
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.kws.KeywordTokenizer
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.CatalogRules
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
@@ -101,6 +103,11 @@ internal class SpeechRuntime private constructor(val context: Context) {
     private val espeak = EspeakHome(EspeakLink(File(context.noBackupFilesDir, "espeak/espeak-ng-data")))
 
     val sessions = SessionTable()
+
+    /**
+     * The recording the background holders of [sessions] share (roadmap D190, D228). zh-CN: [sessions] 的后台持有者共用的录音 (路线图 D190, D228).
+     */
+    val backgroundCapture = SharedCapture { listener, frameSamples -> AudioCaptures.open(listener, null, frameSamples) }
 
     /** The leases of contract version 3 (roadmap P11.2, D203). zh-CN: 契约版本 3 的租约 (路线图 P11.2, D203). */
     val leases = EngineLeases(IdleScheduler.of(idle))

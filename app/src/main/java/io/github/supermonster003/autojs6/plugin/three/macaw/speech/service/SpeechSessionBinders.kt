@@ -97,6 +97,15 @@ internal class CallbackWakeEvents(
         send { callback.onEnd(SpeechBundles.end(reason, null, null)) }
     }
 
+    /**
+     * A background session paused for the session that [reason] names (contract version 3, roadmap D190).
+     * zh-CN: 后台会话为 [reason] 所指的会话而暂停 (契约版本 3, 路线图 D190).
+     */
+    fun paused(reason: String) = send { callback.onPaused(SpeechBundles.pause(reason)) }
+
+    /** A background session records again (roadmap D190). zh-CN: 后台会话重新录音 (路线图 D190). */
+    fun resumed(reason: String) = send { callback.onResumed(SpeechBundles.pause(reason)) }
+
     private inline fun send(block: () -> Unit) {
         try {
             block()
@@ -290,9 +299,15 @@ internal abstract class SessionBinder(
     /** The microphone's read step (roadmap P8.1). zh-CN: 麦克风的读取步长 (路线图 P8.1). */
     protected open val frameSamples: Int get() = MicrophoneSource.FRAME_SAMPLES
 
+    /**
+     * The capture of this session: a recording of its own, or a member of the recording the background holders share
+     * (roadmap D228). zh-CN: 本会话的采集: 自己的一路录音, 或后台持有者共用录音中的一员 (路线图 D228).
+     */
+    protected open fun openCapture(listener: MicrophoneSource.Listener, frameSamples: Int): AudioCapture = AudioCaptures.open(listener, attribution, frameSamples)
+
     /** Starts recording into [accept] (ASR thread). zh-CN: 开始录音并交给 [accept] (ASR 线程). */
     protected fun startMicrophone() {
-        val source = AudioCaptures.open(object : MicrophoneSource.Listener {
+        val source = openCapture(object : MicrophoneSource.Listener {
             override fun onAudio(samples: FloatArray) = enqueue(samples, microphone = true)
 
             override fun onSilenced(silenced: Boolean) {
@@ -303,7 +318,7 @@ internal abstract class SessionBinder(
             }
 
             override fun onFailure(error: SpeechException) = onAsr { fail(error.code, error.message ?: error.code) }
-        }, attribution, frameSamples)
+        }, frameSamples)
         source.start()
         microphone = source
     }
@@ -541,13 +556,22 @@ internal class WakeBinder(
     makeSession: (WakeEvents, DictationEvents?) -> WakeSession,
 ) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder()), keep = keep), SessionTable.Yielding {
 
-    private val session: WakeSession = makeSession(
-        CallbackWakeEvents(callback, beforeEnd = { freeMicrophone() }, leaseId = { keptLease() }) { binderDied() },
-        listenCallback?.let { listen -> CallbackDictationEvents(listen) { binderDied() } },
-    )
+    private val wakeEvents = CallbackWakeEvents(callback, beforeEnd = { freeMicrophone() }, leaseId = { keptLease() }) { binderDied() }
+
+    private val session: WakeSession = makeSession(wakeEvents, listenCallback?.let { listen -> CallbackDictationEvents(listen) { binderDied() } })
 
     private var gate: VoiceGatedKeywords? = null
     private var gateLogged = 0L
+
+    /** Why the session is paused (roadmap D190), set with the table locked. zh-CN: 会话暂停的原因 (路线图 D190), 在会话表加锁时设置. */
+    @Volatile
+    private var pauseReason = SessionTable.REASON_LISTEN
+
+    /** The script saw `paused` and not yet `resumed` (ASR thread). zh-CN: 脚本已收到 `paused` 而尚未收到 `resumed` (ASR 线程). */
+    private var pauseReported = false
+
+    /** A `thenListen` round of this background holder holds the microphone (D229, ASR thread). zh-CN: 本后台持有者的 `thenListen` 轮次占用麦克风. */
+    private var rounding = false
 
     override val isEnded: Boolean get() = session.isEnded
 
@@ -589,26 +613,44 @@ internal class WakeBinder(
                 if (listen != null && asr != null) { sink -> runtime.dictation(asr, listen, sink, punctuator) } else null,
             )
             val readyAt = SystemClock.elapsedRealtime()
-            // A takeover that came while the models loaded keeps the microphone until it is released (D57).
+            // A takeover that came while the models loaded keeps the microphone until it is released (D57); a background
+            // session reserved while the microphone was in use starts paused and says so after its ready (D190).
             if (!session.isEnded && !session.suspended) startMicrophone()
+            if (session.suspended) reportPause(pauseReason)
             logStartup(session.id, readyAt, if (recording) SystemClock.elapsedRealtime() else null)
         }
     }
 
-    /** Roadmap D57, with the session table locked. zh-CN: 路线图 D57, 调用时会话表已加锁. */
-    override fun yieldMicrophone(): Boolean {
+    /**
+     * A background holder records in the recording the background holders share (roadmap D228).
+     * zh-CN: 后台持有者在后台持有者共用的录音中录音 (路线图 D228).
+     */
+    override fun openCapture(listener: MicrophoneSource.Listener, frameSamples: Int): AudioCapture =
+        if (slot.background) runtime.backgroundCapture.member(listener, frameSamples) else super.openCapture(listener, frameSamples)
+
+    /**
+     * Roadmap D57 / D76 / D190, with the session table locked. A background session that already ended never holds a
+     * reservation up. zh-CN: 路线图 D57 / D76 / D190, 调用时会话表已加锁. 已结束的后台会话从不阻挡预留.
+     */
+    override fun yieldMicrophone(reason: String): Boolean {
+        if (slot.background && session.isEnded) return true
         if (!session.yieldToTakeover()) return false
-        Log.i(TAG, "Wake session ${session.id} yields the microphone to a takeover")
-        onAsr { stopMicrophone() }
+        pauseReason = reason
+        Log.i(TAG, "Wake session ${session.id} yields the microphone (${if (slot.background) "background, " else ""}$reason)")
+        onAsr {
+            stopMicrophone()
+            reportPause(reason)
+        }
         return true
     }
 
-    override fun resumeMicrophone() = onAsr {
+    override fun resumeMicrophone(reason: String) = onAsr {
         if (session.isEnded) return@onAsr
         session.resumeAfterTakeover()
         // The audio before the takeover belongs to nobody who could say the wake word now (roadmap D139).
         tail?.clear()
-        Log.i(TAG, "Wake session ${session.id} resumes after the takeover")
+        Log.i(TAG, "Wake session ${session.id} resumes after $reason")
+        reportResume(reason)
         if (session.state != SessionState.ACTIVE || recording) return@onAsr
         try {
             startMicrophone()
@@ -617,10 +659,51 @@ internal class WakeBinder(
         }
     }
 
+    /**
+     * `paused` for a background session the script sees as ready (roadmap D190); once until `resumed`. ASR thread.
+     * zh-CN: 已就绪的后台会话的 `paused` (路线图 D190); 在 `resumed` 之前只发一次. ASR 线程.
+     */
+    private fun reportPause(reason: String) {
+        if (!slot.background || session.state != SessionState.ACTIVE || pauseReported) return
+        pauseReported = true
+        wakeEvents.paused(reason)
+    }
+
+    private fun reportResume(reason: String) {
+        if (!pauseReported) return
+        pauseReported = false
+        wakeEvents.resumed(reason)
+    }
+
+    /**
+     * Roadmap D229: a `thenListen` round of a background session is a dictation, so it holds the microphone of the table
+     * from its hit to its end; one that cannot get it (the microphone went to another session meanwhile) is cancelled.
+     * ASR thread. zh-CN: 路线图 D229: 后台会话的 `thenListen` 轮次是听写, 从命中到结束占用会话表的麦克风; 拿不到 (麦克风已给了其他会话) 的轮次被取消.
+     * ASR 线程.
+     */
+    private fun syncRound() {
+        if (!slot.background) return
+        val inRound = session.currentRound != null && !session.isEnded
+        if (inRound == rounding) return
+        if (!inRound) {
+            rounding = false
+            runtime.sessions.endRound(slot)
+            return
+        }
+        if (runtime.sessions.startRound(slot)) {
+            rounding = true
+            Log.i(TAG, "Wake session ${session.id}: the thenListen round holds the microphone")
+        } else {
+            Log.w(TAG, "Wake session ${session.id}: the microphone is in use; the thenListen round is cancelled")
+            session.finishRound(discard = true)
+        }
+    }
+
     override fun accept(samples: FloatArray) {
         // Before the spotter, so a hit finds its own audio in the tail (roadmap D139).
         tail?.write(samples)
         session.accept(samples)
+        syncRound()
         val current = gate ?: return
         // Every 5 minutes of audio: how much of it the spotter decoded, for the device runs (roadmap P8.1).
         if (current.heard - gateLogged >= GATE_LOG_SAMPLES) {
@@ -646,6 +729,7 @@ internal class WakeBinder(
 
     override fun finishRound(discard: Boolean) = onAsr {
         session.finishRound(discard)
+        syncRound()
         if (session.isEnded) cleanup()
     }
 }

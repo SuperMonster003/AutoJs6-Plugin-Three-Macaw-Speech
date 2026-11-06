@@ -2,7 +2,8 @@
 
     py .python/device_contract_v3_check.py <serial> v3      a 1.6.0 build that speaks version 3 but declares none of its features
     py .python/device_contract_v3_check.py <serial> v2      a plugin of contract version 2 (1.5.0 and earlier)
-    py .python/device_contract_v3_check.py <serial> prepare a 1.6.0 build that declares speechPrepare and speechResident (P11.2, P11.3)
+    py .python/device_contract_v3_check.py <serial> prepare a 1.6.0 build that declares speechPrepare, speechResident and
+                                                            speechBackgroundWake (P11.2 - P11.4)
 
 Every version 3 call must fail at once with FEATURE_UNAVAILABLE and a message that names the missing feature (v3) or the
 two contract versions (v2): speech.prepare / prepareAsync, the speech.resident methods and `on('hit')`, and listen / wake
@@ -15,7 +16,8 @@ Mode `prepare` (roadmap P11.2, D202 - D204): prepare / prepareAsync answer `{ le
 streaming model, the default listen model and the default wake model), a second prepare of the same model reuses the
 engines (loadMillis 0, a new lease), release(id) answers true once and then false, the 16 leases of D197 / D203 end in
 LIMIT_EXCEEDED and release() answers 16, a keepLoaded listen session's ready event carries a lease that release(id)
-returns, and `background` still fails with FEATURE_UNAVAILABLE. The resident methods answer since P11.3 (speechResident):
+returns, and a `background` wake session opens since P11.4.1 (speechBackgroundWake, D190; device_resident_run.py
+arbitration covers its pauses). The resident methods answer since P11.3 (speechResident):
 `resident.get()` returns `{ enabled, rules }` and `enabled` a boolean; the switch itself is not touched here
 (device_resident_actions.py covers enable / set / on('hit')).
 
@@ -143,10 +145,11 @@ try {
 } catch (e) { fail(e); }
 """
 
-# Mode `prepare`: a build that declares speechPrepare (P11.2) but not yet speechResident / speechBackgroundWake.
-PREPARE_UNAVAILABLE = {"wake background": "speechBackgroundWake"}
+# Mode `prepare`: a build that declares speechPrepare (P11.2), speechResident (P11.3) and speechBackgroundWake (P11.4.1).
+PREPARE_UNAVAILABLE = {}
 PREPARE_RETURNS = {"release(id)": "true", "release(id) again": "false", "release(id) unknown": "false", "release() empty": "0",
                    "resident.enabled": ("false", "true"), "resident.off": "undefined", "wake keepLoaded": '"opened"',
+                   "wake background": '"opened"',
                    "release(keepLoaded)": "true", "release() at the end": ("1", "2")}
 # At the end the prepareAsync lease is held, and the lease of "wake keepLoaded" (5 minutes) too when that session
 # reached ready before its stop arrived (D204: the lease is given with the ready event), so 1 or 2.
@@ -205,8 +208,7 @@ def check_prepare(r):
         print(f"    {'PASS' if ok else 'FAIL'} {name}: {detail}")
 
     features = (r.get("features") or "").split(",")
-    report(r.get("contractVersion") == 3 and "speechPrepare" in features and "speechResident" in features
-           and "speechBackgroundWake" not in features, "features", f"contractVersion {r.get('contractVersion')}, {r.get('features')}")
+    report(r.get("contractVersion") == 3 and all(f in features for f in ("speechPrepare", "speechResident", "speechBackgroundWake")), "features", f"contractVersion {r.get('contractVersion')}, {r.get('features')}")
     answers = {name: lease(values.get(name)) for name in ("prepare", "prepare again", "prepare default", "prepare kws", "prepareAsync")}
     for name, answer in answers.items():
         detail = (f"{answer['modelId']} loadMillis {answer['loadMillis']} in {millis.get(name)} ms" if answer
