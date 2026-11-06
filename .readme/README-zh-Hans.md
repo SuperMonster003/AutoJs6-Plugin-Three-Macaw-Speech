@@ -62,11 +62,12 @@
 - 系统语音输入: 其他应用 (例如 3-Stove Agent) 的麦克风按钮可以使用离线识别, 在底部弹层中说一句话, 识别出的文字直接交回该应用.
 - 数字助理: 把 3-Macaw Speech 选为默认数字助理应用后, 长按电源键或 Home 键说一句话, 需要时编辑识别出的文字, 再交给 3-Stove Agent, 3-Stone AI 等接收语音指令的应用, 或复制. 它也提供系统语音识别服务: Android 11 及以下选它为助理时一般会一并设为默认识别服务; Android 12 起需在系统的语音输入设置里另行选择 (部分手机没有这项设置), 应用也可以直接指定它.
 - 触发式入口: 不必长按电源键也能打开同一个听写弹层: 快速设置磁贴 (锁屏上也能用), 桌面小部件与应用图标快捷方式, 可拖动的悬浮麦克风 (默认关闭), 长按或双击音量键的按键触发 (只过滤按键的无障碍服务, 默认关闭), 以及蓝牙耳机的语音键. 平时不录音, 只在弹层听写的几秒内使用麦克风.
-- 常驻唤醒 (默认关闭): 开启后说出唤醒词 (默认 `小鹦小鹦` 与 `Hey Macaw`, 可修改) 即打开同一个听写弹层, 熄屏或锁屏时也会点亮屏幕, 并朗读识别出的文字. 监听期间麦克风指示灯常亮, 有一条常驻通知, 也更耗电 (默认开启的省电模式在安静时不运行唤醒词模型, 插件占用的 CPU 少得多); 可设监听时长 (10, 30, 60 分钟后自动关闭或一直开着) 与只在充电时监听. 脚本, 其他应用或其他入口要用麦克风时自动让出, 用完后继续.
+- 常驻唤醒 (默认关闭): 开启后说出唤醒词 (默认 `小鹦小鹦` 与 `Hey Macaw`, 可修改) 即打开同一个听写弹层, 熄屏或锁屏时也会点亮屏幕, 并朗读识别出的文字. 监听期间麦克风指示灯常亮, 有一条常驻通知, 也更耗电 (默认开启的省电模式在安静时不运行唤醒词模型, 插件占用的 CPU 少得多); 可设监听时长 (10, 30, 60 分钟后自动关闭或一直开着) 与只在充电时监听. 脚本, 其他应用或其他入口要用麦克风时自动让出, 用完后继续. 1.6.0 起唤醒词至多 10 个, 每个词可以单独选择命中后的动作: 打开听写弹层, 运行 AutoJs6 脚本 (后台和锁屏时也能运行), 向 AutoJs6 发系统广播 (触发它由广播启动的定时任务), 或只发通知; AutoJs6 6.8.1 起脚本也可以用 `speech.resident` 读写唤醒词, 开关常驻唤醒并监听命中.
 - 说话人识别 (1.3.0): 在设置 > 常驻唤醒 > 说话人中输入名字并跟读 3 句话, 即可注册自己的声音 (可以注册多人, 也可以用试验证查看分数). 打开 "只听主人" 后, 常驻唤醒听到唤醒词时先比对声音, 只有与已注册的人相符才打开弹层, 别人说唤醒词会被忽略; 磁贴, 小部件, 耳机键等手动入口不受影响. 脚本可以用 `speech.speaker` 注册, 验证与辨认说话人 (需要 AutoJs6 6.8.0 及以上). 说话人识别模型约 26.5 MB, 在 "说话人" 页按提示下载.
 - 音频分析 (1.3.0): 试听试说页的文件识别还可以分离说话人 (标出谁在什么时候说话, 能用已注册的声音认出名字; 选 "分离 + 转写" 还会把每个人说的话转成文字), 识别语种 (Whisper 的 99 种语言), 以及给声音打标签 (人声, 音乐, 动物, 车辆, 警报等 AudioSet 的 527 类). 下载模型后全部在手机上离线完成 (页面会提示需要哪些模型). 脚本可以用 `speech.diarize`, `speech.detectLanguage` 与 `speech.tag` 调用 (需要 AutoJs6 6.8.0 及以上).
 - 音频试听 (1.4.0): 试听试说页的文件识别可以播放所选文件, 能拖动进度, 0.5 倍到 2 倍变速, 前后跳 5 秒. 正在播放的句子会高亮, 点一句就从那里播放, 还可以切换成大字的歌词式视图. 插件只保留最近一个文件的读取权限, 清除结果或换文件时放弃.
 - 模型更新提示 (1.4.0): 已安装的模型有新版本时, 首页的模型卡片标出 "可更新 (v2)", 点一下就能更新. 新版下载并校验通过后才替换旧版, 更新失败或中途暂停都不影响使用, 进行中的任务用旧版做完.
+- 引擎预热与保留 (1.6.0): 插件按设置在模型空闲一段时间后释放它, 下次识别要重新加载 (较新的手机约 0.6 到 1.4 秒, 低端手机可达 4 秒). AutoJs6 6.8.1 起, 在脚本开头调用 `speech.prepare()` 即可提前加载, 之后第一次听写立即开始; `listen` 与 `wake` 的 `keepLoaded` 选项让模型在会话结束后继续保留. 设置中的 "空闲模型释放" 也可以选 "不释放".
 - 插件工具 (需要 AutoJs6 6.8.0 及以上): 提供 `speech_listen` (听一句话并返回识别出的文字), `speech_speak` (朗读一段文字), `speech_transcribe` (识别手机上的音频文件) 与 `speech_synthesize` (把文字合成为 WAV 或 M4A 文件) 四个工具. MCP Server 插件用它们让电脑上的 AI 助手通过手机听和说, 脚本也可以用 `plugins.tools` 调用. 1.3.0 新增 `speech_speaker_verify` (判断一段录音是不是某位已注册的人) 与 `speech_speaker_identify` (在已注册的人中找出最像的一位), 结果只有名字与分数. 1.3.0 另新增三个分析工具: `speech_diarize` (分离说话人, 文件最长 10 分钟), `speech_detect_language` (识别语种) 与 `speech_tag` (给声音打标签).
 - 模型管理: 从签名的模型目录下载, 逐个文件校验 SHA-256 后才启用, 也可以导入本地模型; 仅限非商业用途的模型在下载前会提示许可.
 - 独立界面: 首页显示运行状态并管理模型, 试听试说页直接试验听写, 唤醒词与合成, 还能把手机上的音频或视频文件识别成文字, 保存为文本或 SRT 字幕, 设置页调整语言, 夜间模式, 主题色, 启动器图标与识别合成的默认值, 外观默认跟随 AutoJs6.
@@ -183,7 +184,7 @@
 
 ******
 
-AutoJs6 6.8.0 (内部版本号 5456) 起, 脚本通过全局模块 `speech` (也可写作 `$speech`) 使用这些能力. 下面三段示例可以分别运行: 听写 30 秒并把每句话追加到文件, 用唤醒词唤醒后听一句话, 合成到文件并朗读:
+AutoJs6 6.8.0 (内部版本号 5456) 起, 脚本通过全局模块 `speech` (也可写作 `$speech`) 使用这些能力. 下面四段示例可以分别运行: 听写 30 秒并把每句话追加到文件, 用唤醒词唤醒后听一句话, 合成到文件并朗读, 以及 (AutoJs6 6.8.1 起) 预先加载引擎后听一句话, 并给常驻唤醒设置一个运行脚本的唤醒词:
 
 ```javascript
 // 1. Dictation: partial text while you speak, one final per sentence, 30 seconds in all
@@ -204,11 +205,24 @@ let result = speech.synthesize("Task completed", "./done.wav", { model: "tts.vit
 console.log(result.durationMillis, result.sampleRate);
 speech.speak("任务完成");
 tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.macaw.speech" });
+
+// 4. AutoJs6 6.8.1 and later: load the engine first, so the dictation starts at once,
+//    keep it 30 minutes after the session, and let a resident wake word run a script
+speech.prepare();
+let quick = speech.listen({ keepLoaded: 30 });
+quick.on("final", (e) => {
+    console.log(e.text);
+    quick.stop();
+});
+speech.resident.set(["小六小六", { keyword: "打开备忘", action: "script", script: "./memo.js" }]);
+speech.resident.enable();
 ```
 
 - `speech.listen(options)` 打开听写会话, 通过 `ready`, `partial`, `final`, `endpoint`, `vad`, `warning`, `error` 与 `end` 事件返回结果, `stop()` 提前结束; `speech.recognize(path)` 识别音频文件 (WAV 以外的格式需要 AutoJs6 6.8.0 及以上; 也接受 16 kHz PCM), `speech.detectVoice(path)` 列出其中的语音段.
 - `speech.listen` 与 `speech.recognize` 的 `punctuation` 选项默认为 true: 模型自带标点 (SenseVoice) 时保留, 流式模型的结果由已安装的标点模型补上标点 (中文与英文, 英文同时恢复大小写), 没有覆盖该语言的标点模型时保持原样; 设为 false 去掉所有标点. 标点模型只在插件首页管理, 不出现在 `speech.models` 中.
 - `speech.wake(keywords, options)` 打开唤醒词会话, 关键词直接写原文 (至多 50 个); `thenListen` 让每次唤醒后在同一录音上转入一轮听写, 该轮的会话由 `wake` 事件的 `listen` 属性给出.
+- AutoJs6 6.8.1 起: `speech.prepare(options)` 在第一个会话之前加载识别或唤醒词模型的引擎 (`kind: 'asr'` 或 `'kws'`, 省略 `model` 时用默认模型), 返回租约 (`leaseId`, `modelId`, `loadMillis`), `prepareAsync` 返回 Promise; `speech.release(leaseId?)` 归还租约, 脚本退出时自动归还. `listen` 与 `wake` 的 `keepLoaded` 选项 (`true`, 或 1 到 1440 分钟) 让会话用过的引擎在结束后继续保留. 同一 AutoJs6 的全部脚本合计至多 16 个租约.
+- AutoJs6 6.8.1 起: `speech.resident` 管理常驻唤醒: `get()` 与 `set(rules)` 读写唤醒词与动作 (至多 10 条; 字符串表示打开弹层, 对象可指定 `action` 为 `'open'`, `'script'` (配 `script` 与 `arguments`), `'broadcast'` 或 `'notify'`), `enable()` / `disable()` 开关 (系统不允许从后台开启时返回 `{ started: false, restartNeeded: true }`, 下次打开插件时生效), 只读属性 `enabled`, `on('hit', fn)` 监听每一次命中.
 - `speech.synthesize(text, path, options)` 合成到 WAV 文件 (至多 8000 个字符, 可选模型, 说话人与语速); `speech.speak(text, options)` 与 `tts(text, { engine })` 经系统 TTS 引擎朗读.
 - `speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.
 - `speech.speaker.enroll(name, files, { replace })` 注册说话人 (多段录音取平均; 同名默认追加到原有声纹, `replace: true` 重新注册), `verify(name, file)` 返回分数与是否相符, `identify(file, { topK })` 在已注册的人中找出最像的一位并列出候选, `list()` 与 `remove(name)` 管理已注册的人; `enroll`, `verify` 与 `identify` 各有返回 Promise 的 `...Async` 版本. 结果只有名字, 分数, 是否相符与阈值 (默认 0.50, 可用 `threshold` 调整), 不含声纹向量. 需要 AutoJs6 6.8.0 正式版与说话人识别模型.
@@ -224,20 +238,21 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 ******
 
 - Android 7.0 (API 24) 及以上, 目标 API 37. arm64-v8a, armeabi-v7a, x86_64 与 x86 各有安装包, 另有 universal 安装包; 原生库按 16 KB 内存页对齐, 已在 16 KB 页模拟器上验证.
-- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6. 识别非 WAV 音频文件 (MP3, M4A 等) 与插件工具需要 AutoJs6 6.8.0 正式版或更高版本, 更早的 AutoJs6 中脚本只能识别 WAV. 脚本的 `speech.speaker`, `speech.diarize`, `speech.detectLanguage` 与 `speech.tag` 同样需要 AutoJs6 6.8.0 正式版或更高版本; 插件内的 "说话人" 页, "只听主人" 与试听试说页的文件分析不依赖 AutoJs6.
+- AutoJs6: 脚本中的 `speech` 模块需要 6.8.0 (内部版本号 5456) 或更高版本; 插件界面, 系统 TTS 引擎, 系统语音输入, 语音识别服务与数字助理不依赖 AutoJs6. 识别非 WAV 音频文件 (MP3, M4A 等) 与插件工具需要 AutoJs6 6.8.0 正式版或更高版本, 更早的 AutoJs6 中脚本只能识别 WAV. 脚本的 `speech.speaker`, `speech.diarize`, `speech.detectLanguage` 与 `speech.tag` 同样需要 AutoJs6 6.8.0 正式版或更高版本; 插件内的 "说话人" 页, "只听主人" 与试听试说页的文件分析不依赖 AutoJs6. 脚本的 `speech.prepare`, `prepareAsync`, `release`, `keepLoaded` 选项, `speech.wake` 的 `background` 选项与 `speech.resident` 需要 AutoJs6 6.8.1 或更高版本 (尚未发布); 设置中的唤醒词动作与 "不释放" 不依赖 AutoJs6 ("运行脚本" 动作在更早的 AutoJs6 上像听写弹层一样打开脚本, 不允许时发通知).
 - 后台收音: 在 AutoJs6 处于前台时开始的听写或唤醒会话, AutoJs6 退到后台或熄屏后仍会继续收音 (插件以麦克风前台服务与通知保持录音). AutoJs6 已在后台时才打开的会话可能被系统静音, 此时会话收到错误码为 `PERMISSION_DENIED` 的 `warning` 事件但不会结束, AutoJs6 回到前台后恢复; 需要后台收音的脚本请在 AutoJs6 可见时开启会话.
 - 实测设备: Sony G8441 (Android 9), Sony XQ-AT72 (Android 12), Sony XQ-DQ72 (Android 13), Redmi 22120RN86C (Android 13), Xiaomi Pad 23046RP50C (Android 15), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24, 35 与 37 (16 KB 页) 模拟器.
 - 性能: 在低端的 Sony G8441 上, 流式模型加载约 1.7 秒, SenseVoice 约 2.8 秒, 听写处理速度约为实时的 3 倍; MeloTTS 与 Kokoro 在这类设备上合成慢于实时, AISHELL-3 最快. Sony XQ-DQ72 等较新设备加载约 0.5 到 1.2 秒, 合成快于实时.
-- 内存: 一个识别模型加载后约占 210 到 300 MB 原生内存. 插件按设备内存的四分之一 (384 MB 到 1.5 GB) 管理已加载的模型, 空闲 5 分钟后释放 (可在设置中调整为 1 到 30 分钟).
+- 内存: 一个识别模型加载后约占 210 到 300 MB 原生内存. 插件按设备内存的四分之一 (384 MB 到 1.5 GB) 管理已加载的模型, 空闲 5 分钟后释放 (可在设置中调整为 1 到 30 分钟, 或选 "不释放").
 - 数字助理: 需要系统允许选择第三方数字助理应用. 唤起方式依系统而定: 长按 Home 键 (三键导航), 从屏幕底部角落斜向上滑, 或在系统设置中把长按电源键设为唤起数字助理. 实测的 ColorOS 与 HyperOS 平板 (Android 15) 把电源键与手势留给自家助理, 可以改用触发式入口.
 - 触发式入口: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), Xiaomi Pad 23046RP50C (HyperOS, Android 15), 以及 API 33 与 35 模拟器. ColorOS 与 HyperOS 在锁屏上点磁贴会先要求解锁, 解锁后打开弹层; 部分桌面接受添加小部件的请求却不显示确认, 此时按设置中的步骤手动添加. 熄屏时手机不把按键交给无障碍服务, 按键触发只在亮屏时可用. 蓝牙耳机语音键: Sony WF-1000XM4 配合 XQ-DQ72 (Android 13) 实测每次长按都打开弹层, 并用耳机麦克风收音; 其他应用 (例如 Google 应用) 也应答时系统先显示选择器. 实测 HyperOS 平板 (Xiaomi Pad 23046RP50C, Android 15) 的选择器在选中 3-Macaw Speech 后没有反应.
-- 常驻唤醒: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 页) 模拟器. 熄屏 30 分钟耗电 (Sony XQ-DQ72, Android 13; Android 按机型功耗表估算, 手机经 USB 连接, 未充电状态为模拟): 开启且省电模式开 (默认) 时 17.1 mAh, 插件 CPU 时间 235 秒; 关掉省电模式时 17.9 mAh, 454 秒 (平均约占一个 CPU 核心的四分之一); 两种情况都一直在录音, 估算中约 14 mAh 算在录音本身上. 那次测试时周围一直有声音, 省电模式减少的主要是 CPU; 在安静的房间里 (Sony G8441, Android 9, 熄屏 10 分钟) 插件 CPU 时间从 265 秒降到 26 秒. 关闭常驻唤醒时 0.006 mAh, 插件没有在运行. 实际耗电因机型与周围的声音而异.
+- 常驻唤醒: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 35 (16 KB 页) 模拟器. 熄屏 30 分钟耗电 (Sony XQ-DQ72, Android 13; Android 按机型功耗表估算, 手机经 USB 连接, 未充电状态为模拟): 开启且省电模式开 (默认) 时 17.1 mAh, 插件 CPU 时间 235 秒; 关掉省电模式时 17.9 mAh, 454 秒 (平均约占一个 CPU 核心的四分之一); 两种情况都一直在录音, 估算中约 14 mAh 算在录音本身上. 那次测试时周围一直有声音, 省电模式减少的主要是 CPU; 在安静的房间里 (Sony G8441, Android 9, 熄屏 10 分钟) 插件 CPU 时间从 265 秒降到 26 秒. 关闭常驻唤醒时 0.006 mAh, 插件没有在运行. 实际耗电因机型与周围的声音而异. 1.6.0 把唤醒词上限提高到 10 个后, 同一台 Sony XQ-DQ72 熄屏 30 分钟 (省电模式开), 10 个唤醒词为 14.2 mAh, 5 个为 15.9 mAh, 都不高于上面的结果.
 - 插件工具: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器 (API 24 只测不需要模型的部分); 经 MCP Server 调用实测 Sony G8441 (Android 9).
 - 标点与 1.2.0 新增模型: 实测 Sony XQ-AT72 (Android 12). 开启标点时, 中文, 英文与中英混合录音都加上了标点, 字词与关闭时相同; 俄语与法语 Piper 声音合成的句子由同语言的流式模型识别回来, 字错率分别为 7.9% 与 0%; 西班牙语与德语声音合成正常, 韩语模型只验证了能加载 (没有韩语测试录音).
 - 1.3.0 新增模型: 实测 Sony G8441 (Android 9), XQ-DQ72 (Android 13) 与 API 35 模拟器 (安装, 使用与删除). 测试录音里没有西班牙语, 阿拉伯语与韩语, 因此用合成的句子由识别模型读回: Kokoro v1.0 的西班牙语声音由 NeMo 读回, 字错率 0% 到 6.5%; 两个阿拉伯语声音由八语模型读回, 均为 3.0% (模拟器上 miro 为 33%); 韩语声音由 SenseVoice 读回, 0%; 八语模型识别英文录音的字错率为 0% 到 1.1%. 八语模型加载后峰值内存约 600 MiB (G8441) 到 880 MiB (XQ-DQ72); Kokoro v1.0 在 G8441 上合成慢于实时 (约为音频时长的 4 到 6 倍), 在 XQ-DQ72 上接近实时.
 - 试听试说页识别文件: 实测 Sony G8441 (Android 9), XQ-AT72 (Android 12), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 模拟器. 在 OnePlus OPD2413 上, 一段 10 分 03 秒的 MP3 约 21 秒识别完 (SenseVoice, 开启自动标点); 离开页面后识别照常进行, 通知里显示进度.
 - 说话人识别: 实测 Sony XQ-AT72 (Android 12), XQ-DQ72 (Android 13), 以及 API 24 与 35 (16 KB 页) 模拟器 (注册, 验证, 辨认, 列出与删除, 以及 "只听主人" 的放行与拒绝; 使用 LibriSpeech 的两位朗读者与合成的唤醒词). 同一人的 2 秒片段得分 0.75 到 0.79, 另一人低于 0.08, 默认阈值 0.50; 在电脑上用 40 位英语与 12 位中文说话人测得, 2 秒片段误拒约 2.5% (英语) 与 0% (中文), 误收约 0.05% 与 0.9%. "只听主人" 的比对在 Sony 手机上约 0.15 到 0.25 秒.
 - 音频分析: 实测 Sony G8441 (Android 9), OnePlus OPD2413 (ColorOS, Android 15), 以及 API 24 与 35 (16 KB 页) 模拟器 (分离与认人, 语种, 标签, 取消, 文件页, 三个工具与 AutoJs6 脚本). 两位 LibriSpeech 朗读者轮流朗读的 42.5 秒录音在各机上都分出 2 人 7 段, 按时长算 93% 的语音归到了正确的人; 已注册的一位被认出 (分数 0.85), 另一位没有 (0.01). 中文, 俄语与英文录音的语种都判断正确, 音乐, 白噪声与提示音都标在了对应的 10 秒窗口. 10 分钟录音在 OnePlus OPD2413 上分离约 70 秒, 识别语种 2.5 秒, 打标签 3.8 秒; 在 Sony G8441 上分别为 222 秒 (峰值内存约 470 MiB), 12 秒与 15 秒.
+- 引擎预热与后台唤醒 (1.6.0): 实测 Sony G8441 (Android 9), OnePlus OPD2413 (ColorOS, Android 15) 与 API 35 (16 KB 页) 模拟器, 配合 AutoJs6 6.8.1 开发版. 插件被系统关闭后, 脚本先 `speech.prepare()` 再听写, 首次听写从调用到就绪由 1.4 秒降到 0.08 秒 (OnePlus), 由 4.2 秒降到 0.25 秒 (G8441); 用 `keepLoaded` 或 "不释放" 时, 闲置 10 到 30 分钟后再听写仍不用重新加载 ("不释放" 时插件常驻约 300 到 540 MB 内存). 后台唤醒会话与常驻唤醒同时开着时, 脚本听写正常开始, 结束后两者按开启顺序恢复, 唤醒词命中率与前台唤醒相同.
 
 ******
 
@@ -312,6 +327,10 @@ Android 只允许无障碍服务在系统处理之前拿到实体按键, 所以�
 #### 模型占用多少空间, 怎样释放?
 
 各模型安装后的大小见上文模型表. 首页可以删除不再需要的模型; 设置中的回收未引用的文件会删除不再需要的下载文件, 导入副本与中断的安装, 已安装的模型与暂停的下载会保留. 卸载插件会删除全部模型.
+
+#### 脚本第一次听写为什么要等一两秒, 能更快吗?
+
+插件按设置中的 "空闲模型释放" (默认 5 分钟) 卸载不用的模型, 系统也可能关闭插件, 之后的第一次听写要先加载模型 (较新的手机约 0.6 到 1.4 秒, 低端手机可达 4 秒). AutoJs6 6.8.1 起, 在脚本开头调用 `speech.prepare()` 把加载提前到脚本开头, 之后的听写立即开始; 隔一段时间还要听写时, 给 `speech.listen` 加上 `keepLoaded: true` (或保留的分钟数). 也可以把 "空闲模型释放" 设为 "不释放", 代价是插件一直占用这部分内存 (每个模型约为其安装大小).
 
 #### 识别结果为什么没有标点?
 
@@ -401,9 +420,10 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 
 #### v1.6.0
 
-_2026/11/06_
+_2026/11/07_
 
-- `提示` 脚本提前加载语音引擎 (speech.prepare, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 "运行脚本" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 "点击运行脚本" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响
+- `提示` 脚本提前加载语音引擎 (speech.prepare, speech.prepareAsync, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 "运行脚本" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 "点击运行脚本" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响
+- `提示` 设置随 AutoJs6 一起导出和导入 (1.5.0 起) 同样需要 AutoJs6 6.8.1 或更高版本
 - `新增` 脚本可以提前加载语音引擎: 在脚本开头调用 speech.prepare(), 之后第一次 speech.listen 不用再等模型加载. 实测插件被系统关闭后, 首次听写的启动时间从 1.4 秒 (OnePlus) 和 4.2 秒 (Sony G8441) 缩短到 0.08 秒和 0.25 秒, 加载改在脚本开头的 prepare 进行. 引擎一直保留到调用 speech.release() 或脚本结束
 - `新增` speech.listen 和 speech.wake 新增 keepLoaded 选项: 设为 true 时, 会话用过的引擎保留到调用 speech.release() 或脚本结束; 设为 1 到 1440 之间的数字时, 会话结束后再保留这么多分钟. 脚本隔一段时间再次听写也不用重新加载模型
 - `新增` 设置页的 "空闲模型释放" 新增 "不释放" 档: 用过的模型一直留在内存里, 下次识别启动最快, 代价是插件一直占用这部分内存 (每个模型约为其安装大小); 手机内存紧张时仍会释放. 这一档也会随 AutoJs6 的设置一起导出和导入

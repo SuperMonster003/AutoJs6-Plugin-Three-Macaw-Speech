@@ -6,9 +6,10 @@
   "changelog_label_dependency": "Dépendance",
   "$data": {
     "v1.6.0": {
-      "released_date": "2026/11/06",
+      "released_date": "2026/11/07",
       "hint": [
-        "Le chargement anticipé des moteurs vocaux depuis un script (speech.prepare, speech.release), l'option keepLoaded de listen / wake, l'option background de wake et la gestion du mot de réveil permanent depuis un script (speech.resident) demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée). Avec une version antérieure d'AutoJs6, l'action \"Exécuter un script\" d'un mot de réveil ouvre le script comme le panneau de dictée, ou publie la notification \"Appuyer pour exécuter le script\" si ce n'est pas permis; la dictée, les mots de réveil, la synthèse vocale et les autres usages existants ne changent pas"
+        "Le chargement anticipé des moteurs vocaux depuis un script (speech.prepare, speech.prepareAsync, speech.release), l'option keepLoaded de listen / wake, l'option background de wake et la gestion du mot de réveil permanent depuis un script (speech.resident) demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée). Avec une version antérieure d'AutoJs6, l'action \"Exécuter un script\" d'un mot de réveil ouvre le script comme le panneau de dictée, ou publie la notification \"Appuyer pour exécuter le script\" si ce n'est pas permis; la dictée, les mots de réveil, la synthèse vocale et les autres usages existants ne changent pas",
+        "L'export et l'import des réglages avec AutoJs6 (depuis la 1.5.0) demandent toujours AutoJs6 6.8.1 ou ultérieure"
       ],
       "feature": [
         "Les scripts peuvent charger les moteurs vocaux à l'avance: appelez speech.prepare() au début du script, et le premier speech.listen n'attend plus le chargement du modèle. Dans nos essais, après la fermeture du plugin par le système, la première dictée a démarré en 0,08 seconde au lieu de 1,4 seconde (OnePlus) et en 0,25 seconde au lieu de 4,2 secondes (Sony G8441), le chargement ayant lieu dans le prepare du début du script. Les moteurs restent chargés jusqu'à l'appel de speech.release() ou la fin du script",

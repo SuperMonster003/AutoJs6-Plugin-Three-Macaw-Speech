@@ -6,9 +6,10 @@
   "changelog_label_dependency": "依赖",
   "$data": {
     "v1.6.0": {
-      "released_date": "2026/11/06",
+      "released_date": "2026/11/07",
       "hint": [
-        "脚本提前加载语音引擎 (speech.prepare, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 \"运行脚本\" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 \"点击运行脚本\" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响"
+        "脚本提前加载语音引擎 (speech.prepare, speech.prepareAsync, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 \"运行脚本\" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 \"点击运行脚本\" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响",
+        "设置随 AutoJs6 一起导出和导入 (1.5.0 起) 同样需要 AutoJs6 6.8.1 或更高版本"
       ],
       "feature": [
         "脚本可以提前加载语音引擎: 在脚本开头调用 speech.prepare(), 之后第一次 speech.listen 不用再等模型加载. 实测插件被系统关闭后, 首次听写的启动时间从 1.4 秒 (OnePlus) 和 4.2 秒 (Sony G8441) 缩短到 0.08 秒和 0.25 秒, 加载改在脚本开头的 prepare 进行. 引擎一直保留到调用 speech.release() 或脚本结束",

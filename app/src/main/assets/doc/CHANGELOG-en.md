@@ -6,9 +6,10 @@
 
 # v1.6.0
 
-###### 2026/11/06
+###### 2026/11/07
 
-* `Hint` Loading the speech engines in advance from a script (speech.prepare, speech.release), the keepLoaded option of listen / wake, the background option of wake and managing the resident wake word from a script (speech.resident) need AutoJs6 6.8.1 or later (not released yet). With an earlier AutoJs6, the "Run a script" action of a wake word opens the script like the dictation sheet, or posts "Tap to run the script" where that is not allowed; dictation, wake words, speech synthesis and the other existing uses are not affected
+* `Hint` Loading the speech engines in advance from a script (speech.prepare, speech.prepareAsync, speech.release), the keepLoaded option of listen / wake, the background option of wake and managing the resident wake word from a script (speech.resident) need AutoJs6 6.8.1 or later (not released yet). With an earlier AutoJs6, the "Run a script" action of a wake word opens the script like the dictation sheet, or posts "Tap to run the script" where that is not allowed; dictation, wake words, speech synthesis and the other existing uses are not affected
+* `Hint` Exporting and importing the settings together with AutoJs6 (since 1.5.0) still needs AutoJs6 6.8.1 or later
 * `Feature` Scripts can load the speech engines in advance: call speech.prepare() at the start of a script, and the first speech.listen no longer waits for the model to load. In our tests, after the system had closed the plugin, the first dictation started in 0.08 s instead of 1.4 s (OnePlus) and in 0.25 s instead of 4.2 s (Sony G8441), the loading having moved to the prepare at the start of the script. The engines stay loaded until speech.release() is called or the script ends
 * `Feature` speech.listen and speech.wake have a new keepLoaded option: true keeps the engines the session used until speech.release() is called or the script ends; a number from 1 to 1440 keeps them that many minutes after the session ends. A script that dictates again after a while does not reload the model
 * `Feature` The setting "Release idle models" has a new choice "Never": used models stay in memory, so the next recognition starts fastest, at the cost of the plugin holding that memory all the time (each model about its installed size); they are still released when the phone runs low on memory. The choice is also exported and imported with AutoJs6's settings

@@ -6,9 +6,10 @@
 
 # v1.6.0
 
-###### 2026/11/06
+###### 2026/11/07
 
-* `提示` 脚本提前加载语音引擎 (speech.prepare, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 "运行脚本" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 "点击运行脚本" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响
+* `提示` 脚本提前加载语音引擎 (speech.prepare, speech.prepareAsync, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 "运行脚本" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 "点击运行脚本" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响
+* `提示` 设置随 AutoJs6 一起导出和导入 (1.5.0 起) 同样需要 AutoJs6 6.8.1 或更高版本
 * `新增` 脚本可以提前加载语音引擎: 在脚本开头调用 speech.prepare(), 之后第一次 speech.listen 不用再等模型加载. 实测插件被系统关闭后, 首次听写的启动时间从 1.4 秒 (OnePlus) 和 4.2 秒 (Sony G8441) 缩短到 0.08 秒和 0.25 秒, 加载改在脚本开头的 prepare 进行. 引擎一直保留到调用 speech.release() 或脚本结束
 * `新增` speech.listen 和 speech.wake 新增 keepLoaded 选项: 设为 true 时, 会话用过的引擎保留到调用 speech.release() 或脚本结束; 设为 1 到 1440 之间的数字时, 会话结束后再保留这么多分钟. 脚本隔一段时间再次听写也不用重新加载模型
 * `新增` 设置页的 "空闲模型释放" 新增 "不释放" 档: 用过的模型一直留在内存里, 下次识别启动最快, 代价是插件一直占用这部分内存 (每个模型约为其安装大小); 手机内存紧张时仍会释放. 这一档也会随 AutoJs6 的设置一起导出和导入

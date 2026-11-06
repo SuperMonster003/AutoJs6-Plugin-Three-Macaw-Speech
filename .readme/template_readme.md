@@ -143,6 +143,17 @@ let result = speech.synthesize("Task completed", "./done.wav", { model: "tts.vit
 console.log(result.durationMillis, result.sampleRate);
 speech.speak("任务完成");
 tts("Task completed", { engine: "{{ plugin_application_id }}" });
+
+// 4. AutoJs6 6.8.1 and later: load the engine first, so the dictation starts at once,
+//    keep it 30 minutes after the session, and let a resident wake word run a script
+speech.prepare();
+let quick = speech.listen({ keepLoaded: 30 });
+quick.on("final", (e) => {
+    console.log(e.text);
+    quick.stop();
+});
+speech.resident.set(["小六小六", { keyword: "打开备忘", action: "script", script: "./memo.js" }]);
+speech.resident.enable();
 ```
 
 {{ placeholder_api_points }}

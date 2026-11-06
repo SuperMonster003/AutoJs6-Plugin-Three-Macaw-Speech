@@ -6,9 +6,10 @@
   "changelog_label_dependency": "Dependency",
   "$data": {
     "v1.6.0": {
-      "released_date": "2026/11/06",
+      "released_date": "2026/11/07",
       "hint": [
-        "Loading the speech engines in advance from a script (speech.prepare, speech.release), the keepLoaded option of listen / wake, the background option of wake and managing the resident wake word from a script (speech.resident) need AutoJs6 6.8.1 or later (not released yet). With an earlier AutoJs6, the \"Run a script\" action of a wake word opens the script like the dictation sheet, or posts \"Tap to run the script\" where that is not allowed; dictation, wake words, speech synthesis and the other existing uses are not affected"
+        "Loading the speech engines in advance from a script (speech.prepare, speech.prepareAsync, speech.release), the keepLoaded option of listen / wake, the background option of wake and managing the resident wake word from a script (speech.resident) need AutoJs6 6.8.1 or later (not released yet). With an earlier AutoJs6, the \"Run a script\" action of a wake word opens the script like the dictation sheet, or posts \"Tap to run the script\" where that is not allowed; dictation, wake words, speech synthesis and the other existing uses are not affected",
+        "Exporting and importing the settings together with AutoJs6 (since 1.5.0) still needs AutoJs6 6.8.1 or later"
       ],
       "feature": [
         "Scripts can load the speech engines in advance: call speech.prepare() at the start of a script, and the first speech.listen no longer waits for the model to load. In our tests, after the system had closed the plugin, the first dictation started in 0.08 s instead of 1.4 s (OnePlus) and in 0.25 s instead of 4.2 s (Sony G8441), the loading having moved to the prepare at the start of the script. The engines stay loaded until speech.release() is called or the script ends",
