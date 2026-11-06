@@ -257,6 +257,10 @@ internal class TryoutController(context: Context) {
     }
 
     private val wakeCallback = object : ISpeechWakeCallback.Stub() {
+        override fun onPaused(info: Bundle?) = Unit
+
+        override fun onResumed(info: Bundle?) = Unit
+
         override fun onReady(event: Bundle?) = post { if (wakePhase == TryoutPhase.LOADING) wakePhase = TryoutPhase.RUNNING }
         override fun onWake(event: Bundle?) = post {
             val keyword = event?.getString(SpeechResultKeys.KEYWORD).orEmpty()

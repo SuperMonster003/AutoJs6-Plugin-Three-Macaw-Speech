@@ -125,6 +125,10 @@ internal object AssistantDevice {
                 putString(SpeechOptionKeys.MODEL, SpeechDevice.KWS)
             }
             session = SpeechDevice.plugin.openWakeSession(options, object : ISpeechWakeCallback.Stub() {
+                override fun onPaused(info: Bundle?) = Unit
+
+                override fun onResumed(info: Bundle?) = Unit
+
                 override fun onReady(event: Bundle?) {
                     events += "ready"
                     ready.countDown()

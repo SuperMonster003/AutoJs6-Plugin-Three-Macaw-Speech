@@ -5,6 +5,12 @@
   "changelog_label_improvement": "Amélioration",
   "changelog_label_dependency": "Dépendance",
   "$data": {
+    "v1.6.0": {
+      "released_date": "2026/11/06",
+      "hint": [
+        "Le chargement anticipé des moteurs vocaux depuis un script (speech.prepare) et la gestion du mot de réveil permanent depuis un script (speech.resident) sont encore en développement et demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée). En attendant, un script qui les appelle reçoit aussitôt une erreur \"fonction indisponible\" au lieu de rester bloqué; la dictée, les mots de réveil, la synthèse vocale et les autres usages existants ne changent pas"
+      ]
+    },
     "v1.5.0": {
       "released_date": "2026/11/05",
       "hint": [

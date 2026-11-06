@@ -226,6 +226,28 @@ class ThreeMacawSpeechContractTest {
     }
 
     @Test
+    fun contractVersionThreeCallsAnswerFeatureUnavailable() {
+        // Roadmap P11.1.2 (D193): this build declares none of the version 3 features, so the plugin itself refuses their
+        // methods (transactions 24 - 27 of the AIDL order) with FEATURE_UNAVAILABLE, the answers carrying version 3.
+        // zh-CN: 路线图 P11.1.2 (D193): 本构建不声明任何版本 3 功能, 插件自身以 FEATURE_UNAVAILABLE 拒绝这些方法 (AIDL 顺序中的事务
+        // 24 - 27), 应答带版本 3.
+        val serviceInfo = discoverSingleService(
+            SpeechPluginActions.SPEECH, SpeechPluginActions.SERVICE_CATEGORY, ThreeMacawSpeechService::class.java.name,
+        )
+        withBoundService(serviceInfo) { binder ->
+            val capabilities = requireNotNull(transactBundle(binder, TRANSACTION_GET_CAPABILITIES))
+            val features = requireNotNull(capabilities.getStringArray(SpeechCapabilityKeys.FEATURES)).toSet()
+            assertTrue(features.intersect(SpeechContract.FEATURES_V3).isEmpty())
+            val request = Bundle().apply { putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_3) }
+            listOf(TRANSACTION_RELEASE, TRANSACTION_GET_RESIDENT, TRANSACTION_SET_RESIDENT, TRANSACTION_SET_RESIDENT_ENABLED).forEach { code ->
+                val answer = requireNotNull(transactBundle(binder, code, request))
+                assertEquals("transaction $code", SpeechErrorCodes.FEATURE_UNAVAILABLE, answer.getString(SpeechContract.KEY_ERROR_CODE))
+                assertEquals("transaction $code", SpeechContract.CALL_VERSION_3, answer.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+            }
+        }
+    }
+
+    @Test
     fun repeatedBindingsKeepAnsweringTheSameIdentity() {
         val serviceInfo = discoverSingleService(PluginActions.INFO, ThreeMacawSpeechContract.INFO_CATEGORY, ThreeMacawSpeechInfoService::class.java.name)
         val versions = (1..3).map {
@@ -426,6 +448,13 @@ class ThreeMacawSpeechContractTest {
         const val TRANSACTION_LIST_MODELS = IBinder.FIRST_CALL_TRANSACTION + 2
         const val TRANSACTION_REMOVE_MODEL = IBinder.FIRST_CALL_TRANSACTION + 5
         const val TRANSACTION_RECOGNIZE_FILE = IBinder.FIRST_CALL_TRANSACTION + 6
+
+        // Contract version 3 (roadmap P11.1.2): appended after the 22 transactions of versions 1 and 2, prepare first.
+        // zh-CN: 契约版本 3 (路线图 P11.1.2): 追加在版本 1 与 2 的 22 个事务之后, prepare 在前.
+        const val TRANSACTION_RELEASE = IBinder.FIRST_CALL_TRANSACTION + 23
+        const val TRANSACTION_GET_RESIDENT = IBinder.FIRST_CALL_TRANSACTION + 24
+        const val TRANSACTION_SET_RESIDENT = IBinder.FIRST_CALL_TRANSACTION + 25
+        const val TRANSACTION_SET_RESIDENT_ENABLED = IBinder.FIRST_CALL_TRANSACTION + 26
 
         val FEATURES = arrayOf(
             SpeechContract.FEATURE_MODELS, SpeechContract.FEATURE_ASR, SpeechContract.FEATURE_ASR_STREAMING, SpeechContract.FEATURE_VAD, SpeechContract.FEATURE_KWS,

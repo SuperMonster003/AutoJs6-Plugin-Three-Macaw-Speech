@@ -32,6 +32,7 @@ import org.autojs.plugin.common.api.PluginCapabilityKeys
 import org.autojs.plugin.common.api.PluginInfo
 import org.autojs.plugin.speech.api.ISpeechPlugin
 import org.autojs.plugin.speech.api.ISpeechProgressCallback
+import org.autojs.plugin.speech.api.ISpeechResidentObserver
 import org.autojs.plugin.speech.api.ISpeechSession
 import org.autojs.plugin.speech.api.ISpeechSessionCallback
 import org.autojs.plugin.speech.api.ISpeechWakeCallback
@@ -54,7 +55,15 @@ class ThreeMacawSpeechService : Service() {
 
     private val binder by lazy { SpeechPluginBinder(applicationContext) }
 
-    override fun onBind(intent: Intent?): IBinder = binder
+    override fun onCreate() {
+        super.onCreate()
+        StartupTiming.log("Speech service created ${StartupTiming.processMillis()} ms after the process started")
+    }
+
+    override fun onBind(intent: Intent?): IBinder {
+        StartupTiming.log("Speech service bound ${StartupTiming.processMillis()} ms after the process started")
+        return binder
+    }
 
 }
 
@@ -156,7 +165,10 @@ internal class SpeechPluginBinder(
      * thrown as `CODE: detail`; the model loads on the plugin's loader thread and `ready` follows.
      * zh-CN: 立即打开听写会话 (路线图 D30): 选项, 权限, 模型与准入在此检查并以 `CODE: detail` 抛出; 模型在插件的加载线程上加载, 随后发出 `ready`.
      */
-    override fun openSession(options: Bundle?, callback: ISpeechSessionCallback?): ISpeechSession = throwing { dictation(options, callback, null) }
+    override fun openSession(options: Bundle?, callback: ISpeechSessionCallback?): ISpeechSession = throwing {
+        StartupTiming.log("openSession received")
+        dictation(options, callback, null)
+    }
 
     /**
      * A dictation of the plugin's own entries (the digital assistant, the voice input sheet, the recognition service, the
@@ -168,15 +180,21 @@ internal class SpeechPluginBinder(
     fun openLocalSession(options: Bundle?, callback: ISpeechSessionCallback?, local: LocalSession): ISpeechSession = throwing { dictation(options, callback, local) }
 
     private fun dictation(options: Bundle?, callback: ISpeechSessionCallback?, local: LocalSession?): ISpeechSession {
+        val checks = StartupTiming.Checks()
         val listen = SpeechOptions.listen(options?.let(::BundleOptionSource))
+        if (listen.keepLoaded != null) unavailable(SpeechContract.FEATURE_PREPARE, "keepLoaded")
         val listener = callback ?: invalid("A session callback is required")
+        val created = SpeechRuntime.existing == null
+        runtime.also { checks.runtime(created) }
         if (!listen.isExternal) {
             requireCallerMicrophone()
             runtime.requireMicrophone()
         }
         val model = runtime.resolve(SpeechContract.KIND_ASR, listen.model)
+        checks.resolved()
         val warnings = runtime.warnings(model, listen.language, listen.hotwords)
         val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true)
+        checks.log("Dictation")
         try {
             val id = runtime.nextId(if (listen.isExternal) "external" else "listen")
             return DictationBinder(runtime, slot, listener, listen.isExternal, local?.foreground != false, local?.attribution, local?.recording) { events ->
@@ -194,6 +212,7 @@ internal class SpeechPluginBinder(
      * zh-CN: 立即打开唤醒会话 (路线图 D18): 关键词在此按模型 token 拼写, 模型无法拼写的关键词使调用以 `INVALID_OPTIONS` 失败.
      */
     override fun openWakeSession(options: Bundle?, callback: ISpeechWakeCallback?, listenCallback: ISpeechSessionCallback?): ISpeechSession = throwing {
+        StartupTiming.log("openWakeSession received")
         wake(options, callback, listenCallback, takeover = false)
     }
 
@@ -229,6 +248,8 @@ internal class SpeechPluginBinder(
         tail: AudioTail? = null,
     ): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
+        if (wake.keepLoaded != null) unavailable(SpeechContract.FEATURE_PREPARE, "keepLoaded")
+        if (wake.background) unavailable(SpeechContract.FEATURE_BACKGROUND_WAKE, "background")
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
         requireCallerMicrophone()
@@ -358,6 +379,46 @@ internal class SpeechPluginBinder(
     override fun tagAudio(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
         analysis.startTag(audio, options, callback)
     }
+
+    // Contract version 3 (roadmap P11, D183 - D195): leases and the resident wake words. This build declares none of their
+    // features, so a host that checks the capabilities never calls these; a call that comes anyway is refused with
+    // FEATURE_UNAVAILABLE (D193), the answers carrying version 3.
+    // zh-CN: 契约版本 3 (路线图 P11, D183 - D195): 租约与常驻唤醒词. 本构建不声明其任何功能, 因此检查能力的宿主不会调用它们; 仍然到来的调用以
+    // FEATURE_UNAVAILABLE 拒绝 (D193), 应答带版本 3.
+
+    override fun prepare(request: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
+        checkContract(request, SpeechContract.CALL_VERSION_3)
+        unavailable(SpeechContract.FEATURE_PREPARE, "prepare")
+    }
+
+    override fun release(request: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_3) {
+        checkContract(request, SpeechContract.CALL_VERSION_3)
+        unavailable(SpeechContract.FEATURE_PREPARE, "release")
+    }
+
+    override fun getResident(query: Bundle?): Bundle = residentCall(query, "getResident")
+
+    override fun setResident(config: Bundle?): Bundle = residentCall(config, "setResident")
+
+    override fun setResidentEnabled(request: Bundle?): Bundle = residentCall(request, "setResidentEnabled")
+
+    override fun registerResidentObserver(request: Bundle?, observer: ISpeechResidentObserver?): Bundle = residentCall(request, "registerResidentObserver")
+
+    /** Nothing is registered (see [registerResidentObserver]). zh-CN: 没有注册任何东西 (见 [registerResidentObserver]). */
+    override fun unregisterResidentObserver(observer: ISpeechResidentObserver?) = Unit
+
+    private fun residentCall(request: Bundle?, call: String): Bundle = answering(SpeechContract.CALL_VERSION_3) {
+        checkContract(request, SpeechContract.CALL_VERSION_3)
+        unavailable(SpeechContract.FEATURE_RESIDENT, call)
+    }
+
+    /**
+     * `FEATURE_UNAVAILABLE` for a [call] (or option) of contract version 3 whose [feature] this build does not declare
+     * (roadmap D193).
+     * zh-CN: 本构建未声明其 [feature] 的契约版本 3 调用 (或选项) [call] 的 `FEATURE_UNAVAILABLE` (路线图 D193).
+     */
+    private fun unavailable(feature: String, call: String): Nothing =
+        throw SpeechException(SpeechErrorCodes.FEATURE_UNAVAILABLE, "$call needs \"$feature\", which this build of 3-Macaw Speech does not offer")
 
     private fun recording(audio: ParcelFileDescriptor?, options: Bundle?): SpeakerRecognition.Recording.Descriptor = SpeakerRecognition.Recording.Descriptor(
         audio ?: throw SpeechException(SpeechErrorCodes.IO_FAILED, "An audio descriptor is required"),

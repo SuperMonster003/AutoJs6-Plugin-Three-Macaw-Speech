@@ -38,6 +38,13 @@ data class ListenOptions(
     val timeoutMillis: Long = SpeechLimits.DEFAULT_TIMEOUT_MILLIS,
     val hotwords: List<String> = emptyList(),
     val punctuation: Boolean = true,
+    /**
+     * `keepLoaded` of contract version 3 (roadmap D184, D196): the session's engines stay loaded under a lease for this
+     * many minutes after it ends, [SpeechLimits.KEEP_LOADED_UNTIL_RELEASED] until the lease is released; null keeps nothing.
+     * zh-CN: 契约版本 3 的 `keepLoaded` (路线图 D184, D196): 会话结束后其引擎以租约保持加载这么多分钟, [SpeechLimits.KEEP_LOADED_UNTIL_RELEASED]
+     * 表示直到租约被归还; null 表示不保持.
+     */
+    val keepLoaded: Int? = null,
 ) {
     val isExternal: Boolean get() = source == SpeechContract.SOURCE_EXTERNAL
 }
@@ -69,6 +76,10 @@ data class WakeOptions(
     val model: String? = null,
     val minIntervalMillis: Long = SpeechLimits.DEFAULT_MIN_INTERVAL_MILLIS,
     val thenListen: ListenOptions? = null,
+    /** `keepLoaded` of contract version 3 (roadmap D184): see [ListenOptions.keepLoaded]. zh-CN: 契约版本 3 的 `keepLoaded` (路线图 D184): 见 [ListenOptions.keepLoaded]. */
+    val keepLoaded: Int? = null,
+    /** `background` of contract version 3 (roadmap D187). zh-CN: 契约版本 3 的 `background` (路线图 D187). */
+    val background: Boolean = false,
 )
 
 /**
@@ -110,6 +121,27 @@ object SpeechOptions {
         }
     }
 
+    /** The contract version a request is stamped with; 1 without a stamp. zh-CN: 请求所带的契约版本; 不带时为 1. */
+    fun callVersion(source: OptionSource?): Int =
+        (source?.value(SpeechContract.KEY_CONTRACT_VERSION) as? Number)?.toInt() ?: SpeechContract.CALL_VERSION_1
+
+    /**
+     * `keepLoaded` of contract version 3 (roadmap D184, D196): [SpeechLimits.KEEP_LOADED_UNTIL_RELEASED] or 1 to
+     * [SpeechLimits.MAX_KEEP_LOADED_MINUTES] minutes. A request of an earlier version never carries it, so the key is
+     * read only from version 3 on and ignored before (a version 2 host may not send it).
+     * zh-CN: 契约版本 3 的 `keepLoaded` (路线图 D184, D196): [SpeechLimits.KEEP_LOADED_UNTIL_RELEASED] 或 1 到 [SpeechLimits.MAX_KEEP_LOADED_MINUTES]
+     * 分钟. 较早版本的请求从不带它, 因此只从版本 3 起读取该键, 之前的忽略 (版本 2 的宿主不会发送它).
+     */
+    private fun keepLoaded(source: OptionSource, label: String): Int? {
+        if (callVersion(source) < SpeechContract.CALL_VERSION_3) return null
+        val minutes = long(source, SpeechOptionKeys.KEEP_LOADED, label) ?: return null
+        if (minutes > SpeechLimits.MAX_KEEP_LOADED_MINUTES) limit("$label.keepLoaded is at most ${SpeechLimits.MAX_KEEP_LOADED_MINUTES} minutes, got $minutes")
+        if (minutes != SpeechLimits.KEEP_LOADED_UNTIL_RELEASED.toLong() && minutes < 1) {
+            invalid("$label.keepLoaded must be ${SpeechLimits.KEEP_LOADED_UNTIL_RELEASED} or between 1 and ${SpeechLimits.MAX_KEEP_LOADED_MINUTES}, got $minutes")
+        }
+        return minutes.toInt()
+    }
+
     fun listen(source: OptionSource?, label: String = "options"): ListenOptions {
         checkContract(source)
         val given = source ?: MapOptionSource(emptyMap())
@@ -136,6 +168,7 @@ object SpeechOptions {
             timeoutMillis = timeout,
             hotwords = hotwords(given, label),
             punctuation = boolean(given, SpeechOptionKeys.PUNCTUATION, label) ?: true,
+            keepLoaded = keepLoaded(given, label),
         )
     }
 
@@ -192,7 +225,12 @@ object SpeechOptions {
             }
             else -> invalid("options.thenListen must be a Bundle")
         }
-        return WakeOptions(keywords, model(given, "options"), interval, thenListen)
+        val version3 = callVersion(given) >= SpeechContract.CALL_VERSION_3
+        return WakeOptions(
+            keywords, model(given, "options"), interval, thenListen,
+            keepLoaded = keepLoaded(given, "options"),
+            background = version3 && boolean(given, SpeechOptionKeys.BACKGROUND, "options") == true,
+        )
     }
 
     /**

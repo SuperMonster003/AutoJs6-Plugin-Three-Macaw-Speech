@@ -5,6 +5,12 @@
   "changelog_label_improvement": "优化",
   "changelog_label_dependency": "依赖",
   "$data": {
+    "v1.6.0": {
+      "released_date": "2026/11/06",
+      "hint": [
+        "脚本提前加载语音引擎 (speech.prepare) 和用脚本管理常驻唤醒 (speech.resident) 还在开发中, 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 这些功能完成之前, 脚本调用它们会立即收到 \"功能不可用\" 的错误, 不会卡住; 语音识别, 唤醒词, 语音合成等已有用法不受影响"
+      ]
+    },
     "v1.5.0": {
       "released_date": "2026/11/05",
       "hint": [

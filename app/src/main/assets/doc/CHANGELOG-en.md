@@ -4,6 +4,12 @@
 
 ******
 
+# v1.6.0
+
+###### 2026/11/06
+
+* `Hint` Loading the speech engines in advance from a script (speech.prepare) and managing the resident wake word from a script (speech.resident) are still in development and need AutoJs6 6.8.1 or later (not released yet). Until they are finished, a script that calls them gets a "feature unavailable" error at once instead of hanging; dictation, wake words, speech synthesis and the other existing uses are not affected
+
 # v1.5.0
 
 ###### 2026/11/05

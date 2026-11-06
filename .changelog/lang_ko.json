@@ -5,6 +5,12 @@
   "changelog_label_improvement": "개선",
   "changelog_label_dependency": "의존성",
   "$data": {
+    "v1.6.0": {
+      "released_date": "2026/11/06",
+      "hint": [
+        "스크립트에서 음성 엔진을 미리 불러오는 기능 (speech.prepare) 과 상시 호출어를 관리하는 기능 (speech.resident) 은 개발 중이며 AutoJs6 6.8.1 이상 (아직 공개되지 않음) 이 필요합니다. 완성되기 전에는 스크립트에서 호출하면 기다리지 않고 바로 \"기능을 사용할 수 없음\" 오류가 납니다. 받아쓰기, 호출어, 음성 합성 등 기존 사용 방법에는 영향이 없습니다"
+      ]
+    },
     "v1.5.0": {
       "released_date": "2026/11/05",
       "hint": [

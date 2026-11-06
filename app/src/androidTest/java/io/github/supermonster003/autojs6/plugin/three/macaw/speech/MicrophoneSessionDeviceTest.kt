@@ -47,6 +47,8 @@ class MicrophoneSessionDeviceTest {
     }
 
     private val wakeCallback = object : ISpeechWakeCallback.Stub() {
+        override fun onPaused(info: Bundle?) = Unit
+        override fun onResumed(info: Bundle?) = Unit
         override fun onReady(info: Bundle?) = Unit
         override fun onWake(hit: Bundle?) = Unit
         override fun onWarning(warning: Bundle?) = Unit

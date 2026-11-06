@@ -330,6 +330,10 @@ class ResidentWakeService : Service() {
 
         override fun onWake(hit: Bundle?) = post { onHit() }
 
+        override fun onPaused(info: Bundle?) = Unit
+
+        override fun onResumed(info: Bundle?) = Unit
+
         override fun onWarning(warning: Bundle?) {
             val code = warning?.getString(SpeechContract.KEY_ERROR_CODE)
             Log.i(TAG, "Wake warning: $code")

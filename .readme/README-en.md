@@ -395,6 +395,12 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 ******
 
+#### v1.6.0
+
+_2026/11/06_
+
+- `Hint` Loading the speech engines in advance from a script (speech.prepare) and managing the resident wake word from a script (speech.resident) are still in development and need AutoJs6 6.8.1 or later (not released yet). Until they are finished, a script that calls them gets a "feature unavailable" error at once instead of hanging; dictation, wake words, speech synthesis and the other existing uses are not affected
+
 #### v1.5.0
 
 _2026/11/05_
@@ -415,21 +421,6 @@ _2026/11/02_
 - `Fix` Opening the plugin from the system's text-to-speech settings left the list one row above the synthesis group; the group's header is now at the top
 - `Fix` While a model downloaded, its total showed twice the real size (162 MB for an 81 MB model), because unpacking was counted in. The home screen and the notification now show the download against the model's size, then the installation on its own
 - `Improvement` Language identification now goes sentence by sentence: when a recording mixes languages, you can see which language each sentence is in (very short sentences join a neighbor). Try it out lists every sentence, and the segments of speech.detectLanguage in scripts and of the speech_detect_language tool are sentences too; the overall language is the one spoken longest and the candidates' scores are shares of the speaking time. The windows option stays as it was. Each sentence takes its own pass, so this is somewhat slower than in 1.3.0
-
-#### v1.3.0
-
-_2026/10/30_
-
-- `Hint` speech.speaker, speech.diarize, speech.detectLanguage and speech.tag in scripts and the five speaker and analysis tools need the AutoJs6 6.8.0 release or later; the Speakers page, "Only enrolled voices" and the file analyses of Try it out are used in the plugin itself and do not depend on the AutoJs6 version. With an older AutoJs6, speech.models.list() in scripts also lists the speaker recognition, speaker segmentation, language identification and audio tagging models (kinds speaker, segment, langid and tagger), which can be installed or deleted as usual
-- `Hint` Analyzing long audio takes a lot of memory: finding the speakers of a 10 minute recording peaked at about 470 MB to 1.3 GB in tests, so the plugin asks Android for a larger memory limit; on phones with little memory, try shorter files first
-- `Feature` Power saving mode for the resident wake word (Settings > Resident wake word, on by default): the wake word model runs only while the phone hears speech or another sound, not in a quiet room, so the plugin takes half to nine tenths less CPU time (the quieter, the less). The recording itself still costs the same, so Android's battery estimate drops only a little (see the README for the measurement). A very soft wake word may be missed; then turn power saving off
-- `Feature` More models to download: offline Spanish recognition (NeMo, with punctuation); streaming recognition of eight languages, Arabic, Indonesian, Thai, Vietnamese, Japanese, Russian, Chinese and English, that detects the language by itself (PengChengStarling, about 339 MB once installed); the Kokoro v1.0 multilingual voices (49 speakers of English, Spanish, French, Hindi, Italian, Brazilian Portuguese and Chinese, each speaking its own language); two Arabic voices and one Korean voice. The Arabic and Korean voices are for non-commercial use only, and the training data of the eight-language model is not disclosed, so its commercial use is unknown; the license is shown before each download. The new voices also appear by language in the system TTS engine, and the system voice input and the plugin tools pick the eight-language model automatically only for languages that no other installed model covers
-- `Feature` Speaker recognition and "Only enrolled voices" (Settings > Resident wake word): on the Speakers page, enter a name and read 3 sentences aloud to enroll your voice (several people can enroll, and Try recognition shows the score); with "Only enrolled voices" on, the resident wake word compares the voice first and opens the sheet only when it matches an enrolled person, so other people saying the wake word are ignored. Manual entries such as the tile, the widget and the headset key are not affected. The speaker recognition model (about 26.5 MB) is downloaded first, and the page shows how; voiceprints stay on the device and are never uploaded or exported
-- `Feature` Scripts can enroll, verify and identify speakers with speech.speaker, and list or remove enrolled people; two new plugin tools, speech_speaker_verify (whether a recording is a given enrolled person) and speech_speaker_identify (the most similar enrolled person), return only names and scores, never voiceprints
-- `Feature` File recognition on Try it out gains three analyses: Find speakers (who spoke when, with enrolled voices named; "Speakers and text" also transcribes what each person says), Identify language (the 99 languages of Whisper) and Tag sounds (which of 527 kinds of sounds, such as speech, music or a barking dog, the file holds). They run offline on the phone, keep going after you leave the screen and show their progress in a notification. The models are downloaded first, and the screen shows how: the speaker segmentation model (about 6 MB, plus the speaker recognition model), the language identification model (about 103 MB) and the audio tagging model (about 10.5 MB). The training data of the speaker segmentation model includes research-only material, so it is marked as non-commercial; the training data of the language identification models is not published, so their commercial use is unknown
-- `Feature` Scripts can run the same analyses with speech.diarize, speech.detectLanguage and speech.tag (and their ...Async versions that return a Promise), with progress reports; three new plugin tools, speech_diarize, speech_detect_language and speech_tag, do so too. A file can be up to 30 minutes long (10 minutes for speech_diarize); one analysis runs at a time and the others wait their turn
-- `Fix` Model downloads work again on Android 7.0: the model catalog and the models are fetched from GitHub, whose certificates are now issued under a root certificate (ISRG Root X1 of Let's Encrypt) that Android 7.0 does not have, so every download and every catalog refresh failed with a certificate error. The plugin now carries that root certificate itself and uses it next to the ones of the system; Android 7.1 and later already have it and were not affected
-- `Fix` On some phones, model and file sizes showed a wide gap between the number and the unit (when the screen language was one without a region, such as English); they now show normally
 
 ##### For more release history, refer to
 

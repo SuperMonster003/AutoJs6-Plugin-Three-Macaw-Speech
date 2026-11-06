@@ -61,6 +61,13 @@ internal class PackagedSpeechBinder(context: Context) : ISpeechPlugin.Stub(), Au
         operation(callback) { delegate.detectLanguage(audio, options, it) }
     override fun tagAudio(audio: ParcelFileDescriptor?, options: Bundle?, callback: ISpeechProgressCallback?) =
         operation(callback) { delegate.tagAudio(audio, options, it) }
+    override fun prepare(request: Bundle?, callback: ISpeechProgressCallback?) = operation(callback) { delegate.prepare(request, it) }
+    override fun release(request: Bundle?) = delegate.release(request)
+    override fun getResident(query: Bundle?) = delegate.getResident(query)
+    override fun setResident(config: Bundle?) = delegate.setResident(config)
+    override fun setResidentEnabled(request: Bundle?) = delegate.setResidentEnabled(request)
+    override fun registerResidentObserver(request: Bundle?, observer: ISpeechResidentObserver?) = delegate.registerResidentObserver(request, observer)
+    override fun unregisterResidentObserver(observer: ISpeechResidentObserver?) = delegate.unregisterResidentObserver(observer)
     override fun cancelOperation(opId: Int) = owners.cancel(Binder.getCallingUid(), opId)
     override fun close() = owners.close()
 

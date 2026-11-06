@@ -48,10 +48,12 @@ internal object ThreeMacawSpeechContract {
 
     /**
      * The highest contract version this build answers, advertised as `speechMaxContractVersion` (roadmap D136): the
-     * speaker calls of version 2 (P8.3). Answers carry the version of their request.
-     * zh-CN: 本构建应答的最高契约版本, 以 `speechMaxContractVersion` 声明 (路线图 D136): 版本 2 的说话人调用 (P8.3). 应答带其请求的版本.
+     * speaker calls of version 2 (P8.3) and the calls of version 3 (P11.1, D183 - D195), which this build refuses with
+     * `FEATURE_UNAVAILABLE` until it declares their features. Answers carry the version of their request.
+     * zh-CN: 本构建应答的最高契约版本, 以 `speechMaxContractVersion` 声明 (路线图 D136): 版本 2 的说话人调用 (P8.3) 与版本 3 的调用 (P11.1,
+     * D183 - D195); 在声明其功能之前, 本构建以 `FEATURE_UNAVAILABLE` 拒绝后者. 应答带其请求的版本.
      */
-    const val MAX_CONTRACT_VERSION = 2
+    const val MAX_CONTRACT_VERSION = 3
 
     /**
      * Capability keys of roadmap D28; P1.1 moves them to `SpeechCapabilityKeys`.

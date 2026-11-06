@@ -43,7 +43,7 @@ class SpeechOptionsTest {
 
     @Test
     fun `listen refusals carry INVALID_OPTIONS, LIMIT_EXCEEDED or PLUGIN_INCOMPATIBLE`() {
-        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.listen(source("contractVersion" to 3)) }
+        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.listen(source("contractVersion" to 4)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("source" to "line-in")) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("sampleRate" to 8000)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("silenceEndMillis" to 0)) }
@@ -93,6 +93,37 @@ class SpeechOptionsTest {
     }
 
     @Test
+    fun `keepLoaded and background are read from contract version 3 on`() {
+        // A version 1 or 2 host never sends them, so a stray key of such a request is ignored (P11.1.2).
+        // zh-CN: 版本 1 或 2 的宿主从不发送它们, 因此这类请求里多出的键被忽略 (P11.1.2).
+        assertNull(SpeechOptions.listen(source("keepLoaded" to 30)).keepLoaded)
+        assertNull(SpeechOptions.listen(source("contractVersion" to 2, "keepLoaded" to 30)).keepLoaded)
+        assertNull(SpeechOptions.listen(source("contractVersion" to 3)).keepLoaded)
+        assertEquals(30, SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 30)).keepLoaded)
+        assertEquals(SpeechLimits.MAX_KEEP_LOADED_MINUTES, SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 1440L)).keepLoaded)
+        assertEquals(SpeechLimits.KEEP_LOADED_UNTIL_RELEASED, SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to -1)).keepLoaded)
+        val keywords = "keywords" to listOf(mapOf("keyword" to "a"))
+        val older = SpeechOptions.wake(source("contractVersion" to 2, keywords, "keepLoaded" to 5, "background" to true))
+        assertNull(older.keepLoaded)
+        assertEquals(false, older.background)
+        val wake = SpeechOptions.wake(source("contractVersion" to 3, keywords, "keepLoaded" to 5, "background" to true))
+        assertEquals(5, wake.keepLoaded)
+        assertEquals(true, wake.background)
+        assertEquals(false, SpeechOptions.wake(source("contractVersion" to 3, keywords)).background)
+    }
+
+    @Test
+    fun `keepLoaded and background refusals of contract version 3`() {
+        val keywords = "keywords" to listOf(mapOf("keyword" to "a"))
+        expect(SpeechErrorCodes.LIMIT_EXCEEDED) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 1441)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 0)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to -2)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to "yes")) }
+        expect(SpeechErrorCodes.LIMIT_EXCEEDED) { SpeechOptions.wake(source("contractVersion" to 3, keywords, "keepLoaded" to 1441)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.wake(source("contractVersion" to 3, keywords, "background" to "on")) }
+    }
+
+    @Test
     fun `wake refusals`() {
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.wake(null) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.wake(source("keywords" to emptyList<Any>())) }
@@ -126,7 +157,7 @@ class SpeechOptionsTest {
 
     @Test
     fun `synthesize refusals carry INVALID_OPTIONS, LIMIT_EXCEEDED or PLUGIN_INCOMPATIBLE`() {
-        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.synthesize(source("contractVersion" to 3, "text" to "hi")) }
+        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.synthesize(source("contractVersion" to 4, "text" to "hi")) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(null) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to " \n ")) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.synthesize(source("text" to 3)) }

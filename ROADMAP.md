@@ -229,6 +229,12 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D193 | (派生, 调度会话 2026-11-05) 功能名协商 | 契约 v3 的 AIDL 方法与选项键在 P11.1 一次到位 (D136 只追加); 功能名 `speechPrepare` / `speechResident` / `speechBackgroundWake` 分别由 P11.2 / P11.3 / P11.4 实现后才写进 `speechFeatures`; 宿主脚本 API 对未声明功能的插件抛 `FEATURE_UNAVAILABLE` (或 D27 现有同义 code), 不崩不等待 | P11.1 开工前 |
 | D194 | (派生, 调度会话 2026-11-05) 命中的投递 | 脚本 `on('hit')` 经 AIDL 观察者回调 (不经系统广播), 事件 `{ keyword, matchedText?, action, timeMillis }`, 无论该词动作为何都投递; "发系统广播" 动作面向宿主广播型任务与第三方: action `org.autojs.plugin.speech.action.RESIDENT_HIT`, extras keyword / matchedText / timeMillis, 显式发给宿主包, 是否同时发隐式广播由 P11.3 按 Android 8+ 限制评估后定 | P11.3 开工前 |
 | D195 | (派生, 调度会话 2026-11-05) 逐词动作进设置迁移 | `resident-wake` store 升级 (新键或新 store 由 P11.3 定), 10 条上限与动作一起导出; 导入 1.5.0 的旧格式 (每行一个词, 无动作) 仍可, 旧词默认动作 "打开弹层"; P10.1 的导入宽松规则与单测同步 | P11.3 开工前 |
+| D196 | (派生, P11.1 子会话 macaw-p11-1) `keepLoaded` 的取值与传递 | `true` = -1 (`KEEP_LOADED_UNTIL_RELEASED`, 保留到 `release()` 或脚本退出), 1 - 1440 的整数 = 会话结束后再保留的分钟数, `false` / 0 / null / 省略 = 不保留; 负数, 小数或非数字为 `INVALID_OPTIONS`, 大于 1440 为 `LIMIT_EXCEEDED`; 只在 listen / wake 选项顶层有效 (`thenListen` 里出现即 `INVALID_OPTIONS`), 带它时 `ready` 事件多一个 `leaseId`; 宿主只在请求带 `keepLoaded` / `background` 时把 `openSession` / `openWakeSession` 标为 `CALL_VERSION_3`, 其余请求保持原版本, 插件只从 v3 请求读这两个键 | P11.2.2 开工前 |
+| D197 | (派生, P11.1 子会话 macaw-p11-1) `speech.release` 的返回与租约上限 | `release(leaseId)` 返回 boolean (不是本脚本的租约, 或插件答 `LEASE_NOT_FOUND` 时为 false); `release()` 归还本脚本的全部租约, 返回插件仍持有的个数; 本脚本没有租约时不联系插件 (返回 false / 0); 每个宿主 Binder 令牌最多 `MAX_LEASES_PER_TOKEN` = 16 个租约 (插件侧记账由 P11.2.1 实现), 宿主等 prepare 完成最多 `PREPARE_TIMEOUT_MS` = 2 分钟 | P11.2.1 开工前 |
+| D198 | (派生, P11.1 子会话 macaw-p11-1) `speech.resident` 的形状 | `get()` -> `{ enabled, rules }`; `set(config)` 接受 `{ rules }` 或规则数组, 规则为字符串 (动作 "open") 或 `{ keyword, action?, script?, arguments? }`, 脚本路径按工作目录解析; 宿主先校验 (最多 10 条, 关键词 1 - 32 字符且去空白后不重复, "script" 动作必须有路径, arguments 至多 1024 字符), 不合规为 `INVALID_OPTIONS`, 返回保存后的配置; `enable()` / `disable()` -> `{ started, restartNeeded }`; `enabled` 属性取不到时为 false, 不抛异常; `on('hit', fn)` / `off('hit', fn?)` 返回 undefined, 第一个监听器注册观察者, 最后一个移除时注销, `off` 不带 fn 时移除全部, 有监听器期间脚本不退出 | P11.3.4 开工前 |
+| D199 | (派生, P11.1 子会话 macaw-p11-1) 三个新错误 code 的含义 | `FEATURE_UNAVAILABLE`: 宿主在任何事务之前抛出 (消息写明缺的功能名, 或 "version 2" / "version 3"), 插件对未实现的 v3 方法与选项也这样答; `RESIDENT_UNAVAILABLE`: 没有麦克风权限, 没有唤醒模型, 或系统拒绝了前台服务 (麦克风权限是否改用 `PERMISSION_DENIED` 由 P11.3.4 定); `LEASE_NOT_FOUND`: 调用方不持有该租约, 宿主 `release` 把它转成 false; v2 宿主把三者报为 `INTERNAL`, 插件只在 v3 应答里发送 | P11.3.4 开工前 |
+| D200 | (派生, P11.1 子会话 macaw-p11-1) api-coverage 登记 (Q153 按 (a) 先行) | 宿主矩阵新增 `speech.prepare` / `prepareAsync` / `release` 与 `speech.resident` 的 7 个成员 (10 行); `tools/api-coverage/policy.json` 的 `deferredNameGate` 加 "speech" (文档 / d.ts / Ace 由 P11.4.2 补, 补齐后必须删除该项, 否则 `check.py` 报过期); Node main / Node Worker / Bun 三列共 30 格记为 pending (`pending-baseline.json` 决策 "3-Macaw Speech Q153 (a)"), `check-runtime-speech.mjs` 跳过 prepare / prepareAsync / release | P11.4.2 开工前 |
+| D201 | (派生, P11.1 子会话 macaw-p11-1) F9 计时日志保留 | 插件 `service/StartupTiming.kt` (tag `MacawStartup`, Info 级, 每次会话几行, 只有毫秒数与阶段名, 不含识别文本) 与 `.python/f9_startup_timing.py` 留在仓库, 供 P11.2.3 复测预热效果; 正式包同样输出 | P11.5.1 开工前 |
 
 ---
 
@@ -975,8 +981,8 @@ P9.6 已定 no-go (D179): 不等迁移, sherpa-onnx 仍为 1.13.8.
 ### P11.1 诊断, 契约 v3 与宿主脚本 API (D183, D184, D192, D193)
 
 - [ ] (诊断) P11.1.1 复现 F9 并分解耗时: 宿主与插件后台 >= 10 分钟 (以及 `am kill` 插件进程, 两种起点) 后脚本 `speech.listen` 首次启动, 用 logcat 时间戳拆成四段: 宿主绑定 (bindService -> onServiceConnected), 插件进程冷启动 (Application.onCreate -> binder 就绪), 引擎加载 (模型读入 -> 识别器可用), 麦克风启动与会话建立 (openSession -> ready 事件); 至少两台真机 (G8441 + OnePlus) 各 3 次, 热态 (刚用过) 对照各 3 次. 结果写进附录 F 新表 "F9 启动耗时基线", 结论写明预热 (D184 只覆盖引擎加载) 能省多少; 绑定或冷启动占大头时登记待决 (例如常驻唤醒开着时进程常在, 是否建议用户以此替代).
-- [ ] (契约) P11.1.2 契约 v3: `SpeechContract.CONTRACT_VERSION` = 3 (宿主 `plugin-api/speech-api`) 与插件 `MAX_CONTRACT_VERSION` 同步; AIDL 追加 `prepare(options, callback)` -> leaseId, `release(leaseId)`, `getResident()` -> Bundle, `setResident(Bundle)` -> Bundle, `setResidentEnabled(boolean)` -> Bundle (含 started / restartNeeded), `registerResidentObserver(observer)` / `unregisterResidentObserver(observer)`; 选项键追加 `keepLoaded` (listen / wake, boolean 或 int 分钟), `background` (wake, boolean); 功能名追加 `speechPrepare`, `speechResident`, `speechBackgroundWake` (D193: 本卡只声明常量, 不写进 `speechFeatures`); 错误 code 追加 `FEATURE_UNAVAILABLE`, `RESIDENT_UNAVAILABLE`, `LEASE_NOT_FOUND` (名称由子会话按 D27 现有命名定). 插件 binder 接上新方法: 功能未实现时返回 `FEATURE_UNAVAILABLE`; 对 v2 宿主忽略新选项键. 附录 C 与宿主协议文档同步.
-- [ ] (宿主) P11.1.3 宿主脚本 API (`Speech.kt`, `SpeechScriptArguments.kt`, 只本地提交): `speech.prepare(options)` 同步 + `speech.prepareAsync(options)` (options: model / language / kind, 省略时按 listen 的默认模型), 返回 `{ leaseId, modelId, loadMillis }`; `speech.release(leaseId?)` (省略时归还本脚本全部租约); `listen` / `wake` 选项 `keepLoaded` 与 `background` 透传; `speech.resident` 对象: `get()`, `set(config)`, `enable()`, `disable()`, `enabled` 属性, `on('hit', fn)` / `off(fn)`; 脚本退出时归还租约并注销观察者 (D185); 绑定到 v2 插件 (1.5.0 正式包) 或功能未声明时抛 `FEATURE_UNAVAILABLE` 异常, 不崩不等待 (D193); 按宿主 api-coverage 路线图的规则把新函数登记进矩阵. d.ts 草案先写进附录 B, 四仓库同步在 P11.4.2.
+- [x] (契约) P11.1.2 契约 v3: `SpeechContract.CONTRACT_VERSION` = 3 (宿主 `plugin-api/speech-api`) 与插件 `MAX_CONTRACT_VERSION` 同步; AIDL 追加 `prepare(options, callback)` -> leaseId, `release(leaseId)`, `getResident()` -> Bundle, `setResident(Bundle)` -> Bundle, `setResidentEnabled(boolean)` -> Bundle (含 started / restartNeeded), `registerResidentObserver(observer)` / `unregisterResidentObserver(observer)`; 选项键追加 `keepLoaded` (listen / wake, boolean 或 int 分钟), `background` (wake, boolean); 功能名追加 `speechPrepare`, `speechResident`, `speechBackgroundWake` (D193: 本卡只声明常量, 不写进 `speechFeatures`); 错误 code 追加 `FEATURE_UNAVAILABLE`, `RESIDENT_UNAVAILABLE`, `LEASE_NOT_FOUND` (名称由子会话按 D27 现有命名定). 插件 binder 接上新方法: 功能未实现时返回 `FEATURE_UNAVAILABLE`; 对 v2 宿主忽略新选项键. 附录 C 与宿主协议文档同步. 完成 (2026-11-06): 宿主 `1b95cc0201` (只本地): `SpeechContract` 的 CONTRACT_VERSION 3, CALL_VERSION_3, 三个功能名 (只声明常量, D193), 常驻动作名与 PREPARE_TIMEOUT_MS, `SpeechErrorCodes` 的三个新 code, `SpeechLimits` / `SpeechOptionKeys` / `SpeechResultKeys` 的新常量, AIDL 事务 23 - 29 与 `ISpeechResidentObserver`, `ISpeechWakeCallback.onPaused` / `onResumed`, `SpeechAidlOrderTest` 锁定事务顺序, 协议文档 "Contract version 3" 一节; 插件 `MAX_CONTRACT_VERSION` = 3, binder 的 7 个新方法答 `FEATURE_UNAVAILABLE` (prepare 以 binder 异常, 其余以 v3 应答 Bundle, unregister 不做任何事), `speechFeatures` 不变, openSession / openWakeSession 只从 v3 请求读 `keepLoaded` / `background`; `libs/speech-api.aar` 换成宿主 `1b95cc0201` 的构建 (SHA-256 `ad3dff26...639c`, 51621 字节), `locks/host-api-aars.lock` 与 `libs/README.md` 同步. 常量与 AIDL 见附录 C.4, 派生决策 D196 / D197 / D199. 证据 (2026-11-06): 宿主 speech-api 模块单测通过; 插件 `:app:testDebugUnitTest` 70 个类 507 例 0 失败 (含 `SpeechOptionsTest` 10 例); androidTest `ThreeMacawSpeechContractTest` 新增 `contractVersionThreeCallsAnswerFeatureUnavailable` (事务 24 - 27 答 `FEATURE_UNAVAILABLE` 且带 contractVersion 3), OnePlus 上与 `MicrophoneSessionDeviceTest` 共 11 例通过.
+- [x] (宿主) P11.1.3 宿主脚本 API (`Speech.kt`, `SpeechScriptArguments.kt`, 只本地提交): `speech.prepare(options)` 同步 + `speech.prepareAsync(options)` (options: model / language / kind, 省略时按 listen 的默认模型), 返回 `{ leaseId, modelId, loadMillis }`; `speech.release(leaseId?)` (省略时归还本脚本全部租约); `listen` / `wake` 选项 `keepLoaded` 与 `background` 透传; `speech.resident` 对象: `get()`, `set(config)`, `enable()`, `disable()`, `enabled` 属性, `on('hit', fn)` / `off(fn)`; 脚本退出时归还租约并注销观察者 (D185); 绑定到 v2 插件 (1.5.0 正式包) 或功能未声明时抛 `FEATURE_UNAVAILABLE` 异常, 不崩不等待 (D193); 按宿主 api-coverage 路线图的规则把新函数登记进矩阵. d.ts 草案先写进附录 B, 四仓库同步在 P11.4.2. 完成 (2026-11-06): 宿主 `1b95cc0201` (只本地): `Speech.kt` 加 prepare / prepareAsync / release, 新增 `SpeechResident` / `SpeechResidentModule` (`speech.resident`), `SpeechScriptArguments` 解析 keepLoaded / background 与常驻规则 (D196, D198); `SpeechPluginHost` 在任何事务之前以 `FEATURE_UNAVAILABLE` 拒绝 v2 插件或未声明的功能 (消息写明功能名或 version 2 / version 3), 只在请求带 keepLoaded / background 时把会话标为 v3; `SpeechHolds` 在脚本退出时归还租约并注销观察者 (D185); wake 代理转发 paused / resumed, `ready` 带 leaseId; api-coverage 矩阵登记 10 行, 文档 / d.ts / Ace 暂缓到 P11.4.2, Node / Bun 三列 30 格 pending (D200, Q153 按 (a) 先行). d.ts 草案见附录 B.6. 证据 (2026-11-06): 宿主 speech 相关 11 个测试类 69 例, `AugmentDelegatingModulesTest` 9 例, `ScriptModuleArityTest` 3 例, `ScriptModuleOrderTest` 7 例, 0 失败; `tools/api-coverage/check.py` 除 feedback-680 遗留的 `console.restoredEntryCount` 外通过; OnePlus (6.8.1 debug 6641, 插件 1.6.0 debug) 上 `.python/device_contract_v3_check.py 63751f63 v3` 17 / 17 通过.
 - [ ] (测试) P11.1.4 插件 JVM: 契约常量, 协商 (v2 / v3 宿主), 新选项键解析, 功能未实现时的返回; 宿主单测按惯例. 6.8.1 debug 宿主装 G8441 与 OnePlus: 对 v3 插件 debug 包调 `speech.prepare()` / `speech.resident.get()` 得到 `FEATURE_UNAVAILABLE` (本卡尚未实现功能), 对 1.5.0 正式包同样得到明确异常; `speech.listen` 等旧 API 不受影响 (现有设备测试类通过). 插件 `VERSION_NAME` 改 1.6.0 (同 D130), changelog 1.6.0 十语言条目占位 (日期占位, 发版时改). 插件本地提交并推送 (Macaw 仓库可随时推送, 不打 tag), 宿主只本地提交.
 
 ### P11.2 引擎预热与保留 (F9, D184, D185)
@@ -1152,6 +1158,82 @@ speech.models.list({ kind: "asr" }).forEach((m) => console.log(m.id, m.installed
 speech.models.install("asr.zipformer-streaming.zh-en.2023-02-20.int8", { onProgress: (done, total) => console.log(done, total) });
 ```
 
+### B.6 契约 v3 新增 (1.6.0, P11.1 定稿, 2026-11-06)
+
+需要 AutoJs6 6.8.1 或更高 (宿主 `1b95cc0201`, 只本地提交). 插件声明对应功能名之前 (P11.2 `speechPrepare`, P11.3 `speechResident`, P11.4 `speechBackgroundWake`), 下面每个调用都立即抛 `FEATURE_UNAVAILABLE`, 消息写明缺的功能名 (D193); 绑定 1.5.0 及更早的插件时, 消息写明插件只支持契约 version 2, 需要 version 3.
+
+| 方法 | 返回 | 说明 |
+| --- | --- | --- |
+| `speech.prepare(options?)` | `SpeechLease` | `options: {model, language, kind}`, `kind` 为 `asr` (默认) 或 `kws`, 省略 model 时用该 kind 与语言的默认模型; 同步, 不能在 UI 线程调用; 引擎已加载时 `loadMillis` 为 0 |
+| `speech.prepareAsync(options?)` | `Promise<SpeechLease>` | 异步变体 |
+| `speech.release(leaseId?)` | `boolean` 或 `number` | 给 id: 归还本脚本的这个租约, 返回插件是否仍持有; 省略: 归还本脚本的全部租约, 返回插件仍持有的个数; 本脚本没有租约时不联系插件 (D197) |
+| `speech.resident.get()` | `{enabled, rules}` | 常驻唤醒的开关与规则 (按顺序) |
+| `speech.resident.set(config)` | `{enabled, rules}` | `config` 为 `{rules}` 或规则数组, 整体替换, 返回保存后的配置 (D198) |
+| `speech.resident.enable()` / `disable()` | `{started, restartNeeded}` | 打开前做设置页的检查; 系统拒绝从后台启动前台服务时 `started` 为 false, `restartNeeded` 为 true, 开关已记下, 下次打开插件时生效 (D189) |
+| `speech.resident.enabled` | `boolean` | 只读属性; 取不到 (插件未装, 功能未声明等) 时为 false, 不抛异常 |
+| `speech.resident.on("hit", fn)` / `off("hit", fn?)` | `undefined` | 监听命中 (`SpeechResidentHit`), 无论该词的动作为何都投递 (D194); 有监听器期间脚本不退出; `off` 不带 fn 时移除全部 |
+
+options 追加:
+
+```text
+listen / wake (只在选项顶层, thenListen 里出现为 INVALID_OPTIONS, D196):
+  keepLoaded    true (保留到 release() 或脚本退出) / 1 - 1440 (会话结束后再保留的分钟数) / false, 0, null, 省略 (不保留)
+                负数, 小数或非数字为 INVALID_OPTIONS, 大于 1440 为 LIMIT_EXCEEDED
+wake:
+  background    boolean, 任何麦克风会话到来时让出, 该会话结束后恢复 (D190)
+```
+
+事件追加: 带 `keepLoaded` 的会话 `ready` 事件多一个 `leaseId`; `background` 唤醒会话的 `paused` / `resumed` (`{reason}`), 宿主代理已转发, 插件在 P11.4.1 实现. 错误 code 追加 `FEATURE_UNAVAILABLE`, `RESIDENT_UNAVAILABLE`, `LEASE_NOT_FOUND` (D199). 脚本退出时宿主归还它的全部租约并注销它的观察者 (D185).
+
+d.ts 草案 (四仓库同步在 P11.4.2):
+
+```ts
+declare namespace speech {
+    function prepare(options?: SpeechPrepareOptions): SpeechLease;
+    function prepareAsync(options?: SpeechPrepareOptions): Promise<SpeechLease>;
+    function release(leaseId: string): boolean;
+    function release(): number;
+    const resident: SpeechResident;
+}
+interface SpeechPrepareOptions { model?: string; language?: string; kind?: "asr" | "kws"; }
+interface SpeechLease { leaseId: string; modelId: string; loadMillis: number; }
+interface SpeechListenOptions { keepLoaded?: boolean | number; }
+interface SpeechWakeOptions { keepLoaded?: boolean | number; background?: boolean; }
+interface SpeechWakeSession { on(event: "paused" | "resumed", listener: (e: { reason: string }) => void): this; }
+type SpeechResidentAction = "open" | "script" | "broadcast" | "notify";
+interface SpeechResidentRule { keyword: string; action?: SpeechResidentAction; script?: string; arguments?: string; }
+interface SpeechResidentConfig { enabled: boolean; rules: SpeechResidentRule[]; }
+interface SpeechResidentSwitch { started: boolean; restartNeeded: boolean; }
+interface SpeechResidentHit { keyword: string; matchedText?: string; action: SpeechResidentAction; timeMillis: number; }
+interface SpeechResident {
+    get(): SpeechResidentConfig;
+    set(config: { rules: Array<string | SpeechResidentRule> } | Array<string | SpeechResidentRule>): SpeechResidentConfig;
+    enable(): SpeechResidentSwitch;
+    disable(): SpeechResidentSwitch;
+    readonly enabled: boolean;
+    on(event: "hit", listener: (hit: SpeechResidentHit) => void): void;
+    off(event: "hit", listener?: (hit: SpeechResidentHit) => void): void;
+}
+```
+
+示例:
+
+```js
+// 脚本开头预热, 之后的 listen 是热启动 (附录 F "F9 启动耗时基线")
+const lease = speech.prepare({ kind: "asr" });
+console.log("引擎加载", lease.loadMillis, "ms");
+const s = speech.listen({ keepLoaded: 30 });   // 会话结束后再保留 30 分钟
+s.on("final", (r) => console.log(r.text));
+// ...
+speech.release();   // 归还本脚本的全部租约 (脚本退出时也会自动归还)
+
+// 常驻唤醒: 一个词打开弹层, 一个词运行脚本
+speech.resident.set(["你好鹦鹉", { keyword: "开始打卡", action: "script", script: "./checkin.js" }]);
+const sw = speech.resident.enable();
+if (sw.restartNeeded) toast("下次打开 3-Macaw Speech 时生效");
+speech.resident.on("hit", (hit) => console.log(hit.keyword, hit.action));
+```
+
 ---
 
 ## 附录 C. 契约草案
@@ -1233,6 +1315,37 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 ```
 
 `sampleRate`, `size` 与 `sha256` 均为 P2.2 实测后填入, 上面的数值仅示意. 签名信封与 `codegen-models/schemas/signature-v1.schema.json` 同构, 密钥独立. P2.1 定稿 (2026-10-16) 的正式结构见 Shared-Assets `speech-models/schemas/catalog-v1.schema.json`, 相对上面草案的差异: 模型级 `modelId` / `kind` / `displayName` (草案的 `name`) / `summary` / `recommended` 与不可变的 `versions[]` 分离 (同 codegen); `upstream` 为数组, 元素为带 `members` 的 `tar.bz2` 或带 `path` 的单文件 `file`; 新增 `runtime.config` (sherpa-onnx 文件角色, 如 `encoder`, `tokens`, `lexicon[]`, `ruleFsts[]`, `dataDir`, transducer 的 `modelType`) 与 `sourceUrl`; `license.commercialUse` 取 true / false / `"unknown"`; 草案的 `status` 由 `deprecated` / `revoked` 取代. 2026-10-16 起 `versions[].mirror` 可为 `null` (维护者决定不镜像的仅上游版本, 附录 D Q10; 字段仍必填, schema 为 `oneOf [null, object]`), 此时 `upstream[]` 须完整覆盖 `files[]`, 该版本不出现在 `release-assets.txt` 中, 发布工作流不重建也不上传; 已发布版本的 `mirror` 与其他字段一样不可变.
+
+### C.4 契约 v3 (P11.1 定稿, 宿主 `1b95cc0201`, 2026-11-06)
+
+```text
+SpeechContract       CONTRACT_VERSION = 3 (MIN 1, MAX 3), CALL_VERSION_3 = 3, PREPARE_TIMEOUT_MS = 120000
+                     FEATURE_PREPARE = "speechPrepare", FEATURE_RESIDENT = "speechResident", FEATURE_BACKGROUND_WAKE = "speechBackgroundWake"
+                     FEATURES_V3, featureVersion(feature), offers(feature, agreedVersion): 版本 3 的功能只在协商版本 >= 3 且插件声明时才算数
+                     EVENT_PAUSED = "paused", EVENT_RESUMED = "resumed"
+                     RESIDENT_ACTION_OPEN / SCRIPT / BROADCAST / NOTIFY = "open" / "script" / "broadcast" / "notify"
+SpeechErrorCodes     FEATURE_UNAVAILABLE, RESIDENT_UNAVAILABLE, LEASE_NOT_FOUND
+SpeechLimits         KEEP_LOADED_UNTIL_RELEASED = -1, MAX_KEEP_LOADED_MINUTES = 1440, MAX_LEASES_PER_TOKEN = 16,
+                     MAX_RESIDENT_RULES = 10, MAX_RESIDENT_KEYWORD_CHARS = 32, MAX_RESIDENT_ARGUMENTS_CHARS = 1024
+SpeechOptionKeys     KEEP_LOADED = "keepLoaded", BACKGROUND = "background", LEASE_ID, ENABLED, RULES, ACTION, SCRIPT, ARGUMENTS
+SpeechResultKeys     LEASE_ID = "leaseId", LOAD_MILLIS = "loadMillis", ENABLED, STARTED, RESTART_NEEDED = "restartNeeded", RULES,
+                     ACTION, SCRIPT, ARGUMENTS, MATCHED_TEXT = "matchedText", TIME_MILLIS = "timeMillis"
+
+interface ISpeechPlugin {
+    ...                                                                                    // 版本 1: 事务 1 - 14, 版本 2: 15 - 22
+    int prepare(in Bundle request, ISpeechProgressCallback callback);                      // 23, 返回 opId; 完成时 leaseId / modelId / loadMillis
+    Bundle release(in Bundle request);                                                     // 24, leaseId
+    Bundle getResident(in Bundle query);                                                   // 25, enabled / rules
+    Bundle setResident(in Bundle config);                                                  // 26, rules; 答复同 getResident
+    Bundle setResidentEnabled(in Bundle request);                                          // 27, enabled -> enabled / started / restartNeeded
+    Bundle registerResidentObserver(in Bundle request, ISpeechResidentObserver observer);  // 28
+    void unregisterResidentObserver(ISpeechResidentObserver observer);                     // 29, 未知观察者不报错
+}
+oneway interface ISpeechWakeCallback { ...; void onPaused(in Bundle info); void onResumed(in Bundle info); }   // 追加, 只有 background 会话调用
+oneway interface ISpeechResidentObserver { void onHit(in Bundle hit); }                    // keyword, matchedText?, action, timeMillis
+```
+
+插件 1.6.0 (P11.1): `ThreeMacawSpeechContract.MAX_CONTRACT_VERSION` = 3, 能力里 `speechContractVersion` 仍为 1, `speechMaxContractVersion` 为 3, `speechFeatures` 不含版本 3 的功能; `prepare` 以 binder 异常抛 `FEATURE_UNAVAILABLE` (与 `installModel` 等返回 opId 的方法相同), `release` / `getResident` / `setResident` / `setResidentEnabled` / `registerResidentObserver` 以 v3 应答 Bundle 答 `FEATURE_UNAVAILABLE`, `unregisterResidentObserver` 不做任何事; v3 的 `openSession` / `openWakeSession` 带 `keepLoaded` / `background` 时以 `FEATURE_UNAVAILABLE` 拒绝, 更早版本的请求里这两个键被忽略. 宿主协议文档 `docs/dev/speech-plugin-protocol-v1.md` 的 "Contract version 3" 一节与本节一致.
 
 ---
 
@@ -1393,6 +1506,7 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 | Q150 | 脚本 API `speech.resident` 是否含常驻唤醒开关 (Android 12+ 从后台启动前台服务可能被拒) | (a) 含开关, 尽力而为: 被拒时返回 started = false 并记下开关, 下次打开插件或点通知时生效 (同 P10.1.2 / D74) (推荐); (b) 只读写词与动作, 开关只在设置页 | 已定 (a) (2026-11-05, D189) |
 | Q151 | `speech.prepare` / `keepLoaded` 保留的引擎在脚本退出后怎么处理 | (a) 租约随脚本: 退出, `release()` 或 binder 死亡即归还, 跨脚本常驻用设置 "不释放" 档 (推荐); (b) 全局生效直到进程结束或另一脚本 release | 已定 (a) (2026-11-05, D185) |
 | Q152 | P11.1 契约卡的启动时机 (1.5.0 发版卡会改 ROADMAP 与 changelog, 共用 checkout) | (a) 等 tag v1.5.0 打出后再启动五张卡, 零冲突, 最多晚约一天 (推荐); (b) 现在启动, 只碰宿主仓库, 插件侧勾选等 v1.5.0 后补 | 已定 (a) (2026-11-05, D183) |
+| Q153 | 契约 v3 脚本 API 在 Node / Bun 引擎里怎么处理 (P11.1 只做了 Rhino 的 `speech.*`; 宿主 api-coverage 要求每个新成员在 Node main / Node Worker / Bun 三列有结论) | (a) 现在登记 30 格 pending, Node / Bun 的共享 speech 外观在 P11.4.2 补齐, 届时转为 covered (推荐, 已先行); (b) 像 imgui 一样登记为仅 Rhino 的排除项 (删 30 格, 写排除理由, 改 mjs 跳过集合); (c) 在 P11.1 内补 Node / Bun 外观 (约半天, 两个插件仓库加发版) | 待决, 已按 (a) 先行 (2026-11-06 P11.1, D200); 影响 P11.4.2; 改选 (b) 的返工: 删 30 格与 mjs 跳过集合, 写排除理由; 改选 (c) 无返工 |
 
 ---
 
@@ -1452,6 +1566,18 @@ AIDL 演进规则: 已发布后保持事务顺序, 新方法追加在末尾, 经
 Redmi: 第一次核对时 AutoJs6 为 5592, 冒烟开始前已换成 5352 (该机按约定保留旧宿主做隐藏验证, 本会话不改动), 低于 5456, 脚本中 `typeof speech` 为 undefined, 因此 R3 的脚本项在这台以插件侧等效项代替: 维护者在手机上授予麦克风权限后 (此前从未授权), release 候选包装好, 再临时换 debug 与测试包跑 HomeDownloadDeviceTest (英文流式识别模型经首页行内下载完成, 但测试在 720 x 1650 小屏上没有结束, 本会话停止了它; 小屏上的这个测试问题未修; 2026-10-20 补记: 原因在测试, 已修, 见 P5.1), SpeechModelSetupDeviceTest (MeloTTS) 与 TryoutDeviceTest (听写, 唤醒, 合成, 声学; 数值日志被该机较小的 logcat 缓冲轮转, 听写按截图核对), 最后装回 release 候选包, 用旧宿主的 `tts(text, {engine})` 经插件的系统引擎朗读成功. 即旧宿主上插件的系统 TTS 引擎与独立界面照常可用.
 
 说明: `tts(text, {engine})` 不按文本语言选语音 (只有 `speech.speak` 按文本语言选择, 见 P4.3 宿主条目), 设备语言为 en-US 且装有 Kokoro 的机型对中文测试句用了引擎默认的 Kokoro 0 号英文说话人; 这是宿主 `tts` 的既定行为, 冒烟只核对引擎可用. 未覆盖: 16 KB 页真机 (CI 的 API 35 / 37.1 16 KB 模拟器作业覆盖加载与契约), API 36 / 37 真机.
+
+F9 启动耗时基线 (P11.1.1, 2026-11-06, `py .python/f9_startup_timing.py <serial>`): 脚本经 `RunIntentActivity` 调 `speech.listen({ model: "asr.zipformer-streaming.zh-en.2023-02-20.int8" })` 打开麦克风听写, `ready` 后 1.5 s 取消; 插件 debug 包输出 `MacawStartup` 日志 (D201), 宿主读 `SpeechPluginHost` 绑定日志; 每个起点先预热一次, 再测 3 次取中位数. 四段: 绑定 = 脚本调用到插件收到 `openSession` 扣除冷启动 (bindService, onServiceConnected, 读能力, 会话专用绑定); 冷启动 = 插件进程启动到语音服务绑定 (进程在时为 0); 引擎加载 = 插件加载线程上的引擎加载 (含排队); 会话建立 = 其余部分 (选项 / 模型 / 准入检查, 进程第一次调用时创建 SpeechRuntime, 前台服务, 听写启动, `ready` 送达脚本). 起点: 热 = 刚用过; 后台 = 预热后回桌面闲置 10 分钟; kill = 回桌面后 `am kill` 插件进程 (系统保留时用 `run-as kill`).
+
+| 设备 | 起点 | 就绪中位数 | 绑定 | 冷启动 | 引擎加载 | 会话建立 | 3 次范围 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| OnePlus OPD2413 (63751f63, API 35, 宿主 5935, 插件 1.5.0 + 计时日志) | 热 | 96 ms | 21 | 0 | 7 | 68 | 90 - 106 ms |
+| OnePlus OPD2413 | 后台 10 分钟 | 643 ms | 30 | 0 | 518 | 100 | 642 - 664 ms (bindService -> onServiceConnected 9 - 17 ms) |
+| OnePlus OPD2413 | am kill | 1368 ms | 74 | 257 | 501 | 539 | 1357 - 1383 ms (bindService -> onServiceConnected 约 316 ms) |
+| OnePlus OPD2413 (复测, 会话建立细分) | am kill | 1371 ms | 70 | 256 | 500 | 539 = 检查 467 (其中创建 SpeechRuntime 447) + 启动 70 + 送达 2 | 1365 - 1371 ms |
+| Sony G8441 (BH900ASK9E, API 28) | 热 / 后台 10 分钟 / am kill | 待测 | | | | | 设备被 3-Prism P3 占用, 见 P11.1.1 |
+
+结论 (OnePlus): 维护者反馈的 7 - 8 s 没有复现, 最慢的 am kill 起点也在 1.4 s 内就绪. 后台 10 分钟后插件进程仍在, 但引擎已按设置的空闲时间卸载, 引擎加载 518 ms 占 80%: `speech.prepare` / `keepLoaded` 可以把它降到热态的约 100 ms. am kill 后绑定 + 冷启动合计约 331 ms (24%), 不占大头, 不登记待决; 引擎加载 501 ms (37%) 之外, 会话建立的 539 ms 里有 447 ms 是进程第一次调用时创建 SpeechRuntime: 只预热引擎省约 37%, 预热时一并创建 SpeechRuntime (或在 Service.onCreate 预建) 可省约 69% (约 950 ms, 剩约 420 ms), 建议 P11.2.1 实现 prepare 时一并处理. 脚本开头 `speech.prepare()`, 之后的 `speech.listen` 即为热态.
 
 ---
 

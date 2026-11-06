@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.os.IBinder
 import android.os.RemoteException
+import android.os.SystemClock
 import android.util.Log
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.AudioCapture
@@ -139,6 +140,11 @@ internal abstract class SessionBinder(
     private var foreground = false
     private var behindWarned = false
 
+    // The startup log (roadmap P11.1.1, [StartupTiming]). zh-CN: 启动日志 (路线图 P11.1.1, [StartupTiming]).
+    private val openedAt = SystemClock.elapsedRealtime()
+    private var loadMillis = 0L
+    private var queueMillis = 0L
+
     protected abstract val isEnded: Boolean
     protected abstract fun accept(samples: FloatArray)
     protected abstract fun stopSession(discard: Boolean)
@@ -176,9 +182,12 @@ internal abstract class SessionBinder(
 
     /** Loads on the loader thread, then continues on the ASR thread; a failure ends the session. zh-CN: 在加载线程上加载, 再在 ASR 线程上继续; 失败即结束会话. */
     protected fun loadThen(load: () -> List<EngineCache.Lease<out Closeable>>, then: () -> Unit) {
+        val queuedAt = SystemClock.elapsedRealtime()
         runtime.load {
+            val loadStarted = SystemClock.elapsedRealtime()
+            queueMillis = loadStarted - queuedAt
             val acquired = try {
-                load()
+                load().also { loadMillis = SystemClock.elapsedRealtime() - loadStarted }
             } catch (e: SpeechException) {
                 onAsr { fail(e.code, e.message ?: e.code) }
                 return@load
@@ -202,6 +211,15 @@ internal abstract class SessionBinder(
                 if (isEnded) cleanup()
             }
         }
+    }
+
+    /**
+     * Logs how long the session took to become ready at [readyAt] and, at [recordingAt], to record (roadmap P11.1.1).
+     * zh-CN: 记录会话在 [readyAt] 就绪, 在 [recordingAt] 开始录音各用了多久 (路线图 P11.1.1).
+     */
+    protected fun logStartup(id: String, readyAt: Long, recordingAt: Long?) {
+        val recording = recordingAt?.let { ", recording ${it - openedAt} ms" }.orEmpty()
+        StartupTiming.log("Session $id ready ${readyAt - openedAt} ms after it was opened$recording (engines $loadMillis ms after $queueMillis ms in the loader queue)")
     }
 
     /** True while the microphone records for this session. zh-CN: 麦克风正在为本会话录音. */
@@ -378,9 +396,14 @@ internal class DictationBinder(
             val engine = leases.first().engine
             val punctuator = runtime.punctuator(model, leases)
             session.start(model.modelId) { sink -> runtime.dictation(engine, options, sink, punctuator) }
+            val readyAt = SystemClock.elapsedRealtime()
             warnings.forEach { session.warning(it.code, it.message) }
-            if (external || session.isEnded) return@loadThen
+            if (external || session.isEnded) {
+                logStartup(session.id, readyAt, null)
+                return@loadThen
+            }
             if (recording) early.drain { if (!session.isEnded) session.accept(it) } else startMicrophone()
+            logStartup(session.id, readyAt, SystemClock.elapsedRealtime())
         }
     }
 
@@ -494,8 +517,10 @@ internal class WakeBinder(
                 listenModel?.modelId,
                 if (listen != null && asr != null) { sink -> runtime.dictation(asr, listen, sink, punctuator) } else null,
             )
+            val readyAt = SystemClock.elapsedRealtime()
             // A takeover that came while the models loaded keeps the microphone until it is released (D57).
             if (!session.isEnded && !session.suspended) startMicrophone()
+            logStartup(session.id, readyAt, if (recording) SystemClock.elapsedRealtime() else null)
         }
     }
 

@@ -4,6 +4,12 @@
 
 ******
 
+# v1.6.0
+
+###### 2026/11/06
+
+* `Aviso` Cargar de antemano los motores de voz desde un script (speech.prepare) y gestionar la palabra de activación permanente desde un script (speech.resident) siguen en desarrollo y requieren AutoJs6 6.8.1 o posterior (aún no publicada). Hasta que estén terminados, un script que los llame recibe al instante un error de "función no disponible" en lugar de quedarse esperando; el dictado, las palabras de activación, la síntesis de voz y los demás usos existentes no cambian
+
 # v1.5.0
 
 ###### 2026/11/05

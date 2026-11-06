@@ -5,6 +5,12 @@
   "changelog_label_improvement": "改善",
   "changelog_label_dependency": "依存関係",
   "$data": {
+    "v1.6.0": {
+      "released_date": "2026/11/06",
+      "hint": [
+        "スクリプトから音声エンジンを事前に読み込む機能 (speech.prepare) と常時ウェイクワードを管理する機能 (speech.resident) は開発中で, AutoJs6 6.8.1 以降 (未公開) が必要です. 完成するまでは, スクリプトから呼び出すと待たされることなくすぐに \"機能を利用できません\" というエラーになります. 音声認識, ウェイクワード, 音声合成など既存の使い方には影響しません"
+      ]
+    },
     "v1.5.0": {
       "released_date": "2026/11/05",
       "hint": [
