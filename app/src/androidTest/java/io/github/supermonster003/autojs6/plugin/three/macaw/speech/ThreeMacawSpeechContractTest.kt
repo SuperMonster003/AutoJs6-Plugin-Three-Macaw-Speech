@@ -226,25 +226,59 @@ class ThreeMacawSpeechContractTest {
     }
 
     @Test
-    fun contractVersionThreeAnswersReleaseAndRefusesTheResidentCalls() {
-        // Roadmap P11.2 (D193): this build declares speechPrepare of the version 3 features only, so release answers
-        // (LEASE_NOT_FOUND for a lease the caller does not hold, INVALID_OPTIONS without one) and the plugin itself refuses
-        // the resident methods (transactions 25 - 27 of the AIDL order) with FEATURE_UNAVAILABLE, the answers carrying version 3.
-        // zh-CN: 路线图 P11.2 (D193): 本构建在版本 3 功能中只声明 speechPrepare, 因此 release 照常应答 (调用方不持有的租约为 LEASE_NOT_FOUND,
-        // 不给租约为 INVALID_OPTIONS), 插件自身以 FEATURE_UNAVAILABLE 拒绝常驻方法 (AIDL 顺序中的事务 25 - 27), 应答带版本 3.
+    fun contractVersionThreeAnswersReleaseAndTheResidentCalls() {
+        // Roadmap P11.2 / P11.3.4 (D193, D226, D227): this build declares the version 3 features of FEATURES_V3, so release
+        // answers (LEASE_NOT_FOUND for a lease the caller does not hold, INVALID_OPTIONS without one) and the resident methods
+        // (transactions 25 - 27 of the AIDL order) answer with version 3: getResident the switch and the rules, setResident
+        // refuses rules it cannot store and keeps the stored ones, setResidentEnabled needs `enabled`. The test never changes
+        // the stored rules and never turns the resident wake word on (a phone keeps its own).
+        // zh-CN: 路线图 P11.2 / P11.3.4 (D193, D226, D227): 本构建声明 FEATURES_V3 中的版本 3 功能, 因此 release 照常应答 (调用方不持有的租约为
+        // LEASE_NOT_FOUND, 不给租约为 INVALID_OPTIONS), 常驻方法 (AIDL 顺序中的事务 25 - 27) 以版本 3 应答: getResident 给出开关与规则, setResident
+        // 拒绝无法保存的规则并保留已存规则, setResidentEnabled 需要 `enabled`. 测试不改动已存规则, 也不打开常驻唤醒 (手机保留自己的设置).
         val serviceInfo = discoverSingleService(
             SpeechPluginActions.SPEECH, SpeechPluginActions.SERVICE_CATEGORY, ThreeMacawSpeechService::class.java.name,
         )
         withBoundService(serviceInfo) { binder ->
             val capabilities = requireNotNull(transactBundle(binder, TRANSACTION_GET_CAPABILITIES))
             val features = requireNotNull(capabilities.getStringArray(SpeechCapabilityKeys.FEATURES)).toSet()
-            assertEquals(setOf(SpeechContract.FEATURE_PREPARE), features.intersect(SpeechContract.FEATURES_V3))
+            assertEquals(FEATURES_V3, features.intersect(SpeechContract.FEATURES_V3))
             val request = Bundle().apply { putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_3) }
-            listOf(TRANSACTION_GET_RESIDENT, TRANSACTION_SET_RESIDENT, TRANSACTION_SET_RESIDENT_ENABLED).forEach { code ->
-                val answer = requireNotNull(transactBundle(binder, code, request))
-                assertEquals("transaction $code", SpeechErrorCodes.FEATURE_UNAVAILABLE, answer.getString(SpeechContract.KEY_ERROR_CODE))
-                assertEquals("transaction $code", SpeechContract.CALL_VERSION_3, answer.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+
+            val resident = requireNotNull(transactBundle(binder, TRANSACTION_GET_RESIDENT, request))
+            assertFalse(resident.getString(SpeechContract.KEY_ERROR_CODE).toString(), resident.containsKey(SpeechContract.KEY_ERROR_CODE))
+            assertEquals(SpeechContract.CALL_VERSION_3, resident.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+            assertTrue(resident.containsKey(SpeechResultKeys.ENABLED))
+            @Suppress("DEPRECATION")
+            val rules = requireNotNull(resident.getParcelableArrayList<Bundle>(SpeechResultKeys.RULES))
+            rules.forEach { rule ->
+                assertTrue(requireNotNull(rule.getString(SpeechResultKeys.KEYWORD)).isNotEmpty())
+                assertTrue(rule.getString(SpeechResultKeys.ACTION) in RESIDENT_ACTIONS)
             }
+
+            val noRules = requireNotNull(transactBundle(binder, TRANSACTION_SET_RESIDENT, request))
+            assertEquals(SpeechErrorCodes.INVALID_OPTIONS, noRules.getString(SpeechContract.KEY_ERROR_CODE))
+            assertEquals(SpeechContract.CALL_VERSION_3, noRules.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+            val eleven = Bundle(request).apply {
+                putParcelableArrayList(SpeechOptionKeys.RULES, ArrayList((1..11).map { i -> Bundle().apply { putString(SpeechOptionKeys.KEYWORD, "word $i") } }))
+            }
+            assertEquals(SpeechErrorCodes.LIMIT_EXCEEDED, transactBundle(binder, TRANSACTION_SET_RESIDENT, eleven)?.getString(SpeechContract.KEY_ERROR_CODE))
+            @Suppress("DEPRECATION")
+            val kept = requireNotNull(transactBundle(binder, TRANSACTION_GET_RESIDENT, request)?.getParcelableArrayList<Bundle>(SpeechResultKeys.RULES))
+            assertEquals(rules.map { it.getString(SpeechResultKeys.KEYWORD) }, kept.map { it.getString(SpeechResultKeys.KEYWORD) })
+
+            val noSwitch = requireNotNull(transactBundle(binder, TRANSACTION_SET_RESIDENT_ENABLED, request))
+            assertEquals(SpeechErrorCodes.INVALID_OPTIONS, noSwitch.getString(SpeechContract.KEY_ERROR_CODE))
+            if (!resident.getBoolean(SpeechResultKeys.ENABLED)) {
+                // Turning off what is off changes nothing (D227). zh-CN: 关闭本已关闭的开关不改变任何状态 (D227).
+                val off = requireNotNull(
+                    transactBundle(binder, TRANSACTION_SET_RESIDENT_ENABLED, Bundle(request).apply { putBoolean(SpeechOptionKeys.ENABLED, false) }),
+                )
+                assertFalse(off.containsKey(SpeechContract.KEY_ERROR_CODE))
+                assertFalse(off.getBoolean(SpeechResultKeys.ENABLED))
+                assertFalse(off.getBoolean(SpeechResultKeys.STARTED))
+                assertFalse(off.getBoolean(SpeechResultKeys.RESTART_NEEDED))
+            }
+
             val unknown = Bundle(request).apply { putString(SpeechOptionKeys.LEASE_ID, "lease-unknown") }
             val released = requireNotNull(transactBundle(binder, TRANSACTION_RELEASE, unknown))
             assertEquals(SpeechErrorCodes.LEASE_NOT_FOUND, released.getString(SpeechContract.KEY_ERROR_CODE))
@@ -318,6 +352,11 @@ class ThreeMacawSpeechContractTest {
         assertEquals(systemTtsComponents(), systemTts.map { it.first }.toSet())
         systemTts.forEach { (name, permission) -> assertEquals("$name is reached by the system", null, permission) }
         library.forEach { (name, permission) -> assertEquals("$name keeps its system protection", (LIBRARY_COMPONENTS + DEBUG_COMPONENTS).getValue(name), permission) }
+        // The debug components exist in a debug build only, each behind DUMP. zh-CN: 调试组件只存在于调试构建, 均受 DUMP 保护.
+        assertEquals(
+            if (BuildConfig.DEBUG) DEBUG_COMPONENTS.keys else emptySet(),
+            library.map { it.first }.filter { it in DEBUG_COMPONENTS }.toSet(),
+        )
         assertEquals(
             setOf(
                 PLUGIN_PERMISSION, "android.permission.RECORD_AUDIO", "android.permission.FOREGROUND_SERVICE",
@@ -472,9 +511,15 @@ class ThreeMacawSpeechContractTest {
             SpeechContract.FEATURE_SPEAKER,
             // Roadmap P8.4 (D146 - D151): the offline analyses of contract version 2.
             SpeechContract.FEATURE_DIARIZATION, SpeechContract.FEATURE_LANGUAGE_ID, SpeechContract.FEATURE_AUDIO_TAGGING,
-            // Roadmap P11.2 (D193): the leases of contract version 3.
-            SpeechContract.FEATURE_PREPARE,
+            // Roadmap P11.2 (D193): the leases of contract version 3; P11.3.4: the resident wake words of scripts.
+            SpeechContract.FEATURE_PREPARE, SpeechContract.FEATURE_RESIDENT,
         )
+
+        /** The version 3 features this build declares (roadmap D193). zh-CN: 本构建声明的版本 3 功能 (路线图 D193). */
+        val FEATURES_V3: Set<String> = setOf(SpeechContract.FEATURE_PREPARE, SpeechContract.FEATURE_RESIDENT)
+
+        /** Action ids of the resident rules (roadmap P11.3.1). zh-CN: 常驻规则的动作 id (路线图 P11.3.1). */
+        val RESIDENT_ACTIONS: Set<String> = setOf("open", "script", "broadcast", "notify")
 
         /**
          * Added by AndroidX to the merged Manifest on its own (core 1.9+ declares the dynamic receiver permission).
@@ -521,10 +566,15 @@ class ThreeMacawSpeechContractTest {
         val LIBRARY_COMPONENTS: Map<String, String> = mapOf("androidx.profileinstaller.ProfileInstallReceiver" to "android.permission.DUMP")
 
         /**
-         * Debug builds only (the instrumented build): the adb switch of the resident wake word (roadmap P7.4), for holders of
-         * DUMP only. zh-CN: 仅调试构建 (被测构建): 常驻唤醒的 adb 开关 (路线图 P7.4), 只对持有 DUMP 的调用方开放.
+         * Debug builds only (`app/src/debug/AndroidManifest.xml`): the adb switch of the resident wake word (roadmap P7.4)
+         * and its hit injection (roadmap P11.3.5), for holders of DUMP only; a release build has neither.
+         * zh-CN: 仅调试构建 (`app/src/debug/AndroidManifest.xml`): 常驻唤醒的 adb 开关 (路线图 P7.4) 及其命中注入 (路线图 P11.3.5), 只对持有 DUMP
+         * 的调用方开放; release 构建两者都没有.
          */
-        val DEBUG_COMPONENTS: Map<String, String> = mapOf("$PACKAGE.ResidentDebugActivity" to "android.permission.DUMP")
+        val DEBUG_COMPONENTS: Map<String, String> = mapOf(
+            "$PACKAGE.ResidentDebugActivity" to "android.permission.DUMP",
+            "$PACKAGE.ResidentDebugHitReceiver" to "android.permission.DUMP",
+        )
 
         /** The Parcelize-generated `CREATOR` is a JVM static field that Kotlin sources cannot name directly. */
         @Suppress("UNCHECKED_CAST")
