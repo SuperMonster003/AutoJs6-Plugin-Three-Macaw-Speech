@@ -240,7 +240,15 @@ class TakeoverDeviceTest {
                 putParcelableArrayList(SpeechOptionKeys.KEYWORDS, arrayListOf(Bundle().apply { putString(SpeechOptionKeys.KEYWORD, KEYWORD) }))
                 putString(SpeechOptionKeys.MODEL, SpeechDevice.KWS)
                 if (!resident) putBoolean(SpeechOptionKeys.BACKGROUND, true)
-                thenListenMillis?.let { millis -> putBundle(SpeechOptionKeys.THEN_LISTEN, Bundle().apply { putLong(SpeechOptionKeys.TIMEOUT_MILLIS, millis) }) }
+                // A long silence end: speech after the keyword in the recording must not end the round with an endpoint
+                // before the test tries its listen; the round ends by the timeout only.
+                // zh-CN: 较长的静音结束: 录音中关键词之后的语音不能在测试尝试 listen 之前以端点结束轮次; 轮次只因超时结束.
+                thenListenMillis?.let { millis ->
+                    putBundle(SpeechOptionKeys.THEN_LISTEN, Bundle().apply {
+                        putLong(SpeechOptionKeys.TIMEOUT_MILLIS, millis)
+                        putLong(SpeechOptionKeys.SILENCE_END_MILLIS, ROUND_SILENCE_END_MILLIS)
+                    })
+                }
             }
             val callback = object : ISpeechWakeCallback.Stub() {
                 override fun onPaused(info: Bundle?) = record("paused ${info?.getString(SpeechResultKeys.REASON)}")
@@ -383,11 +391,18 @@ class TakeoverDeviceTest {
         // a plain foreground session alone, on the same recording.
         val plays = SpeechDevice.argument("macawPlays")?.toIntOrNull() ?: 5
         val log: MutableList<String> = Collections.synchronizedList(ArrayList())
-        val backgroundHits = Holder("resident", log, resident = true).use { _ ->
-            Holder("background", log).use { background -> count(plays) { background.hits.size } }
+        var residentHits = 0
+        var backgroundTotal = 0
+        val backgroundHits = Holder("resident", log, resident = true).use { resident ->
+            Holder("background", log).use { background ->
+                count(plays) { background.hits.size }.also { backgroundTotal = background.hits.size }
+            }.also { residentHits = resident.hits.size }
         }
+        // The same background session without the resident beside it: tells the shared recording from the session kind.
+        // zh-CN: 旁边没有常驻唤醒的同一种后台会话: 区分共用录音与会话类别的影响.
+        val aloneHits = Holder("alone", log).use { alone -> count(plays) { alone.hits.size } }
         val foregroundHits = AssistantDevice.Wake(KEYWORD).use { wake -> count(plays) { wake.hits.size } }
-        SpeechDevice.log("arbitration hit rate background=$backgroundHits/$plays foreground=$foregroundHits/$plays room=${if (AssistantDevice.virtual) "virtual" else "speaker"}")
+        SpeechDevice.log("arbitration hit rate background=$backgroundHits/$plays (hits $backgroundTotal, resident $residentHits) alone=$aloneHits/$plays foreground=$foregroundHits/$plays room=${if (AssistantDevice.virtual) "virtual" else "speaker"}")
         val tolerance = if (AssistantDevice.virtual) 0 else 1
         assertTrue("background $backgroundHits, foreground $foregroundHits of $plays", backgroundHits >= foregroundHits - tolerance)
     }
@@ -405,6 +420,7 @@ class TakeoverDeviceTest {
     private companion object {
         /** A thenListen round that hears no speech ends after this much audio. zh-CN: 听不到语音的 thenListen 轮次在这么长的音频后结束. */
         const val ROUND_MILLIS = 4_000L
+        const val ROUND_SILENCE_END_MILLIS = 30_000L
 
         /** The keyword of `kws-zh-6.wav` (`KeywordSpottingDeviceTest`). zh-CN: `kws-zh-6.wav` 中的关键词. */
         const val KEYWORD = "\u6731\u4e3d\u6960"

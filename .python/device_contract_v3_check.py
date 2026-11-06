@@ -4,6 +4,14 @@
     py .python/device_contract_v3_check.py <serial> v2      a plugin of contract version 2 (1.5.0 and earlier)
     py .python/device_contract_v3_check.py <serial> prepare a 1.6.0 build that declares speechPrepare, speechResident and
                                                             speechBackgroundWake (P11.2 - P11.4)
+    py .python/device_contract_v3_check.py <serial> background
+                                                            a `background` wake session of a script and a microphone
+                                                            listen of the same script (P11.4.3, D229, D230; needs the
+                                                            host fix of AutoJs6 87daced8ae for the Rhino events)
+
+Mode `background`: the listen opens without SESSION_BUSY, the wake session reports `paused` with reason `listen` while
+its state stays `active`, then `resumed` with reason `listen` after the listen ended, and ends by its stop. No keyword is
+spoken; the listen ends by its timeout (or maxDuration) on whatever the microphone hears.
 
 Every version 3 call must fail at once with FEATURE_UNAVAILABLE and a message that names the missing feature (v3) or the
 two contract versions (v2): speech.prepare / prepareAsync, the speech.resident methods and `on('hit')`, and listen / wake
@@ -145,6 +153,29 @@ try {
 } catch (e) { fail(e); }
 """
 
+SCRIPT_BACKGROUND = scripts.COMMON + """
+try {
+    r.available = speech.isAvailable();
+    var wake = speech.wake(["hello macaw"], { background: true });
+    var listened = false;
+    wake.on("ready", function () {
+        r.events.push("wake ready");
+        if (listened) return;
+        listened = true;
+        try {
+            var s = speech.listen({ model: "%(streaming)s", timeoutMillis: 3000, maxDurationMillis: 8000 });
+            s.on("ready", function () { r.events.push("listen ready"); });
+            s.on("error", function (e) { r.errors.push("listen " + e.code + " " + e.message); });
+            s.on("end", function (e) { r.events.push("listen end"); });
+        } catch (e) { r.errors.push("listen " + String(e.code || "") + " " + String(e.message || e)); wake.stop(); }
+    });
+    wake.on("paused", function (e) { r.events.push("paused:" + e.reason + ":" + wake.state); });
+    wake.on("resumed", function (e) { r.events.push("resumed:" + e.reason + ":" + wake.state); setTimeout(function () { wake.stop(); }, 300); });
+    wake.on("error", function (e) { r.errors.push("wake " + e.code + " " + e.message); });
+    wake.on("end", function (e) { r.events.push("wake end:" + e.reason); done(); });
+} catch (e) { fail(e); }
+"""
+
 # Mode `prepare`: a build that declares speechPrepare (P11.2), speechResident (P11.3) and speechBackgroundWake (P11.4.1).
 PREPARE_UNAVAILABLE = {}
 PREPARE_RETURNS = {"release(id)": "true", "release(id) again": "false", "release(id) unknown": "false", "release() empty": "0",
@@ -237,15 +268,37 @@ def check_prepare(r):
     return failures
 
 
+def check_background(r):
+    """The checks of mode `background`; prints one line per item and answers the number of failures."""
+    events, errors = r.get("events", []), r.get("errors", [])
+    failures = 0
+
+    def report(ok, name, detail):
+        nonlocal failures
+        failures += not ok
+        print(f"    {'PASS' if ok else 'FAIL'} {name}: {detail}")
+
+    def at(prefix):
+        return next((i for i, event in enumerate(events) if event.startswith(prefix)), -1)
+
+    report(not errors, "no error (no SESSION_BUSY for the listen)", errors[:2] if errors else "none")
+    report("listen ready" in events and "listen end" in events, "the listen opened and ended", ",".join(events))
+    report("paused:listen:active" in events, "paused { reason: 'listen' }, the session stays active", next((e for e in events if e.startswith("paused")), "missing"))
+    report("resumed:listen:active" in events and at("paused") < at("resumed"), "resumed { reason: 'listen' } after paused",
+           next((e for e in events if e.startswith("resumed")), "missing"))
+    report(events[-1:] == ["wake end:stopped"] and events.count("wake ready") == 1, "the wake session ended by stop", events[-1:] or "no end")
+    return failures
+
+
 def main(argv):
-    if len(argv) != 2 or argv[1] not in ("v2", "v3", "prepare"):
+    if len(argv) != 2 or argv[1] not in ("v2", "v3", "prepare", "background"):
         print(__doc__)
         return 2
     serial, mode = argv
     head = scripts.label(serial)
     host, plugin = versions(serial)
     print(f"{head}: host {host}, plugin {plugin}, expecting a contract {mode} plugin")
-    scripts.SCRIPTS[NAME] = SCRIPT_PREPARE if mode == "prepare" else SCRIPT
+    scripts.SCRIPTS[NAME] = {"prepare": SCRIPT_PREPARE, "background": SCRIPT_BACKGROUND}.get(mode, SCRIPT)
     scripts.adb(serial, "shell", "rm", "-rf", scripts.REMOTE, check=False)
     scripts.adb(serial, "shell", "mkdir", "-p", scripts.REMOTE)
     try:
@@ -261,8 +314,8 @@ def main(argv):
     if r.get("errors") and "codes" not in r:
         print(f"{head}: FAIL script error {r['errors']}")
         return 1
-    if mode == "prepare":
-        failures = check_prepare(r)
+    if mode in ("prepare", "background"):
+        failures = (check_prepare if mode == "prepare" else check_background)(r)
         print(f"{head}: {'PASS' if failures == 0 else 'FAIL'} ({failures} failed)")
         return 0 if failures == 0 else 1
     failures = 0

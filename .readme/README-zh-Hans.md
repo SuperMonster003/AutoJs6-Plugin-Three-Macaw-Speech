@@ -213,7 +213,7 @@ tts("Task completed", { engine: "io.github.supermonster003.autojs6.plugin.three.
 - `speech.models` 列出, 下载 (`install`, 可报告进度), 导入, 删除模型与设置默认模型; `speech.capabilities()` 返回插件版本, 支持的功能与麦克风权限状态.
 - `speech.speaker.enroll(name, files, { replace })` 注册说话人 (多段录音取平均; 同名默认追加到原有声纹, `replace: true` 重新注册), `verify(name, file)` 返回分数与是否相符, `identify(file, { topK })` 在已注册的人中找出最像的一位并列出候选, `list()` 与 `remove(name)` 管理已注册的人; `enroll`, `verify` 与 `identify` 各有返回 Promise 的 `...Async` 版本. 结果只有名字, 分数, 是否相符与阈值 (默认 0.50, 可用 `threshold` 调整), 不含声纹向量. 需要 AutoJs6 6.8.0 正式版与说话人识别模型.
 - `speech.diarize(file, options)` 分离说话人, 返回按时间排列的轮次 (`segments`, 每项有 `startMillis`, `endMillis` 与从 0 编号的 `speaker`) 与人数 (`speakers`); 选项 `speakers` 指定人数 (0 为自动判断, 至多 20), `identify: true` 用已注册的声纹给说话人认出名字 (`names`). `speech.detectLanguage(file, { windows })` 逐句判断语音前几个窗口 (每个 30 秒, 默认 3 个) 的语种: `language` 是说话时长最长的语种, `candidates` 是各语种的时长占比, `segments` 是每句的语种. `speech.tag(file, { topK, timeline })` 按 10 秒的窗口打分, 返回得分最高的标签 (AudioSet 的 527 个英文标签, 默认 5 个), `timeline: true` 附上每个窗口的标签. 三者都可以用 `onProgress(done, total)` 报告进度, 各有返回 Promise 的 `...Async` 版本; 需要 AutoJs6 6.8.0 正式版与对应的模型.
-- 整个插件同一时间只有一个麦克风会话 (听写或唤醒); 缺少麦克风权限时调用以 `PERMISSION_DENIED` 失败, 打开插件首页授予即可. 识别出的文字不会写入 AutoJs6 的日志.
+- 整个插件同一时间只有一个前台麦克风会话 (听写或唤醒), 第二个以 `SESSION_BUSY` 失败; AutoJs6 6.8.1 起, `speech.wake(keywords, { background: true })` 打开的唤醒会话与常驻唤醒一起在后台检测, 其他麦克风会话到来时自动暂停让出 (`paused` 事件), 结束后恢复 (`resumed` 事件), 不会让对方失败; 缺少麦克风权限时调用以 `PERMISSION_DENIED` 失败, 打开插件首页授予即可. 识别出的文字不会写入 AutoJs6 的日志.
 - AutoJs6 6.8.0 及以上, 脚本也可以经 `plugins.tools.call` 调用这些插件工具, 例如 `plugins.tools.call('speech_speak', { text: '你好' })`; 参数与 MCP Server 看到的相同. 日常脚本直接用 `speech` 模块更灵活.
 - 完整的方法, 选项, 事件与错误码见 [AutoJs6 文档](https://docs.autojs6.com/#/speech); AutoJs6 的示例代码 > 3-Macaw Speech 中有听写到文件, 唤醒词与听写, TTS 播报, 语音命令交给 Agent, 说话人识别, 说话人分离, 语种识别与音频标签八个示例.
 
@@ -403,12 +403,13 @@ native libraries: libsherpa-onnx-jni.so, libonnxruntime.so (sherpa-onnx 1.13.8; 
 
 _2026/11/06_
 
-- `提示` 脚本提前加载语音引擎 (speech.prepare, speech.release), listen / wake 的 keepLoaded 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 "运行脚本" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 "点击运行脚本" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响
+- `提示` 脚本提前加载语音引擎 (speech.prepare, speech.release), listen / wake 的 keepLoaded 选项, wake 的 background 选项和用脚本管理常驻唤醒 (speech.resident) 需要 AutoJs6 6.8.1 或更高版本 (尚未发布). 常驻唤醒词的 "运行脚本" 动作在更早的 AutoJs6 上改为像听写弹层一样打开脚本, 不允许时发 "点击运行脚本" 通知; 语音识别, 唤醒词, 语音合成等已有用法不受影响
 - `新增` 脚本可以提前加载语音引擎: 在脚本开头调用 speech.prepare(), 之后第一次 speech.listen 不用再等模型加载. 实测插件被系统关闭后, 首次听写的启动时间从 1.4 秒 (OnePlus) 和 4.2 秒 (Sony G8441) 缩短到 0.08 秒和 0.25 秒, 加载改在脚本开头的 prepare 进行. 引擎一直保留到调用 speech.release() 或脚本结束
 - `新增` speech.listen 和 speech.wake 新增 keepLoaded 选项: 设为 true 时, 会话用过的引擎保留到调用 speech.release() 或脚本结束; 设为 1 到 1440 之间的数字时, 会话结束后再保留这么多分钟. 脚本隔一段时间再次听写也不用重新加载模型
 - `新增` 设置页的 "空闲模型释放" 新增 "不释放" 档: 用过的模型一直留在内存里, 下次识别启动最快, 代价是插件一直占用这部分内存 (每个模型约为其安装大小); 手机内存紧张时仍会释放. 这一档也会随 AutoJs6 的设置一起导出和导入
 - `新增` 常驻唤醒词可以逐个设定命中后的动作: 打开听写弹层 (原有行为, 升级后已有的唤醒词保持这一项), 运行 AutoJs6 脚本 (可带参数, 在后台和锁屏时同样运行, 脚本从 execArgv 读取唤醒词与参数), 向 AutoJs6 发系统广播 (供其广播触发的定时任务使用; 可在设置中改为同时发给其他应用), 或只发 "点此说话" 通知. 设置页的唤醒词改为逐条编辑的列表, 脚本可以从文件中选择, 唤醒词上限从 5 个增加到 10 个; 唤醒词与动作也随 AutoJs6 的设置一起导出和导入
 - `新增` 脚本可以管理常驻唤醒: speech.resident.get / set 读写唤醒词与动作, enable / disable 开关, on("hit") 监听每一次命中 (无论该词的动作是什么). 系统不允许从后台开启时, enable() 返回 { started: false, restartNeeded: true }, 开关已经记下, 下次打开插件或点 "点此恢复常驻唤醒" 通知时生效
+- `新增` 脚本的 speech.wake 新增 background 选项: 以 background: true 打开的唤醒会话和常驻唤醒一起在后台检测, 脚本或其他应用开始听写, 前台唤醒开始或插件的听写弹层打开时自动暂停并让出麦克风, 结束后按开启顺序恢复, 新会话不再因麦克风被占用而失败; 暂停与恢复时触发 paused / resumed 事件 (带原因 listen, wake 或 plugin). 这类会话与常驻唤醒共用一路录音, 整个插件同时最多 4 个后台唤醒会话
 - `优化` 检查更新改为读取 AutoJs6 官方插件索引, 与 AutoJs6 插件中心使用相同的地址, 访问不了 GitHub 时自动换用镜像; 新版本登记进官方索引后, 插件里才会提示更新
 
 #### v1.5.0
