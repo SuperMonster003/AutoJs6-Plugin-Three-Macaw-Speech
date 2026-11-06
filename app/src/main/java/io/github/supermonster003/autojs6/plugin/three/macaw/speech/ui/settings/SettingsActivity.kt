@@ -653,6 +653,12 @@ class SettingsActivity : StandaloneActivity() {
                     { on -> saveResident { it.copy(readAloud = on) } },
                     summary = stringResource(R.string.settings_resident_read_aloud_summary), icon = R.drawable.ic_volume_up_24, modifier = Modifier.testTag("macaw.settings.residentReadAloud"))
                 Hairline()
+                // Q170 (c), D225: off by default; on, "Send a broadcast" also goes out as an implicit broadcast.
+                SwitchRow(stringResource(R.string.settings_resident_broadcast_all), residentSettings.broadcastToAll,
+                    { on -> saveResident { it.copy(broadcastToAll = on) } },
+                    summary = stringResource(R.string.settings_resident_broadcast_all_summary), icon = R.drawable.ic_apps_24,
+                    modifier = Modifier.testTag("macaw.settings.residentBroadcastAll"))
+                Hairline()
                 // Roadmap D139 / D140: off by default; turning it on with no one enrolled opens the speaker screen instead.
                 val speakers = speakerCount
                 SwitchRow(stringResource(R.string.settings_resident_only_enrolled), residentSettings.onlyEnrolled,

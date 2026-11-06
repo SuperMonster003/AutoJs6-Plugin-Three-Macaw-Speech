@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">Только уведомить</string>
     <string name="settings_resident_action_open">Открыть панель диктовки</string>
     <string name="settings_resident_action_script">Запустить скрипт</string>
+    <string name="settings_resident_broadcast_all">Рассылать и другим приложениям</string>
+    <string name="settings_resident_broadcast_all_summary">\"Отправить широковещательное сообщение\" по умолчанию получает только AutoJs6. Если включить, его смогут получить любые приложения, вместе со словом активации</string>
     <string name="settings_resident_charging">Слушать только во время зарядки</string>
     <string name="settings_resident_charging_note">Приостанавливается при отключении питания и продолжается после подключения</string>
     <string name="settings_resident_conflict">%1$s уже слушает постоянно, сначала выключите это там</string>

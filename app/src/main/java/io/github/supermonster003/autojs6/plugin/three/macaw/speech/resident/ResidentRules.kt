@@ -239,6 +239,8 @@ internal data class ResidentSettings(
     val deadline: Long? = null,
     val powerSaving: Boolean = true,
     val onlyEnrolled: Boolean = false,
+    /** "Send a broadcast" also as an implicit broadcast (Q170 (c), D225); off sends it to AutoJs6 only. zh-CN: "发系统广播" 同时发隐式广播; 关时只发给 AutoJs6. */
+    val broadcastToAll: Boolean = false,
 ) {
     init {
         require(ResidentRules.valid(rules))

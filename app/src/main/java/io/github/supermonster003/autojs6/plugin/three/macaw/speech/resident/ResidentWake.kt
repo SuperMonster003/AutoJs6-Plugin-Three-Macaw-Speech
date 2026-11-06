@@ -261,6 +261,7 @@ internal class ResidentPreferences(context: Context) {
             deadline = preferences.getLong(KEY_DEADLINE, 0L).takeIf { it > 0 },
             powerSaving = preferences.getBoolean(KEY_POWER_SAVING, true),
             onlyEnrolled = preferences.getBoolean(KEY_ONLY_ENROLLED, false),
+            broadcastToAll = preferences.getBoolean(KEY_BROADCAST_TO_ALL, false),
         )
     }
 
@@ -276,6 +277,7 @@ internal class ResidentPreferences(context: Context) {
             putBoolean(KEY_READ_ALOUD, value.readAloud)
             putBoolean(KEY_POWER_SAVING, value.powerSaving)
             putBoolean(KEY_ONLY_ENROLLED, value.onlyEnrolled)
+            putBoolean(KEY_BROADCAST_TO_ALL, value.broadcastToAll)
             if (value.deadline == null) remove(KEY_DEADLINE) else putLong(KEY_DEADLINE, value.deadline)
         }
     }
@@ -297,6 +299,9 @@ internal class ResidentPreferences(context: Context) {
         const val KEY_DEADLINE = "deadline"
         const val KEY_POWER_SAVING = "powerSaving"
         const val KEY_ONLY_ENROLLED = "onlyEnrolled"
+
+        /** Q170 (c), D225: "Send a broadcast" also to every app. zh-CN: "发系统广播" 也发给所有应用. */
+        const val KEY_BROADCAST_TO_ALL = "broadcastToAll"
         val LINE = Char(10).toString()
     }
 }

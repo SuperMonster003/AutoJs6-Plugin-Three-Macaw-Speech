@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">إشعار فقط</string>
     <string name="settings_resident_action_open">فتح لوحة الإملاء</string>
     <string name="settings_resident_action_script">تشغيل نص برمجي</string>
+    <string name="settings_resident_broadcast_all">إرسال البث إلى التطبيقات الأخرى أيضا</string>
+    <string name="settings_resident_broadcast_all_summary">لا يصل \"إرسال بث\" افتراضيا إلا إلى AutoJs6. عند التشغيل يمكن لأي تطبيق استقباله أيضا, بما فيه كلمة التنبيه</string>
     <string name="settings_resident_charging">الاستماع أثناء الشحن فقط</string>
     <string name="settings_resident_charging_note">يتوقف مؤقتا عند فصل الشاحن ويستأنف عند توصيله مجددا</string>
     <string name="settings_resident_conflict">⁨%1$s⁩ يستمع بشكل دائم بالفعل; أوقفه هناك أولا</string>

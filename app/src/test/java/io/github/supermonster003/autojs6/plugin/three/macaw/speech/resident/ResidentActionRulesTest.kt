@@ -128,4 +128,10 @@ class ResidentActionRulesTest {
         assertNull("another provider", ResidentScriptPaths.fromDocument("com.android.providers.downloads.documents", "raw:/storage/emulated/0/Download/a.js", primary))
         assertNull(ResidentScriptPaths.fromDocument(authority, null, primary))
     }
+
+    @Test
+    fun `the broadcast goes to AutoJs6 only unless every app is allowed`() {
+        assertFalse("Q170 (c): off by default", ResidentSettings().broadcastToAll)
+        assertTrue(ResidentSettings(broadcastToAll = true).broadcastToAll)
+    }
 }

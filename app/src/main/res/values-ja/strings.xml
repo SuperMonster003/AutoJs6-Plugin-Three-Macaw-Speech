@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">通知のみ</string>
     <string name="settings_resident_action_open">音声入力パネルを開く</string>
     <string name="settings_resident_action_script">スクリプトを実行</string>
+    <string name="settings_resident_broadcast_all">ほかのアプリにもブロードキャスト</string>
+    <string name="settings_resident_broadcast_all_summary">\"ブロードキャストを送信\" は既定では AutoJs6 にだけ送ります. オンにすると, どのアプリもウェイクワードを含めて受け取れるようになります</string>
     <string name="settings_resident_charging">充電中のみ待ち受け</string>
     <string name="settings_resident_charging_note">電源を外すと一時停止し, つなぎ直すと再開します</string>
     <string name="settings_resident_conflict">%1$s が常時待ち受け中です. 先にそちらでオフにしてください</string>

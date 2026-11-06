@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">알림만</string>
     <string name="settings_resident_action_open">받아쓰기 패널 열기</string>
     <string name="settings_resident_action_script">스크립트 실행</string>
+    <string name="settings_resident_broadcast_all">다른 앱에도 브로드캐스트</string>
+    <string name="settings_resident_broadcast_all_summary">\"브로드캐스트 전송\" 은 기본적으로 AutoJs6 에만 보냅니다. 켜면 호출어를 포함해 어떤 앱이든 받을 수 있습니다</string>
     <string name="settings_resident_charging">충전 중에만 듣기</string>
     <string name="settings_resident_charging_note">전원을 뽑으면 일시 중지하고 다시 연결하면 계속합니다</string>
     <string name="settings_resident_conflict">%1$s 앱이 상시 듣기 중입니다. 먼저 그 앱에서 끄세요</string>

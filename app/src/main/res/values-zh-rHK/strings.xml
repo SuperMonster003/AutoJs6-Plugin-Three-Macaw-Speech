@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">只發通知</string>
     <string name="settings_resident_action_open">開啟聽寫面板</string>
     <string name="settings_resident_action_script">執行腳本</string>
+    <string name="settings_resident_broadcast_all">廣播亦發送給其他應用程式</string>
+    <string name="settings_resident_broadcast_all_summary">\"發送系統廣播\" 預設只發送給 AutoJs6. 開啟後任何應用程式都可能收到, 包括其中的喚醒詞</string>
     <string name="settings_resident_charging">只在充電時監聽</string>
     <string name="settings_resident_charging_note">拔掉電源時暫停, 接上後繼續</string>
     <string name="settings_resident_conflict">%1$s 正在常駐監聽, 需先在其中關閉</string>

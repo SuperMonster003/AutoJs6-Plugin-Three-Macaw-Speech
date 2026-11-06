@@ -128,16 +128,27 @@ internal object ResidentHost {
         .withHit(hit, rule)
 
     /** "Send broadcast" (D194, D225): explicit, to AutoJs6 only. zh-CN: "发系统广播" (D194, D225): 显式, 只发给 AutoJs6. */
-    fun broadcast(context: Context, hit: ResidentHit) {
-        val intent = Intent(ACTION_HIT)
-            .setPackage(HOST_PACKAGE)
+    fun broadcast(context: Context, hit: ResidentHit, toAll: Boolean = false) {
+        for (intent in hitIntents(hit, toAll)) {
+            runCatching { context.sendBroadcast(intent) }
+                .onSuccess { Log.i(TAG, "Hit broadcast sent (${if (intent.`package` == null) "implicit" else "AutoJs6"})") }
+                .onFailure { Log.w(TAG, "Hit broadcast not sent (${it.javaClass.simpleName})") }
+        }
+    }
+
+    /**
+     * The explicit broadcast to AutoJs6, and with [toAll] (Q170 (c), D225) an implicit one as well, which only receivers
+     * registered at run time get on Android 8+.
+     * zh-CN: 发给 AutoJs6 的显式广播; [toAll] 时另发一条隐式广播 (Android 8+ 只有运行时注册的接收器收得到).
+     */
+    fun hitIntents(hit: ResidentHit, toAll: Boolean): List<Intent> {
+        fun intent() = Intent(ACTION_HIT)
             .addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
             .putExtra(EXTRA_KEYWORD, hit.keyword)
             .putExtra(EXTRA_TIME_MILLIS, hit.timeMillis)
-        hit.matchedText?.let { intent.putExtra(EXTRA_MATCHED_TEXT, it) }
-        runCatching { context.sendBroadcast(intent) }
-            .onSuccess { Log.i(TAG, "Hit broadcast sent") }
-            .onFailure { Log.w(TAG, "Hit broadcast not sent (${it.javaClass.simpleName})") }
+            .also { i -> hit.matchedText?.let { i.putExtra(EXTRA_MATCHED_TEXT, it) } }
+        val toHost = intent().setPackage(HOST_PACKAGE)
+        return if (toAll) listOf(toHost, intent()) else listOf(toHost)
     }
 }
 

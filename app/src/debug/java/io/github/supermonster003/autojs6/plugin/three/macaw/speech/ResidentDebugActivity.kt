@@ -16,7 +16,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.Resi
  * a foreground state of its own. Exported to holders of DUMP only (adb, the system); a transparent window like the
  * notification trampoline, so the service starts from a visible state as it does for the user.
  *
- *     am start -n <package>/.ResidentDebugActivity --es resident on|off [--es keywords "a|b"] [--ei keywordCount 10] [--es rules <JSON>] [--ez chargingOnly true]
+ *     am start -n <package>/.ResidentDebugActivity --es resident on|off [--es keywords "a|b"] [--ei keywordCount 10] [--es rules <JSON>] [--ez broadcastToAll true] [--ez chargingOnly true]
  *         [--es duration 10|30|60|always] [--ez readAloud false] [--ez powerSaving false] [--es power off|gate|vad|step|both|setting]
  *
  * The options are stored before the switch, also with `off`, so that a run can put back what it changed. `power` picks a
@@ -52,6 +52,7 @@ class ResidentDebugActivity : Activity() {
             }
             if (intent.hasExtra(EXTRA_CHARGING_ONLY)) next = next.copy(chargingOnly = intent.getBooleanExtra(EXTRA_CHARGING_ONLY, false))
             if (intent.hasExtra(EXTRA_READ_ALOUD)) next = next.copy(readAloud = intent.getBooleanExtra(EXTRA_READ_ALOUD, true))
+            if (intent.hasExtra(EXTRA_BROADCAST_TO_ALL)) next = next.copy(broadcastToAll = intent.getBooleanExtra(EXTRA_BROADCAST_TO_ALL, false))
             intent.getStringExtra(EXTRA_DURATION)?.let { next = next.copy(duration = ListeningDuration.of(it)) }
             if (intent.hasExtra(EXTRA_POWER_SAVING)) next = next.copy(powerSaving = intent.getBooleanExtra(EXTRA_POWER_SAVING, true))
             next
@@ -86,6 +87,9 @@ class ResidentDebugActivity : Activity() {
 
         /** `--es rules <JSON>` (P11.3.5): the stored form of [ResidentRules.encode]. zh-CN: `--es rules <JSON>`: [ResidentRules.encode] 的存储形式. */
         const val EXTRA_RULES = "rules"
+
+        /** `--ez broadcastToAll true|false` (Q170 (c)). zh-CN: "广播也发给其他应用" 开关. */
+        const val EXTRA_BROADCAST_TO_ALL = "broadcastToAll"
         val MORE_KEYWORDS = listOf("文森特卡索", "周望军", "蒋友伯", "女儿", "法国", "见面会", "LIGHT UP", "LOVELY CHILD")
     }
 }

@@ -140,6 +140,7 @@ internal class MacawSettingsTransfer(private val preferences: (String) -> Shared
                     ResidentPreferences.KEY_READ_ALOUD to Rule(Type.BOOL),
                     ResidentPreferences.KEY_POWER_SAVING to Rule(Type.BOOL),
                     ResidentPreferences.KEY_ONLY_ENROLLED to Rule(Type.BOOL),
+                    ResidentPreferences.KEY_BROADCAST_TO_ALL to Rule(Type.BOOL),
                 ),
             ),
             AppearancePreferences.FILE to StoreRules(

@@ -66,6 +66,7 @@ class MacawSettingsTransferTest {
             ResidentPreferences.KEY_READ_ALOUD to false,
             ResidentPreferences.KEY_POWER_SAVING to true,
             ResidentPreferences.KEY_ONLY_ENROLLED to true,
+            ResidentPreferences.KEY_BROADCAST_TO_ALL to true,
             ResidentPreferences.KEY_DEADLINE to 1_800_000_000_000L,
         ),
         AppearancePreferences.FILE to mapOf(
@@ -85,7 +86,7 @@ class MacawSettingsTransferTest {
         val exported = transfer(stored()).exportSettings()
 
         assertEquals(MacawSettingsTransfer.STORE_NAMES.toSet(), exported.settings.keys().asSequence().toSet())
-        assertEquals(23, exported.entries)
+        assertEquals(24, exported.entries)
         assertFalse("nothing in the document is a secret", exported.sensitive)
 
         val speech = exported.settings.getJSONObject(SpeechPreferences.FILE)

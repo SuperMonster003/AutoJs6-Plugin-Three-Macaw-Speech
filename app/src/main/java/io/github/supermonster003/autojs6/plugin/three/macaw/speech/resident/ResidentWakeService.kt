@@ -322,7 +322,7 @@ class ResidentWakeService : Service() {
                 ResidentNotifications.run(this, ResidentHost.runIntent(hit, rule), rule)
             }
             HitStep.RUN_NOTICE -> ResidentNotifications.run(this, ResidentHost.runIntent(hit, rule), rule)
-            HitStep.BROADCAST -> ResidentHost.broadcast(this, hit)
+            HitStep.BROADCAST -> ResidentHost.broadcast(this, hit, toAll = preferences.read().broadcastToAll)
         }
     }
 

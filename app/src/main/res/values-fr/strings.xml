@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">Notifier seulement</string>
     <string name="settings_resident_action_open">Ouvrir le panneau de dictée</string>
     <string name="settings_resident_action_script">Exécuter un script</string>
+    <string name="settings_resident_broadcast_all">Diffuser aussi aux autres applications</string>
+    <string name="settings_resident_broadcast_all_summary">\"Envoyer une diffusion\" ne s\'adresse qu\'à AutoJs6. Activé, toute application peut aussi la recevoir, mot de réveil compris</string>
     <string name="settings_resident_charging">Écouter uniquement pendant la charge</string>
     <string name="settings_resident_charging_note">Se met en pause une fois débranché et reprend une fois rebranché</string>
     <string name="settings_resident_conflict">%1$s écoute déjà en permanence; désactivez-le d\'abord là-bas</string>

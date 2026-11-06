@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">Notify only</string>
     <string name="settings_resident_action_open">Open the dictation sheet</string>
     <string name="settings_resident_action_script">Run a script</string>
+    <string name="settings_resident_broadcast_all">Broadcast to other apps too</string>
+    <string name="settings_resident_broadcast_all_summary">\"Send a broadcast\" goes to AutoJs6 only. When on, every app may also receive it, with the wake word</string>
     <string name="settings_resident_charging">Listen only while charging</string>
     <string name="settings_resident_charging_note">Pauses when unplugged and continues when plugged in again</string>
     <string name="settings_resident_conflict">%1$s is already listening resident; turn it off there first</string>

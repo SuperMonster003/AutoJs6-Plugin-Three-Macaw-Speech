@@ -293,6 +293,8 @@
     <string name="settings_resident_action_notify">Solo notificar</string>
     <string name="settings_resident_action_open">Abrir el panel de dictado</string>
     <string name="settings_resident_action_script">Ejecutar un script</string>
+    <string name="settings_resident_broadcast_all">Difundir también a otras aplicaciones</string>
+    <string name="settings_resident_broadcast_all_summary">\"Enviar una difusión\" solo va a AutoJs6. Si se activa, cualquier aplicación puede recibirla también, con la palabra de activación</string>
     <string name="settings_resident_charging">Escuchar solo mientras se carga</string>
     <string name="settings_resident_charging_note">Se pausa al desconectar el cargador y continúa al volver a conectarlo</string>
     <string name="settings_resident_conflict">%1$s ya está escuchando de forma permanente; desactívalo allí primero</string>
