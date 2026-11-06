@@ -47,9 +47,9 @@ class PluginRuntimeInfoTest {
         assertEquals(ThreeMacawSpeechContract.REQUIRED_HOST_VERSION, fields.requiredHostVersion)
         assertEquals(1, fields.contractVersion)
         // Roadmap P2.3 / P2.4: model management, then recognition (P3), synthesis and the system TTS engine (P4), speakers (P8.3)
-        // and the offline analyses (P8.4).
+        // and the offline analyses (P8.4); engine prewarming of contract version 3 (P11.2.1, D193).
         assertEquals(
-            listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker", "diarization", "languageId", "audioTagging"),
+            listOf("models", "asr", "asrStreaming", "vad", "kws", "tts", "ttsSystemEngine", "audioDecode", "speaker", "diarization", "languageId", "audioTagging", "speechPrepare"),
             fields.features,
         )
         assertEquals("the version of assets/catalog/catalog-v3.json (BundledCatalogTest)", 3, fields.catalogVersion)

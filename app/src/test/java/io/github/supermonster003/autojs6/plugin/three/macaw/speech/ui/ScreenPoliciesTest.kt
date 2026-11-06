@@ -2,6 +2,7 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui
 
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.RepositoryFiles
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsModelVoices
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.tts.TtsVoiceTable
@@ -54,15 +55,13 @@ class ScreenPoliciesTest {
     }
 
     @Test
-    fun `newer versions follow semantic versioning`() {
-        assertTrue(UpdateVersionPolicy.isNewer("v1.0.1", "1.0.0"))
-        assertTrue(UpdateVersionPolicy.isNewer("1.1", "1.0.9"))
-        assertTrue(UpdateVersionPolicy.isNewer("v1.0.0", "1.0.0-beta"))
-        assertTrue(UpdateVersionPolicy.isNewer("1.0.0-rc.2", "1.0.0-rc.1"))
-        assertFalse(UpdateVersionPolicy.isNewer("v1.0.0", "1.0.0"))
-        assertFalse(UpdateVersionPolicy.isNewer("1.0.0-beta", "1.0.0"))
-        assertFalse(UpdateVersionPolicy.isNewer("v0.9.9", "1.0.0"))
-        assertFalse(UpdateVersionPolicy.isNewer("latest", "1.0.0"))
+    fun `newer releases have a greater versionCode`() {
+        // Roadmap P11.2.4 (D206): 1.4.0 (172) is offered 1.5.0 (177); the 1.6.0 debug build (181) is up to date.
+        // zh-CN: 路线图 P11.2.4 (D206): 1.4.0 (172) 会看到 1.5.0 (177); 1.6.0 debug 包 (181) 是最新.
+        assertTrue(UpdateVersionPolicy.isNewer(177L, 172L))
+        assertFalse(UpdateVersionPolicy.isNewer(177L, 181L))
+        assertFalse(UpdateVersionPolicy.isNewer(177L, 177L))
+        assertTrue(UpdateVersionPolicy.isNewer(1_000L, 999L))
     }
 
     @Test
@@ -119,8 +118,15 @@ class ScreenPoliciesTest {
         assertEquals(listOf(600L, 1200L, 2000L), SpeechPreferencePolicy.ENDPOINT_MILLIS)
         assertEquals(1200L, SpeechPreferencePolicy.endpoint(999))
         assertEquals(600L, SpeechPreferencePolicy.endpoint(600))
-        assertEquals(listOf(1, 5, 15, 30), SpeechPreferencePolicy.IDLE_MINUTES)
+        assertEquals(listOf(1, 5, 15, 30, 0), SpeechPreferencePolicy.IDLE_MINUTES)
         assertEquals(5, SpeechPreferencePolicy.idleMinutes(7))
+        assertEquals(5, SpeechPreferencePolicy.idleMinutes(-1))
+        // Roadmap P11.2.2 (D205): 0 is "never", the idle timer of the engine cache is off.
+        // zh-CN: 路线图 P11.2.2 (D205): 0 为 "不释放", 引擎缓存不再按空闲计时释放.
+        assertEquals(0, SpeechPreferencePolicy.idleMinutes(SpeechPreferencePolicy.NEVER_IDLE_MINUTES))
+        assertEquals(EngineCache.NEVER, SpeechPreferencePolicy.idleMillis(0))
+        assertEquals(15 * 60_000L, SpeechPreferencePolicy.idleMillis(15))
+        assertEquals(5 * 60_000L, SpeechPreferencePolicy.idleMillis(7))
         assertEquals(0.5f, SpeechPreferencePolicy.speed(0.1f))
         assertEquals(2.0f, SpeechPreferencePolicy.speed(9f))
         assertEquals(1.3f, SpeechPreferencePolicy.speed(1.26f))

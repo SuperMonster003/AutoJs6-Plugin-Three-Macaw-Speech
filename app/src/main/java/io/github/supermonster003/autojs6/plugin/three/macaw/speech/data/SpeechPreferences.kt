@@ -2,18 +2,27 @@ package io.github.supermonster003.autojs6.plugin.three.macaw.speech.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileAction
 import org.autojs.plugin.speech.api.SpeechLimits
 
 /**
  * The presets of the settings screen (roadmap P5.2, decided with the maintainer on 2026-10-16): three endpoint
- * sensitivities (how long a pause ends an utterance), four idle release times, the tryout speed range. Pure Kotlin.
- * zh-CN: 设置页的预设 (路线图 P5.2, 2026-10-16 与维护者确定): 三档端点灵敏度 (停顿多久算一句结束), 四档空闲释放时间, 试听的语速范围. 纯 Kotlin.
+ * sensitivities (how long a pause ends an utterance), four idle release times and "never" ([NEVER_IDLE_MINUTES],
+ * roadmap P11.2.2, D205), the tryout speed range. Pure Kotlin.
+ * zh-CN: 设置页的预设 (路线图 P5.2, 2026-10-16 与维护者确定): 三档端点灵敏度 (停顿多久算一句结束), 四档空闲释放时间与 "不释放" ([NEVER_IDLE_MINUTES],
+ * 路线图 P11.2.2, D205), 试听的语速范围. 纯 Kotlin.
  */
 object SpeechPreferencePolicy {
     /** Sensitive, standard (the protocol default), relaxed. zh-CN: 灵敏, 标准 (协议默认值), 宽松. */
     val ENDPOINT_MILLIS = listOf(600L, SpeechLimits.DEFAULT_SILENCE_END_MILLIS, 2000L)
-    val IDLE_MINUTES = listOf(1, 5, 15, 30)
+    /**
+     * "Never" (roadmap P11.2.2, D205): idle engines are not released on a timer, only for the memory budget, under memory
+     * pressure and when their model is removed or updated; the settings transfer writes it as 0 too.
+     * zh-CN: "不释放" (路线图 P11.2.2, D205): 空闲引擎不按计时释放, 只在内存预算不足, 系统内存紧张以及模型被删除或更新时释放; 设置导入导出同样写作 0.
+     */
+    const val NEVER_IDLE_MINUTES = 0
+    val IDLE_MINUTES = listOf(1, 5, 15, 30, NEVER_IDLE_MINUTES)
     const val DEFAULT_IDLE_MINUTES = 5
     const val MIN_SPEED = 0.5f
     const val MAX_SPEED = 2.0f
@@ -21,6 +30,9 @@ object SpeechPreferencePolicy {
 
     fun endpoint(value: Long): Long = value.takeIf { it in ENDPOINT_MILLIS } ?: SpeechLimits.DEFAULT_SILENCE_END_MILLIS
     fun idleMinutes(value: Int): Int = value.takeIf { it in IDLE_MINUTES } ?: DEFAULT_IDLE_MINUTES
+
+    /** The idle time of [EngineCache] for [minutes]; [EngineCache.NEVER] for "never". zh-CN: [minutes] 对应的 [EngineCache] 空闲时间; "不释放" 为 [EngineCache.NEVER]. */
+    fun idleMillis(minutes: Int): Long = idleMinutes(minutes).let { if (it == NEVER_IDLE_MINUTES) EngineCache.NEVER else it * 60_000L }
 
     /** Rounds to one decimal inside the range. zh-CN: 在范围内取一位小数. */
     fun speed(value: Float): Float = (Math.round(value.coerceIn(MIN_SPEED, MAX_SPEED) * 10f) / 10f)
@@ -57,7 +69,7 @@ class SpeechPreferences(context: Context) {
         get() = SpeechPreferencePolicy.idleMinutes(preferences.getInt(KEY_IDLE_MINUTES, SpeechPreferencePolicy.DEFAULT_IDLE_MINUTES))
         set(value) = edit { putInt(KEY_IDLE_MINUTES, SpeechPreferencePolicy.idleMinutes(value)) }
 
-    val idleMillis: Long get() = idleMinutes * 60_000L
+    val idleMillis: Long get() = SpeechPreferencePolicy.idleMillis(idleMinutes)
 
     /**
      * The last action of the tryout file tab (roadmap D160); its models and options stay per screen (D114).

@@ -247,7 +247,8 @@
     <string name="settings_headset">Tecla de voz de los auriculares</string>
     <string name="settings_headset_summary">Abre el panel de dictado cuando unos auriculares Bluetooth llaman al asistente de voz (pulsación larga en su tecla de voz o zona táctil). Si otra app también responde, el sistema te pide que elijas. Permite \"Dispositivos cercanos\" cuando se pida: así se usa el micrófono de los auriculares y cada pulsación funciona</string>
     <string name="settings_idle">Liberar modelos inactivos</string>
-    <string name="settings_idle_message">Un modelo cargado se libera tras este tiempo sin uso, también para los scripts</string>
+    <string name="settings_idle_message">Un modelo cargado se libera tras este tiempo sin uso, también para los scripts. Con Nunca, los modelos cargados conservan su memoria (aproximadamente su tamaño instalado cada uno) hasta que el sistema se quede sin memoria o el modelo se elimine o actualice</string>
+    <string name="settings_idle_never">Nunca</string>
     <string name="settings_idle_value">Tras %1$d min</string>
     <string name="settings_install_voices">Instalar voces</string>
     <string name="settings_install_voices_summary">Descargar modelos de síntesis de voz</string>

@@ -8,7 +8,15 @@
     "v1.6.0": {
       "released_date": "2026/11/06",
       "hint": [
-        "Cargar de antemano los motores de voz desde un script (speech.prepare) y gestionar la palabra de activación permanente desde un script (speech.resident) siguen en desarrollo y requieren AutoJs6 6.8.1 o posterior (aún no publicada). Hasta que estén terminados, un script que los llame recibe al instante un error de \"función no disponible\" en lugar de quedarse esperando; el dictado, las palabras de activación, la síntesis de voz y los demás usos existentes no cambian"
+        "Cargar de antemano los motores de voz desde un script (speech.prepare, speech.release) y la opción keepLoaded de listen / wake requieren AutoJs6 6.8.1 o posterior (aún no publicada). La gestión de la palabra de activación permanente desde un script (speech.resident) sigue en desarrollo: un script que la llame recibe al instante un error de \"función no disponible\" en lugar de quedarse esperando; el dictado, las palabras de activación, la síntesis de voz y los demás usos existentes no cambian"
+      ],
+      "feature": [
+        "Los scripts pueden cargar de antemano los motores de voz: llame a speech.prepare() al comienzo del script y el primer speech.listen ya no espera a que se cargue el modelo. En nuestras pruebas, después de que el sistema cerrara el plugin, el primer dictado empezó en 0,08 segundos en vez de 1,4 segundos (OnePlus) y en 0,25 segundos en vez de 4,2 segundos (Sony G8441), porque la carga pasó al prepare del comienzo del script. Los motores siguen cargados hasta que se llama a speech.release() o termina el script",
+        "speech.listen y speech.wake tienen una nueva opción keepLoaded: true conserva los motores que usó la sesión hasta que se llama a speech.release() o termina el script; un número de 1 a 1440 los conserva esos minutos más después de que termine la sesión. Un script que vuelve a dictar al cabo de un rato no tiene que volver a cargar el modelo",
+        "El ajuste \"Liberar modelos inactivos\" tiene una nueva opción \"Nunca\": los modelos usados se quedan en memoria, así que el siguiente reconocimiento empieza lo antes posible, a cambio de que el plugin ocupe esa memoria todo el tiempo (cada modelo, aproximadamente su tamaño instalado); aun así se liberan cuando al teléfono le falta memoria. Esta opción también se exporta e importa con los ajustes de AutoJs6"
+      ],
+      "improvement": [
+        "La búsqueda de actualizaciones ahora lee el índice oficial de complementos de AutoJs6, en las mismas direcciones que el centro de complementos de AutoJs6, y cambia a un espejo cuando no se puede acceder a GitHub; el plugin avisa de una versión nueva cuando ya figura en el índice oficial"
       ]
     },
     "v1.5.0": {

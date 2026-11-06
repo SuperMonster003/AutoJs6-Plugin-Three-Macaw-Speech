@@ -80,7 +80,7 @@ class HomeActivity : StandaloneActivity() {
                 HomeController(ManagerBackend(applicationContext), OperationTracker.shared, environment, { task -> io.execute(task) }, { task -> main.post(task) }) as T
         })[HomeController::class.java]
         controller.environment = environment
-        updates = AppUpdateController(AppUpdateStore.of(this), BuildConfig.VERSION_NAME)
+        updates = AppUpdateController(AppUpdateStore.of(this), BuildConfig.VERSION_CODE.toLong())
         super.onCreate(savedInstanceState)
         controller.refresh()
         if (savedInstanceState == null) updates.checkAutomaticallyIfDue()

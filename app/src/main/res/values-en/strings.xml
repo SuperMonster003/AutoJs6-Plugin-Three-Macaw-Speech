@@ -247,7 +247,8 @@
     <string name="settings_headset">Headset voice key</string>
     <string name="settings_headset_summary">Opens the dictation sheet when a Bluetooth headset calls the voice assistant (a long press on its voice key or touch area). If another app answers it too, the system asks you to choose. Allow \"Nearby devices\" when asked, so that the headset\'s microphone is heard and every press works</string>
     <string name="settings_idle">Release idle models</string>
-    <string name="settings_idle_message">A loaded model is released after this time without use, for scripts as well</string>
+    <string name="settings_idle_message">A loaded model is released after this time without use, for scripts as well. With Never, loaded models keep their memory (about their installed size each) until the system runs low on memory or the model is removed or updated</string>
+    <string name="settings_idle_never">Never</string>
     <string name="settings_idle_value">After %1$d min</string>
     <string name="settings_install_voices">Install voices</string>
     <string name="settings_install_voices_summary">Download speech synthesis models</string>

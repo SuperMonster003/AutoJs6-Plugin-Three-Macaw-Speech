@@ -247,7 +247,8 @@
     <string name="settings_headset">Touche vocale du casque</string>
     <string name="settings_headset_summary">Ouvre le panneau de dictée quand un casque Bluetooth appelle l\'assistant vocal (appui long sur sa touche vocale ou sa zone tactile). Si une autre application y répond aussi, le système vous demande de choisir. Autorisez \"Appareils à proximité\" quand c\'est demandé: le micro du casque est alors utilisé et chaque appui fonctionne</string>
     <string name="settings_idle">Libérer les modèles inactifs</string>
-    <string name="settings_idle_message">Un modèle chargé est libéré après cette durée sans utilisation, y compris pour les scripts</string>
+    <string name="settings_idle_message">Un modèle chargé est libéré après cette durée sans utilisation, y compris pour les scripts. Avec Jamais, les modèles chargés gardent leur mémoire (environ leur taille installée chacun) jusqu\'à ce que le système manque de mémoire ou que le modèle soit supprimé ou mis à jour</string>
+    <string name="settings_idle_never">Jamais</string>
     <string name="settings_idle_value">Après %1$d min</string>
     <string name="settings_install_voices">Installer des voix</string>
     <string name="settings_install_voices_summary">Télécharger des modèles de synthèse vocale</string>

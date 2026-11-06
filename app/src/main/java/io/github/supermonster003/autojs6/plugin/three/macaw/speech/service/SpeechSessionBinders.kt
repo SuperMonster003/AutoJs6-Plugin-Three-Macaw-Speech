@@ -14,6 +14,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.Ea
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.audio.MicrophoneSource
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstalledModel
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineLeases
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.KeywordEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationEvents
@@ -41,16 +42,20 @@ import kotlin.concurrent.withLock
 
 /**
  * [DictationEvents] delivered to an `ISpeechSessionCallback` (oneway). A dead callback (the host process died) cancels
- * the session through [onDead]; [beforeEnd] runs before the `onEnd` of the session itself (not of a wake round) leaves.
+ * the session through [onDead]; [beforeEnd] runs before the `onEnd` of the session itself (not of a wake round) leaves;
+ * the ready event of the session itself carries the lease [leaseId] gives (`keepLoaded`, roadmap P11.2.2).
  * zh-CN: 投递到 `ISpeechSessionCallback` (oneway) 的 [DictationEvents]. 回调已失效 (宿主进程死亡) 时经 [onDead] 取消会话; [beforeEnd]
- * 在会话本身 (而非唤醒轮次) 的 `onEnd` 发出之前运行.
+ * 在会话本身 (而非唤醒轮次) 的 `onEnd` 发出之前运行; 会话本身的 ready 事件带 [leaseId] 给出的租约 (`keepLoaded`, 路线图 P11.2.2).
  */
 internal class CallbackDictationEvents(
     private val callback: ISpeechSessionCallback,
     private val beforeEnd: () -> Unit = {},
+    private val leaseId: () -> String? = { null },
     private val onDead: () -> Unit,
 ) : DictationEvents {
-    override fun ready(sessionId: String, modelId: String, round: Int?) = send { callback.onReady(SpeechBundles.ready(sessionId, modelId, round)) }
+    override fun ready(sessionId: String, modelId: String, round: Int?) = send {
+        callback.onReady(SpeechBundles.ready(sessionId, modelId, round, if (round == null) leaseId() else null))
+    }
     override fun partial(text: String, segmentIndex: Int) = send { callback.onPartial(SpeechBundles.partial(text, segmentIndex)) }
     override fun final(utterance: Utterance) = send { callback.onFinal(SpeechBundles.utterance(utterance)) }
     override fun endpoint() = send { callback.onEndpoint() }
@@ -72,15 +77,18 @@ internal class CallbackDictationEvents(
 }
 
 /**
- * [WakeEvents] delivered to an `ISpeechWakeCallback`; [beforeEnd] runs before `onEnd` leaves.
- * zh-CN: 投递到 `ISpeechWakeCallback` 的 [WakeEvents]; [beforeEnd] 在 `onEnd` 发出之前运行.
+ * [WakeEvents] delivered to an `ISpeechWakeCallback`; [beforeEnd] runs before `onEnd` leaves; the ready event carries the
+ * lease [leaseId] gives (`keepLoaded`, roadmap P11.2.2).
+ * zh-CN: 投递到 `ISpeechWakeCallback` 的 [WakeEvents]; [beforeEnd] 在 `onEnd` 发出之前运行; ready 事件带 [leaseId] 给出的租约 (`keepLoaded`,
+ * 路线图 P11.2.2).
  */
 internal class CallbackWakeEvents(
     private val callback: ISpeechWakeCallback,
     private val beforeEnd: () -> Unit = {},
+    private val leaseId: () -> String? = { null },
     private val onDead: () -> Unit,
 ) : WakeEvents {
-    override fun ready(sessionId: String, modelId: String) = send { callback.onReady(SpeechBundles.ready(sessionId, modelId, null)) }
+    override fun ready(sessionId: String, modelId: String) = send { callback.onReady(SpeechBundles.ready(sessionId, modelId, null, leaseId())) }
     override fun wake(keyword: String, score: Float, timestampMillis: Long, round: Int?) = send { callback.onWake(SpeechBundles.wake(keyword, score, timestampMillis, round)) }
     override fun warning(code: String, message: String) = send { callback.onWarning(SpeechBundles.problem(code, message)) }
     override fun error(code: String, message: String) = send { callback.onError(SpeechBundles.problem(code, message)) }
@@ -117,20 +125,51 @@ internal data class LocalSession(
 )
 
 /**
+ * `keepLoaded` of a session (roadmap P11.2.2, D184, D196): the place among the caller's leases taken when the session
+ * opened, and the minutes the lease outlives the session ([SpeechLimits.KEEP_LOADED_UNTIL_RELEASED]: until `release` or
+ * the death of the caller's process).
+ * zh-CN: 会话的 `keepLoaded` (路线图 P11.2.2, D184, D196): 会话打开时在调用方租约中占用的位置, 以及租约比会话多保留的分钟数
+ * ([SpeechLimits.KEEP_LOADED_UNTIL_RELEASED]: 直到 `release` 或调用方进程死亡).
+ */
+internal class KeepLoaded(val ticket: EngineLeases.Ticket, val minutes: Int)
+
+/**
+ * Ends a lease when the process of [binder] dies; [unlink] when the lease ended otherwise.
+ * zh-CN: [binder] 所在进程死亡时结束租约; 租约以其他方式结束时 [unlink].
+ */
+internal class LeaseDeath(private val leases: EngineLeases, private val binder: IBinder) : IBinder.DeathRecipient {
+    @Volatile
+    var leaseId: String? = null
+
+    override fun binderDied() {
+        leaseId?.let(leases::drop)
+    }
+
+    fun unlink() {
+        runCatching { binder.unlinkToDeath(this, 0) }
+    }
+}
+
+/**
  * What every session Binder shares (roadmap D16): the admission slot, the death links of the host callbacks, the
  * engine leases, the microphone and its foreground service, and a cleanup that runs exactly once when the session
- * ended. Everything but the Binder entry points runs on the ASR thread.
+ * ended. Everything but the Binder entry points runs on the ASR thread. With [keep] (`keepLoaded`, roadmap P11.2.2) the
+ * session's engines also become a lease of the caller when the ready event of the session leaves ([keptLease]); the
+ * lease outlives the session by [KeepLoaded.minutes] and ends at once when the caller's process dies.
  * zh-CN: 每个会话 Binder 共有的部分 (路线图 D16): 准入位置, 宿主回调的死亡监听, 引擎租约, 麦克风及其前台服务, 以及会话结束时恰好运行一次的清理.
- * 除 Binder 入口外, 一切都在 ASR 线程上运行.
+ * 除 Binder 入口外, 一切都在 ASR 线程上运行. 带 [keep] (`keepLoaded`, 路线图 P11.2.2) 时, 会话本身的 ready 事件发出时会话的引擎也成为调用方的
+ * 租约 ([keptLease]); 租约比会话多保留 [KeepLoaded.minutes], 调用方进程死亡时立即结束.
  */
 internal abstract class SessionBinder(
     protected val runtime: SpeechRuntime,
     protected val slot: SessionTable.Slot,
     private val callbacks: List<IBinder>,
     private val attribution: Context? = null,
+    private val keep: KeepLoaded? = null,
 ) : ISpeechSession.Stub(), IBinder.DeathRecipient, MicrophoneService.Listener {
 
     protected val leases = ArrayList<EngineCache.Lease<out Closeable>>()
+    private var keptLeaseId: String? = null
     private val cleaned = AtomicBoolean(false)
     private val freed = AtomicBoolean(false)
     private val pending = AtomicLong(0)
@@ -211,6 +250,29 @@ internal abstract class SessionBinder(
                 if (isEnded) cleanup()
             }
         }
+    }
+
+    /**
+     * The `keepLoaded` lease for the ready event of the session itself (ASR thread): granted on the first call from the
+     * engines the session holds, so a session that fails before it is ready leaves none; null without `keepLoaded`.
+     * zh-CN: 会话本身 ready 事件所带的 `keepLoaded` 租约 (ASR 线程): 首次调用时用会话持有的引擎发放, 因此就绪之前失败的会话不留下租约; 没有
+     * `keepLoaded` 时为 null.
+     */
+    protected fun keptLease(): String? {
+        val keep = keep ?: return null
+        keptLeaseId?.let { return it }
+        if (leases.isEmpty() || cleaned.get()) return null
+        val holder = callbacks.first()
+        val death = LeaseDeath(runtime.leases, holder)
+        val id = keep.ticket.grant(leases.first().key.modelId, leases.map { runtime.engines.share(it) }, death::unlink)
+        death.leaseId = id
+        keptLeaseId = id
+        try {
+            holder.linkToDeath(death, 0)
+        } catch (_: RemoteException) {
+            runtime.leases.drop(id)
+        }
+        return id
     }
 
     /**
@@ -330,6 +392,13 @@ internal abstract class SessionBinder(
         callbacks.forEach { runCatching { it.unlinkToDeath(this, 0) } }
         leases.forEach { runCatching { it.close() } }
         leases.clear()
+        keep?.let { keep ->
+            val id = keptLeaseId
+            when {
+                id == null -> keep.ticket.cancel()
+                keep.minutes != SpeechLimits.KEEP_LOADED_UNTIL_RELEASED -> runtime.leases.expireAfter(id, keep.minutes)
+            }
+        }
     }
 
     // ISpeechSession: the entry points post to the ASR thread.
@@ -369,10 +438,11 @@ internal class DictationBinder(
     private val foreground: Boolean,
     attribution: Context?,
     private val recordingStarted: (() -> Unit)? = null,
+    keep: KeepLoaded? = null,
     makeSession: (DictationEvents) -> DictationSession,
-) : SessionBinder(runtime, slot, listOf(callback.asBinder()), attribution) {
+) : SessionBinder(runtime, slot, listOf(callback.asBinder()), attribution, keep) {
 
-    private val session: DictationSession = makeSession(CallbackDictationEvents(callback, beforeEnd = { freeMicrophone() }) { binderDied() })
+    private val session: DictationSession = makeSession(CallbackDictationEvents(callback, beforeEnd = { freeMicrophone() }, leaseId = { keptLease() }) { binderDied() })
     private val early = EarlyAudio()
 
     override val isEnded: Boolean get() = session.isEnded
@@ -467,11 +537,12 @@ internal class WakeBinder(
     private val foreground: Boolean = true,
     private val power: WakePower = WakePower.OFF,
     private val tail: AudioTail? = null,
+    keep: KeepLoaded? = null,
     makeSession: (WakeEvents, DictationEvents?) -> WakeSession,
-) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder())), SessionTable.Yielding {
+) : SessionBinder(runtime, slot, listOfNotNull(callback.asBinder(), listenCallback?.asBinder()), keep = keep), SessionTable.Yielding {
 
     private val session: WakeSession = makeSession(
-        CallbackWakeEvents(callback, beforeEnd = { freeMicrophone() }) { binderDied() },
+        CallbackWakeEvents(callback, beforeEnd = { freeMicrophone() }, leaseId = { keptLease() }) { binderDied() },
         listenCallback?.let { listen -> CallbackDictationEvents(listen) { binderDied() } },
     )
 

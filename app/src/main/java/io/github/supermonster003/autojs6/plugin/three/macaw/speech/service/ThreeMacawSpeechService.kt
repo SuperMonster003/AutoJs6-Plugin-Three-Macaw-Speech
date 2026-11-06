@@ -23,6 +23,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Op
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.OperationResult
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.SherpaEngines
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.DictationSession
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SessionTable
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.SpeechOptions
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakeSession
@@ -137,6 +138,7 @@ internal class SpeechPluginBinder(
         manager.cancel(opId)
         synthesis.cancel(opId)
         analysis.cancel(opId)
+        SpeechRuntime.existing?.prepares?.cancel(opId)
     }
 
     override fun removeModel(request: Bundle?): Bundle = answering {
@@ -182,7 +184,6 @@ internal class SpeechPluginBinder(
     private fun dictation(options: Bundle?, callback: ISpeechSessionCallback?, local: LocalSession?): ISpeechSession {
         val checks = StartupTiming.Checks()
         val listen = SpeechOptions.listen(options?.let(::BundleOptionSource))
-        if (listen.keepLoaded != null) unavailable(SpeechContract.FEATURE_PREPARE, "keepLoaded")
         val listener = callback ?: invalid("A session callback is required")
         val created = SpeechRuntime.existing == null
         runtime.also { checks.runtime(created) }
@@ -193,17 +194,35 @@ internal class SpeechPluginBinder(
         val model = runtime.resolve(SpeechContract.KIND_ASR, listen.model)
         checks.resolved()
         val warnings = runtime.warnings(model, listen.language, listen.hotwords)
-        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true)
+        val keep = keepLoaded(listen.keepLoaded)
+        val slot = reserveSlot(keep) { runtime.sessions.reserve(Binder.getCallingUid(), microphone = !listen.isExternal, takeover = local?.takeover == true) }
         checks.log("Dictation")
         try {
             val id = runtime.nextId(if (listen.isExternal) "external" else "listen")
-            return DictationBinder(runtime, slot, listener, listen.isExternal, local?.foreground != false, local?.attribution, local?.recording) { events ->
+            return DictationBinder(runtime, slot, listener, listen.isExternal, local?.foreground != false, local?.attribution, local?.recording, keep) { events ->
                 DictationSession(id, listen, events)
             }.also { it.open(model, warnings) }
         } catch (t: Throwable) {
             runtime.sessions.release(slot)
+            keep?.ticket?.cancel()
             throw t
         }
+    }
+
+    /**
+     * The place of a `keepLoaded` lease (roadmap P11.2.2, D203), taken before the session opens so that a caller at its
+     * lease limit fails with `LIMIT_EXCEEDED` at once; null without `keepLoaded`.
+     * zh-CN: `keepLoaded` 租约的位置 (路线图 P11.2.2, D203), 在会话打开之前占用, 使已达租约上限的调用方立即以 `LIMIT_EXCEEDED` 失败; 没有
+     * `keepLoaded` 时为 null.
+     */
+    private fun keepLoaded(minutes: Int?): KeepLoaded? = minutes?.let { KeepLoaded(runtime.leases.reserve(Binder.getCallingUid()), it) }
+
+    /** Reserves the session slot, giving the place of [keep] back when that fails. zh-CN: 占用会话位置, 失败时归还 [keep] 的位置. */
+    private inline fun reserveSlot(keep: KeepLoaded?, reserve: () -> SessionTable.Slot): SessionTable.Slot = try {
+        reserve()
+    } catch (t: Throwable) {
+        keep?.ticket?.cancel()
+        throw t
     }
 
     /**
@@ -248,7 +267,6 @@ internal class SpeechPluginBinder(
         tail: AudioTail? = null,
     ): ISpeechSession {
         val wake = SpeechOptions.wake(options?.let(::BundleOptionSource))
-        if (wake.keepLoaded != null) unavailable(SpeechContract.FEATURE_PREPARE, "keepLoaded")
         if (wake.background) unavailable(SpeechContract.FEATURE_BACKGROUND_WAKE, "background")
         val listener = callback ?: invalid("A wake callback is required")
         val listen = if (wake.thenListen != null) listenCallback ?: invalid("thenListen needs the listen callback") else null
@@ -258,14 +276,16 @@ internal class SpeechPluginBinder(
         val listenModel = wake.thenListen?.let { runtime.resolve(SpeechContract.KIND_ASR, it.model) }
         val buffer = runtime.keywordBuffer(keywordModel, wake.keywords)
         if (resident && wake.thenListen != null) invalid("The resident wake word has no thenListen round")
-        val slot = runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = resident)
+        val keep = keepLoaded(wake.keepLoaded)
+        val slot = reserveSlot(keep) { runtime.sessions.reserve(Binder.getCallingUid(), microphone = true, takeover = takeover, background = resident) }
         try {
             val id = runtime.nextId(if (resident) "resident" else "wake")
-            return WakeBinder(runtime, slot, listener, listen, foreground = !resident, power = power, tail = tail) { events, listenEvents ->
+            return WakeBinder(runtime, slot, listener, listen, foreground = !resident, power = power, tail = tail, keep = keep) { events, listenEvents ->
                 WakeSession(id, wake, events, listenEvents, SherpaEngines.DEFAULT_KEYWORD_THRESHOLD)
             }.also { it.open(keywordModel, buffer, listenModel) }
         } catch (t: Throwable) {
             runtime.sessions.release(slot)
+            keep?.ticket?.cancel()
             throw t
         }
     }
@@ -380,20 +400,38 @@ internal class SpeechPluginBinder(
         analysis.startTag(audio, options, callback)
     }
 
-    // Contract version 3 (roadmap P11, D183 - D195): leases and the resident wake words. This build declares none of their
-    // features, so a host that checks the capabilities never calls these; a call that comes anyway is refused with
-    // FEATURE_UNAVAILABLE (D193), the answers carrying version 3.
-    // zh-CN: 契约版本 3 (路线图 P11, D183 - D195): 租约与常驻唤醒词. 本构建不声明其任何功能, 因此检查能力的宿主不会调用它们; 仍然到来的调用以
-    // FEATURE_UNAVAILABLE 拒绝 (D193), 应答带版本 3.
+    // Contract version 3 (roadmap P11, D183 - D195): leases and the resident wake words, the answers carrying version 3.
+    // The leases (feature speechPrepare) are implemented since P11.2 ([SpeechPrepare], [EngineLeases], keepLoaded of the
+    // sessions); this build does not declare the resident wake words or the background wake session yet, so a host that
+    // checks the capabilities never calls those, and a call that comes anyway is refused with FEATURE_UNAVAILABLE (D193).
+    // zh-CN: 契约版本 3 (路线图 P11, D183 - D195): 租约与常驻唤醒词, 应答带版本 3. 租约 (功能 speechPrepare) 自 P11.2 起实现 ([SpeechPrepare],
+    // [EngineLeases], 会话的 keepLoaded); 本构建尚未声明常驻唤醒词与后台唤醒会话, 因此检查能力的宿主不会调用它们, 仍然到来的调用以
+    // FEATURE_UNAVAILABLE 拒绝 (D193).
 
+    /**
+     * Starts a prepare of the calling uid (roadmap P11.2.1, D203) and answers its operation id at once; see [SpeechPrepare].
+     * zh-CN: 开始调用方 uid 的预热 (路线图 P11.2.1, D203) 并立即返回操作 ID; 见 [SpeechPrepare].
+     */
     override fun prepare(request: Bundle?, callback: ISpeechProgressCallback?): Int = throwing {
         checkContract(request, SpeechContract.CALL_VERSION_3)
-        unavailable(SpeechContract.FEATURE_PREPARE, "prepare")
+        runtime.prepares.start(request, callback, Binder.getCallingUid())
     }
 
+    /**
+     * Ends a lease of the calling uid (a prepare's or a `keepLoaded` session's); `LEASE_NOT_FOUND` when the caller does
+     * not hold it (released, expired, of another caller, or of an earlier plugin process). The runtime is not created for
+     * this: without one no lease exists.
+     * zh-CN: 结束调用方 uid 的一个租约 (预热或 `keepLoaded` 会话的); 调用方不持有它 (已归还, 已到期, 属于其他调用方或此前的插件进程) 时为
+     * `LEASE_NOT_FOUND`. 不为此创建运行时: 没有运行时就没有租约.
+     */
     override fun release(request: Bundle?): Bundle = answering(SpeechContract.CALL_VERSION_3) {
         checkContract(request, SpeechContract.CALL_VERSION_3)
-        unavailable(SpeechContract.FEATURE_PREPARE, "release")
+        val leaseId = request?.getString(SpeechOptionKeys.LEASE_ID)?.takeIf { it.isNotEmpty() && it.length <= SpeechLimits.MAX_TOKEN_CHARS }
+            ?: invalid("leaseId is required")
+        if (SpeechRuntime.existing?.leases?.release(leaseId, Binder.getCallingUid()) != true) {
+            throw SpeechException(SpeechErrorCodes.LEASE_NOT_FOUND, "The caller holds no lease $leaseId")
+        }
+        SpeechBundles.answer(SpeechContract.CALL_VERSION_3)
     }
 
     override fun getResident(query: Bundle?): Bundle = residentCall(query, "getResident")

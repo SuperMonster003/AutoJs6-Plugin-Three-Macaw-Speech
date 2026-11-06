@@ -68,7 +68,7 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D33 | 首页结构 | 单页: 顶栏右侧 "试听试说" 与 "设置" 两个图标; 状态卡 4 行 (运行时版本, 已装模型数与目录版本, 麦克风权限 + 一键申请, 系统 TTS 引擎是否选中 + 打开系统设置) 下方带 "试听试说" 按钮; 再往下按 识别 / 唤醒词 / 合成 / VAD 4 组列出目录模型与导入的模型. 与 3-Maple Image 的单页 + 顶栏动作一致; 未采用底部导航与 "首页只放入口". | P5.1 (已定) |
 | D34 | 界面下载与计量网络 (附录 D Q7 (a)) | 计量网络上点下载时弹确认框, 写明下载大小, 框内有 "不再询问" 复选框; 设置页 "资源" 组的 "允许计量网络下载" 开关可改回. 离线时下载按钮不可用并显示离线提示, 导入仍可用. 判断离线与计量用 `ConnectivityManager`, 为此追加 `ACCESS_NETWORK_STATE` (D29). 脚本 `installModel` 不受影响 (P2.3). | P5.1 (已定) |
 | D35 | 识别与合成设置的作用范围 | 端点灵敏度, VAD 开关, 说话人, 语速与按语言的默认语音只作用于试听试说页与系统 TTS 引擎 (引擎使用说话人与按语言的默认语音, 语速由请求决定); 脚本始终用协议默认值 (`silenceEndMillis` 1200 ms, VAD 开, 模型默认说话人, 语速 1.0), 行为与文档一致, 不随设备上的设置变化. 默认模型本来就是全局的 (`setDefaultModel`); 模型空闲释放时间属于资源管理, 对脚本同样生效 (D39). P5.6 起端点灵敏度与 VAD 开关也作用于系统语音输入 (D44). | P5.2 (已定) |
-| D36 | 更新检查 | 沿用 3-Stone AI: 打开首页时自动检查, 每 12 小时最多一次; 连接 15 s / 读取 20 s / 总 30 s 超时, 手动检查可取消; 发现新版对话框: 查看发行版 / 稍后 / Neutral 发行历史, 内容区 "忽略此版本" 复选框; 设置页有自动检查开关与 "管理已忽略的版本". 数据源 GitHub `releases/latest`; 仓库尚无 Release (HTTP 404) 时手动检查显示 "尚未发布", 自动检查不打扰. | P5.4 (已定) |
+| D36 | 更新检查 | 沿用 3-Stone AI: 打开首页时自动检查, 每 12 小时最多一次; 连接 15 s / 读取 20 s / 总 30 s 超时, 手动检查可取消; 发现新版对话框: 查看发行版 / 稍后 / Neutral 发行历史, 内容区 "忽略此版本" 复选框; 设置页有自动检查开关与 "管理已忽略的版本". 数据源 (2026-11-06 修订, 见 D206) 官方插件索引中本插件的条目, 按 versionCode 比较 (原为 GitHub `releases/latest`); 索引尚无本插件条目或 HTTP 404 时手动检查显示 "尚未发布", 自动检查不打扰. | P5.4 (已定; 数据源 2026-11-06 由 D206 修订) |
 | D37 | 试听试说的 TTS 播放 | 复用 `synthesizeToFile` 写缓存 WAV, 合成时显示按句进度, 完成后 `MediaPlayer` 播放; "保存到文件" 用系统文件选择器把同一份 WAV 复制出去, 播放与保存的声音完全一致; 文本上限 500 字. 未采用经系统引擎边合成边播 (保存要再合成一遍). | P5.3 (已定) |
 | D38 | 界面导入本地模型 | 来源为文件 (tar / tar.bz2 / zip, `OpenDocument` 复制到 `cacheDir/imports`) 或 SAF 文件夹 (`OpenDocumentTree`, `DocumentTree` 适配 `ImportTree`). 先按目录 `files[]` 的大小与 SHA-256 自动匹配, 命中即以目录身份登记, 需要时先弹 D11 许可提示; 不匹配时 (`NoCatalogMatchException`, 错误码 `INVALID_OPTIONS`) 弹表单填 种类 / 模型类型 / 名称 / 语言 / ID, 用同一个文件重试. | P5.1 (已定) |
 | D39 | 设置预设 | 端点灵敏度 3 档: 灵敏 600 ms / 标准 1200 ms (协议默认) / 宽松 2000 ms; 模型空闲释放 4 档: 1 / 5 (默认, D30) / 15 / 30 分钟, 写入 `EngineCache.idleMillis` 后立即生效; 语速 0.5 - 2.0, 步长 0.1. 存储值超出预设时按 `SpeechPreferencePolicy` 夹取. 未采用 4 档端点与 "不释放". | P5.2 (已定) |
@@ -233,8 +233,15 @@ D13-D32 据第 1 节派生, 进入对应阶段前可推翻 (推翻点见各条),
 | D197 | (派生, P11.1 子会话 macaw-p11-1) `speech.release` 的返回与租约上限 | `release(leaseId)` 返回 boolean (不是本脚本的租约, 或插件答 `LEASE_NOT_FOUND` 时为 false); `release()` 归还本脚本的全部租约, 返回插件仍持有的个数; 本脚本没有租约时不联系插件 (返回 false / 0); 每个宿主 Binder 令牌最多 `MAX_LEASES_PER_TOKEN` = 16 个租约 (插件侧记账由 P11.2.1 实现), 宿主等 prepare 完成最多 `PREPARE_TIMEOUT_MS` = 2 分钟 | P11.2.1 开工前 |
 | D198 | (派生, P11.1 子会话 macaw-p11-1) `speech.resident` 的形状 | `get()` -> `{ enabled, rules }`; `set(config)` 接受 `{ rules }` 或规则数组, 规则为字符串 (动作 "open") 或 `{ keyword, action?, script?, arguments? }`, 脚本路径按工作目录解析; 宿主先校验 (最多 10 条, 关键词 1 - 32 字符且去空白后不重复, "script" 动作必须有路径, arguments 至多 1024 字符), 不合规为 `INVALID_OPTIONS`, 返回保存后的配置; `enable()` / `disable()` -> `{ started, restartNeeded }`; `enabled` 属性取不到时为 false, 不抛异常; `on('hit', fn)` / `off('hit', fn?)` 返回 undefined, 第一个监听器注册观察者, 最后一个移除时注销, `off` 不带 fn 时移除全部, 有监听器期间脚本不退出 | P11.3.4 开工前 |
 | D199 | (派生, P11.1 子会话 macaw-p11-1) 三个新错误 code 的含义 | `FEATURE_UNAVAILABLE`: 宿主在任何事务之前抛出 (消息写明缺的功能名, 或 "version 2" / "version 3"), 插件对未实现的 v3 方法与选项也这样答; `RESIDENT_UNAVAILABLE`: 没有麦克风权限, 没有唤醒模型, 或系统拒绝了前台服务 (麦克风权限是否改用 `PERMISSION_DENIED` 由 P11.3.4 定); `LEASE_NOT_FOUND`: 调用方不持有该租约, 宿主 `release` 把它转成 false; v2 宿主把三者报为 `INTERNAL`, 插件只在 v3 应答里发送 | P11.3.4 开工前 |
-| D200 | (派生, P11.1 子会话 macaw-p11-1) api-coverage 登记 (Q153 按 (a) 先行) | 宿主矩阵新增 `speech.prepare` / `prepareAsync` / `release` 与 `speech.resident` 的 7 个成员 (10 行); `tools/api-coverage/policy.json` 的 `deferredNameGate` 加 "speech" (文档 / d.ts / Ace 由 P11.4.2 补, 补齐后必须删除该项, 否则 `check.py` 报过期); Node main / Node Worker / Bun 三列共 30 格记为 pending (`pending-baseline.json` 决策 "3-Macaw Speech Q153 (a)"), `check-runtime-speech.mjs` 跳过 prepare / prepareAsync / release | P11.4.2 开工前 |
+| D200 | (派生, P11.1 子会话 macaw-p11-1) api-coverage 登记 (Q153 按 (a) 先行) | 宿主矩阵新增 `speech.prepare` / `prepareAsync` / `release` 与 `speech.resident` 的 7 个成员 (10 行); `tools/api-coverage/policy.json` 的 `deferredNameGate` 加 "speech" (文档 / d.ts / Ace 由 P11.4.2 补, 补齐后必须删除该项, 否则 `check.py` 报过期); Node main / Node Worker / Bun 三列共 30 格记为 pending (`pending-baseline.json` 决策 "3-Macaw Speech Q153 (a)"), `check-runtime-speech.mjs` 跳过 prepare / prepareAsync / release; Q153 改选 (c) 后 30 格 pending 由 macaw-q153-nodebun 转 covered | P11.4.2 开工前 |
 | D201 | (派生, P11.1 子会话 macaw-p11-1) F9 计时日志保留 | 插件 `service/StartupTiming.kt` (tag `MacawStartup`, Info 级, 每次会话几行, 只有毫秒数与阶段名, 不含识别文本) 与 `.python/f9_startup_timing.py` 留在仓库, 供 P11.2.3 复测预热效果; 正式包同样输出 | P11.5.1 开工前 |
+| D202 | (派生, P11.2 子会话 macaw-p11-2) `prepare` 预热哪些引擎 | `kind` "asr" (默认) 加载该模型默认 listen 所用的引擎 (EngineKey 相同: 无热词, 开启标点, `language` 选变体), "kws" 加载唤醒会话所用的引擎; 不预热 TTS (synthesize 是一次性调用, 不在 F9 范围); 模型按 listen / wake 的默认规则解析, 不存在或类型不符在 Binder 线程上立即失败; 同一引擎已在缓存时直接复用, `loadMillis` 为 0, 再发一个租约 (同一引擎的多个租约由 `EngineCache` 计数, 全部归还后才按空闲设置计时); 进程的第一次 prepare 同时创建 SpeechRuntime (P11.1.1 结论) | P11.2.1 (已实施) |
+| D203 | (派生, P11.2 子会话 macaw-p11-2) 租约记账 | 持有者是调用方 uid (同一宿主的全部脚本共用, 宿主按脚本分别记录并在脚本退出时归还); 每个 uid 至多 16 个 (D197), 仍在加载的 prepare 与已打开的 keepLoaded 会话也计入, 超出为 `LIMIT_EXCEEDED`; `release` 只接受同一 uid 的租约, 否则 `LEASE_NOT_FOUND`; 租约 ID 为 `lease-<UUID>`, 插件进程重启后旧 ID 一律 `LEASE_NOT_FOUND`; prepare 的回调 binder 死亡即归还 | P11.2.1 (已实施) |
+| D204 | (派生, P11.2 子会话 macaw-p11-2) `keepLoaded` 租约的发放时机 | 会话本身的 `ready` 事件发出时用会话持有的引擎发放 (事件带 `leaseId`), 就绪之前失败的会话不留租约; 位置在打开会话之前占用, 已达上限立即 `LIMIT_EXCEEDED`; 1 - 1440 分钟从会话结束时开始计时, -1 (`true`) 保留到 `release` 或调用方进程死亡; wake 会话 `thenListen` 轮次不带租约 (D196) | P11.2.2 (已实施) |
+| D205 | (派生, P11.2 子会话 macaw-p11-2) "不释放" 档的边界 | `EngineCache.NEVER`: 空闲实例不按时间释放, 但内存预算需要腾出空间 (makeRoom), 系统 trim (onTrimMemory) 与逐出 (evict) 时照常释放; 设置迁移导出为 `idleMinutes` 0, 导入接受 0 / 1 / 5 / 15 / 30, 其他值按 P10.1 宽松规则跳过该键并计入 skipped (保留当前值); 从 "不释放" 改回某个分钟数时, 保留的实例按新的空闲时间开始计时 | P11.2.2 (已实施) |
+| D206 | (派生, P11.2 子会话 macaw-p11-2) 应用内更新检查改读官方插件索引 | 来源: 2026-11-06 13:15 维护者在 3-prism 调度会话回答 Q45 时指示 "改读官方插件索引, 同时 macaw 项目也要求这样做" (由 3-prism 调度会话 local_1b7ecda2 转达). 读 `SuperMonster003/AutoJs6-Official-Plugins-Index` (main 分支) 的 `plugins.official.generated.json` (与宿主插件中心 `PluginIndexMirrors` 同序: raw.githubusercontent.com, 失败再依次换 cdn.jsdelivr.net / fastly.jsdelivr.net), 取 `packageName` 等于本插件的条目, 在 `releases` 中选非 prerelease, versionCode > 0 且 versionName 合法的最高 versionCode, 大于已安装 versionCode 即为新版; 条目不存在或 HTTP 404 = 尚未发布; 响应上限 8 MiB; 忽略版本仍按 `v<versionName>` 记录, D36 的其余行为 (12 小时节流, 超时, 对话框, 忽略管理) 不变; ISRG Root X1 的 `network_security_config` 是 base-config, 对索引的三个域名同样生效 (TrustAnchorDeviceTest 覆盖) | P11.2.4 (已实施) |
+| D207 | (派生, P11.2 子会话 macaw-p11-2) 新版对话框的更新说明来源 | 用索引条目的 `changelogText` (即 GitHub Release 正文), 截断到 6000 字符; 未采用: 另取本地化的 `CHANGELOG-*.md` (多一次请求, 镜像不同步时与版本号不一致), 或不显示说明 (失去 D36 的信息量) | P11.2.4 (已实施) |
+| D208 | (派生, P11.2 子会话 macaw-p11-2) P11.2.3 的耗时门槛 | 预热后首次 listen 的就绪时间不超过 P11.1.1 热态 "会话建立" 段中位数的 1.5 倍: OnePlus 102 ms (68 x 1.5), G8441 368 ms (245 x 1.5); 按就绪时间整体判定 (含绑定与送达), 比单看会话建立段更严 | P11.2.3 (已实施) |
 
 ---
 
@@ -987,9 +994,10 @@ P9.6 已定 no-go (D179): 不等迁移, sherpa-onnx 仍为 1.13.8.
 
 ### P11.2 引擎预热与保留 (F9, D184, D185)
 
-- [ ] (插件) P11.2.1 `prepare` 实现: 按 options 把引擎 (识别 / 唤醒 / TTS, 哪些类型由子会话定并登记) 加载进 `EngineCache` 并发放租约; 租约按调用方 (binder 身份 + leaseId) 记账, 持有期间不走 `idleMillis` 释放; `release`, 脚本退出 (宿主侧调 release) 或 binder 死亡即归还; 同一引擎多租约计数; 重复 `prepare` 同模型复用已加载引擎并立即返回. 实现后把 `speechPrepare` 写进 `speechFeatures`.
-- [ ] (插件) P11.2.2 `keepLoaded` 选项: listen / wake 会话附带租约, `true` = 直到脚本退出, 数字 = 会话结束后再保留 N 分钟 (范围与上限由子会话定并登记, 建议 1 - 1440), 到期或脚本退出归还; 设置页 "空闲释放" 加 "不释放" 档 (`SpeechPreferences` 选项 1 / 5 / 15 / 30 / 不释放, 默认仍 5; 迁移契约 `idleMinutes` 用 0 表示不释放, P10.1 导入宽松规则与 `MacawSettingsTransferTest` 同步); 十语言文案 (说明写明内存占用).
-- [ ] (测试) P11.2.3 JVM: 租约计数, 到期, 脚本退出 / binder 死亡归还, 设置档位, 迁移往返; 真机 (P11.1.1 同两台) 复测同场景: 脚本开头 `speech.prepare()` 后首次 `listen` 的启动耗时, `keepLoaded: true` 后台 10 分钟再 `listen` 的耗时, "不释放" 档后台 30 分钟再 `listen` 的耗时, 与 P11.1.1 基线并列写进附录 F; "不释放" 档插件进程 PSS (`dumpsys meminfo`) 记录不设门槛. 验收: 预热后首次 `listen` 的启动耗时不超过 P11.1.1 基线中 "麦克风启动与会话建立" 段的 1.5 倍 (阈值由子会话按实测调整并登记派生决策); 现有设备测试类通过; 附录 B 草案更新; 本地提交并推送.
+- [x] (插件) P11.2.1 `prepare` 实现: 按 options 把引擎 (识别 / 唤醒 / TTS, 哪些类型由子会话定并登记) 加载进 `EngineCache` 并发放租约; 租约按调用方 (binder 身份 + leaseId) 记账, 持有期间不走 `idleMillis` 释放; `release`, 脚本退出 (宿主侧调 release) 或 binder 死亡即归还; 同一引擎多租约计数; 重复 `prepare` 同模型复用已加载引擎并立即返回. 实现后把 `speechPrepare` 写进 `speechFeatures`. 完成 (2026-11-06): 新增 `service/SpeechPrepare.kt` 与 `core/runtime/EngineLeases.kt`; 预热范围 D202 (asr 加载默认 listen 的引擎, kws 加载唤醒会话的引擎, 不预热 TTS; 进程第一次 prepare 同时创建 SpeechRuntime), 记账 D203 (持有者为调用方 uid, 每个 uid 16 个, 含加载中的 prepare 与 keepLoaded 会话, 超出 `LIMIT_EXCEEDED`, 别的 uid 或旧进程的 ID 为 `LEASE_NOT_FOUND`, 回调 binder 死亡即归还); 同一引擎多个租约由 `EngineCache` 计数, 全部归还后才按空闲设置计时; 已加载时 `loadMillis` 为 0 并发新租约; `speechPrepare` 写进 `speechFeatures` (只在商定契约 3 时). 证据见 P11.2.3.
+- [x] (插件) P11.2.2 `keepLoaded` 选项: listen / wake 会话附带租约, `true` = 直到脚本退出, 数字 = 会话结束后再保留 N 分钟 (范围与上限由子会话定并登记, 建议 1 - 1440), 到期或脚本退出归还; 设置页 "空闲释放" 加 "不释放" 档 (`SpeechPreferences` 选项 1 / 5 / 15 / 30 / 不释放, 默认仍 5; 迁移契约 `idleMinutes` 用 0 表示不释放, P10.1 导入宽松规则与 `MacawSettingsTransferTest` 同步); 十语言文案 (说明写明内存占用). 完成 (2026-11-06): `SpeechOptions` 解析 `keepLoaded` (true / -1 = 直到 release 或调用方进程死亡, 1 - 1440 分钟从会话结束起算, 超出为 `LIMIT_EXCEEDED`, thenListen 内为 `INVALID_OPTIONS`, D196); 会话在 `ready` 事件发出时用自身引擎发放租约, 事件带 `leaseId` (D204); 设置页 "空闲模型释放" 加 "不释放" 档 (`EngineCache.NEVER`, 内存紧张 / trim / 模型删除或更新时仍释放, D205), 迁移契约 `idleMinutes` 0 = 不释放, 导入接受 0 / 1 / 5 / 15 / 30, 其他值跳过并计入 skipped (`MacawSettingsTransferTest` 同步); 11 个 strings 目录的选项与说明 (写明每个模型约占其安装大小的内存). 证据见 P11.2.3.
+- [x] (测试) P11.2.3 JVM: 租约计数, 到期, 脚本退出 / binder 死亡归还, 设置档位, 迁移往返; 真机 (P11.1.1 同两台) 复测同场景: 脚本开头 `speech.prepare()` 后首次 `listen` 的启动耗时, `keepLoaded: true` 后台 10 分钟再 `listen` 的耗时, "不释放" 档后台 30 分钟再 `listen` 的耗时, 与 P11.1.1 基线并列写进附录 F; "不释放" 档插件进程 PSS (`dumpsys meminfo`) 记录不设门槛. 验收: 预热后首次 `listen` 的启动耗时不超过 P11.1.1 基线中 "麦克风启动与会话建立" 段的 1.5 倍 (阈值由子会话按实测调整并登记派生决策); 现有设备测试类通过; 附录 B 草案更新; 本地提交并推送. 完成 (2026-11-06): 门槛按实测登记为 D208 (OnePlus <= 102 ms, G8441 <= 368 ms); 结果表与结论见附录 F "F9 预热与保留复测": am kill 起点 prepare 后首次 listen 中位数 OnePlus 77 ms (基线 1368 ms), G8441 249 ms (基线 4186 ms), 均 PASS; keepLoaded 后台 10 分钟 256 / 312 ms, 不释放档后台 30 分钟 203 / 283 ms (进程存活, 未重新加载引擎), 不释放档 PSS 约 288 - 543 MB. 证据 (2026-11-06): 插件 `:app:testDebugUnitTest` 72 个类 533 例 0 失败 (新增 `EngineLeasesTest` 10 例, `AppUpdateCheckerTest` 8 例, `EngineCacheTest` / `SpeechOptionsTest` / `MacawSettingsTransferTest` / `ThreeMacawSpeechContractTest` / `PluginRuntimeInfoTest` / `ScreenPoliciesTest` 同步); 两台真机 (隔离克隆 debug 宿主 6640 = `e856c613f5`, 插件 1.6.0 debug 182 / 183): `f9_startup_timing.py prepare | keep | never`, `device_contract_v3_check.py <serial> prepare` 新模式 24 / 24 (features 含 speechPrepare, prepare / prepareAsync / kws 的应答, 重复 prepare loadMillis 0 且发新租约, 16 个上限后 `LIMIT_EXCEEDED`, release 的返回值, keepLoaded 会话 ready 带 leaseId, 常驻与后台唤醒仍 `FEATURE_UNAVAILABLE`), `device_ui_run.py update` (`AppUpdateIndexDeviceTest` 2 例: 以 172 检查得到 v1.5.0 (177), 183 为已是最新), `trust` (`TrustAnchorDeviceTest`, 含索引三个域名), `contract` (`ThreeMacawSpeechContractTest` 9 例) 两台均通过. 附录 B.6 已按 D202 - D205 更新. 测后两台按 md5 装回原宿主与插件, 模型与测前一致.
+- [x] (插件) P11.2.4 应用内更新检查改读官方插件索引 (D206, D207; 2026-11-06 维护者经 3-prism 调度会话指示后新增): `ui/update/AppUpdate.kt` 读官方索引中本插件的条目并按 versionCode 与已安装版本比较, 地址顺序与解析沿用宿主插件中心 (`PluginIndexMirrors`: raw.githubusercontent.com, 失败再换 cdn.jsdelivr.net / fastly.jsdelivr.net); 新版对话框的更新说明另取 (D207); 索引无本插件条目或 HTTP 404 视为尚无新版, D36 的其余行为 (节流, 超时, 对话框, 忽略版本) 不变; 核对 ISRG Root X1 的 `network_security_config` 对索引域名仍生效. 验收: JVM 单测 (解析, 镜像回退, 404, 版本比较); 以 1.4.0 (172) 的已安装 versionCode 检查得到 177 或更高; 本仓库 debug 构建报告已是最新. 完成 (2026-11-06): `AppUpdateChecker` 按 D206 读官方索引 (三个地址依次回退, 404 / 无条目 = `NoRelease`, 8 MiB 上限), 说明取 `changelogText` 截断到 6000 字符 (D207), D36 其余行为不变 (D36 已标修订); ISRG Root X1 的 `network_security_config` 是 base-config, 对索引三个域名同样生效; changelog 1.6.0 十语言加一条优化 ("新版本登记进官方索引后, 插件里才会提示更新"), P11.5.3 已补同一句. 证据: JVM `AppUpdateCheckerTest` 8 例 (解析与选版规则, 预发布, 无条目 / 无可用版本, JSON null 与说明截断, 地址与插件中心同序; 本机 HttpServer 上的镜像回退, 404 即结束, 全部失败报首个错误); 真机见 P11.2.3 (`device_ui_run.py update` 的 `AppUpdateIndexDeviceTest`: 以 172 检查得到索引中的新版, 本 debug 构建为已是最新; `trust` 的 `TrustAnchorDeviceTest` 覆盖索引域名). 1.4.0 正式包自带旧的 GitHub 检查代码, "172 得到 177" 只能以已安装 versionCode 172 模拟验证.
 
 ### P11.3 常驻唤醒逐词动作与 speech.resident (F10, D186 - D189, D194, D195)
 
@@ -1009,9 +1017,9 @@ P9.6 已定 no-go (D179): 不等迁移, sherpa-onnx 仍为 1.13.8.
 
 - [ ] (发布) P11.5.1 changelog 十语言定稿 (功能: 引擎预热与保留; 常驻唤醒逐词动作, 10 条上限, 运行脚本与广播; 后台唤醒自动让出与恢复; 脚本 API `speech.prepare` / `speech.resident`; 提示: 脚本 API 需要 AutoJs6 6.8.1 或更高; 1.5.0 的提示保留), 日期改为发布当日; README 十语言功能与脚本示例; `VERSION_BUILD` 按 R1.
 - [ ] (发布) P11.5.2 release 候选包冒烟 (D180 惯例): XQ-AT72 从 1.5.0 正式包直接升级到候选包, 核对常驻唤醒词存储升级 (旧词保留, 动作为打开弹层), 设置, 模型与声纹库保留, `speech.listen` / 常驻唤醒 / 预热各通过一次; G8441 与 OnePlus 换装 release 包跑脚本 API 冒烟 (6.8.1 debug 宿主); 附录 F 设备矩阵更新.
-- [ ] (发布) P11.5.3 `prepush_check.py` 通过, 推送, 轻量 tag `v1.6.0`, CI Release 产物与 `SHA256SUMS` 核对, 官方索引登记 (注意并发: 变基后用自己的生成文件逐条比对再推), 阶段总览与看板状态更新; 宿主与文档四仓库的本地提交清单列给维护者.
+- [ ] (发布) P11.5.3 `prepush_check.py` 通过, 推送, 轻量 tag `v1.6.0`, CI Release 产物与 `SHA256SUMS` 核对, 官方索引登记 (注意并发: 变基后用自己的生成文件逐条比对再推; 登记官方索引后应用内检查才能发现新版, D206), 阶段总览与看板状态更新; 宿主与文档四仓库的本地提交清单列给维护者.
 
-验收状态: 进行中: P11.1 已完成 (2026-11-06, 插件 `6b32b85` 等, 宿主 `1b95cc0201` 只本地), P11.2 - P11.5 待做.
+验收状态: 进行中: P11.1 已完成 (2026-11-06, 插件 `6b32b85` 等, 宿主 `1b95cc0201` 只本地), P11.2 已完成 (2026-11-06, 插件提交见 P11.2.3 所在提交, 宿主无改动), P11.3 - P11.5 待做.
 
 ---
 
@@ -1160,11 +1168,11 @@ speech.models.install("asr.zipformer-streaming.zh-en.2023-02-20.int8", { onProgr
 
 ### B.6 契约 v3 新增 (1.6.0, P11.1 定稿, 2026-11-06)
 
-需要 AutoJs6 6.8.1 或更高 (宿主 `1b95cc0201`, 只本地提交). 插件声明对应功能名之前 (P11.2 `speechPrepare`, P11.3 `speechResident`, P11.4 `speechBackgroundWake`), 下面每个调用都立即抛 `FEATURE_UNAVAILABLE`, 消息写明缺的功能名 (D193); 绑定 1.5.0 及更早的插件时, 消息写明插件只支持契约 version 2, 需要 version 3.
+需要 AutoJs6 6.8.1 或更高 (宿主 `1b95cc0201`, 只本地提交). P11.2 起插件声明 `speechPrepare`: prepare / prepareAsync / release 与 `keepLoaded` 可用 (D202 - D205). 插件声明对应功能名之前 (P11.3 `speechResident`, P11.4 `speechBackgroundWake`), 下面其余调用都立即抛 `FEATURE_UNAVAILABLE`, 消息写明缺的功能名 (D193); 绑定 1.5.0 及更早的插件时, 消息写明插件只支持契约 version 2, 需要 version 3.
 
 | 方法 | 返回 | 说明 |
 | --- | --- | --- |
-| `speech.prepare(options?)` | `SpeechLease` | `options: {model, language, kind}`, `kind` 为 `asr` (默认) 或 `kws`, 省略 model 时用该 kind 与语言的默认模型; 同步, 不能在 UI 线程调用; 引擎已加载时 `loadMillis` 为 0 |
+| `speech.prepare(options?)` | `SpeechLease` | `options: {model, language, kind}`, `kind` 为 `asr` (默认) 或 `kws`, 省略 model 时用该 kind 与语言的默认模型; 加载的是该模型默认 listen (`asr`: 无热词, 开启标点) 或 wake 会话所用的引擎, 不预热合成 (D202); 同步, 不能在 UI 线程调用; 引擎已加载时 `loadMillis` 为 0, 仍另发一个租约; 同一 AutoJs6 的全部脚本合计最多 16 个租约 (含 keepLoaded 会话), 超出为 `LIMIT_EXCEEDED` (D197, D203) |
 | `speech.prepareAsync(options?)` | `Promise<SpeechLease>` | 异步变体 |
 | `speech.release(leaseId?)` | `boolean` 或 `number` | 给 id: 归还本脚本的这个租约, 返回插件是否仍持有; 省略: 归还本脚本的全部租约, 返回插件仍持有的个数; 本脚本没有租约时不联系插件 (D197) |
 | `speech.resident.get()` | `{enabled, rules}` | 常驻唤醒的开关与规则 (按顺序) |
@@ -1183,7 +1191,7 @@ wake:
   background    boolean, 任何麦克风会话到来时让出, 该会话结束后恢复 (D190)
 ```
 
-事件追加: 带 `keepLoaded` 的会话 `ready` 事件多一个 `leaseId`; `background` 唤醒会话的 `paused` / `resumed` (`{reason}`), 宿主代理已转发, 插件在 P11.4.1 实现. 错误 code 追加 `FEATURE_UNAVAILABLE`, `RESIDENT_UNAVAILABLE`, `LEASE_NOT_FOUND` (D199). 脚本退出时宿主归还它的全部租约并注销它的观察者 (D185).
+事件追加: 带 `keepLoaded` 的会话 `ready` 事件多一个 `leaseId` (就绪之前失败的会话不留租约, 分钟数从会话结束时计时, D204); `background` 唤醒会话的 `paused` / `resumed` (`{reason}`), 宿主代理已转发, 插件在 P11.4.1 实现. 错误 code 追加 `FEATURE_UNAVAILABLE`, `RESIDENT_UNAVAILABLE`, `LEASE_NOT_FOUND` (D199). 脚本退出时宿主归还它的全部租约并注销它的观察者 (D185).
 
 d.ts 草案 (四仓库同步在 P11.4.2):
 
@@ -1506,7 +1514,7 @@ oneway interface ISpeechResidentObserver { void onHit(in Bundle hit); }         
 | Q150 | 脚本 API `speech.resident` 是否含常驻唤醒开关 (Android 12+ 从后台启动前台服务可能被拒) | (a) 含开关, 尽力而为: 被拒时返回 started = false 并记下开关, 下次打开插件或点通知时生效 (同 P10.1.2 / D74) (推荐); (b) 只读写词与动作, 开关只在设置页 | 已定 (a) (2026-11-05, D189) |
 | Q151 | `speech.prepare` / `keepLoaded` 保留的引擎在脚本退出后怎么处理 | (a) 租约随脚本: 退出, `release()` 或 binder 死亡即归还, 跨脚本常驻用设置 "不释放" 档 (推荐); (b) 全局生效直到进程结束或另一脚本 release | 已定 (a) (2026-11-05, D185) |
 | Q152 | P11.1 契约卡的启动时机 (1.5.0 发版卡会改 ROADMAP 与 changelog, 共用 checkout) | (a) 等 tag v1.5.0 打出后再启动五张卡, 零冲突, 最多晚约一天 (推荐); (b) 现在启动, 只碰宿主仓库, 插件侧勾选等 v1.5.0 后补 | 已定 (a) (2026-11-05, D183) |
-| Q153 | 契约 v3 脚本 API 在 Node / Bun 引擎里怎么处理 (P11.1 只做了 Rhino 的 `speech.*`; 宿主 api-coverage 要求每个新成员在 Node main / Node Worker / Bun 三列有结论) | (a) 现在登记 30 格 pending, Node / Bun 的共享 speech 外观在 P11.4.2 补齐, 届时转为 covered (推荐, 已先行); (b) 像 imgui 一样登记为仅 Rhino 的排除项 (删 30 格, 写排除理由, 改 mjs 跳过集合); (c) 在 P11.1 内补 Node / Bun 外观 (约半天, 两个插件仓库加发版) | 待决, 已按 (a) 先行 (2026-11-06 P11.1, D200); 影响 P11.4.2; 改选 (b) 的返工: 删 30 格与 mjs 跳过集合, 写排除理由; 改选 (c) 无返工 |
+| Q153 | 契约 v3 脚本 API 在 Node / Bun 引擎里怎么处理 (P11.1 只做了 Rhino 的 `speech.*`; 宿主 api-coverage 要求每个新成员在 Node main / Node Worker / Bun 三列有结论) | (a) 现在登记 30 格 pending, Node / Bun 的共享 speech 外观在 P11.4.2 补齐, 届时转为 covered (推荐, 已先行); (b) 像 imgui 一样登记为仅 Rhino 的排除项 (删 30 格, 写排除理由, 改 mjs 跳过集合); (c) 在 P11.1 内补 Node / Bun 外观 (约半天, 两个插件仓库加发版) | 已定 (c) (2026-11-06 12:2x 维护者在调度会话选: 现在补 Node / Bun 外观, 由并行卡 macaw-q153-nodebun 实现); 此前已按 (a) 先行 (P11.1, D200); 影响 P11.4.2 |
 
 ---
 
@@ -1582,6 +1590,19 @@ F9 启动耗时基线 (P11.1.1, 2026-11-06, `py .python/f9_startup_timing.py <se
 结论 (OnePlus): 维护者反馈的 7 - 8 s 没有复现, 最慢的 am kill 起点也在 1.4 s 内就绪. 后台 10 分钟后插件进程仍在, 但引擎已按设置的空闲时间卸载, 引擎加载 518 ms 占 80%: `speech.prepare` / `keepLoaded` 可以把它降到热态的约 100 ms. am kill 后绑定 + 冷启动合计约 331 ms (24%), 不占大头, 不登记待决; 引擎加载 501 ms (37%) 之外, 会话建立的 539 ms 里有 447 ms 是进程第一次调用时创建 SpeechRuntime: 只预热引擎省约 37%, 预热时一并创建 SpeechRuntime (或在 Service.onCreate 预建) 可省约 69% (约 950 ms, 剩约 420 ms), 建议 P11.2.1 实现 prepare 时一并处理. 脚本开头 `speech.prepare()`, 之后的 `speech.listen` 即为热态.
 
 结论 (G8441, Android 9, 2017 年机型): 各段约为 OnePlus 的 2 - 4 倍, 7 - 8 s 仍未复现 (am kill 中位数 4186 ms). 后台 10 分钟起点引擎加载 1726 ms 占 88%, `speech.prepare` / `keepLoaded` 可降到热态的约 300 ms (热态里约 240 ms 是听写启动, 即打开麦克风, 预热省不掉). am kill 起点: 绑定 + 冷启动 1347 ms (32%, 其中 bindService -> onServiceConnected 约 1300 ms), 引擎加载 1637 ms (39%), 创建 SpeechRuntime 962 ms (23%), 听写启动 219 ms; 只预热引擎省约 39%, 一并创建 SpeechRuntime 省约 62% (约 2600 ms, 剩约 1590 ms, 主要是绑定 + 冷启动). 绑定 + 冷启动仍不是最大的一段, 与 OnePlus 一样不登记待决; 它只在脚本开头没有 prepare, 或保留期间插件进程被系统回收时出现, P11.2 设计 keepLoaded 时可留意进程被回收的情形.
+
+F9 预热与保留复测 (P11.2.3, 2026-11-06, `py .python/f9_startup_timing.py <serial> prepare | keep | never`): 同上模型与四段拆分, 两台都装隔离克隆 debug 宿主 6640 (`e856c613f5`) 与插件 1.6.0 debug 182. 起点: prepare = 回桌面后 `am kill` 插件进程 (与基线最慢的起点相同), 脚本开头 `speech.prepare({ model })` 后再 `listen`, 3 次取中位数; keep = 预热会话带 `keepLoaded: true`, 回桌面闲置 10 分钟后同一脚本再 `listen` (1 次); never = "空闲模型释放" 设为不释放 (`run-as` 临时写 `idleMinutes` 0, 测后还原为默认), 预热后回桌面闲置 30 分钟再 `listen` (1 次). 门槛 D208: 预热后首次 listen 的就绪时间 OnePlus <= 102 ms, G8441 <= 368 ms.
+
+| 设备 | 场景 | 就绪 | 绑定 | 冷启动 | 引擎加载 | 会话建立 | 对照基线 | 备注 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OnePlus OPD2413 (63751f63, API 35) | prepare 后首次 listen | 77 ms (84 / 77 / 77) | 6 | 0 | 11 | 60 | am kill 1368 ms, 热 96 ms | PASS (<= 102); prepare 本身中位数 1276 ms (`loadMillis` 480 - 488, 其余为进程冷启动与创建 SpeechRuntime) |
+| OnePlus OPD2413 | keepLoaded: true, 后台 10 分钟 | 256 ms | 16 | 0 | 129 | 111 | 后台 10 分钟 643 ms | 进程存活, 未加载新引擎 (引擎段 129 ms 是取用已缓存引擎的耗时); PSS 401 MB |
+| OnePlus OPD2413 | 不释放, 后台 30 分钟 | 203 ms | 20 | 0 | 81 | 102 | 后台 10 分钟 643 ms | 进程存活, 未重新加载引擎; PSS 预热后 543 MB, 30 分钟后 404 MB |
+| Sony G8441 (BH900ASK9E, API 28) | prepare 后首次 listen | 249 ms (260 / 239 / 249) | 24 | 0 | 1 | 224 | am kill 4186 ms, 热 306 ms | PASS (<= 368); prepare 本身约 4026 ms (`loadMillis` 1618 - 1636) |
+| Sony G8441 | keepLoaded: true, 后台 10 分钟 | 312 ms | 75 | 0 | 1 | 236 | 后台 10 分钟 1967 ms | 进程存活, 未重新加载引擎; PSS 327 MB |
+| Sony G8441 | 不释放, 后台 30 分钟 | 283 ms | 41 | 0 | 1 | 241 | 后台 10 分钟 1967 ms | 进程存活, 未重新加载引擎; PSS 预热后 303 MB, 30 分钟后 288 MB |
+
+结论: prepare 把 am kill 起点的首次 listen 降到热态以内 (OnePlus 1368 -> 77 ms, G8441 4186 -> 249 ms), 加载时间移到脚本开头的 prepare (分别约 1.3 s 与 4.0 s, 其中进程冷启动与创建 SpeechRuntime 也一并提前). keepLoaded 与 "不释放" 档在后台 10 / 30 分钟后都未重新加载引擎, 就绪时间回到热态附近 (OnePlus 203 - 256 ms, 比热态多出约 100 - 160 ms, 推测是进程在后台久置后的调度与缓存冷却, 未单独拆分; G8441 283 - 312 ms 与热态 306 ms 相当), 比基线的后台 10 分钟起点快 2.5 - 7 倍. "不释放" 档的代价是插件进程常驻约 300 - 540 MB PSS (随系统回收波动), 已写进设置说明. 两台在测试期间插件进程都未被系统回收; 进程被回收时保留失效, 下一次 listen 回到 am kill 起点 (租约 ID 随之失效, D203).
 
 ---
 

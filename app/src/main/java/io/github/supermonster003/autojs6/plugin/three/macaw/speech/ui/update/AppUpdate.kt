@@ -21,6 +21,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.DialogDefaults
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.MacawDialog
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.components.MessageDialog
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -30,38 +31,22 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-/** The latest GitHub release of the plugin. zh-CN: 插件在 GitHub 上的最新发行版. */
-internal data class AppRelease(val tag: String, val name: String, val notes: String, val pageUrl: String)
+/**
+ * The newest release of the plugin in the official plugin index (roadmap P11.2.4, D206): [tag] is `v` + its version
+ * name (the release tag, also the key of an ignored update), [notes] the release notes the index copies from the GitHub
+ * release (D207).
+ * zh-CN: 官方插件索引中本插件的最新发行版 (路线图 P11.2.4, D206): [tag] 为 `v` + 版本名 (即发行版 tag, 也是忽略某次更新时记下的键), [notes] 为索引从 GitHub
+ * 发行版复制的发行说明 (D207).
+ */
+internal data class AppRelease(val tag: String, val versionCode: Long, val name: String, val notes: String, val pageUrl: String)
 
-/** Semantic version comparison of 3-Stone AI (roadmap P5.4). Pure Kotlin. zh-CN: 沿用 3-Stone AI 的语义化版本比较. 纯 Kotlin. */
+/**
+ * Roadmap P11.2.4 (D206): an index release is newer when its versionCode is greater than the installed one, as in the
+ * Plugin Center of AutoJs6; the version name only names it. Pure Kotlin.
+ * zh-CN: 路线图 P11.2.4 (D206): 索引中的发行版 versionCode 大于已安装的才算新版, 与 AutoJs6 插件中心一致; 版本名只用于显示. 纯 Kotlin.
+ */
 internal object UpdateVersionPolicy {
-    fun isNewer(candidateTag: String, installedVersion: String): Boolean {
-        val candidate = parse(candidateTag) ?: return false
-        val installed = parse(installedVersion) ?: return false
-        val width = maxOf(candidate.numbers.size, installed.numbers.size)
-        repeat(width) { index ->
-            val comparison = candidate.numbers.getOrElse(index) { 0 }.compareTo(installed.numbers.getOrElse(index) { 0 })
-            if (comparison != 0) return comparison > 0
-        }
-        return when {
-            candidate.preRelease == installed.preRelease -> false
-            candidate.preRelease == null -> true
-            installed.preRelease == null -> false
-            else -> candidate.preRelease > installed.preRelease
-        }
-    }
-
-    private fun parse(value: String): ParsedVersion? {
-        val match = VERSION_PATTERN.matchEntire(value.trim()) ?: return null
-        return ParsedVersion(
-            numbers = match.groupValues[1].split('.').map { part -> part.toIntOrNull() ?: return null },
-            preRelease = match.groupValues[2].takeIf(String::isNotEmpty),
-        )
-    }
-
-    private data class ParsedVersion(val numbers: List<Int>, val preRelease: String?)
-
-    private val VERSION_PATTERN = Regex("^[vV]?([0-9]+(?:\\.[0-9]+)*)(?:-([0-9A-Za-z.-]+))?(?:\\+[0-9A-Za-z.-]+)?$")
+    fun isNewer(candidateVersionCode: Long, installedVersionCode: Long): Boolean = candidateVersionCode > installedVersionCode
 }
 
 /**
@@ -127,17 +112,25 @@ internal class AppUpdateStore(private val storage: Storage, private val clock: (
 internal sealed interface UpdateResult {
     data class Release(val release: AppRelease) : UpdateResult
 
-    /** The repository has no published release yet (HTTP 404). zh-CN: 仓库尚无已发布的版本 (HTTP 404). */
+    /**
+     * The official index has no release of the plugin (no entry, or HTTP 404), which counts as no newer release.
+     * zh-CN: 官方索引中没有本插件的发行版 (没有条目或 HTTP 404), 视为没有新版.
+     */
     data object NoRelease : UpdateResult
 }
 
 /**
- * Reads the latest release from the GitHub API (3-Stone AI limits: 15 s connect, 20 s read, 30 s in total, no
- * redirects, at most 256 KiB and 6000 characters of notes). [cancel] aborts the connection.
- * zh-CN: 从 GitHub API 读取最新发行版 (沿用 3-Stone AI 的限制: 连接 15 秒, 读取 20 秒, 总计 30 秒, 不跟随重定向, 至多 256 KiB, 说明至多 6000 字符).
- * [cancel] 中止连接.
+ * Reads the newest release of the plugin from the official plugin index (roadmap P11.2.4, D206), the file and the
+ * mirrors the Plugin Center of AutoJs6 reads (`PluginIndexRepository`, `PluginIndexMirrors`): raw.githubusercontent.com
+ * first, then the two jsDelivr hosts when a request fails; HTTP 404 ends the check as [UpdateResult.NoRelease]. The
+ * limits of 3-Stone AI stay (D36: 15 s connect, 20 s read, 30 s in total for every attempt together, no redirects, at
+ * most 6000 characters of notes); the response may hold up to 8 MiB, since the index lists every official plugin.
+ * [Call.cancel] aborts the connection.
+ * zh-CN: 从官方插件索引读取本插件的最新发行版 (路线图 P11.2.4, D206), 文件与镜像同 AutoJs6 插件中心 (`PluginIndexRepository`, `PluginIndexMirrors`):
+ * 先 raw.githubusercontent.com, 请求失败再依次换 jsDelivr 的两个域名; HTTP 404 即以 [UpdateResult.NoRelease] 结束. 沿用 3-Stone AI 的限制 (D36:
+ * 连接 15 秒, 读取 20 秒, 所有尝试合计 30 秒, 不跟随重定向, 说明至多 6000 字符); 索引列出全部官方插件, 响应至多 8 MiB. [Call.cancel] 中止连接.
  */
-internal class AppUpdateChecker(private val apiUrl: String = LATEST_RELEASE_API) {
+internal class AppUpdateChecker(private val indexUrls: List<String> = INDEX_URLS, private val packageName: String = BuildConfig.APPLICATION_ID) {
 
     inner class Call internal constructor() {
         private val cancelled = AtomicBoolean(false)
@@ -170,62 +163,120 @@ internal class AppUpdateChecker(private val apiUrl: String = LATEST_RELEASE_API)
         return call
     }
 
-    private fun fetch(call: Call): UpdateResult {
-        val connection = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
+    internal fun fetch(call: Call): UpdateResult {
+        var failure: Exception? = null
+        for (url in indexUrls) {
+            if (call.isCancelled) throw IOException("cancelled")
+            try {
+                val text = download(call, url) ?: return UpdateResult.NoRelease
+                return decode(text, packageName)?.let(UpdateResult::Release) ?: UpdateResult.NoRelease
+            } catch (e: Exception) {
+                // A cancel or the total limit ends every attempt; any other failure tries the next mirror.
+                // zh-CN: 取消或总时限结束全部尝试; 其他失败换下一个镜像.
+                if (call.isCancelled) throw e
+                failure = failure ?: e
+            }
+        }
+        throw failure ?: IOException("No index address")
+    }
+
+    /** The index text, or null for HTTP 404. zh-CN: 索引文本, HTTP 404 时为 null. */
+    private fun download(call: Call, url: String): String? {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MILLIS
             readTimeout = READ_TIMEOUT_MILLIS
             instanceFollowRedirects = false
-            setRequestProperty("Accept", "application/vnd.github+json")
+            setRequestProperty("Accept", "application/json")
             setRequestProperty("User-Agent", "Three-Macaw-Speech-update-checker/${BuildConfig.VERSION_NAME}")
         }
         call.connection = connection
         try {
             if (call.isCancelled) throw IOException("cancelled")
             val code = connection.responseCode
-            if (code == HttpURLConnection.HTTP_NOT_FOUND) return UpdateResult.NoRelease
-            if (code != HttpURLConnection.HTTP_OK) throw IOException("Release service returned HTTP $code")
+            if (code == HttpURLConnection.HTTP_NOT_FOUND) return null
+            if (code != HttpURLConnection.HTTP_OK) throw IOException("Index service returned HTTP $code")
             val declared = connection.contentLengthLong
-            if (declared > MAXIMUM_RESPONSE_BYTES) throw IOException("Release response is too large")
+            if (declared > MAXIMUM_RESPONSE_BYTES) throw IOException("Index response is too large")
             val output = ByteArrayOutputStream()
             connection.inputStream.use { input ->
-                val buffer = ByteArray(8 * 1024)
+                val buffer = ByteArray(16 * 1024)
                 while (true) {
                     val read = input.read(buffer)
                     if (read < 0) break
                     output.write(buffer, 0, read)
-                    if (output.size() > MAXIMUM_RESPONSE_BYTES) throw IOException("Release response is too large")
+                    if (output.size() > MAXIMUM_RESPONSE_BYTES) throw IOException("Index response is too large")
                 }
             }
-            return UpdateResult.Release(decode(output.toString(Charsets.UTF_8.name())))
+            return output.toString(Charsets.UTF_8.name())
         } finally {
             connection.disconnect()
         }
     }
 
     companion object {
-        const val LATEST_RELEASE_API = "https://api.github.com/repos/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases/latest"
         const val RELEASES_PAGE = "https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases"
+        private const val INDEX_OWNER = "SuperMonster003"
+        private const val INDEX_REPO = "AutoJs6-Official-Plugins-Index"
+        private const val INDEX_BRANCH = "main"
+        private const val INDEX_PATH = "plugins.official.generated.json"
+
+        /**
+         * The generated official index on its branch: GitHub's raw host, then jsDelivr's GitHub mirror on two hosts (the
+         * order of `PluginIndexMirrors` in AutoJs6).
+         * zh-CN: 分支上生成的官方索引: 先 GitHub raw 域名, 再 jsDelivr 的 GitHub 镜像的两个域名 (同 AutoJs6 `PluginIndexMirrors` 的顺序).
+         */
+        val INDEX_URLS = listOf(
+            "https://raw.githubusercontent.com/$INDEX_OWNER/$INDEX_REPO/refs/heads/$INDEX_BRANCH/$INDEX_PATH",
+            "https://cdn.jsdelivr.net/gh/$INDEX_OWNER/$INDEX_REPO@$INDEX_BRANCH/$INDEX_PATH",
+            "https://fastly.jsdelivr.net/gh/$INDEX_OWNER/$INDEX_REPO@$INDEX_BRANCH/$INDEX_PATH",
+        )
         const val CONNECT_TIMEOUT_MILLIS = 15_000
         const val READ_TIMEOUT_MILLIS = 20_000
         const val TOTAL_TIMEOUT_MILLIS = 30_000L
-        const val MAXIMUM_RESPONSE_BYTES = 256 * 1024
+        const val MAXIMUM_RESPONSE_BYTES = 8 * 1024 * 1024
         const val MAXIMUM_NOTES_CHARACTERS = 6_000
-        private val TAG_PATTERN = Regex("^[0-9A-Za-z._-]{1,100}$")
+        private const val DEFAULT_TITLE = "3-Macaw Speech"
+        private val VERSION_NAME_PATTERN = Regex("^[0-9A-Za-z._-]{1,100}$")
         private val worker = Executors.newSingleThreadExecutor { Thread(it, "MacawUpdateCheck").apply { isDaemon = true } }
-        private val main = Handler(Looper.getMainLooper())
+        // Lazy, so [decode] stays usable on the JVM without a main looper. zh-CN: 延迟创建, 使 [decode] 在没有主 Looper 的 JVM 上也能用.
+        private val main by lazy { Handler(Looper.getMainLooper()) }
 
-        /** Parses the release JSON of the GitHub API. Pure apart from `org.json`. zh-CN: 解析 GitHub API 的发行版 JSON. */
-        fun decode(text: String): AppRelease {
-            val json = JSONObject(text)
-            val tag = json.getString("tag_name").trim()
-            require(TAG_PATTERN.matches(tag)) { "Release tag is invalid" }
+        /**
+         * The newest release of [packageName] in the generated official index, or null when the index has no entry or no
+         * usable release for it. A release counts when it is not a prerelease and has a positive versionCode and a valid
+         * version name; the greatest versionCode wins. Members are read with `opt` and a type check, since Android's
+         * `optString` turns a JSON null into "null". Pure apart from `org.json`.
+         * zh-CN: 生成的官方索引中 [packageName] 的最新发行版; 索引没有该条目或没有可用的发行版时为 null. 可用指不是预发布版, versionCode 为正且版本名有效;
+         * 取 versionCode 最大的一个. 成员用 `opt` 加类型判断读取, 因为 Android 的 `optString` 把 JSON null 变成 "null". 除 `org.json` 外是纯函数.
+         */
+        fun decode(text: String, packageName: String): AppRelease? {
+            val items = JSONObject(text).getJSONArray("items")
+            val item = items.objects().firstOrNull { it.opt("packageName") == packageName } ?: return null
+            val release = (item.opt("releases") as? JSONArray)?.objects()
+                ?.filter { it.opt("prerelease") != true && it.versionCode() > 0L && (it.text("versionName")?.let(VERSION_NAME_PATTERN::matches) == true) }
+                ?.maxByOrNull { it.versionCode() }
+                ?: return null
+            val versionName = release.text("versionName")!!
+            val tag = "v$versionName"
             return AppRelease(
                 tag = tag,
-                name = json.optString("name").trim().ifEmpty { tag },
-                notes = json.optString("body").trim().take(MAXIMUM_NOTES_CHARACTERS),
+                versionCode = release.versionCode(),
+                name = "${item.text("title") ?: DEFAULT_TITLE} $versionName",
+                notes = release.text("changelogText").orEmpty().take(MAXIMUM_NOTES_CHARACTERS),
                 pageUrl = "$RELEASES_PAGE/tag/$tag",
             )
         }
+
+        private fun JSONArray.objects(): Sequence<JSONObject> = (0 until length()).asSequence().mapNotNull { opt(it) as? JSONObject }
+
+        private fun JSONObject.text(key: String): String? = (opt(key) as? String)?.trim()?.takeIf(String::isNotEmpty)
+
+        /** A whole positive number, else 0. zh-CN: 正整数, 否则为 0. */
+        private fun JSONObject.versionCode(): Long = when (val value = opt("versionCode")) {
+            is Int -> value.toLong()
+            is Long -> value
+            else -> 0L
+        }.coerceAtLeast(0L)
     }
 }
 
@@ -238,7 +289,7 @@ internal class AppUpdateChecker(private val apiUrl: String = LATEST_RELEASE_API)
  */
 internal class AppUpdateController(
     private val store: AppUpdateStore,
-    private val installedVersion: String,
+    private val installedVersionCode: Long,
     private val checker: AppUpdateChecker = AppUpdateChecker(),
 ) {
     sealed interface State {
@@ -291,7 +342,7 @@ internal class AppUpdateController(
                             is UpdateResult.Release -> {
                                 val release = found.release
                                 when {
-                                    !UpdateVersionPolicy.isNewer(release.tag, installedVersion) -> if (manual) state = State.UpToDate(noRelease = false)
+                                    !UpdateVersionPolicy.isNewer(release.versionCode, installedVersionCode) -> if (manual) state = State.UpToDate(noRelease = false)
                                     !manual && release.tag in store.ignoredTags -> Unit
                                     else -> state = State.Available(release)
                                 }

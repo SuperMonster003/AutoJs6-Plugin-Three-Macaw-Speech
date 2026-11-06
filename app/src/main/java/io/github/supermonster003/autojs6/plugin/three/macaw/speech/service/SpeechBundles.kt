@@ -100,7 +100,8 @@ internal object SpeechBundles {
 
     // Session events (ISpeechSessionCallback / ISpeechWakeCallback) and recognition answers (roadmap P3).
 
-    fun ready(sessionId: String, modelId: String, round: Int?): Bundle = answer {
+    fun ready(sessionId: String, modelId: String, round: Int?, leaseId: String? = null): Bundle = answer {
+        leaseId?.let { putString(SpeechResultKeys.LEASE_ID, it) }
         putString(SpeechResultKeys.SESSION_ID, sessionId)
         putString(SpeechResultKeys.MODEL_ID, modelId)
         round?.let { putInt(SpeechResultKeys.ROUND, it) }

@@ -247,7 +247,8 @@
     <string name="settings_headset">زر الصوت في سماعة الرأس</string>
     <string name="settings_headset_summary">يفتح لوحة الإملاء عندما تستدعي سماعة بلوتوث المساعد الصوتي (ضغطة طويلة على زر الصوت أو منطقة اللمس). إذا كان تطبيق آخر يستجيب أيضا, يطلب منك النظام الاختيار. اسمح بإذن \"الأجهزة المجاورة\" عند طلبه, فيُستخدم ميكروفون السماعة وتعمل كل ضغطة</string>
     <string name="settings_idle">تحرير النماذج الخاملة</string>
-    <string name="settings_idle_message">يُحرَّر النموذج المحمّل بعد هذه المدة دون استخدام, وينطبق ذلك على البرامج النصية أيضا</string>
+    <string name="settings_idle_message">يُحرَّر النموذج المحمّل بعد هذه المدة دون استخدام, وينطبق ذلك على البرامج النصية أيضا. عند اختيار أبدا تبقى النماذج المحمّلة في الذاكرة (بقدر حجم تثبيت كل منها تقريبا) حتى تنخفض ذاكرة النظام أو يُحذف النموذج أو يُحدَّث</string>
+    <string name="settings_idle_never">أبدا</string>
     <string name="settings_idle_value">بعد %1$d دقيقة</string>
     <string name="settings_install_voices">تثبيت الأصوات</string>
     <string name="settings_install_voices_summary">تنزيل نماذج تركيب الكلام</string>

@@ -16,6 +16,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.In
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelManager
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineCache
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineKey
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.EngineLeases
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.IdleScheduler
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.KeywordEngine
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.runtime.OfflineEngine
@@ -100,6 +101,12 @@ internal class SpeechRuntime private constructor(val context: Context) {
     private val espeak = EspeakHome(EspeakLink(File(context.noBackupFilesDir, "espeak/espeak-ng-data")))
 
     val sessions = SessionTable()
+
+    /** The leases of contract version 3 (roadmap P11.2, D203). zh-CN: 契约版本 3 的租约 (路线图 P11.2, D203). */
+    val leases = EngineLeases(IdleScheduler.of(idle))
+
+    /** The prepare operations in flight (roadmap P11.2.1). zh-CN: 进行中的预热操作 (路线图 P11.2.1). */
+    val prepares = SpeechPrepare(this)
 
     private val ids = AtomicInteger(0)
 

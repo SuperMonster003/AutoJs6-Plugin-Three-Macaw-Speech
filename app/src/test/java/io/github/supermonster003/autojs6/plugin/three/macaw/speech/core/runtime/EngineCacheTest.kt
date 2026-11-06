@@ -161,6 +161,72 @@ class EngineCacheTest {
     }
 
     @Test
+    fun `never keeps idle instances until a trim or an eviction`() {
+        // Roadmap P11.2.2: the settings' "never" stops the idle timer only. zh-CN: 设置页的 "不释放" 只停用空闲计时.
+        cache.idleMillis = EngineCache.NEVER
+        val first = cache.acquire(key) { load() }
+        first.close()
+        scheduler.advance(30L * 24 * 3_600_000L)
+        assertFalse(first.engine.closed)
+        assertEquals(listOf(key), cache.loaded())
+        cache.trim()
+        assertTrue(first.engine.closed)
+        val other = cache.acquire(EngineKey("asr.b", 1, "greedy")) { load("b") }
+        other.close()
+        cache.evict("asr.b")
+        assertTrue(other.engine.closed)
+    }
+
+    @Test
+    fun `leaving never starts the new idle time for the kept instances`() {
+        cache.idleMillis = EngineCache.NEVER
+        val kept = cache.acquire(key) { load() }
+        kept.close()
+        val busy = cache.acquire(EngineKey("asr.b", 1, "greedy")) { load("b") }
+        cache.idleMillis = 60_000
+        scheduler.advance(59_999)
+        assertFalse(kept.engine.closed)
+        scheduler.advance(1)
+        assertTrue(kept.engine.closed)
+        assertFalse("an instance in use gets its timer when it is released", busy.engine.closed)
+        busy.close()
+        scheduler.advance(60_000)
+        assertTrue(busy.engine.closed)
+    }
+
+    @Test
+    fun `the budget still closes instances kept by never`() {
+        val budget = EngineCache(EngineCache.NEVER, scheduler, budgetBytes = 1000)
+        val old = budget.acquire(EngineKey("asr.a", 1, "x"), 600) { load("old") }
+        old.close()
+        val new = budget.acquire(EngineKey("asr.b", 1, "x"), 600) { load("new") }
+        assertTrue(old.engine.closed)
+        new.close()
+    }
+
+    @Test
+    fun `a shared use outlives the lease it comes from and loadedNow tells who loaded`() {
+        val first = cache.acquire(key) { load() }
+        assertTrue(first.loadedNow)
+        val second = cache.acquire(key) { load() }
+        assertFalse(second.loadedNow)
+        second.close()
+        val shared = cache.share(first)
+        assertSame(first.engine, shared.engine)
+        assertFalse(shared.loadedNow)
+        first.close()
+        assertTrue("the shared use holds the instance", cache.inUse("asr.a"))
+        scheduler.advance(600_000)
+        assertFalse(first.engine.closed)
+        shared.close()
+        shared.close()
+        assertFalse(cache.inUse("asr.a"))
+        scheduler.advance(300_000)
+        assertTrue(first.engine.closed)
+        assertThrows(IllegalStateException::class.java) { cache.share(first) }
+    }
+
+    @Test
     fun `loading one key does not block another`() {
         val real = EngineCache(1000, IdleScheduler.of(Executors.newSingleThreadScheduledExecutor()))
         val started = CountDownLatch(1)

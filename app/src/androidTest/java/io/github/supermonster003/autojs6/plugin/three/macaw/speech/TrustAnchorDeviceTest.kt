@@ -21,13 +21,14 @@ import javax.net.ssl.X509TrustManager
 /**
  * TLS trust of every GitHub host the plugin talks to (roadmap P5.1, the Android 7.0 trust anchor): the catalog on
  * `raw.githubusercontent.com`, a release asset behind `github.com` (redirected to `release-assets.githubusercontent.com`;
- * both carry a Let's Encrypt chain that ends at ISRG Root X1, which Android 7.0 lacks) and the release API on
- * `api.github.com` (Sectigo). Opt-in because it needs the network: `-e macawNetwork true`. Each probe logs PASS / FAIL
- * under `MacawDeviceRun`; only the first byte of the asset is read.
+ * both carry a Let's Encrypt chain that ends at ISRG Root X1, which Android 7.0 lacks), the releases page and the
+ * official plugin index of the update check on `raw.githubusercontent.com` and the two jsDelivr hosts (roadmap
+ * P11.2.4, D206). Opt-in because it needs the network: `-e macawNetwork true`. Each probe logs PASS / FAIL under
+ * `MacawDeviceRun`; only the first byte of the asset is read.
  * zh-CN: 插件访问的每个 GitHub 主机的 TLS 信任 (路线图 P5.1, Android 7.0 信任锚): `raw.githubusercontent.com` 上的目录, `github.com` 后面的
  * Release 资产 (重定向到 `release-assets.githubusercontent.com`; 两者都是终止于 ISRG Root X1 的 Let's Encrypt 证书链, Android 7.0 没有该根证书)
- * 与 `api.github.com` 上的发行 API (Sectigo). 需要网络, 因此须显式开启: `-e macawNetwork true`. 每个探针在 `MacawDeviceRun` 下记录 PASS / FAIL;
- * 资产只读第一个字节.
+ * 以及发行版页面与更新检查读取的官方插件索引 (`raw.githubusercontent.com` 与 jsDelivr 的两个域名, 路线图 P11.2.4, D206). 需要网络, 因此须显式开启:
+ * `-e macawNetwork true`. 每个探针在 `MacawDeviceRun` 下记录 PASS / FAIL; 资产只读第一个字节.
  */
 @RunWith(AndroidJUnit4::class)
 class TrustAnchorDeviceTest {
@@ -49,9 +50,11 @@ class TrustAnchorDeviceTest {
                     "HTTP ${response.status}, first byte $first"
                 }
             },
-            "release API api.github.com" to { "HTTP ${status(AppUpdateChecker.LATEST_RELEASE_API)}" },
             "releases page github.com" to { "HTTP ${status(AppUpdateChecker.RELEASES_PAGE)}" },
         )
+        // Roadmap P11.2.4: the update check reads the official index from GitHub's raw host and the jsDelivr mirrors.
+        // zh-CN: 路线图 P11.2.4: 更新检查从 GitHub raw 域名与 jsDelivr 镜像读取官方索引.
+        AppUpdateChecker.INDEX_URLS.forEach { url -> probes["official index ${URL(url).host}"] = { "HTTP ${status(url)}" } }
         val failures = mutableListOf<String>()
         probes.forEach { (name, probe) ->
             runCatching(probe)

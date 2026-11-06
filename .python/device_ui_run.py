@@ -6,8 +6,12 @@
     py .python/device_ui_run.py download <serial> <id>   HomeDownloadDeviceTest (P5.1): downloads one commercial-use model
                                                         from its home screen row on an unmetered network
     py .python/device_ui_run.py trust <serial>           TrustAnchorDeviceTest (P5.1): the TLS handshake with every GitHub
-                                                        host the plugin uses (catalog, release asset, release API), the
+                                                        host the plugin uses (catalog, release asset, releases page, the
+                                                        official index on raw.githubusercontent.com and jsDelivr), the
                                                         Android 7.0 trust anchor of network_security_config.xml
+    py .python/device_ui_run.py update <serial>          AppUpdateIndexDeviceTest (P11.2.4): the manual update check against
+                                                        the live official index offers the newest release to installed
+                                                        version code 172 (1.4.0) and reports this build up to date
     py .python/device_ui_run.py tryout <serial> [out]    TryoutDeviceTest (P5.3): dictation, wake word trial and synthesis
                                                         playback on the real microphone, the test recordings played
                                                         through the speaker at MACAW_VOLUME_PERCENT (70 by default) of
@@ -109,6 +113,8 @@ def main(argv):
         return 0 if run_test(serial, "HomeDownloadDeviceTest", [f"macawDownload={argv[2]}"]) else 1
     if action == "trust":
         return 0 if run_test(serial, "TrustAnchorDeviceTest", ["macawNetwork=true"]) else 1
+    if action == "update":
+        return 0 if run_test(serial, "AppUpdateIndexDeviceTest", ["macawNetwork=true"]) else 1
     if action == "tryout":
         return 0 if tryout(serial, argv[2] if len(argv) > 2 else None) else 1
     if action == "voice":

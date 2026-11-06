@@ -226,24 +226,31 @@ class ThreeMacawSpeechContractTest {
     }
 
     @Test
-    fun contractVersionThreeCallsAnswerFeatureUnavailable() {
-        // Roadmap P11.1.2 (D193): this build declares none of the version 3 features, so the plugin itself refuses their
-        // methods (transactions 24 - 27 of the AIDL order) with FEATURE_UNAVAILABLE, the answers carrying version 3.
-        // zh-CN: 路线图 P11.1.2 (D193): 本构建不声明任何版本 3 功能, 插件自身以 FEATURE_UNAVAILABLE 拒绝这些方法 (AIDL 顺序中的事务
-        // 24 - 27), 应答带版本 3.
+    fun contractVersionThreeAnswersReleaseAndRefusesTheResidentCalls() {
+        // Roadmap P11.2 (D193): this build declares speechPrepare of the version 3 features only, so release answers
+        // (LEASE_NOT_FOUND for a lease the caller does not hold, INVALID_OPTIONS without one) and the plugin itself refuses
+        // the resident methods (transactions 25 - 27 of the AIDL order) with FEATURE_UNAVAILABLE, the answers carrying version 3.
+        // zh-CN: 路线图 P11.2 (D193): 本构建在版本 3 功能中只声明 speechPrepare, 因此 release 照常应答 (调用方不持有的租约为 LEASE_NOT_FOUND,
+        // 不给租约为 INVALID_OPTIONS), 插件自身以 FEATURE_UNAVAILABLE 拒绝常驻方法 (AIDL 顺序中的事务 25 - 27), 应答带版本 3.
         val serviceInfo = discoverSingleService(
             SpeechPluginActions.SPEECH, SpeechPluginActions.SERVICE_CATEGORY, ThreeMacawSpeechService::class.java.name,
         )
         withBoundService(serviceInfo) { binder ->
             val capabilities = requireNotNull(transactBundle(binder, TRANSACTION_GET_CAPABILITIES))
             val features = requireNotNull(capabilities.getStringArray(SpeechCapabilityKeys.FEATURES)).toSet()
-            assertTrue(features.intersect(SpeechContract.FEATURES_V3).isEmpty())
+            assertEquals(setOf(SpeechContract.FEATURE_PREPARE), features.intersect(SpeechContract.FEATURES_V3))
             val request = Bundle().apply { putInt(SpeechContract.KEY_CONTRACT_VERSION, SpeechContract.CALL_VERSION_3) }
-            listOf(TRANSACTION_RELEASE, TRANSACTION_GET_RESIDENT, TRANSACTION_SET_RESIDENT, TRANSACTION_SET_RESIDENT_ENABLED).forEach { code ->
+            listOf(TRANSACTION_GET_RESIDENT, TRANSACTION_SET_RESIDENT, TRANSACTION_SET_RESIDENT_ENABLED).forEach { code ->
                 val answer = requireNotNull(transactBundle(binder, code, request))
                 assertEquals("transaction $code", SpeechErrorCodes.FEATURE_UNAVAILABLE, answer.getString(SpeechContract.KEY_ERROR_CODE))
                 assertEquals("transaction $code", SpeechContract.CALL_VERSION_3, answer.getInt(SpeechContract.KEY_CONTRACT_VERSION))
             }
+            val unknown = Bundle(request).apply { putString(SpeechOptionKeys.LEASE_ID, "lease-unknown") }
+            val released = requireNotNull(transactBundle(binder, TRANSACTION_RELEASE, unknown))
+            assertEquals(SpeechErrorCodes.LEASE_NOT_FOUND, released.getString(SpeechContract.KEY_ERROR_CODE))
+            assertEquals(SpeechContract.CALL_VERSION_3, released.getInt(SpeechContract.KEY_CONTRACT_VERSION))
+            val missing = requireNotNull(transactBundle(binder, TRANSACTION_RELEASE, request))
+            assertEquals(SpeechErrorCodes.INVALID_OPTIONS, missing.getString(SpeechContract.KEY_ERROR_CODE))
         }
     }
 
@@ -465,6 +472,8 @@ class ThreeMacawSpeechContractTest {
             SpeechContract.FEATURE_SPEAKER,
             // Roadmap P8.4 (D146 - D151): the offline analyses of contract version 2.
             SpeechContract.FEATURE_DIARIZATION, SpeechContract.FEATURE_LANGUAGE_ID, SpeechContract.FEATURE_AUDIO_TAGGING,
+            // Roadmap P11.2 (D193): the leases of contract version 3.
+            SpeechContract.FEATURE_PREPARE,
         )
 
         /**

@@ -1,5 +1,6 @@
 package io.github.supermonster003.autojs6.plugin.three.macaw.speech.transfer
 
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferencePolicy
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.trigger.TriggerPreferences
@@ -191,6 +192,26 @@ class MacawSettingsTransferTest {
         assertEquals(2, imported.written)
         assertEquals(1, imported.skipped)
         assertEquals(mapOf<String, Any>(SpeechPreferences.KEY_ENDPOINT to 2000L, SpeechPreferences.KEY_SPEED to 2f), target.getValue(SpeechPreferences.FILE).values)
+    }
+
+    @Test
+    fun `the idle release time never travels as 0`() {
+        // Roadmap P11.2.2 (D205): "never" is stored and transferred as 0 and imported again on the other device.
+        // zh-CN: 路线图 P11.2.2 (D205): "不释放" 以 0 保存与迁移, 在另一台设备上照样导入.
+        val source = files(SpeechPreferences.FILE to mapOf(SpeechPreferences.KEY_IDLE_MINUTES to SpeechPreferencePolicy.NEVER_IDLE_MINUTES))
+        val exported = transfer(source).exportSettings()
+        val idle = exported.settings.getJSONObject(SpeechPreferences.FILE).getJSONObject(SpeechPreferences.KEY_IDLE_MINUTES)
+        assertEquals(Contract.TYPE_INT, idle.getString(Contract.VALUE_KEY_TYPE))
+        assertEquals(0, idle.getInt(Contract.VALUE_KEY_VALUE))
+
+        val target = files()
+        val imported = transfer(target).importSettings(exported.settings)
+
+        assertEquals(1, imported.written)
+        assertEquals(0, imported.skipped)
+        assertEquals(mapOf<String, Any>(SpeechPreferences.KEY_IDLE_MINUTES to 0), target.getValue(SpeechPreferences.FILE).values)
+        val negative = JSONObject().put(SpeechPreferences.FILE, JSONObject().put(SpeechPreferences.KEY_IDLE_MINUTES, entry(Contract.TYPE_INT, -1)))
+        assertEquals(1, transfer(files()).importSettings(negative).skipped)
     }
 
     @Test

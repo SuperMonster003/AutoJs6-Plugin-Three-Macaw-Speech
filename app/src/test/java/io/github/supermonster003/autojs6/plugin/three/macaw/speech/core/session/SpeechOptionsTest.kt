@@ -116,11 +116,45 @@ class SpeechOptionsTest {
     fun `keepLoaded and background refusals of contract version 3`() {
         val keywords = "keywords" to listOf(mapOf("keyword" to "a"))
         expect(SpeechErrorCodes.LIMIT_EXCEEDED) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 1441)) }
-        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 0)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to -2)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to "yes")) }
         expect(SpeechErrorCodes.LIMIT_EXCEEDED) { SpeechOptions.wake(source("contractVersion" to 3, keywords, "keepLoaded" to 1441)) }
         expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.wake(source("contractVersion" to 3, keywords, "background" to "on")) }
+        // The lease belongs to the wake session as a whole (D196); a version 2 thenListen never carries the key.
+        // zh-CN: 租约属于整个唤醒会话 (D196); 版本 2 的 thenListen 从不带这个键.
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.wake(source("contractVersion" to 3, keywords, "thenListen" to mapOf("keepLoaded" to 5))) }
+        assertNull(SpeechOptions.wake(source("contractVersion" to 2, keywords, "thenListen" to mapOf("keepLoaded" to 5))).thenListen?.keepLoaded)
+    }
+
+    @Test
+    fun `keepLoaded 0 keeps nothing like an absent key`() {
+        // D196: false, 0, null and absence keep nothing; the host sends false as an absent key and 0 as 0.
+        // zh-CN: D196: false, 0, null 与省略都不保留; 宿主把 false 作为缺省发送, 0 原样发送.
+        assertNull(SpeechOptions.listen(source("contractVersion" to 3, "keepLoaded" to 0)).keepLoaded)
+        assertNull(SpeechOptions.wake(source("contractVersion" to 3, "keywords" to listOf(mapOf("keyword" to "a")), "keepLoaded" to 0L)).keepLoaded)
+    }
+
+    @Test
+    fun `prepare reads kind, model and language`() {
+        // Roadmap P11.2.1 (D202): asr by default, kws for a wake word model; the language picks the engine variant as it
+        // does for a listen of that language.
+        // zh-CN: 路线图 P11.2.1 (D202): 默认 asr, 唤醒词模型为 kws; 语言与同语言的听写一样决定引擎变体.
+        assertEquals(PrepareOptions(SpeechContract.KIND_ASR), SpeechOptions.prepare(null))
+        assertEquals(PrepareOptions(SpeechContract.KIND_ASR), SpeechOptions.prepare(source("contractVersion" to 3)))
+        assertEquals(
+            PrepareOptions(SpeechContract.KIND_KWS, "kws.x", "zh-CN"),
+            SpeechOptions.prepare(source("contractVersion" to 3, "kind" to "kws", "model" to "kws.x", "language" to "zh-CN", "futureKey" to 1)),
+        )
+        assertEquals(PrepareOptions(SpeechContract.KIND_ASR, language = "en"), SpeechOptions.prepare(source("contractVersion" to 3, "language" to "en")))
+    }
+
+    @Test
+    fun `prepare refusals`() {
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.prepare(source("contractVersion" to 3, "kind" to "tts")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.prepare(source("contractVersion" to 3, "kind" to "vad")) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.prepare(source("contractVersion" to 3, "kind" to 1)) }
+        expect(SpeechErrorCodes.INVALID_OPTIONS) { SpeechOptions.prepare(source("contractVersion" to 3, "model" to "")) }
+        expect(SpeechErrorCodes.PLUGIN_INCOMPATIBLE) { SpeechOptions.prepare(source("contractVersion" to 4)) }
     }
 
     @Test

@@ -83,6 +83,18 @@ data class WakeOptions(
 )
 
 /**
+ * `prepare` options of contract version 3 (roadmap D184, D202): the engines of [model] (or of the default model of
+ * [kind]) as a listen or wake session with default options loads them.
+ * zh-CN: 契约版本 3 的 `prepare` 选项 (路线图 D184, D202): [model] (或 [kind] 的默认模型) 的引擎, 即默认选项的听写或唤醒会话加载的那些.
+ */
+data class PrepareOptions(val kind: String, val model: String? = null, val language: String? = null) {
+    companion object {
+        /** The kinds `prepare` loads (roadmap D202). zh-CN: `prepare` 可加载的种类 (路线图 D202). */
+        val KINDS = listOf(SpeechContract.KIND_ASR, SpeechContract.KIND_KWS)
+    }
+}
+
+/**
  * Synthesis options (`synthesizeToFile`, roadmap D20, appendix B.2): [speaker] stays text (a number or a name, resolved
  * against the model), [speed] 0.5 to 2.0.
  * zh-CN: 合成选项 (`synthesizeToFile`, 路线图 D20, 附录 B.2): [speaker] 保持为文本 (编号或名字, 按模型解析), [speed] 0.5 到 2.0.
@@ -127,14 +139,15 @@ object SpeechOptions {
 
     /**
      * `keepLoaded` of contract version 3 (roadmap D184, D196): [SpeechLimits.KEEP_LOADED_UNTIL_RELEASED] or 1 to
-     * [SpeechLimits.MAX_KEEP_LOADED_MINUTES] minutes. A request of an earlier version never carries it, so the key is
-     * read only from version 3 on and ignored before (a version 2 host may not send it).
+     * [SpeechLimits.MAX_KEEP_LOADED_MINUTES] minutes; 0 keeps nothing, like an absent key. A request of an earlier version
+     * never carries it, so the key is read only from version 3 on and ignored before (a version 2 host may not send it).
      * zh-CN: 契约版本 3 的 `keepLoaded` (路线图 D184, D196): [SpeechLimits.KEEP_LOADED_UNTIL_RELEASED] 或 1 到 [SpeechLimits.MAX_KEEP_LOADED_MINUTES]
-     * 分钟. 较早版本的请求从不带它, 因此只从版本 3 起读取该键, 之前的忽略 (版本 2 的宿主不会发送它).
+     * 分钟; 0 与省略一样表示不保留. 较早版本的请求从不带它, 因此只从版本 3 起读取该键, 之前的忽略 (版本 2 的宿主不会发送它).
      */
     private fun keepLoaded(source: OptionSource, label: String): Int? {
         if (callVersion(source) < SpeechContract.CALL_VERSION_3) return null
         val minutes = long(source, SpeechOptionKeys.KEEP_LOADED, label) ?: return null
+        if (minutes == 0L) return null
         if (minutes > SpeechLimits.MAX_KEEP_LOADED_MINUTES) limit("$label.keepLoaded is at most ${SpeechLimits.MAX_KEEP_LOADED_MINUTES} minutes, got $minutes")
         if (minutes != SpeechLimits.KEEP_LOADED_UNTIL_RELEASED.toLong() && minutes < 1) {
             invalid("$label.keepLoaded must be ${SpeechLimits.KEEP_LOADED_UNTIL_RELEASED} or between 1 and ${SpeechLimits.MAX_KEEP_LOADED_MINUTES}, got $minutes")
@@ -185,6 +198,20 @@ object SpeechOptions {
         )
     }
 
+    /**
+     * `prepare` of contract version 3 (roadmap D184, D202): [SpeechOptionKeys.KIND] `asr` (default) or `kws`, an optional
+     * [SpeechOptionKeys.MODEL] (else the default model of the kind) and [SpeechOptionKeys.LANGUAGE] (SenseVoice only).
+     * zh-CN: 契约版本 3 的 `prepare` (路线图 D184, D202): [SpeechOptionKeys.KIND] 为 `asr` (默认) 或 `kws`, 可选的 [SpeechOptionKeys.MODEL]
+     * (否则取该种类的默认模型) 与 [SpeechOptionKeys.LANGUAGE] (仅 SenseVoice).
+     */
+    fun prepare(source: OptionSource?): PrepareOptions {
+        checkContract(source)
+        val given = source ?: MapOptionSource(emptyMap())
+        val kind = string(given, SpeechOptionKeys.KIND, "request") ?: SpeechContract.KIND_ASR
+        if (kind !in PrepareOptions.KINDS) invalid("request.kind must be one of ${PrepareOptions.KINDS}, got $kind")
+        return PrepareOptions(kind, model(given, "request"), language(given, "request"))
+    }
+
     fun vad(source: OptionSource?): VadOptions {
         checkContract(source)
         val given = source ?: MapOptionSource(emptyMap())
@@ -222,6 +249,9 @@ object SpeechOptions {
             null -> null
             is OptionSource -> listen(value, "options.thenListen").also {
                 if (it.isExternal) invalid("options.thenListen listens to the microphone; source \"external\" is not available")
+                if (callVersion(given) >= SpeechContract.CALL_VERSION_3 && value.has(SpeechOptionKeys.KEEP_LOADED)) {
+                    invalid("keepLoaded belongs to the wake options, not to options.thenListen")
+                }
             }
             else -> invalid("options.thenListen must be a Bundle")
         }

@@ -49,10 +49,27 @@ class EngineCache(
 
     /**
      * The idle time; the settings' "release idle models" changes it (roadmap P5.2) for instances released afterwards.
-     * zh-CN: 空闲时间; 设置页的 "空闲释放" 修改它 (路线图 P5.2), 对此后归还的实例生效.
+     * [NEVER] keeps idle instances until the budget needs room, [trim] or [evict] (roadmap P11.2.2); leaving it starts
+     * the new idle time for the instances it kept.
+     * zh-CN: 空闲时间; 设置页的 "空闲释放" 修改它 (路线图 P5.2), 对此后归还的实例生效. [NEVER] 让空闲实例一直保留, 直到预算需要腾出空间, [trim] 或
+     * [evict] (路线图 P11.2.2); 离开 [NEVER] 时, 它保留的实例开始按新的空闲时间计时.
      */
     @Volatile
     var idleMillis: Long = idleMillis
+        set(value) {
+            val kept = synchronized(entries) {
+                field = value
+                if (value == NEVER || value <= 0) return@synchronized emptyList<Entry>()
+                entries.values.filter { it.engine != null && it.users == 0 && it.cancelIdle == null }
+            }
+            kept.forEach { entry ->
+                synchronized(entries) {
+                    if (entry.users == 0 && entry.cancelIdle == null && entries[entry.key] === entry) {
+                        entry.cancelIdle = scheduler.schedule(value) { expire(entry) }
+                    }
+                }
+            }
+        }
 
     /** The last use of an instance ended; runs on the caller's thread. zh-CN: 某实例最后一次使用结束; 在调用方线程上运行. */
     @Volatile
@@ -67,8 +84,12 @@ class EngineCache(
         val loadLock = Any()
     }
 
-    /** One use of a loaded engine; close it exactly once. zh-CN: 已加载引擎的一次使用; 恰好关闭一次. */
-    inner class Lease<E : Closeable> internal constructor(private val entry: Entry, val engine: E) : Closeable {
+    /**
+     * One use of a loaded engine; close it exactly once. [loadedNow]: this [acquire] loaded the engine (the `loadMillis`
+     * of a prepare, roadmap P11.2.1).
+     * zh-CN: 已加载引擎的一次使用; 恰好关闭一次. [loadedNow]: 本次 [acquire] 加载了引擎 (预热的 `loadMillis`, 路线图 P11.2.1).
+     */
+    inner class Lease<E : Closeable> internal constructor(internal val entry: Entry, val engine: E, val loadedNow: Boolean = false) : Closeable {
         private var closed = false
 
         val key: EngineKey get() = entry.key
@@ -100,11 +121,13 @@ class EngineCache(
                 item.cancelIdle = null
             }
         }
+        var loaded = false
         try {
             synchronized(entry.loadLock) {
                 if (entry.engine == null) {
                     makeRoom(entry, weightBytes)
                     entry.engine = load()
+                    loaded = true
                     log("Loaded ${key.modelId} v${key.versionCode} (${key.variant})")
                 }
             }
@@ -112,7 +135,21 @@ class EngineCache(
             release(entry)
             throw t
         }
-        return Lease(entry, entry.engine as E)
+        return Lease(entry, entry.engine as E, loaded)
+    }
+
+    /**
+     * Another use of the instance [lease] holds, for a lease of contract version 3 that outlives the session it comes from
+     * (roadmap P11.2.2, `keepLoaded`); [lease] stays open and both are closed separately.
+     * zh-CN: [lease] 所持实例的另一次使用, 用于比其来源会话活得更久的契约版本 3 租约 (路线图 P11.2.2, `keepLoaded`); [lease] 保持打开, 两者分别关闭.
+     */
+    fun share(lease: Lease<*>): Lease<Closeable> {
+        val entry = lease.entry
+        synchronized(entries) {
+            check(entry.users > 0) { "The lease of ${entry.key.modelId} is closed" }
+            entry.users++
+        }
+        return Lease(entry, lease.engine)
     }
 
     /** Weight of the instances currently loaded. zh-CN: 当前已加载实例的总重. */
@@ -194,6 +231,9 @@ class EngineCache(
                 if (idleMillis <= 0) {
                     entries.remove(entry.key)
                     true
+                } else if (idleMillis == NEVER) {
+                    // Kept until the budget needs room, a trim or an eviction. zh-CN: 保留到预算需要空间, 修剪或逐出.
+                    false
                 } else {
                     entry.cancelIdle = scheduler.schedule(idleMillis) { expire(entry) }
                     false
@@ -211,6 +251,11 @@ class EngineCache(
             entry.cancelIdle = null
         }
         closeEngine(entry)
+    }
+
+    companion object {
+        /** [idleMillis] of the settings' "never" (roadmap P11.2.2): idle instances are not released on a timer. zh-CN: 设置页 "不释放" 的 [idleMillis]: 空闲实例不按计时释放. */
+        const val NEVER = Long.MAX_VALUE
     }
 
     private fun closeEngine(entry: Entry) {

@@ -247,7 +247,8 @@
     <string name="settings_headset">헤드셋 음성 키</string>
     <string name="settings_headset_summary">블루투스 헤드셋으로 음성 어시스턴트를 부를 때 (음성 키나 터치 영역 길게 누르기) 받아쓰기 패널을 엽니다. 다른 앱도 응답할 수 있으면 시스템이 먼저 선택을 요청합니다. 요청이 표시되면 \"근처 기기\"를 허용하세요. 헤드셋 마이크로 듣고 누를 때마다 작동합니다</string>
     <string name="settings_idle">유휴 모델 해제</string>
-    <string name="settings_idle_message">로드된 모델은 이 시간 동안 사용되지 않으면 해제되며, 스크립트에도 적용됩니다</string>
+    <string name="settings_idle_message">로드된 모델은 이 시간 동안 사용되지 않으면 해제되며, 스크립트에도 적용됩니다. 해제 안 함을 선택하면 로드된 모델은 시스템 메모리가 부족해지거나 모델이 삭제 또는 업데이트될 때까지 메모리를 계속 차지합니다 (각각 설치 크기 정도)</string>
+    <string name="settings_idle_never">해제 안 함</string>
     <string name="settings_idle_value">%1$d분 후</string>
     <string name="settings_install_voices">음성 설치</string>
     <string name="settings_install_voices_summary">음성 합성 모델 다운로드</string>

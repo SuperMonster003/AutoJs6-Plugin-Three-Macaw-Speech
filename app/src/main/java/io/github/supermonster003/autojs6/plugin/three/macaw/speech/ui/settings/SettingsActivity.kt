@@ -210,7 +210,7 @@ class SettingsActivity : StandaloneActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         preferences = SpeechPreferences(this)
-        updates = AppUpdateController(AppUpdateStore.of(this), BuildConfig.VERSION_NAME)
+        updates = AppUpdateController(AppUpdateStore.of(this), BuildConfig.VERSION_CODE.toLong())
         super.onCreate(savedInstanceState)
         OperationTracker.shared.addListener(outcomes)
         busy = OperationTracker.shared.running(TrackedOperation.Kind.REFRESH)?.kind ?: OperationTracker.shared.running(TrackedOperation.Kind.RECYCLE)?.kind
@@ -640,7 +640,7 @@ class SettingsActivity : StandaloneActivity() {
                     onClick = { startActivity(HomeActivity.intent(this@SettingsActivity, showTts = true)) }, modifier = Modifier.testTag("macaw.settings.installVoices"))
 
                 SectionHeader(stringResource(R.string.settings_resources))
-                SettingsRow(stringResource(R.string.settings_idle), summary = stringResource(R.string.settings_idle_value, preferences.idleMinutes), icon = R.drawable.ic_storage_24,
+                SettingsRow(stringResource(R.string.settings_idle), summary = idleLabel(preferences.idleMinutes), icon = R.drawable.ic_storage_24,
                     onClick = { dialog = Dialog.IDLE }, modifier = Modifier.testTag("macaw.settings.idle"))
                 Hairline()
                 var metered by remember { mutableStateOf(preferences.allowMeteredDownloads) }
@@ -811,7 +811,7 @@ class SettingsActivity : StandaloneActivity() {
             Dialog.IDLE -> ChoiceDialog(
                 title = stringResource(R.string.settings_idle),
                 message = stringResource(R.string.settings_idle_message),
-                options = SpeechPreferencePolicy.IDLE_MINUTES.map { Choice(stringResource(R.string.settings_idle_value, it)) },
+                options = SpeechPreferencePolicy.IDLE_MINUTES.map { Choice(idleLabel(it)) },
                 selectedIndex = SpeechPreferencePolicy.IDLE_MINUTES.indexOf(preferences.idleMinutes),
                 onDismissRequest = close,
                 onConfirm = { index ->
@@ -1129,6 +1129,11 @@ class SettingsActivity : StandaloneActivity() {
         val chosen = preferences.speaker(model.id)?.takeIf { it < speech.speakers.size }
         return if (chosen == null) stringResource(R.string.settings_speaker_model_default) else speakerLabel(chosen, speech.speakers[chosen])
     }
+
+    /** "After N min", or "Never" (roadmap P11.2.2). zh-CN: "N 分钟后", 或 "不释放" (路线图 P11.2.2). */
+    @Composable
+    private fun idleLabel(minutes: Int): String =
+        if (minutes == SpeechPreferencePolicy.NEVER_IDLE_MINUTES) stringResource(R.string.settings_idle_never) else stringResource(R.string.settings_idle_value, minutes)
 
     @Composable
     private fun speakerLabel(index: Int, name: String): String =

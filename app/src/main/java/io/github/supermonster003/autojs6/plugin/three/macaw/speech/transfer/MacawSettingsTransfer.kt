@@ -31,12 +31,15 @@ import org.autojs.plugin.common.api.AutoJs6PluginSettingsTransferContract as Con
  * question, the tryout file tab, ignored update tags, the last update check, the listening deadline) stay out. Nothing
  * is a secret, so an export is never sensitive. Import is lenient: a known key whose value the settings screen could not
  * have saved (an endpoint outside the presets, an unknown key gesture, invalid wake words, ...) is skipped like an
- * unknown key, the rest is written with one commit per file. Pure JVM; [preferences] opens a file by name.
+ * unknown key, the rest is written with one commit per file. The idle release time is one of
+ * [SpeechPreferencePolicy.IDLE_MINUTES], 0 meaning "never" (roadmap P11.2.2, D205). Pure JVM; [preferences] opens a file
+ * by name.
  * zh-CN: AutoJs6 设置迁移 (契约 v1, 路线图 P10.1, 宿主设置路线图 P18.1) 的设置文档: 五个 SharedPreferences 文件中的用户选择, 每个文件一个
  * 以文件名命名的 store, 采用 [SharedPreferencesSettingsTransfer] 的类型化形式. 模型, 目录缓存, 下载, 已登记说话人, 组件开关 (常驻唤醒,
  * 语音输入, 耳机, 启动器图标) 与本机记录 (通知询问, 试听文件标签, 已忽略的更新, 上次检查更新, 监听截止时刻) 不在其中. 没有秘密, 导出从不
  * 标为敏感. 导入宽松: 已知键的值若设置页不可能保存 (端点不在预设中, 未知的按键手势, 无效的唤醒词等), 与未知键一样计为跳过, 其余每个文件
- * 一次 commit 写入. 纯 JVM; [preferences] 按名称打开文件.
+ * 一次 commit 写入. 空闲释放时间取 [SpeechPreferencePolicy.IDLE_MINUTES] 之一, 0 表示 "不释放" (路线图 P11.2.2, D205). 纯 JVM; [preferences]
+ * 按名称打开文件.
  */
 internal class MacawSettingsTransfer(private val preferences: (String) -> SharedPreferences) {
 

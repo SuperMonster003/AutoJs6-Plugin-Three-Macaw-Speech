@@ -247,7 +247,8 @@
     <string name="settings_headset">ヘッドセットの音声キー</string>
     <string name="settings_headset_summary">Bluetooth ヘッドセットで音声アシスタントを呼び出したとき (音声キーやタッチ部分の長押し) に音声入力パネルを開きます. 他のアプリも応答できる場合は, 先にどれを使うか選びます. 確認されたら \"付近のデバイス\" を許可してください. ヘッドセットのマイクで聞き取り, 毎回の押下が有効になります</string>
     <string name="settings_idle">未使用のモデルを解放</string>
-    <string name="settings_idle_message">読み込んだモデルは, この時間使われないと解放されます (スクリプトも同様)</string>
+    <string name="settings_idle_message">読み込んだモデルは, この時間使われないと解放されます (スクリプトも同様). 解放しないを選ぶと, 読み込んだモデルはシステムのメモリが不足するか, モデルが削除または更新されるまでメモリを使い続けます (それぞれインストールサイズ程度)</string>
+    <string name="settings_idle_never">解放しない</string>
     <string name="settings_idle_value">%1$d 分後</string>
     <string name="settings_install_voices">音声をインストール</string>
     <string name="settings_install_voices_summary">音声合成モデルをダウンロード</string>
