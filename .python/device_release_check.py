@@ -220,9 +220,10 @@ def run_compare(serial, path, remove):
         ("models", base["models"] == r["models"], f"{len(base['models'])} -> {len(r['models'])}, {sum(m['bytes'] or 0 for m in r['models'])} bytes"),
         ("speakers", base["speakers"] == r["speakers"], f"{len(base['speakers'])} -> {len(r['speakers'])}"),
     ]
-    if "readerScore" in base:
-        drift = abs(base["readerScore"] - r.get("readerScore", -9))
-        rows.append(("voiceprint", drift <= MAX_SCORE_DRIFT and r.get("readerMatched") is True, f"score {base['readerScore']:.3f} -> {r.get('readerScore', -9):.3f}"))
+    if base.get("readerScore") is not None:  # the snapshot keeps the key as null when no speaker was there to verify
+        score = r.get("readerScore") if r.get("readerScore") is not None else -9
+        drift = abs(base["readerScore"] - score)
+        rows.append(("voiceprint", drift <= MAX_SCORE_DRIFT and r.get("readerMatched") is True, f"score {base['readerScore']:.3f} -> {score:.3f}"))
     if remove and "readerRemoved" in r:
         rows.append((f"remove {READER}", r["readerRemoved"] is True, ""))
     if base.get("settings") and r.get("settings"):
