@@ -11,7 +11,8 @@
 `snapshot` and `compare` cover the catalog version, the installed models with their sizes and the default models, and the
 enrolled speakers, and since 1.6.0 (P11.5.2) the plugin's settings document as AutoJs6 exports it (1.5.0+, every
 value must stay) and `speech.resident.get()` (6.8.1+, the 1.5.0 wake words must come back in order with the action
-"open"). A device without any speaker gets `release-check-reader` from the LibriSpeech reader with `--enroll`
+"open"); an update from a version without the settings provider (1.4.0 and earlier) only reports the document after
+the update. A device without any speaker gets `release-check-reader` from the LibriSpeech reader with `--enroll`
 (it needs a host with contract v2 and the speaker model), so that the voiceprint store has something to keep; `compare`
 verifies the same recording again and `--remove` then removes that one speaker. Other speakers are never touched.
 
@@ -238,6 +239,15 @@ def run_compare(serial, path, remove):
             actions = sorted({rule["action"] for rule in rules})
             rows.append(("resident wake words", kept_words == words and actions in ([], ["open"]),
                          f"{len(words)} -> {len(kept_words)} words, actions {actions}, switch {'on' if resident.get('enabled') else 'off'}"))
+    elif base.get("settings") is None and r.get("settings") is not None:
+        # An update from a version without the settings transfer provider (1.4.0 and earlier): nothing to compare, the
+        # document and the wake words after the update are only reported.
+        # zh-CN: 从没有设置传输 provider 的版本 (1.4.0 及更早) 升级: 无可比对, 只报告升级后的文档与唤醒词.
+        entries = len(flatten(json.loads(r["settings"])["settings"], "/settings"))
+        resident = r.get("resident") or {}
+        rules = resident.get("rules") or []
+        rows.append(("settings", True, f"not compared ({base['version']} has no settings provider), {entries} values after the update, "
+                                       f"resident wake words {[rule['action'] for rule in rules]}, switch {'on' if resident.get('enabled') else 'off'}"))
     elif base.get("settings") is not None or r.get("settings") is not None:
         rows.append(("settings", False, f"document missing ({r.get('settingsError', 'before')})"))
     for name, passed, detail in rows:
