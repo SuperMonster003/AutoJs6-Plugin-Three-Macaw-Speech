@@ -9,13 +9,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import androidx.core.content.ContextCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.FileTranscriptRecord
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.TranscriptExport
@@ -32,11 +33,14 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.tryout.Try
  * downloads. The ongoing notification shows the state and the recognized time with a cancel action and opens the file
  * tab; a run that ends while no tryout screen is visible leaves a result notification that can be dismissed. No
  * notification names the file or shows recognized text, and the lock screen hides their content. Android may refuse
- * to start the service from the background; the run then goes on in the process without it.
+ * to start the service from the background; the run then goes on in the process without it. A start Android drops
+ * silently (`startForegroundService` answers null, or `onStartCommand` does not come within
+ * [ForegroundStartWatch.TIMEOUT_MILLIS]) counts as refused, so the next run starts the service again.
  * zh-CN: 试听试说页文件标签的前台服务 (路线图 D111, P7.8.2): 在 [FileTranscription] 识别所选音频文件期间保持插件进程存活, 因此离开页面后识别继续
  * ([FileTranscription] 的唤醒锁使其在熄屏后也继续). Android 15+ 类型为 `mediaProcessing`, Android 10 - 14 为 `dataSync`, 更早无类型; 因此在
  * Android 15+ 不占用模型下载的数据同步时长. 进行中通知显示状态与已识别时长, 带 "取消" 动作, 点击打开文件标签; 识别结束时若没有可见的试听试说页,
- * 留下一条可清除的结果通知. 通知不写文件名与识别文字, 锁屏上隐藏内容. Android 可能拒绝从后台启动本服务, 这时识别照常在进程内进行.
+ * 留下一条可清除的结果通知. 通知不写文件名与识别文字, 锁屏上隐藏内容. Android 可能拒绝从后台启动本服务, 这时识别照常在进程内进行. 被 Android
+ * 静默丢弃的启动 (`startForegroundService` 返回 null, 或 [ForegroundStartWatch.TIMEOUT_MILLIS] 内没有 `onStartCommand`) 按被拒处理, 下一次识别会重新启动服务.
  */
 class FileRecognitionService : Service() {
 
@@ -49,10 +53,10 @@ class FileRecognitionService : Service() {
         if (intent?.action == ACTION_CANCEL) {
             FileTranscription.get(this).cancel()
             // Started for the action alone (no run holds the service): nothing to keep. zh-CN: 仅为动作而启动 (没有识别占用服务): 无需保留.
-            if (running !== this && !starting) stopSelf(startId)
+            if (running !== this && !startWatch.starting) stopSelf(startId)
             return START_NOT_STICKY
         }
-        starting = false
+        startWatch.arrived()
         val run = latest
         try {
             // startForeground must follow startForegroundService in every case, even when the run just ended.
@@ -146,10 +150,12 @@ class FileRecognitionService : Service() {
         private const val PROGRESS_MAX = 1000
         private const val UPDATE_INTERVAL_MILLIS = 500L
 
+        private val main = Handler(Looper.getMainLooper())
+
         // Touched on the main thread only.
         private var latest: FileRun? = null
         private var running: FileRecognitionService? = null
-        private var starting = false
+        private val startWatch = ForegroundStartWatch({ delayMillis, action -> main.postDelayed(action, delayMillis) })
 
         /** The foreground service type in effect, or null while the service does not run (device tests). zh-CN: 当前的前台服务类型, 服务未运行时为 null (设备测试用). */
         @VisibleForTesting
@@ -163,17 +169,24 @@ class FileRecognitionService : Service() {
             val service = running
             when {
                 service != null -> service.update(run)
-                !starting -> {
-                    starting = true
-                    try {
-                        ContextCompat.startForegroundService(context, Intent(context, FileRecognitionService::class.java))
-                    } catch (e: Exception) {
-                        // ForegroundServiceStartNotAllowedException (API 31+) or IllegalStateException (API 26+) from the background.
-                        starting = false
-                        Log.w(TAG, "Foreground service not started; the file recognition goes on without it: $e")
-                    }
-                }
+                startWatch.begin() -> startService(context)
             }
+        }
+
+        /** Refused, dropped or timed out, the run goes on without the service. zh-CN: 被拒, 被丢弃或超时, 识别都在没有服务的情况下继续. */
+        private fun startService(context: Context) {
+            val component = try {
+                ForegroundStarts.request(context, Intent(context, FileRecognitionService::class.java))
+            } catch (e: Exception) {
+                // ForegroundServiceStartNotAllowedException (API 31+) or IllegalStateException (API 26+) from the background.
+                startWatch.abandon()
+                Log.w(TAG, "Foreground service not started; the file recognition goes on without it: $e")
+                return
+            }
+            val dropped = startWatch.requested(component != null) { late ->
+                Log.w(TAG, "Foreground service not started; the file recognition goes on without it: $late")
+            }
+            if (dropped != null) Log.w(TAG, "Foreground service not started; the file recognition goes on without it: $dropped")
         }
 
         /** Progress (main thread). zh-CN: 进度 (主线程). */

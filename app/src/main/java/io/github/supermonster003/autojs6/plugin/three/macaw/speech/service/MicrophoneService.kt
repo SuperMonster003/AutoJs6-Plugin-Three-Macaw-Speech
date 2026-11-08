@@ -14,7 +14,6 @@ import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import androidx.core.content.ContextCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 
 /**
@@ -24,14 +23,17 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
  * the host's own, roadmap D22). It must start while the plugin still has the microphone capability it inherits from
  * the host (the host is visible, or holds the capability itself); [acquire] is called when a session opens for that
  * reason. Android may refuse the start (API 31+ background starts, API 34+ while-in-use checks): the session goes on
- * without it and [Listener.onRefused] tells the sessions, which report a warning. It is a service of its own rather
+ * without it and [Listener.onRefused] tells the sessions, which report a warning. A start Android drops silently
+ * (`startForegroundService` answers null, or `onStartCommand` does not come within [ForegroundStartWatch.TIMEOUT_MILLIS])
+ * is a refusal too, so the next session starts the service again. It is a service of its own rather
  * than a second type of [ModelOperationService]: its life follows the sessions, not the operation queue, it must not
  * inherit the Android 15 data sync time limit, and its notification says "recording", not a download progress.
  * zh-CN: 路线图附录 D Q5 (a), P3.1 的麦克风前台服务: 麦克风会话 (听写或唤醒) 运行期间, 插件持有 `microphone` 类型的前台服务与常驻通知, 因此 AutoJs6
  * 离开前台或熄屏后录音继续 (宿主绑定传递的能力随宿主自身的能力结束, 路线图 D22). 它必须在插件仍继承宿主麦克风能力时启动 (宿主可见, 或宿主自身持有
  * 能力), 因此会话打开时即调用 [acquire]. Android 可能拒绝启动 (API 31+ 的后台启动, API 34+ 的使用期间检查): 会话照常进行, [Listener.onRefused]
- * 通知各会话报告警告. 它是独立的服务, 而不是 [ModelOperationService] 的第二种类型: 其生命周期跟随会话而非操作队列, 不应受 Android 15 数据同步时长
- * 限制, 通知内容是 "正在录音" 而非下载进度.
+ * 通知各会话报告警告. 被 Android 静默丢弃的启动 (`startForegroundService` 返回 null, 或 [ForegroundStartWatch.TIMEOUT_MILLIS] 内没有
+ * `onStartCommand`) 同样按被拒处理, 下一个会话会重新启动服务. 它是独立的服务, 而不是 [ModelOperationService] 的第二种类型: 其生命周期跟随会话
+ * 而非操作队列, 不应受 Android 15 数据同步时长限制, 通知内容是 "正在录音" 而非下载进度.
  */
 class MicrophoneService : Service() {
 
@@ -42,7 +44,7 @@ class MicrophoneService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        starting = false
+        startWatch.arrived()
         try {
             // startForeground must follow startForegroundService, even when the last session already ended.
             ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(), foregroundType())
@@ -111,7 +113,7 @@ class MicrophoneService : Service() {
         // Touched on the main thread only.
         private var users = 0
         private var running: MicrophoneService? = null
-        private var starting = false
+        private val startWatch = ForegroundStartWatch({ delayMillis, action -> main.postDelayed(action, delayMillis) })
         private var starter: MicrophoneStartActivity? = null
         private var starterSeen = false
         private val listeners = LinkedHashSet<Listener>()
@@ -131,8 +133,8 @@ class MicrophoneService : Service() {
             val synchronous = onMain {
                 users++
                 listeners += listener
-                if (running != null || starting) return@onMain null
-                starting = true
+                // A start under way answers this listener too. zh-CN: 进行中的启动同样答复此监听器.
+                if (running != null || !startWatch.begin()) return@onMain null
                 state = STATE_STARTING
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && launchStarter(application)) return@onMain null
                 startService(application)
@@ -154,6 +156,7 @@ class MicrophoneService : Service() {
          */
         private fun launchStarter(context: Context): Boolean {
             starterSeen = false
+            val attempt = startWatch.attempt
             return try {
                 context.startActivity(
                     Intent(context, MicrophoneStartActivity::class.java).addFlags(
@@ -161,7 +164,7 @@ class MicrophoneService : Service() {
                     ),
                 )
                 main.postDelayed({
-                    if (starting && !starterSeen) {
+                    if (startWatch.isCurrent(attempt) && !starterSeen) {
                         Log.w(TAG, "The microphone start activity did not appear; starting the service without it")
                         startService(context)?.let(::refused)
                     }
@@ -178,7 +181,7 @@ class MicrophoneService : Service() {
             starterSeen = true
             starter = activity
             main.postDelayed(::finishStarter, STARTER_LIFETIME_MILLIS)
-            if (!starting || running != null) {
+            if (!startWatch.starting || running != null) {
                 finishStarter()
                 return
             }
@@ -191,16 +194,31 @@ class MicrophoneService : Service() {
             if (!activity.isFinishing) activity.finish()
         }
 
-        /** Starts the service; answers the reason of a refusal. zh-CN: 启动服务; 被拒时返回原因. */
-        private fun startService(context: Context): String? = try {
-            ContextCompat.startForegroundService(context, Intent(context, MicrophoneService::class.java))
-            null
-        } catch (e: Exception) {
-            starting = false
+        /**
+         * Starts the service; answers the reason of a refusal. A start that Android accepts but that never reaches
+         * `onStartCommand` is refused later, through [refused], by [ForegroundStartWatch].
+         * zh-CN: 启动服务; 被拒时返回原因. Android 接受却始终没有到达 `onStartCommand` 的启动, 由 [ForegroundStartWatch] 稍后经 [refused] 拒绝.
+         */
+        private fun startService(context: Context): String? {
+            val component = try {
+                ForegroundStarts.request(context, Intent(context, MicrophoneService::class.java))
+            } catch (e: Exception) {
+                // ForegroundServiceStartNotAllowedException (API 31+) or SecurityException.
+                startWatch.abandon()
+                finishStarter()
+                Log.w(TAG, "Microphone foreground service not started: $e")
+                state = STATE_REFUSED
+                return e.toString()
+            }
+            val reason = startWatch.requested(component != null) { late ->
+                Log.w(TAG, "Microphone foreground service not started: $late")
+                finishStarter()
+                refused(late)
+            } ?: return null
             finishStarter()
-            Log.w(TAG, "Microphone foreground service not started: $e")
+            Log.w(TAG, "Microphone foreground service not started: $reason")
             state = STATE_REFUSED
-            e.toString()
+            return reason
         }
 
         /** A microphone session ended. zh-CN: 一个麦克风会话已结束. */

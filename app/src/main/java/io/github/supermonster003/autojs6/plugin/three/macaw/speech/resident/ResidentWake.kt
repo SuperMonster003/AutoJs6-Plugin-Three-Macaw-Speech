@@ -12,11 +12,11 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.SpeechException
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.Keyword
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.session.WakePower
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ForegroundStarts
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechModels
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.SpeechRuntime
 import org.autojs.plugin.speech.api.SpeechContract
@@ -115,9 +115,12 @@ internal object ResidentWake {
         }
     }
 
-    /** Starts (or keeps) the service from a visible state. zh-CN: 从可见状态启动 (或保持) 服务. */
+    /**
+     * Starts (or keeps) the service from a visible state; false when Android refused or dropped the start.
+     * zh-CN: 从可见状态启动 (或保持) 服务; Android 拒绝或丢弃启动时为 false.
+     */
     fun start(context: Context, action: String? = null): Boolean = runCatching {
-        ContextCompat.startForegroundService(context, Intent(context, ResidentWakeService::class.java).setAction(action))
+        ForegroundStarts.require(context, Intent(context, ResidentWakeService::class.java).setAction(action))
     }.onFailure { Log.w(TAG, "The resident wake word service could not start: $it") }.isSuccess
 
     /** Turning the switch on starts its listening time (D77) and the service. zh-CN: 打开开关即开始计时 (D77) 并启动服务. */

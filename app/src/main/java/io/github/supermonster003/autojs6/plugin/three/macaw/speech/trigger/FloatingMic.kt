@@ -27,6 +27,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.service.ForegroundStarts
 import java.lang.ref.WeakReference
 import kotlin.math.roundToInt
 
@@ -352,7 +353,7 @@ class FloatingMicService : Service() {
          */
         fun start(context: Context): Boolean {
             if (!isOn(context)) return false
-            return runCatching { ContextCompat.startForegroundService(context, Intent(context, FloatingMicService::class.java)) }
+            return runCatching { ForegroundStarts.require(context, Intent(context, FloatingMicService::class.java)) }
                 .onFailure { Log.w(TAG, "The floating microphone service could not start: $it") }
                 .isSuccess
         }

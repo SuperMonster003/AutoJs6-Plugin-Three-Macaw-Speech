@@ -418,6 +418,12 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 ******
 
+#### v1.6.1
+
+_2026/11/08_
+
+- `Corrección` En algunos sistemas (por ejemplo HyperOS), al iniciar un dictado o una palabra de activación con AutoJs6 en segundo plano, el sistema bloqueaba el servicio en primer plano de micrófono del complemento sin ningún error. Después el complemento ya no iniciaba ese servicio para ninguna sesión, ni siquiera para las iniciadas con AutoJs6 de nuevo en primer plano, así que la grabación podía quedar silenciada cuando AutoJs6 pasaba a segundo plano o se apagaba la pantalla, hasta reiniciar el complemento. Ahora una sesión bloqueada recibe un evento warning con el código PERMISSION_DENIED, y la siguiente sesión vuelve a iniciar el servicio en primer plano. Los servicios en primer plano de la descarga de modelos (incluido speech.models.install() desde scripts) y del reconocimiento de archivos de Probar tenían el mismo problema y también están corregidos
+
 #### v1.6.0
 
 _2026/11/07_
@@ -438,20 +444,6 @@ _2026/11/05_
 
 - `Aviso` Exportar e importar los ajustes junto con AutoJs6 requiere AutoJs6 6.8.1 o posterior (aún no publicada); con una versión anterior de AutoJs6, esta versión funciona igual que la 1.4.0
 - `Función` Los ajustes del plugin se pueden exportar e importar junto con los de AutoJs6, así que un teléfono nuevo o una reinstalación ya no obliga a configurarlos uno por uno: sensibilidad de fin de frase, detección de actividad de voz, velocidad, liberación de modelos inactivos, descargas en redes de uso medido, el hablante y la voz elegidos para cada modelo, el micrófono flotante y la tecla de activación, las palabras de activación y opciones de la palabra de activación permanente, la apariencia (idioma, modo oscuro, color del tema) y la búsqueda automática de actualizaciones. Los modelos, las voces registradas y los interruptores de funciones como la palabra de activación permanente o la entrada de voz no se incluyen: descárguelos o actívelos de nuevo en el teléfono nuevo. Los ajustes importados se aplican al instante; si Android no deja que el plugin inicie la palabra de activación permanente o el micrófono flotante en segundo plano, se aplican la próxima vez que se abra el plugin
-
-#### v1.4.0
-
-_2026/11/02_
-
-- `Aviso` speech.detectLanguage en los scripts y la herramienta speech_detect_language requieren la versión final de AutoJs6 6.8.0 o posterior, igual que en 1.3.0; la reproducción de audio y los idiomas por frase del reconocimiento de archivos y el aviso de actualización de modelos de la pantalla de inicio se usan dentro del complemento y no dependen de la versión de AutoJs6
-- `Aviso` En esta versión se evaluó acelerar el reconocimiento con la NPU del teléfono y por ahora no se activa, así que el reconocimiento sigue en la CPU: en las pruebas, el habla de menos de 8 segundos iba más lenta, solo los teléfonos Qualcomm de gama alta recientes podían usarla, y el APK y los modelos crecerían mucho
-- `Aviso` El motor de voz sigue en sherpa-onnx 1.13.8: la nueva versión 2.0 elimina eSpeak NG, el componente de pronunciación del que dependen la mayoría de las voces, y en las pruebas 10 de los 13 modelos de síntesis quedaron sin sonido u omitían palabras, por lo que esta versión no actualiza
-- `Función` El reconocimiento de archivos de Probar ahora puede reproducir el audio: un reproductor sobre el resultado con barra de progreso, velocidades de 0.5x a 2x y saltos de 5 segundos. La frase que se oye se resalta y sigue a la vista, al tocar una frase se reproduce desde ahí, y una vista de letra muestra la frase actual en grande (también en los resultados de hablantes, idiomas y etiquetas de sonido). El último resultado se puede reproducir después de salir de la página mientras el archivo siga ahí: el complemento conserva el acceso de lectura a ese único archivo hasta que borres el resultado o elijas otro
-- `Función` Aviso de actualización de modelos: cuando hay una versión más reciente de un modelo instalado, su tarjeta en la pantalla de inicio muestra "Actualización disponible (v2)" y basta un toque para actualizarlo. La nueva versión se descarga y se verifica primero, así que si la actualización falla o se pausa, la anterior sigue funcionando. También se puede actualizar un modelo en uso: lo que está en marcha termina con la versión anterior y lo que empiece después usa la nueva. Si la licencia de la nueva versión aún no se ha aceptado, o en una red de uso medido, primero se pregunta. Los scripts ven updateAvailable y latestVersionCode en speech.models.list(), y speech.models.install() actualiza
-- `Corrección` Tras eliminar o reemplazar un modelo de síntesis, otros modelos podían perder la mayor parte del texto leído, sin ningún error, hasta reiniciar el complemento. Ocurría cuando el modelo eliminado era el primero usado desde que se inició el complemento
-- `Corrección` Al abrir el complemento desde los ajustes de texto a voz del sistema, la lista se quedaba una fila por encima del grupo de síntesis; ahora el encabezado del grupo aparece arriba
-- `Corrección` Durante la descarga de un modelo, el total mostraba el doble del tamaño real (162 MB para un modelo de 81 MB) porque incluía el desempaquetado. Ahora la pantalla de inicio y la notificación muestran la descarga según el tamaño del modelo y después la instalación por separado
-- `Mejora` La identificación del idioma ahora va frase por frase: si una grabación mezcla idiomas, se ve en qué idioma está cada frase (las frases muy cortas se unen a una vecina). La pantalla de prueba lista cada frase, y los segments de speech.detectLanguage en scripts y de la herramienta speech_detect_language también son frases; el idioma general es el que más tiempo se habla y las puntuaciones de los candidatos son proporciones del tiempo de habla. La opción windows no cambia. Cada frase requiere su propia pasada, así que es algo más lento que en 1.3.0
 
 ##### Para más historial de versiones
 

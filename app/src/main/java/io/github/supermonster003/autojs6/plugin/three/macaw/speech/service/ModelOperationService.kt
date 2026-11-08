@@ -16,7 +16,6 @@ import android.text.format.Formatter
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
-import androidx.core.content.ContextCompat
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.R
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.InstallProgress
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.ModelManager
@@ -25,11 +24,14 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.core.model.Mo
  * Data sync foreground service (roadmap P2.3) that keeps the plugin process alive with a progress notification while
  * model operations (downloads, imports, catalog refreshes) are queued or running; it stops itself when the queue is
  * empty. Android may refuse to start it while the plugin is in the background (API 31+): the operations then continue
- * without it, and an interrupted download resumes from its partial file on the next request. The notification is
+ * without it, and an interrupted download resumes from its partial file on the next request. A start Android drops
+ * silently (`startForegroundService` answers null, or `onStartCommand` does not come within
+ * [ForegroundStartWatch.TIMEOUT_MILLIS]) counts as refused, so the next activity starts the service again. The notification is
  * silent and needs `POST_NOTIFICATIONS` on API 33+ to be visible; the home screen asks for it once, at the first
  * download (roadmap P5.1), and script calls never ask.
  * zh-CN: 数据同步前台服务 (路线图 P2.3), 在模型操作 (下载, 导入, 目录刷新) 排队或运行期间以进度通知保持插件进程存活, 队列清空后自行停止.
- * 插件在后台时 Android 可能拒绝启动它 (API 31+): 操作照常继续, 被中断的下载会在下次请求时从部分文件续传. 通知为静默通知, 在 API 33+ 需要
+ * 插件在后台时 Android 可能拒绝启动它 (API 31+): 操作照常继续, 被中断的下载会在下次请求时从部分文件续传. 被 Android 静默丢弃的启动
+ * (`startForegroundService` 返回 null, 或 [ForegroundStartWatch.TIMEOUT_MILLIS] 内没有 `onStartCommand`) 按被拒处理, 下一次进度变化会重新启动服务. 通知为静默通知, 在 API 33+ 需要
  * `POST_NOTIFICATIONS` 才可见; 首页在第一次下载时申请一次 (路线图 P5.1), 脚本调用从不申请.
  */
 class ModelOperationService : Service() {
@@ -39,7 +41,7 @@ class ModelOperationService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        starting = false
+        startWatch.arrived()
         // startForeground must follow startForegroundService in every case, even when the queue just emptied.
         ServiceCompat.startForeground(this, NOTIFICATION_ID, notification(latest), foregroundType())
         running = this
@@ -106,7 +108,7 @@ class ModelOperationService : Service() {
         // Touched on the main thread only.
         private var latest = ModelManager.Activity(0, null, 0, 0)
         private var running: ModelOperationService? = null
-        private var starting = false
+        private val startWatch = ForegroundStartWatch({ delayMillis, action -> main.postDelayed(action, delayMillis) })
 
         /** Called by [ModelManager] from any thread. zh-CN: 由 [ModelManager] 从任意线程调用. */
         fun onActivity(context: Context, activity: ModelManager.Activity) {
@@ -116,20 +118,24 @@ class ModelOperationService : Service() {
                 when {
                     activity.pending == 0 -> service?.stop()
                     service != null -> service.update(activity)
-                    !starting -> start(context)
+                    startWatch.begin() -> startService(context)
                 }
             }
         }
 
-        private fun start(context: Context) {
-            starting = true
-            try {
-                ContextCompat.startForegroundService(context, Intent(context, ModelOperationService::class.java))
+        private fun startService(context: Context) {
+            val component = try {
+                ForegroundStarts.request(context, Intent(context, ModelOperationService::class.java))
             } catch (e: Exception) {
                 // ForegroundServiceStartNotAllowedException (API 31+) or IllegalStateException (API 26+) from the background.
-                starting = false
+                startWatch.abandon()
                 Log.w(TAG, "Foreground service not started; operations continue without it: $e")
+                return
             }
+            val dropped = startWatch.requested(component != null) { late ->
+                Log.w(TAG, "Foreground service not started; operations continue without it: $late")
+            }
+            if (dropped != null) Log.w(TAG, "Foreground service not started; operations continue without it: $dropped")
         }
 
         private fun createChannel(context: Context) {

@@ -418,6 +418,12 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 ******
 
+#### v1.6.1
+
+_2026/11/08_
+
+- `Fix` On some systems (HyperOS, for one), starting a dictation or wake word session while AutoJs6 was in the background let the system block the plugin's microphone foreground service without any error. After that the plugin started the service for no session at all, not even for sessions started once AutoJs6 was back in the foreground, so recording could be silenced after AutoJs6 moved to the background or the screen turned off, until the plugin restarted. A blocked session now gets a warning event with the code PERMISSION_DENIED, and the next session starts the foreground service again. The foreground services of model downloads (speech.models.install() of scripts included) and of file recognition on Try it out had the same problem and are fixed too
+
 #### v1.6.0
 
 _2026/11/07_
@@ -438,20 +444,6 @@ _2026/11/05_
 
 - `Hint` Exporting and importing the settings together with AutoJs6 needs AutoJs6 6.8.1 or later (not released yet); with an earlier AutoJs6 this version works like 1.4.0
 - `Feature` The plugin's settings can be exported and imported together with AutoJs6's settings, so a new phone or a reinstall does not need them set again one by one: endpoint sensitivity, voice activity detection, speed, releasing idle models, downloads on metered networks, the speaker and voice chosen for each model, the floating microphone and the trigger key, the wake words and options of the resident wake word, the appearance (language, dark mode, theme color) and automatic update checks. Models, enrolled voices and the switches of features such as the resident wake word and the voice input are not included; download or turn them on again on the new phone. Imported settings apply at once; if Android does not let the plugin start the resident wake word or the floating microphone in the background, they apply the next time the plugin opens
-
-#### v1.4.0
-
-_2026/11/02_
-
-- `Hint` speech.detectLanguage in scripts and the speech_detect_language tool need the AutoJs6 6.8.0 release or later, as in 1.3.0; audio playback and sentence languages in file recognition and the model update notice on the home screen are used in the plugin itself and do not depend on the AutoJs6 version
-- `Hint` This version evaluated speeding up recognition with the phone's NPU and leaves it off for now, so recognition still runs on the CPU: in tests, speech under 8 seconds got slower, only recent Qualcomm flagship phones could use it, and the APK and the models would grow a lot
-- `Hint` The speech runtime stays on sherpa-onnx 1.13.8: the new 2.0 drops eSpeak NG, the pronunciation component most voices rely on, and in tests 10 of the 13 speech synthesis models went silent or skipped words, so this version does not upgrade
-- `Feature` File recognition on Try it out can now play the audio: a player above the result with a seek bar, speeds from 0.5x to 2x and 5 second skips. The sentence you hear lights up and stays in view, a tap on a sentence plays from there, and a lyrics view shows the current sentence in large type (for speakers, languages and sound tags too). The latest result can still be played after you leave the page, as long as the file is there. The plugin keeps read access to that one file until you clear it or pick another
-- `Feature` Model updates: when a newer version of an installed model is available, its card on the home screen says "Update available (v2)" and one tap updates it. The new version is downloaded and checked first, so a failed or paused update leaves the old one working. A model in use can be updated too: what is running finishes with the old version, and anything started afterwards uses the new one. If the license of the new version was not accepted yet, or on a metered network, it asks first. Scripts see updateAvailable and latestVersionCode in speech.models.list(), and speech.models.install() updates
-- `Fix` After deleting a speech synthesis model, or replacing it, other models could lose most of the text they read aloud, without any error, until the plugin restarted. This happened when the deleted model was the first one used since the plugin started
-- `Fix` Opening the plugin from the system's text-to-speech settings left the list one row above the synthesis group; the group's header is now at the top
-- `Fix` While a model downloaded, its total showed twice the real size (162 MB for an 81 MB model), because unpacking was counted in. The home screen and the notification now show the download against the model's size, then the installation on its own
-- `Improvement` Language identification now goes sentence by sentence: when a recording mixes languages, you can see which language each sentence is in (very short sentences join a neighbor). Try it out lists every sentence, and the segments of speech.detectLanguage in scripts and of the speech_detect_language tool are sentences too; the overall language is the one spoken longest and the candidates' scores are shares of the speaking time. The windows option stays as it was. Each sentence takes its own pass, so this is somewhat slower than in 1.3.0
 
 ##### For more release history, refer to
 

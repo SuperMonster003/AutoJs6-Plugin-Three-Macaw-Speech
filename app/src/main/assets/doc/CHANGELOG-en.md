@@ -4,6 +4,12 @@
 
 ******
 
+# v1.6.1
+
+###### 2026/11/08
+
+* `Fix` On some systems (HyperOS, for one), starting a dictation or wake word session while AutoJs6 was in the background let the system block the plugin's microphone foreground service without any error. After that the plugin started the service for no session at all, not even for sessions started once AutoJs6 was back in the foreground, so recording could be silenced after AutoJs6 moved to the background or the screen turned off, until the plugin restarted. A blocked session now gets a warning event with the code PERMISSION_DENIED, and the next session starts the foreground service again. The foreground services of model downloads (speech.models.install() of scripts included) and of file recognition on Try it out had the same problem and are fixed too
+
 # v1.6.0
 
 ###### 2026/11/07

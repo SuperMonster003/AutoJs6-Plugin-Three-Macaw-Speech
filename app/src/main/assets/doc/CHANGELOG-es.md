@@ -4,6 +4,12 @@
 
 ******
 
+# v1.6.1
+
+###### 2026/11/08
+
+* `Corrección` En algunos sistemas (por ejemplo HyperOS), al iniciar un dictado o una palabra de activación con AutoJs6 en segundo plano, el sistema bloqueaba el servicio en primer plano de micrófono del complemento sin ningún error. Después el complemento ya no iniciaba ese servicio para ninguna sesión, ni siquiera para las iniciadas con AutoJs6 de nuevo en primer plano, así que la grabación podía quedar silenciada cuando AutoJs6 pasaba a segundo plano o se apagaba la pantalla, hasta reiniciar el complemento. Ahora una sesión bloqueada recibe un evento warning con el código PERMISSION_DENIED, y la siguiente sesión vuelve a iniciar el servicio en primer plano. Los servicios en primer plano de la descarga de modelos (incluido speech.models.install() desde scripts) y del reconocimiento de archivos de Probar tenían el mismo problema y también están corregidos
+
 # v1.6.0
 
 ###### 2026/11/07
