@@ -39,6 +39,7 @@ class ModelManagerTest {
     private lateinit var downloads: File
     private lateinit var manager: ModelManager
     private val logs = ArrayList<String>()
+    private val downloader = Downloader(server.transport, retryDelaysMillis = longArrayOf(0, 0))
 
     @Before
     fun start() {
@@ -59,7 +60,7 @@ class ModelManagerTest {
         return ModelManager(
             store = store,
             catalogs = catalogs,
-            installer = ModelInstaller(store, Downloader(server.transport, sleep = {}), extractor, downloads, freeSpace = { freeSpace }, log = { synchronized(logs) { logs += it } }),
+            installer = ModelInstaller(store, downloader, extractor, downloads, freeSpace = { freeSpace }, log = { synchronized(logs) { logs += it } }),
             importer = Importer(store, extractor, license, freeSpace = { freeSpace }),
             licensePolicy = license,
             downloadDirectory = downloads,
@@ -88,7 +89,7 @@ class ModelManagerTest {
         assertEquals(total, done)
         assertEquals(Fixtures.tiny.latestVersion.mirror!!.size + Fixtures.tiny.latestVersion.installBytes, total)
         assertEquals("the screens can tell the unpacking from the download", setOf(Fixtures.tiny.latestVersion.installBytes), listener.unpackBytes)
-        assertEquals("no archive is kept after the install", emptyList<String>(), downloads.list()!!.toList())
+        assertEquals("no archive is kept after the install", emptyList<File>(), downloads.walkTopDown().filter { it.isFile }.toList())
         assertEquals(0, server.requests.count { it.first.contains("sherpa-onnx") })
     }
 
@@ -109,7 +110,8 @@ class ModelManagerTest {
         server.serve(mirror.url, Fixtures.bytes(mirror.fileName).also { it[600] = (it[600] + 1).toByte() })
         val result = install("tts.test.tiny").result as OperationResult.Model
         assertEquals("upstream", result.origin)
-        assertFalse("the corrupt download is deleted", File(downloads, "${mirror.sha256}.part").exists())
+        assertFalse("the corrupt download is deleted", downloader.partialFile(mirror, downloads).exists())
+        assertFalse(downloader.completeFile(mirror, downloads).exists())
     }
 
     @Test
@@ -169,9 +171,9 @@ class ModelManagerTest {
         assertEquals(SpeechErrorCodes.SESSION_CANCELLED, listener.error!!.code)
         assertNull(store.installed("tts.test.tiny"))
         // The bytes received before the cancellation stay for a resume (the local server may deliver this small archive
-        // in one piece, so the partial file can already be complete).
-        val partial = File(downloads, "${mirror.sha256}.part")
-        assertTrue("partial ${partial.length()} of ${mirror.size}", partial.length() in 1..mirror.size)
+        // in one piece, so the download can already be complete and verified in the store).
+        val kept = manager.downloadedBytes("tts.test.tiny")
+        assertTrue("kept $kept of ${mirror.size}", kept in 1..mirror.size)
         server.resource(mirror.url).bytesPerChunkDelayMillis = 0
         val before = server.requests.size
         assertNotNull(install("tts.test.tiny").result)
@@ -361,7 +363,8 @@ class ModelManagerTest {
         manager.discardDownload("asr.test.noncommercial") { done.countDown() }
         assertTrue(done.await(10, TimeUnit.SECONDS))
         assertEquals("a discarded download leaves nothing", 0L, manager.downloadedBytes("tts.test.tiny"))
-        assertFalse(File(downloads, "${mirror.sha256}.part").exists())
+        assertFalse(downloader.partialFile(mirror, downloads).exists())
+        assertFalse(downloader.legacyPartialFile(mirror.sha256, downloads).exists())
         assertNull(store.installed("tts.test.tiny"))
     }
 
@@ -533,7 +536,7 @@ class ModelManagerTest {
         assertEquals(listOf("1"), deleted)
         assertEquals(listOf(TINY), replaced)
         assertEquals(TINY, manager.defaultModel("tts")!!.modelId)
-        assertEquals("no archive is kept", emptyList<String>(), downloads.list()!!.toList())
+        assertEquals("no archive is kept", emptyList<File>(), downloads.walkTopDown().filter { it.isFile }.toList())
         assertEquals(emptyList<String>(), File(store.root, ".staging").list()?.toList().orEmpty())
 
         // The same version again has nothing to replace.

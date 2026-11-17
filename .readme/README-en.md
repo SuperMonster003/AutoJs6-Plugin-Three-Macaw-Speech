@@ -420,9 +420,11 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 #### v1.6.1
 
-_2026/11/08_
+_2026/11/17_
 
 - `Fix` On some systems (HyperOS, for one), starting a dictation or wake word session while AutoJs6 was in the background let the system block the plugin's microphone foreground service without any error. After that the plugin started the service for no session at all, not even for sessions started once AutoJs6 was back in the foreground, so recording could be silenced after AutoJs6 moved to the background or the screen turned off, until the plugin restarted. A blocked session now gets a warning event with the code PERMISSION_DENIED, and the next session starts the foreground service again. The foreground services of model downloads (speech.models.install() of scripts included) and of file recognition on Try it out had the same problem and are fixed too
+- `Improvement` Model downloads now use the same download component as the AutoJs6 Plugin Center: a resumed download checks whether the file on the server has been replaced and starts over if it has, so two versions are never joined; a resumed file that fails its check is downloaded whole once more instead of failing at once; the SHA-256 is computed while downloading, so a finished file is no longer read again in full and large models start installing sooner; busy servers (HTTP 408 / 429) are retried automatically as well
+- `Improvement` After an upgrade from 1.6.0 or earlier, an unfinished model download continues from the part already downloaded, and a model that was downloaded but not yet installed is used as it is instead of being downloaded again
 
 #### v1.6.0
 

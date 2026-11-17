@@ -72,14 +72,23 @@ class NetworkPolicy(
     }
 }
 
-/** An open HTTP answer; [body] is null for anything but 200 and 206. zh-CN: 已打开的 HTTP 应答; 仅 200 与 206 时 [body] 非空. */
+/**
+ * An open HTTP answer; [body] is null for anything but 200 and 206. [url] is the address that answered (after redirects,
+ * null when unknown) and [header] reads any other response header (validators such as `ETag` for resuming).
+ * zh-CN: 已打开的 HTTP 应答; 仅 200 与 206 时 [body] 非空. [url] 是作出应答的地址 (重定向之后, 未知时为 null), [header] 读取其他应答头
+ * (例如续传用的验证头 `ETag`).
+ */
 class HttpResponse(
     val status: Int,
     val contentLength: Long,
     val contentRange: String?,
     val body: InputStream?,
+    val url: String? = null,
+    private val headers: (String) -> String? = { null },
     private val onClose: () -> Unit,
 ) : Closeable {
+    fun header(name: String): String? = headers(name)
+
     override fun close() = onClose()
 }
 
@@ -87,14 +96,34 @@ class HttpResponse(
 fun interface HttpTransport {
     @Throws(IOException::class)
     fun get(url: String, rangeStart: Long, cancel: CancelToken): HttpResponse
+
+    /**
+     * A GET with request headers (the download kit's `Range`, `If-Range` and conditional headers, see [Downloader]). A
+     * transport without header support keeps the start of `Range` only, so it still resumes.
+     * zh-CN: 带请求头的 GET (下载库的 `Range`, `If-Range` 与条件请求头, 见 [Downloader]). 不支持请求头的传输只保留 `Range` 的起点, 仍可续传.
+     */
+    @Throws(IOException::class)
+    fun get(url: String, headers: Map<String, String>, cancel: CancelToken): HttpResponse = get(url, rangeStartOf(headers), cancel)
+
+    companion object {
+        private val RANGE_START = Regex("bytes=([0-9]+)-")
+
+        /** The start of a `bytes=N-` range header, 0 without one. zh-CN: `bytes=N-` 范围头的起点, 没有时为 0. */
+        fun rangeStartOf(headers: Map<String, String>): Long =
+            headers.entries.firstOrNull { it.key.equals("Range", ignoreCase = true) }?.value?.trim()
+                ?.let { RANGE_START.matchEntire(it)?.groupValues?.get(1)?.toLongOrNull() } ?: 0L
+
+        /** The request headers of a plain resume from [rangeStart]. zh-CN: 从 [rangeStart] 普通续传的请求头. */
+        fun rangeHeaders(rangeStart: Long): Map<String, String> = if (rangeStart > 0) mapOf("Range" to "bytes=$rangeStart-") else emptyMap()
+    }
 }
 
 /**
  * [HttpTransport] on `HttpURLConnection` (no extra dependency): manual redirects checked against [policy] at every hop
- * (at most [maxRedirects]), `Accept-Encoding: identity` so lengths are the raw bytes, a `Range` header on every hop
- * when resuming, and the connection closed on cancellation.
+ * (at most [maxRedirects]), `Accept-Encoding: identity` so lengths are the raw bytes, the request headers (`Range`,
+ * `If-Range`, ...) on every hop when resuming, and the connection closed on cancellation.
  * zh-CN: 基于 `HttpURLConnection` 的 [HttpTransport] (无额外依赖): 手动跟随重定向并在每一跳按 [policy] 检查 (最多 [maxRedirects] 次),
- * `Accept-Encoding: identity` 使长度即原始字节数, 续传时每一跳都带 `Range` 头, 取消时关闭连接.
+ * `Accept-Encoding: identity` 使长度即原始字节数, 续传时每一跳都带请求头 (`Range`, `If-Range` 等), 取消时关闭连接.
  */
 class UrlConnectionTransport(
     private val policy: NetworkPolicy = NetworkPolicy.PRODUCTION,
@@ -104,7 +133,9 @@ class UrlConnectionTransport(
     private val maxRedirects: Int = 5,
 ) : HttpTransport {
 
-    override fun get(url: String, rangeStart: Long, cancel: CancelToken): HttpResponse {
+    override fun get(url: String, rangeStart: Long, cancel: CancelToken): HttpResponse = get(url, HttpTransport.rangeHeaders(rangeStart), cancel)
+
+    override fun get(url: String, headers: Map<String, String>, cancel: CancelToken): HttpResponse {
         var current = URL(url)
         if (!policy.allowsEntry(current)) throw IOException("Download URL is not allowed: ${redactQuery(url)}")
         repeat(maxRedirects + 1) {
@@ -120,7 +151,7 @@ class UrlConnectionTransport(
                 connection.setRequestProperty("User-Agent", userAgent)
                 connection.setRequestProperty("Accept", "application/octet-stream, application/json;q=0.9, */*;q=0.1")
                 connection.setRequestProperty("Accept-Encoding", "identity")
-                if (rangeStart > 0) connection.setRequestProperty("Range", "bytes=$rangeStart-")
+                headers.forEach { (name, value) -> connection.setRequestProperty(name, value) }
                 val status = connection.responseCode
                 cancel.throwIfCancelled()
                 if (status in REDIRECTS) {
@@ -137,6 +168,8 @@ class UrlConnectionTransport(
                     contentLength = connection.getHeaderField("Content-Length")?.trim()?.toLongOrNull() ?: -1L,
                     contentRange = connection.getHeaderField("Content-Range"),
                     body = body,
+                    url = current.toString(),
+                    headers = { name -> connection.getHeaderField(name) },
                 ) {
                     registration.close()
                     runCatching { body?.close() }

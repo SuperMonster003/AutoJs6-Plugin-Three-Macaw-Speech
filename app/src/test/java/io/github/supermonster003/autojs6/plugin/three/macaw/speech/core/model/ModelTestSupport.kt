@@ -96,11 +96,18 @@ internal class FakeGitHub : AutoCloseable {
         var dropTimes: Int = 0,
         var bytesPerChunkDelayMillis: Long = 0,
         var extraBytes: ByteArray = ByteArray(0),
+        /** Sent as `ETag`; an `If-Range` other than it gets the whole file (RFC 9110). */
+        var etag: String? = null,
+        /** Answer [errorStatus] to the next [errorTimes] requests. */
+        var errorStatus: Int = 503,
+        var errorTimes: Int = 0,
     )
 
     private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
     private val resources = Collections.synchronizedMap(HashMap<String, Resource>())
     val requests: MutableList<Pair<String, String?>> = Collections.synchronizedList(ArrayList())
+    /** The `If-Range` header of every request, in the order of [requests]. */
+    val ifRanges: MutableList<String?> = Collections.synchronizedList(ArrayList())
     private val active = AtomicInteger()
     val maxConcurrent = AtomicInteger()
     var transferStarted = CountDownLatch(1)
@@ -132,13 +139,17 @@ internal class FakeGitHub : AutoCloseable {
         }
     }
 
-    val transport: HttpTransport = HttpTransport { url, start, cancel ->
-        val rewritten = when {
-            url.startsWith("https://github.com/") -> "$base/github/" + url.removePrefix("https://github.com/")
-            url.startsWith("https://raw.githubusercontent.com/") -> "$base/raw/" + url.removePrefix("https://raw.githubusercontent.com/")
-            else -> url
+    val transport: HttpTransport = object : HttpTransport {
+        override fun get(url: String, rangeStart: Long, cancel: CancelToken): HttpResponse = get(url, HttpTransport.rangeHeaders(rangeStart), cancel)
+
+        override fun get(url: String, headers: Map<String, String>, cancel: CancelToken): HttpResponse {
+            val rewritten = when {
+                url.startsWith("https://github.com/") -> "$base/github/" + url.removePrefix("https://github.com/")
+                url.startsWith("https://raw.githubusercontent.com/") -> "$base/raw/" + url.removePrefix("https://raw.githubusercontent.com/")
+                else -> url
+            }
+            return UrlConnectionTransport(NetworkPolicy.LOOPBACK_TEST, userAgent = "test").get(rewritten, headers, cancel)
         }
-        UrlConnectionTransport(NetworkPolicy.LOOPBACK_TEST, userAgent = "test").get(rewritten, start, cancel)
     }
 
     private fun local(url: String): String = when {
@@ -149,8 +160,12 @@ internal class FakeGitHub : AutoCloseable {
 
     private fun handle(exchange: HttpExchange) {
         val path = exchange.requestURI.path
-        val range = exchange.requestHeaders.getFirst("Range")
-        requests += path to range
+        var range = exchange.requestHeaders.getFirst("Range")
+        val ifRange = exchange.requestHeaders.getFirst("If-Range")
+        synchronized(requests) {
+            requests += path to range
+            ifRanges += ifRange
+        }
         val resource = resources[path]
         if (resource == null) {
             exchange.sendResponseHeaders(404, -1)
@@ -160,6 +175,13 @@ internal class FakeGitHub : AutoCloseable {
             exchange.sendResponseHeaders(resource.status, -1)
             return
         }
+        val failing = synchronized(resource) { (resource.errorTimes > 0).also { if (it) resource.errorTimes-- } }
+        if (failing) {
+            exchange.sendResponseHeaders(resource.errorStatus, -1)
+            return
+        }
+        resource.etag?.let { exchange.responseHeaders.add("ETag", it) }
+        if (ifRange != null && ifRange != resource.etag) range = null
         val concurrent = active.incrementAndGet()
         maxConcurrent.accumulateAndGet(concurrent) { a, b -> maxOf(a, b) }
         try {

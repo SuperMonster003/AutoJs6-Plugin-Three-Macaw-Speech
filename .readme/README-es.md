@@ -420,9 +420,11 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 #### v1.6.1
 
-_2026/11/08_
+_2026/11/17_
 
 - `Corrección` En algunos sistemas (por ejemplo HyperOS), al iniciar un dictado o una palabra de activación con AutoJs6 en segundo plano, el sistema bloqueaba el servicio en primer plano de micrófono del complemento sin ningún error. Después el complemento ya no iniciaba ese servicio para ninguna sesión, ni siquiera para las iniciadas con AutoJs6 de nuevo en primer plano, así que la grabación podía quedar silenciada cuando AutoJs6 pasaba a segundo plano o se apagaba la pantalla, hasta reiniciar el complemento. Ahora una sesión bloqueada recibe un evento warning con el código PERMISSION_DENIED, y la siguiente sesión vuelve a iniciar el servicio en primer plano. Los servicios en primer plano de la descarga de modelos (incluido speech.models.install() desde scripts) y del reconocimiento de archivos de Probar tenían el mismo problema y también están corregidos
+- `Mejora` La descarga de modelos usa ahora el mismo componente que el centro de complementos de AutoJs6: al reanudar comprueba si el archivo del servidor ha sido reemplazado y, si es así, empieza desde el principio, de modo que nunca se juntan dos versiones; un archivo reanudado que no supera la verificación se descarga entero una vez más en lugar de fallar al instante; el SHA-256 se calcula mientras se descarga, así que el archivo terminado ya no se vuelve a leer entero y los modelos grandes empiezan a instalarse antes; los servidores ocupados (HTTP 408 / 429) también se reintentan automáticamente
+- `Mejora` Tras actualizar desde la 1.6.0 o una versión anterior, la descarga inacabada de un modelo continúa desde la parte ya descargada, y un modelo descargado pero aún no instalado se usa tal cual en lugar de descargarse otra vez
 
 #### v1.6.0
 

@@ -147,7 +147,7 @@ class ModelUpdateDeviceTest {
         id!!
         installVersionOne(id)
         // The partial file of a failed run would show the row as a paused update.
-        File(context.cacheDir, "downloads").listFiles()?.forEach { it.delete() }
+        File(context.cacheDir, "downloads").listFiles()?.forEach { it.deleteRecursively() }
         val old = manager.store.installed(id)!!
         assertListed(id, version = 1, latest = 2, update = true)
 

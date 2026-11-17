@@ -25,10 +25,12 @@ import java.io.FileNotFoundException
 
 /**
  * The process-wide [ModelManager] (roadmap P2.3 / P2.4), shared by the capability service, the foreground service and
- * later the screens: models in `filesDir/models/`, the verified catalog cache in `filesDir/catalog/`, partial downloads
- * in `cacheDir/downloads/` and import copies in `cacheDir/imports/`.
+ * later the screens: models in `filesDir/models/`, the verified catalog cache in `filesDir/catalog/`, downloads in the
+ * download kit's store `cacheDir/downloads/store/` (files of 1.6.0 and earlier directly in `cacheDir/downloads/` are
+ * imported, see [Downloader]) and import copies in `cacheDir/imports/`.
  * zh-CN: 进程级的 [ModelManager] (路线图 P2.3 / P2.4), 由能力服务, 前台服务及后续界面共用: 模型位于 `filesDir/models/`, 已验签的目录缓存
- * 位于 `filesDir/catalog/`, 未完成的下载位于 `cacheDir/downloads/`, 导入副本位于 `cacheDir/imports/`.
+ * 位于 `filesDir/catalog/`, 下载位于下载库仓库 `cacheDir/downloads/store/` (1.6.0 及更早版本直接放在 `cacheDir/downloads/` 中的文件会被导入,
+ * 见 [Downloader]), 导入副本位于 `cacheDir/imports/`.
  */
 internal object SpeechModels {
 
@@ -92,7 +94,7 @@ internal object SpeechModels {
         return ModelManager(
             store = store,
             catalogs = catalogs,
-            installer = ModelInstaller(store, Downloader(transport), extractor, downloads, freeSpace = freeSpace, log = log),
+            installer = ModelInstaller(store, Downloader(transport, log = log), extractor, downloads, freeSpace = freeSpace, log = log),
             importer = Importer(store, extractor, licensePolicy, freeSpace = freeSpace),
             licensePolicy = licensePolicy,
             downloadDirectory = downloads,

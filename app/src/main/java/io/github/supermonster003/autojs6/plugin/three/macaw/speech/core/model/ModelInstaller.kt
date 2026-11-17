@@ -14,7 +14,8 @@ import java.io.File
  */
 class ModelInstaller(
     private val store: ModelStore,
-    private val downloader: Downloader,
+    /** Also the download files of [ModelManager] (size, discard, recycle). zh-CN: 也供 [ModelManager] 处理下载文件 (大小, 丢弃, 回收). */
+    val downloader: Downloader,
     private val extractor: ArchiveExtractor,
     private val downloadDirectory: File,
     private val freeSpace: (File) -> Long,
@@ -59,11 +60,11 @@ class ModelInstaller(
                 extractor.extractMirror(archive, version.files, staging, cancel) { onProgress(mirror.size + it, total, version.installBytes) }
             } catch (e: ModelException) {
                 // A verified archive that does not unpack to the catalog files is useless: drop it before the fallback.
-                if (e !is OperationCancelledException) archive.delete()
+                if (e !is OperationCancelledException) downloader.discard(mirror.sha256, downloadDirectory)
                 throw e
             }
             val installed = commit(staging, model, version, catalogVersion, ModelStore.ORIGIN_MIRROR)
-            archive.delete()
+            downloader.discard(mirror.sha256, downloadDirectory)
             return Result(installed, ModelStore.ORIGIN_MIRROR, null, before)
         } finally {
             staging.deleteRecursively()
@@ -99,10 +100,10 @@ class ModelInstaller(
             val missing = version.files.filter { !File(staging, it.path).isFile }
             if (missing.isNotEmpty()) throw IntegrityException("Upstream assets lack ${missing.size} catalog files")
             val installed = commit(staging, model, version, catalogVersion, ModelStore.ORIGIN_UPSTREAM)
-            downloaded.forEach { it.delete() }
+            version.upstream.forEach { downloader.discard(it.sha256, downloadDirectory) }
             return Result(installed, ModelStore.ORIGIN_UPSTREAM, mirrorFailure, remaining)
         } catch (e: ModelException) {
-            if (e !is OperationCancelledException && e !is InsufficientSpaceException) downloaded.forEach { it.delete() }
+            if (e !is OperationCancelledException && e !is InsufficientSpaceException) version.upstream.forEach { downloader.discard(it.sha256, downloadDirectory) }
             throw e
         } finally {
             staging.deleteRecursively()

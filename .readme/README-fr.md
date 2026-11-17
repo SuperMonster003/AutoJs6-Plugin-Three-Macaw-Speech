@@ -420,9 +420,11 @@ Les plans, décisions de conception et l'avancement sont suivis sous forme de li
 
 #### v1.6.1
 
-_2026/11/08_
+_2026/11/17_
 
 - `Correctif` Sur certains systèmes (HyperOS par exemple), une dictée ou un mot de réveil lancé pendant qu'AutoJs6 était en arrière-plan laissait le système bloquer le service de premier plan de microphone du plugin sans aucune erreur. Ensuite, le plugin ne démarrait plus ce service pour aucune session, même pour celles ouvertes après le retour d'AutoJs6 au premier plan, si bien que l'enregistrement pouvait être rendu muet quand AutoJs6 passait en arrière-plan ou que l'écran s'éteignait, jusqu'au redémarrage du plugin. Une session bloquée reçoit maintenant un événement warning de code PERMISSION_DENIED, et la session suivante redémarre le service de premier plan. Les services de premier plan du téléchargement des modèles (y compris speech.models.install() dans les scripts) et de la reconnaissance de fichiers de la page Essayer avaient le même problème et sont aussi corrigés
+- `Amélioration` Le téléchargement des modèles utilise désormais le même composant que le centre des plugins d'AutoJs6: une reprise vérifie que le fichier n'a pas été remplacé sur le serveur et recommence depuis le début s'il l'a été, si bien que deux versions ne sont jamais assemblées; un fichier repris qui échoue à la vérification est retéléchargé en entier une fois au lieu d'échouer aussitôt; le SHA-256 est calculé pendant le téléchargement, si bien que le fichier terminé n'est plus relu en entier et que l'installation des gros modèles commence plus tôt; les serveurs occupés (HTTP 408 / 429) sont eux aussi réessayés automatiquement
+- `Amélioration` Après une mise à jour depuis la 1.6.0 ou une version antérieure, le téléchargement inachevé d'un modèle reprend à partir de la partie déjà téléchargée, et un modèle téléchargé mais pas encore installé est utilisé tel quel au lieu d'être téléchargé à nouveau
 
 #### v1.6.0
 

@@ -365,9 +365,7 @@ class ModelManager(
      */
     fun downloadedBytes(modelId: String): Long {
         val model = catalogs.current().catalog.model(modelId) ?: return 0
-        return artifacts(model).sumOf { sha ->
-            listOf(File(downloadDirectory, "$sha.part"), File(downloadDirectory, "$sha.bin")).sumOf { if (it.isFile) it.length() else 0L }
-        }
+        return artifacts(model).sumOf { sha -> installer.downloader.downloadedBytes(sha, downloadDirectory) }
     }
 
     /**
@@ -405,7 +403,7 @@ class ModelManager(
             file.walkBottomUp().filter { it.isFile }.forEach { bytes += it.length(); files++ }
             file.deleteRecursively()
         }
-        downloadDirectory.listFiles().orEmpty().filter { it.name.substringBefore('.') !in referenced }.forEach(::drop)
+        installer.downloader.leftovers(downloadDirectory, referenced).forEach(::drop)
         scratchDirectories.forEach { directory -> directory.listFiles().orEmpty().forEach(::drop) }
         val before = usage(store.root)
         store.reconcile()
@@ -428,10 +426,7 @@ class ModelManager(
 
     private fun discardDownloads(modelId: String) {
         val model = catalogs.current().catalog.model(modelId) ?: return
-        artifacts(model).forEach { sha ->
-            File(downloadDirectory, "$sha.part").delete()
-            File(downloadDirectory, "$sha.bin").delete()
-        }
+        artifacts(model).forEach { sha -> installer.downloader.discard(sha, downloadDirectory) }
     }
 
     private fun enqueue(title: String, listener: OperationListener, cleanup: () -> Unit = {}, modelId: String? = null, body: (Operation) -> OperationResult): Int {
@@ -498,9 +493,6 @@ class ModelManager(
     private fun recycleDownloads() {
         val referenced = catalogs.current().catalog.models.flatMap(::artifacts).toSet()
         val limit = System.currentTimeMillis() - 7L * 24 * 3600 * 1000
-        downloadDirectory.listFiles().orEmpty().forEach { file ->
-            val sha = file.name.substringBefore('.')
-            if (sha !in referenced || file.lastModified() < limit) file.deleteRecursively()
-        }
+        installer.downloader.leftovers(downloadDirectory, referenced, modifiedBefore = limit).forEach { it.deleteRecursively() }
     }
 }

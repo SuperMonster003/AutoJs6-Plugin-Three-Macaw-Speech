@@ -13,6 +13,8 @@ speech-api.file=speech-api.aar
 speech-api.sha256=ad3dff26233d43afac148fce5d2844b3d631694a0517060621bf2dc4d0e1639c
 plugin-tool-api.file=plugin-tool-api.aar
 plugin-tool-api.sha256=8bce82dd2c9811fa689f6b2c7b3926262cf3a756d78569ef4b19e1af21016005
+download-kit.file=download-kit.aar
+download-kit.sha256=31d4cdd169c6d05f08066716e95307576ca4976525257dbe023802cbc5e81364
 
 # Packaged speech entry: release AAR from host commit be1b3eee0ab9817fff5ebbdffcada282330e9313 (2026-10-20).
 # Original AIDL and required host version 5456 are unchanged.
@@ -43,3 +45,10 @@ plugin-tool-api.sha256=8bce82dd2c9811fa689f6b2c7b3926262cf3a756d78569ef4b19e1af2
 # AutoJs6PluginSettingsTransferContract, PluginSettingsTransferProvider, SharedPreferencesSettingsTransfer and
 # PluginSettingsTransferException and replaces the artifact of host snapshot 6c151c900e (ed7a71942ffb67255ebad8d8a2c912b01c4a3cdd8aad497baba0687b4072032a).
 # plugin-tool-api.aar is byte-identical to the plugin-tool-api 1.1.0 release staged by the same commit (same version rule, host Q56).
+
+# Shared download kit (host plugin-center roadmap P13.2, D22, D26, T31): plugin-api/download-kit release AAR of host commit
+# b38fb2c467a8d7da899eb6d933a774062b8e39b9 (2026-11-16, the last change of plugin-api/download-kit), assembled on 2026-11-17
+# with :plugin-api:download-kit:assembleRelease in a shallow clone of host 287856198 (172207 bytes). Package
+# org.autojs.plugin.downloadkit: the verified store and the resumable fetcher of the host's Plugin Center, which
+# core/model/Downloader uses since 1.6.1. Only official plugins stage it (no Maven coordinate, no compatibility promise):
+# a host change of the module means a new artifact here.

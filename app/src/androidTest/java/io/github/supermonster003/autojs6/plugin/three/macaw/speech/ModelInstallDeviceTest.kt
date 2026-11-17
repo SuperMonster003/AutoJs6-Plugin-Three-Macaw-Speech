@@ -99,8 +99,8 @@ class ModelInstallDeviceTest {
         plugin.cancelOperation(firstId)
         assertTrue(first.latch.await(60, TimeUnit.SECONDS))
         assertEquals(SpeechErrorCodes.SESSION_CANCELLED, first.result.get().getString(SpeechContract.KEY_ERROR_CODE))
-        val partial = File(File(context.cacheDir, "downloads"), "${version.upstream.first().sha256}.part").length()
-        report("cancelled at ${first.done.get()} of ${first.total.get()} progress bytes, partial upstream file $partial bytes")
+        val partial = manager.downloadedBytes(MODEL)
+        report("cancelled at ${first.done.get()} of ${first.total.get()} progress bytes, partial download files $partial bytes")
         assertTrue(partial > 0)
 
         // Second attempt resumes and completes.
