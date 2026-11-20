@@ -185,8 +185,12 @@
     <string name="notification_tool_listen_channel">Speech requests of apps</string>
     <string name="notification_tool_listen_text">An app is waiting for you to speak. Tap within a minute to start</string>
     <string name="plugin_description">Offline speech recognition, wake word detection, voice activity detection and neural text-to-speech, usable as the system TTS engine</string>
-    <string name="release_history_title">Version history</string>
-    <string name="release_history_unavailable">Unable to load the version history</string>
+    <string name="release_history">Release history</string>
+    <string name="release_history_collapse_all">Collapse all</string>
+    <string name="release_history_collapsed">Collapsed</string>
+    <string name="release_history_expand_all">Expand all</string>
+    <string name="release_history_expanded">Expanded</string>
+    <string name="release_history_unavailable">Unable to load the release history</string>
     <string name="resident_blocked">Tap to continue listening: Android does not allow reopening the microphone in the background</string>
     <string name="resident_conflict_message">The system supports only one app listening resident. Turn off %1$s first, then turn it on here.</string>
     <string name="resident_conflict_open">Open %1$s settings</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">Could not recycle the files</string>
     <string name="settings_recycle_message">Download files that no model needs, import copies and interrupted installs are deleted. Installed models and paused downloads stay.</string>
     <string name="settings_recycle_summary">Delete download leftovers and interrupted installs</string>
-    <string name="settings_release_history_summary">Read the release history included with the plugin</string>
+    <string name="settings_release_history_summary">Read the release history included with this app</string>
     <string name="settings_resident">Listen for the wake word</string>
     <string name="settings_resident_action_broadcast">Send a broadcast</string>
     <string name="settings_resident_action_notify">Notify only</string>

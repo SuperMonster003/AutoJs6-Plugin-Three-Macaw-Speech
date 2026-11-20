@@ -185,7 +185,11 @@
     <string name="notification_tool_listen_channel">طلبات الكلام من التطبيقات</string>
     <string name="notification_tool_listen_text">تطبيق ينتظر أن تتحدث. انقر خلال دقيقة للبدء</string>
     <string name="plugin_description">التعرف على الكلام دون اتصال, واكتشاف كلمة التنبيه, واكتشاف النشاط الصوتي, وتحويل النص إلى كلام بالشبكات العصبية, مع إمكانية استخدامه كمحرك TTS للنظام</string>
-    <string name="release_history_title">سجل الإصدارات</string>
+    <string name="release_history">سجل الإصدارات</string>
+    <string name="release_history_collapse_all">طيّ الكل</string>
+    <string name="release_history_collapsed">مطوي</string>
+    <string name="release_history_expand_all">توسيع الكل</string>
+    <string name="release_history_expanded">موسَّع</string>
     <string name="release_history_unavailable">تعذر تحميل سجل الإصدارات</string>
     <string name="resident_blocked">اضغط لمتابعة الاستماع: لا يسمح Android بإعادة فتح الميكروفون في الخلفية</string>
     <string name="resident_conflict_message">يدعم النظام تطبيقا واحدا فقط للاستماع الدائم. أوقف ⁨%1$s⁩ أولا ثم شغّله هنا.</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">تعذر تنظيف الملفات</string>
     <string name="settings_recycle_message">ستُحذف ملفات التنزيل التي لا يحتاجها أي نموذج ونسخ الاستيراد وعمليات التثبيت المتقطعة. تبقى النماذج المثبتة والتنزيلات المتوقفة مؤقتا.</string>
     <string name="settings_recycle_summary">حذف بقايا التنزيلات وعمليات التثبيت المتقطعة</string>
-    <string name="settings_release_history_summary">قراءة سجل الإصدارات المضمن في الإضافة</string>
+    <string name="settings_release_history_summary">عرض سجل الإصدارات المضمن في التطبيق</string>
     <string name="settings_resident">الاستماع إلى كلمة التنبيه</string>
     <string name="settings_resident_action_broadcast">إرسال بث</string>
     <string name="settings_resident_action_notify">إشعار فقط</string>

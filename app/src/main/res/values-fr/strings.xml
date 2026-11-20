@@ -185,7 +185,11 @@
     <string name="notification_tool_listen_channel">Demandes vocales des applications</string>
     <string name="notification_tool_listen_text">Une application attend que vous parliez. Appuyez dans la minute pour commencer</string>
     <string name="plugin_description">Reconnaissance vocale hors ligne, détection de mots de réveil, détection d\'activité vocale et synthèse vocale neuronale, utilisable comme moteur TTS du système</string>
-    <string name="release_history_title">Historique des versions</string>
+    <string name="release_history">Historique des versions</string>
+    <string name="release_history_collapse_all">Tout réduire</string>
+    <string name="release_history_collapsed">Réduit</string>
+    <string name="release_history_expand_all">Tout développer</string>
+    <string name="release_history_expanded">Développé</string>
     <string name="release_history_unavailable">Impossible de charger l\'historique des versions</string>
     <string name="resident_blocked">Touchez pour continuer l\'écoute: Android n\'autorise pas la réouverture du micro en arrière-plan</string>
     <string name="resident_conflict_message">Le système ne prend en charge qu\'une seule appli en écoute permanente. Désactivez d\'abord %1$s, puis activez-la ici.</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">Impossible de nettoyer les fichiers</string>
     <string name="settings_recycle_message">Les fichiers téléchargés dont aucun modèle n\'a besoin, les copies d\'importation et les installations interrompues sont supprimés. Les modèles installés et les téléchargements en pause sont conservés.</string>
     <string name="settings_recycle_summary">Supprimer les restes de téléchargement et les installations interrompues</string>
-    <string name="settings_release_history_summary">Lire l\'historique des versions inclus dans le plugin</string>
+    <string name="settings_release_history_summary">Consulter l\'historique des versions inclus dans l\'application</string>
     <string name="settings_resident">Écouter le mot de réveil</string>
     <string name="settings_resident_action_broadcast">Envoyer une diffusion</string>
     <string name="settings_resident_action_notify">Notifier seulement</string>

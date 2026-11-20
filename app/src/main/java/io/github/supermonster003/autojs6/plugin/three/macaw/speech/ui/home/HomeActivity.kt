@@ -23,7 +23,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.BuildConfig
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.data.SpeechPreferences
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.resident.ResidentWake
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.StandaloneActivity
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.ReleaseHistoryActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.openReleaseHistory
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.settings.SettingsActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.tryout.TryoutActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateController
@@ -102,7 +102,7 @@ class HomeActivity : StandaloneActivity() {
             ),
             scrollToKind = scrollTo,
         )
-        UpdateDialogs(updates, onOpenRelease = ::openUrl, onReleaseHistory = { startActivity(Intent(this, ReleaseHistoryActivity::class.java)) })
+        UpdateDialogs(updates, onOpenRelease = ::openUrl, onReleaseHistory = { openReleaseHistory() })
     }
 
     override fun onStart() {

@@ -185,8 +185,12 @@
     <string name="notification_tool_listen_channel">應用程式的語音請求</string>
     <string name="notification_tool_listen_text">有應用程式在等你說話, 請在一分鐘內點此開始</string>
     <string name="plugin_description">離線語音識別, 喚醒詞偵測, 語音活動偵測與神經網絡語音合成, 可註冊為系統 TTS 引擎</string>
-    <string name="release_history_title">版本記錄</string>
-    <string name="release_history_unavailable">無法載入版本記錄</string>
+    <string name="release_history">發行歷史</string>
+    <string name="release_history_collapse_all">收起全部</string>
+    <string name="release_history_collapsed">已收起</string>
+    <string name="release_history_expand_all">展開全部</string>
+    <string name="release_history_expanded">已展開</string>
+    <string name="release_history_unavailable">無法載入發行歷史</string>
     <string name="resident_blocked">點此繼續監聽: Android 不允許在背景重新開啟麥克風</string>
     <string name="resident_conflict_message">系統只能支援一個常駐監聽應用程式, 需要先關閉 %1$s 才能開啟.</string>
     <string name="resident_conflict_open">開啟 %1$s 設定</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">回收失敗</string>
     <string name="settings_recycle_message">將刪除不再需要的下載檔案, 匯入副本與中斷的安裝. 已安裝的模型與暫停的下載會保留.</string>
     <string name="settings_recycle_summary">刪除下載殘留與中斷的安裝</string>
-    <string name="settings_release_history_summary">查看插件內置的發行歷史</string>
+    <string name="settings_release_history_summary">檢視應用程式內置的發行歷史</string>
     <string name="settings_resident">監聽喚醒詞</string>
     <string name="settings_resident_action_broadcast">發送系統廣播</string>
     <string name="settings_resident_action_notify">只發通知</string>

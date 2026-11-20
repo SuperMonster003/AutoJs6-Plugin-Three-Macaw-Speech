@@ -418,6 +418,12 @@ Les plans, décisions de conception et l'avancement sont suivis sous forme de li
 
 ******
 
+#### v1.6.2
+
+_2026/11/20_
+
+- `Amélioration` La page Historique des versions se développe et se réduit désormais par version: une version réduite affiche sa date et le nombre d'entrées par catégorie, une version développée ne nomme chaque catégorie qu'une fois; toutes les versions peuvent être développées ou réduites d'un coup, et la plus récente s'ouvre développée; la page a pour sous-titre le nom du plugin
+
 #### v1.6.1
 
 _2026/11/17_
@@ -439,13 +445,6 @@ _2026/11/07_
 - `Fonctionnalité` Les scripts peuvent gérer le mot de réveil permanent: speech.resident.get / set lisent et écrivent les mots et leurs actions, enable / disable l'activent et le désactivent, on("hit") reçoit chaque détection (quelle que soit l'action du mot). Quand le système refuse de le démarrer en arrière-plan, enable() renvoie { started: false, restartNeeded: true }: l'interrupteur est enregistré et prend effet à la prochaine ouverture du plugin ou en appuyant sur la notification "Appuyez pour reprendre le mot de réveil permanent"
 - `Fonctionnalité` speech.wake reçoit l'option background: une session de mot de réveil ouverte avec background: true écoute en arrière-plan avec le mot de réveil permanent, se met en pause et libère le microphone quand un script ou une autre application commence une dictée, qu'une session de réveil au premier plan démarre ou que le panneau de dictée du plugin s'ouvre, puis reprend dans l'ordre d'ouverture une fois celle-ci terminée; la nouvelle session n'échoue donc plus parce que le microphone est occupé. La session reçoit les événements paused / resumed (avec la raison listen, wake ou plugin). Ces sessions et le mot de réveil permanent partagent un seul enregistrement; jusqu'à 4 sessions de réveil en arrière-plan à la fois dans tout le plugin
 - `Amélioration` La recherche de mises à jour lit désormais l'index officiel des plugins d'AutoJs6, aux mêmes adresses que le centre des plugins d'AutoJs6, et passe à un miroir quand GitHub est injoignable; une nouvelle version n'est proposée dans le plugin qu'une fois inscrite dans l'index officiel
-
-#### v1.5.0
-
-_2026/11/05_
-
-- `Note` L'export et l'import des réglages avec AutoJs6 demandent AutoJs6 6.8.1 ou ultérieure (pas encore publiée); avec une version plus ancienne d'AutoJs6, cette version fonctionne comme la 1.4.0
-- `Fonctionnalité` Les réglages du plugin peuvent être exportés et importés avec ceux d'AutoJs6, si bien qu'un nouveau téléphone ou une réinstallation n'oblige plus à tout régler de nouveau: sensibilité de fin de phrase, détection de l'activité vocale, débit, libération des modèles inactifs, téléchargements sur les réseaux facturés à l'usage, locuteur et voix choisis pour chaque modèle, micro flottant et touche de déclenchement, mots de réveil et options du mot de réveil permanent, apparence (langue, mode sombre, couleur du thème) et recherche automatique des mises à jour. Les modèles, les voix enregistrées et les interrupteurs de fonctions comme le mot de réveil permanent ou la saisie vocale n'en font pas partie: téléchargez-les ou réactivez-les sur le nouveau téléphone. Les réglages importés s'appliquent tout de suite; si Android ne laisse pas le plugin démarrer le mot de réveil permanent ou le micro flottant en arrière-plan, ils s'appliquent à la prochaine ouverture du plugin
 
 ##### Pour plus d'historique des versions
 

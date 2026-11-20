@@ -185,8 +185,12 @@
     <string name="notification_tool_listen_channel">Голосовые запросы приложений</string>
     <string name="notification_tool_listen_text">Приложение ждёт вашей речи. Нажмите в течение минуты, чтобы начать</string>
     <string name="plugin_description">Офлайн-распознавание речи, обнаружение слов активации, определение речевой активности и нейросетевой синтез речи с регистрацией в качестве системного движка TTS</string>
-    <string name="release_history_title">История версий</string>
-    <string name="release_history_unavailable">Не удалось загрузить историю версий</string>
+    <string name="release_history">История выпусков</string>
+    <string name="release_history_collapse_all">Свернуть всё</string>
+    <string name="release_history_collapsed">Свёрнуто</string>
+    <string name="release_history_expand_all">Развернуть всё</string>
+    <string name="release_history_expanded">Развёрнуто</string>
+    <string name="release_history_unavailable">Не удалось загрузить историю выпусков</string>
     <string name="resident_blocked">Нажмите, чтобы продолжить прослушивание: Android не позволяет снова включать микрофон в фоне</string>
     <string name="resident_conflict_message">Система поддерживает только одно приложение с постоянным прослушиванием. Сначала выключите его в %1$s, затем включите здесь.</string>
     <string name="resident_conflict_open">Открыть настройки %1$s</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">Не удалось очистить файлы</string>
     <string name="settings_recycle_message">Будут удалены загруженные файлы, не нужные ни одной модели, копии импорта и прерванные установки. Установленные модели и приостановленные загрузки сохранятся.</string>
     <string name="settings_recycle_summary">Удалить остатки загрузок и прерванные установки</string>
-    <string name="settings_release_history_summary">Открыть историю выпусков, встроенную в плагин</string>
+    <string name="settings_release_history_summary">Открыть встроенную историю выпусков приложения</string>
     <string name="settings_resident">Слушать слово активации</string>
     <string name="settings_resident_action_broadcast">Отправить широковещательное сообщение</string>
     <string name="settings_resident_action_notify">Только уведомить</string>

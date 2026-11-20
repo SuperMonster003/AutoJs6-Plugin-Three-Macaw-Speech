@@ -418,6 +418,12 @@ Plans, design decisions and progress are tracked as a checklist in ROADMAP.md. U
 
 ******
 
+#### v1.6.2
+
+_2026/11/20_
+
+- `Improvement` The release history page now expands and collapses by version: a collapsed version shows its date and the number of entries per category, an expanded one names each category once; all versions can be expanded or collapsed at once, and the newest one opens expanded; the page is titled "Release history" (formerly "Version history") with the plugin name as the subtitle, and its entries in the "About" section of the settings and in the update dialog are renamed to match
+
 #### v1.6.1
 
 _2026/11/17_
@@ -439,13 +445,6 @@ _2026/11/07_
 - `Feature` Scripts can manage the resident wake word: speech.resident.get / set read and write the wake words and their actions, enable / disable switch it, on("hit") receives every hit (whatever the action of the word). When the system does not let it start from the background, enable() answers { started: false, restartNeeded: true }: the switch is kept and takes effect the next time the plugin opens or "Tap to resume the resident wake word" is tapped
 - `Feature` speech.wake gains the background option: a wake session opened with background: true listens in the background together with the resident wake word, pauses and gives up the microphone when a script or another app starts dictation, a foreground wake session starts or the plugin's dictation sheet opens, and resumes in the order the sessions started once that ends, so the new session no longer fails because the microphone is busy; the session gets paused / resumed events (with the reason listen, wake or plugin). These sessions and the resident wake word share one recording; up to 4 background wake sessions run in the whole plugin
 - `Improvement` Checking for updates now reads the official AutoJs6 plugin index, at the same addresses as the AutoJs6 Plugin Center, and switches to a mirror when GitHub cannot be reached; the plugin offers a new version once it is listed in the official index
-
-#### v1.5.0
-
-_2026/11/05_
-
-- `Hint` Exporting and importing the settings together with AutoJs6 needs AutoJs6 6.8.1 or later (not released yet); with an earlier AutoJs6 this version works like 1.4.0
-- `Feature` The plugin's settings can be exported and imported together with AutoJs6's settings, so a new phone or a reinstall does not need them set again one by one: endpoint sensitivity, voice activity detection, speed, releasing idle models, downloads on metered networks, the speaker and voice chosen for each model, the floating microphone and the trigger key, the wake words and options of the resident wake word, the appearance (language, dark mode, theme color) and automatic update checks. Models, enrolled voices and the switches of features such as the resident wake word and the voice input are not included; download or turn them on again on the new phone. Imported settings apply at once; if Android does not let the plugin start the resident wake word or the floating microphone in the background, they apply the next time the plugin opens
 
 ##### For more release history, refer to
 

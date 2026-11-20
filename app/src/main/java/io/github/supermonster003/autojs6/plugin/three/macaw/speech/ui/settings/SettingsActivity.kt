@@ -112,7 +112,7 @@ import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.HomeT
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.ManagerBackend
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.OperationTracker
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.home.TrackedOperation
-import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.ReleaseHistoryActivity
+import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.release.openReleaseHistory
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.speakers.SpeakersActivity
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateController
 import io.github.supermonster003.autojs6.plugin.three.macaw.speech.ui.update.AppUpdateStore
@@ -713,8 +713,8 @@ class SettingsActivity : StandaloneActivity() {
                     summary = stringResource(R.string.settings_version_value, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE, stringResource(R.string.plugin_version_date)),
                     icon = R.drawable.ic_info_24, modifier = Modifier.testTag("macaw.settings.version"))
                 Hairline()
-                SettingsRow(stringResource(R.string.release_history_title), summary = stringResource(R.string.settings_release_history_summary), icon = R.drawable.ic_history_24,
-                    onClick = { startActivity(Intent(this@SettingsActivity, ReleaseHistoryActivity::class.java)) }, modifier = Modifier.testTag("macaw.settings.releaseHistory"))
+                SettingsRow(stringResource(R.string.release_history), summary = stringResource(R.string.settings_release_history_summary), icon = R.drawable.ic_history_24,
+                    onClick = { openReleaseHistory() }, modifier = Modifier.testTag("macaw.settings.releaseHistory"))
                 Hairline()
                 SettingsRow(stringResource(R.string.update_check), summary = stringResource(R.string.settings_update_summary), icon = R.drawable.ic_update_24,
                     onClick = updates::checkManually, modifier = Modifier.testTag("macaw.settings.update"))
@@ -735,7 +735,7 @@ class SettingsActivity : StandaloneActivity() {
             }
         }
         Dialogs()
-        UpdateDialogs(updates, onOpenRelease = ::open, onReleaseHistory = { startActivity(Intent(this, ReleaseHistoryActivity::class.java)) })
+        UpdateDialogs(updates, onOpenRelease = ::open, onReleaseHistory = { openReleaseHistory() })
     }
 
     @Composable

@@ -1,32 +1,68 @@
-3-Macaw Speech usa [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) para ejecutar sin conexión, en el propio dispositivo, el reconocimiento de voz, la detección de actividad de voz, la detección de palabras de activación y la síntesis de voz neuronal. Todo se calcula localmente y no se envía ningún audio.
+3-Macaw Speech realiza sin conexión, en el teléfono, el reconocimiento de voz, la detección de palabras de activación y la síntesis de voz; una vez descargados los modelos, todo el cálculo se hace en el dispositivo y no se sube ningún audio. Funciona por sí solo, sin AutoJs6, y también puede servir como motor de texto a voz del sistema, entrada de voz y asistente digital. Con AutoJs6, los scripts pueden dictar, transcribir archivos de audio, esperar palabras de activación y leer texto en voz alta.
 
-> El módulo `speech` en los scripts necesita AutoJs6 6.8.0 (versión interna 5456) o posterior. El motor de texto a voz del sistema, la entrada de voz del sistema, el servicio de reconocimiento de voz, el asistente digital y las pantallas del complemento no dependen de AutoJs6 y funcionan en cuanto el complemento está instalado y los modelos descargados.
+### Primeros pasos
 
-### Funciones Destacadas
+1. Abre 3-Macaw Speech y toca "Conceder" en la fila "Permiso de micrófono" de la pantalla de inicio.
+2. En la pantalla de inicio, descarga los modelos que necesites en los grupos "Reconocimiento de voz", "Palabras de activación" y "Síntesis de voz"; los modelos marcados como "Recomendado" son un buen punto de partida.
+3. Toca el botón "Probar" de la pantalla de inicio para probar el dictado, las palabras de activación y la síntesis.
+4. Para usarlo en scripts, activa este complemento en el "Centro de plugins" de AutoJs6.
 
-- Reconocimiento de voz: dictado continuo desde el micrófono (resultados parciales y finales en tiempo real) y reconocimiento de archivos de audio (WAV, MP3, AAC, Ogg, FLAC y otros, o el sonido de un archivo de vídeo), con modelos sin conexión para chino, inglés, chino e inglés mezclados, japonés, coreano y cantonés. El francés, el ruso y el coreano también tienen modelos en streaming que muestran el texto mientras hablas. La versión 1.3.0 añade un modelo sin conexión para español (con puntuación) y un modelo en streaming de ocho idiomas que detecta el idioma por sí solo: árabe, indonesio, tailandés, vietnamita, japonés, ruso, chino e inglés.
-- Puntuación automática: con un modelo de puntuación instalado, cada frase que reconoce un modelo en streaming recibe comas, puntos y signos de interrogación (chino e inglés), y el texto en inglés recupera las mayúsculas; SenseVoice añade su propia puntuación y no se modifica. Los modelos de puntuación se descargan desde el grupo "Puntuación" de la pantalla de inicio.
-- Detección de actividad de voz: el silero VAD v5 integrado divide el audio en segmentos de voz por sí solo y también cierra automáticamente las frases dictadas.
-- Palabras de activación: escriba la palabra clave como texto (por ejemplo `小六小六` o `hey macaw`) sin entrenar ningún modelo; tras la activación, el dictado puede empezar automáticamente.
-- Síntesis de voz: varias voces neuronales en chino e inglés, sintetizadas en archivos WAV o usadas como motor TTS del sistema por el módulo `tts` de AutoJs6 y otras aplicaciones. También hay voces Piper en francés, español, alemán y ruso (solo uso no comercial). La versión 1.3.0 añade las voces multilingües de Kokoro v1.0 (inglés, español, francés, hindi, italiano, portugués de Brasil y chino) y voces en árabe y coreano (solo uso no comercial).
-- Entrada de voz del sistema: los botones de micrófono de otras apps, como 3-Stove Agent, pueden usar el reconocimiento sin conexión; dices una frase en un panel inferior y el texto reconocido vuelve a esa app.
-- Asistente digital: elige 3-Macaw Speech como app de asistente digital predeterminada, mantén pulsado el botón de encendido o el de inicio, di una frase, edita el texto reconocido si hace falta y entrégalo a 3-Stove Agent, 3-Stone AI u otra app que reciba comandos de voz, o cópialo. También ofrece un servicio de reconocimiento de voz del sistema: en Android 11 y versiones anteriores, elegirlo como asistente suele convertirlo también en el servicio de reconocimiento predeterminado; desde Android 12, elígelo aparte en los ajustes de entrada de voz del sistema (algunos teléfonos no los tienen), y las apps también pueden indicarlo directamente.
-- Formas de activación: abre el mismo panel de dictado sin el botón de encendido: un icono de Ajustes rápidos (también en la pantalla de bloqueo), un widget y un acceso directo del icono de la app, un micrófono flotante que puedes arrastrar (desactivado por defecto), un activador por tecla que mantiene pulsada o pulsa dos veces una tecla de volumen (un servicio de accesibilidad que solo filtra teclas, desactivado por defecto) y la tecla de voz de unos auriculares Bluetooth. No se graba nada hasta que el panel escucha, y solo durante los pocos segundos del dictado.
-- Palabra de activación permanente (desactivada por defecto): una vez activa, decir una palabra de activación (`小鹦小鹦` y `Hey Macaw` por defecto, editables) abre el mismo panel de dictado, enciende la pantalla si está apagada o bloqueada y lee en voz alta el texto reconocido. Mientras escucha, el indicador del micrófono sigue encendido, hay una notificación fija y la batería se gasta más rápido (el Modo de ahorro de energía, activo por defecto, no ejecuta el modelo de la palabra de activación mientras hay silencio y usa mucha menos CPU); se puede fijar un tiempo de escucha (desactivar tras 10, 30 o 60 minutos, o siempre activa) y Escuchar solo mientras se carga. Cuando un script, otra app u otra forma de activación necesita el micrófono, se aparta y vuelve a escuchar después. Desde la 1.6.0 admite hasta 10 palabras de activación, cada una con su propia acción: abrir el panel de dictado, ejecutar un script de AutoJs6 (también en segundo plano y con la pantalla bloqueada), enviar una difusión a AutoJs6 (para sus tareas activadas por difusión) o solo mostrar una notificación; desde AutoJs6 6.8.1, los scripts también pueden leer y escribir las palabras, activarla o desactivarla y recibir las detecciones con `speech.resident`.
-- Reconocimiento de hablante (1.3.0): en Ajustes > Palabra de activación permanente > Hablantes, escribe un nombre y lee 3 frases en voz alta para registrar tu voz (pueden registrarse varias personas, y "Probar el reconocimiento" muestra la puntuación). Con "Solo voces registradas" activado, la palabra de activación permanente compara primero la voz y solo abre el panel si coincide con una persona registrada, así que se ignora la palabra de activación dicha por otros; las formas de activación manuales como el icono, el widget y la tecla de los auriculares no cambian. Los scripts pueden registrar, verificar e identificar hablantes con `speech.speaker` (AutoJs6 6.8.0 o posterior). El modelo de reconocimiento de hablante ocupa unos 26,5 MB; la página "Hablantes" indica cómo descargarlo.
-- Análisis de audio (1.3.0): el reconocimiento de archivos de Probar también puede separar hablantes (quién habló y cuándo, con el nombre de las voces registradas, o "Hablantes y texto" para transcribir lo que dice cada persona), identificar el idioma (los 99 idiomas de Whisper) y etiquetar sonidos (527 tipos de AudioSet, como voz, música, animales, vehículos y alarmas). Todo funciona sin conexión en el teléfono una vez descargados los modelos (la pantalla indica cuáles). Los scripts pueden usar `speech.diarize`, `speech.detectLanguage` y `speech.tag` (AutoJs6 6.8.0 o posterior).
-- Reproducción de audio (1.4.0): el reconocimiento de archivos de Probar reproduce el archivo con barra de progreso, velocidades de 0.5x a 2x y saltos de 5 segundos. La frase que se oye se resalta, al tocar una frase se reproduce desde ahí y una vista de letra la muestra en grande. El complemento solo conserva el acceso de lectura al último archivo, hasta que se borra el resultado o se elige otro.
-- Aviso de actualización de modelos (1.4.0): cuando hay una versión más reciente de un modelo instalado, su tarjeta en la pantalla de inicio muestra "Actualización disponible (v2)" y basta un toque para actualizarlo. La nueva versión sustituye a la anterior solo después de descargarse y verificarse, así que un fallo o una pausa no cambian nada, y lo que está en marcha termina con la versión anterior.
-- Carga anticipada (1.6.0): el complemento libera un modelo que lleva un rato sin usarse (según los ajustes), y el siguiente reconocimiento lo vuelve a cargar (unos 0,6 a 1,4 segundos en teléfonos recientes, hasta 4 segundos en los de gama baja). Desde AutoJs6 6.8.1, llamar a `speech.prepare()` al comienzo de un script lo carga de antemano y el primer dictado empieza enseguida; la opción `keepLoaded` de `listen` y `wake` conserva el modelo cuando termina la sesión. El ajuste "Liberar modelos inactivos" también ofrece "Nunca".
-- Herramientas del complemento (AutoJs6 6.8.0 o posterior): cuatro herramientas, `speech_listen` (escucha una frase y devuelve el texto reconocido), `speech_speak` (lee un texto en voz alta), `speech_transcribe` (transcribe un archivo de audio del teléfono) y `speech_synthesize` (sintetiza texto en un archivo WAV o M4A). El complemento MCP Server las usa para que un asistente de IA en el ordenador escuche y hable a través del teléfono, y los scripts también pueden llamarlas con `plugins.tools`. 1.3.0 añade `speech_speaker_verify` (si una grabación es de una persona registrada concreta) y `speech_speaker_identify` (la persona registrada más parecida), que devuelven solo nombres y puntuaciones. 1.3.0 también añade tres herramientas de análisis: `speech_diarize` (separar hablantes, archivos de hasta 10 minutos), `speech_detect_language` (identificar el idioma) y `speech_tag` (etiquetar sonidos).
-- Gestión de modelos: descarga desde un catálogo firmado, activación solo después de que cada archivo supere su comprobación SHA-256, e importación de modelos locales; los modelos restringidos a uso no comercial muestran su licencia antes de la descarga.
-- Pantallas propias: la pantalla de inicio muestra el estado y gestiona los modelos, Probar ensaya directamente el dictado, las palabras de activación y la síntesis y convierte en texto un archivo de audio o vídeo del teléfono, que se puede guardar como texto plano o subtítulos SRT, y los ajustes cambian el idioma, el modo nocturno, el color del tema, el icono del lanzador y los valores predeterminados de reconocimiento y síntesis; la apariencia sigue a AutoJs6 de forma predeterminada.
+### Funciones principales
 
-### Instalación y uso
+- **Reconocimiento de voz**: dictado en tiempo real desde el micrófono y transcripción de archivos de audio y del sonido de vídeos; hay modelos sin conexión para chino, inglés, japonés, cantonés y más. Tras descargar un modelo de "Puntuación", los resultados se puntúan automáticamente.
+- **Palabras de activación**: escribe la palabra clave tal cual, sin entrenar modelos; tras oír una palabra de activación, puede dictar una frase a continuación.
+- **Síntesis de voz**: voces neuronales leen texto en voz alta o lo guardan en archivos de audio; como motor de texto a voz del sistema, también lee para el módulo `tts` de AutoJs6 y otras apps.
+- **Entrada de voz y asistente digital**: los botones de micrófono de otras apps pueden usarlo para dictar sin conexión; como asistente digital predeterminado, mantén pulsada la tecla de encendido o Inicio, di una frase y el texto pasa a una app que acepte comandos de voz.
+- **Formas de activación**: accesos como "Icono de Ajustes rápidos", "Widget y acceso directo de la pantalla de inicio" y "Micrófono flotante" abren el mismo panel de dictado; el resto del tiempo no se graba nada.
+- **Palabra de activación permanente**: desactivada por defecto; al activarla, decir una palabra de activación abre el panel de dictado, y cada palabra también puede "Enviar una difusión" o "Solo notificar". Mientras está activa, el indicador del micrófono sigue encendido y se gasta más batería.
+- **Reconocimiento del hablante**: registra tu voz en la página "Hablantes" y activa "Solo voces registradas" para que la palabra de activación permanente solo responda a las personas registradas.
+- **Transcripción y análisis de archivos**: la pestaña "Archivo" de "Probar" convierte audio en texto y permite "Guardar como subtítulos"; también separa hablantes, identifica el idioma y etiqueta sonidos.
+- **Gestión de modelos**: un modelo solo se activa tras verificar cada uno de sus archivos; cuando sale una versión nueva, actualízalo desde su tarjeta, o usa "Importar un modelo local".
+- **Herramientas del complemento**: mediante el complemento MCP Server o `plugins.tools.call`, escucha una frase, lee texto en voz alta y transcribe archivos de audio.
 
-1. Descargue desde [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) el APK que corresponda a la ABI del dispositivo e instálelo: la mayoría de los teléfonos usan `arm64-v8a`; si tiene dudas, elija `universal`, que funciona en todos los dispositivos pero ocupa más.
-2. Abra 3-Macaw Speech, conceda el permiso del micrófono en la pantalla de inicio y descargue los modelos que necesite en los grupos de reconocimiento, palabra de activación y síntesis (los modelos que recomienda el catálogo son un buen punto de partida; consulte la tabla de modelos más abajo). En Android 13 y posteriores, la primera descarga también pide mostrar notificaciones de progreso.
-3. En AutoJs6: actualice AutoJs6 a 6.8.0 (versión interna 5456) o posterior, active 3-Macaw Speech en el centro de complementos y llame al módulo `speech` en los scripts (consulte API de scripts más abajo). Los ejemplos de AutoJs6 incluyen cuatro scripts listos para ejecutar en Muestras > 3-Macaw Speech.
-4. En otras aplicaciones: consulte Texto a voz del sistema más abajo para el motor de texto a voz, y las preguntas frecuentes para la entrada de voz del sistema, el servicio de reconocimiento de voz y el asistente digital.
+### Uso en scripts
 
-Consulte la [página del proyecto](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech) para las instrucciones completas, la lista de modelos y las preguntas frecuentes, y la [documentación de AutoJs6](https://docs.autojs6.com/#/speech) para la API de scripts.
+En los scripts Rhino de AutoJs6, estas funciones se usan con el módulo global `speech`; descarga antes modelos de palabras de activación, reconocimiento de voz y síntesis de voz. El siguiente ejemplo escucha una frase tras una palabra de activación y luego muestra el texto reconocido y lo lee en voz alta:
+
+```js
+let wake = speech.wake(["hey macaw", "小六小六"], { thenListen: true });
+wake.on("wake", e => {
+    e.listen.on("final", r => {
+        console.log(r.text);
+        speech.speak(r.text);
+    });
+});
+```
+
+- `speech.recognize` transcribe un archivo de audio y `speech.synthesize` guarda texto en un archivo WAV; ambos bloquean y no se pueden llamar en el hilo de UI, así que en scripts de interfaz usa `recognizeAsync` y `synthesizeAsync`.
+- Solo puede haber una sesión de dictado o de activación abierta a la vez; abrir otra falla con `SESSION_BUSY` en lugar de esperar turno.
+- Los scripts de Node.js usan la misma API mediante `autojs6:speech`; los de Bun usan `host.speech`, que requiere la autorización `speech.control`.
+- El uso completo, incluidos el reconocimiento del hablante, el análisis de audio y la gestión de modelos, está en [Documentación de AutoJs6 > speech](https://docs.autojs6.com/#/speech).
+
+### Requisitos
+
+- Android 7.0 o posterior. Las pantallas del complemento, el motor de texto a voz del sistema, la entrada de voz y el asistente digital no necesitan AutoJs6.
+- El módulo `speech` y las herramientas del complemento necesitan AutoJs6 6.8.0 o posterior, con este complemento activado en el "Centro de plugins".
+- El permiso de micrófono se usa para el dictado y la detección de palabras de activación, y debe concederse a este mismo complemento; el de AutoJs6 no lo sustituye. El permiso de notificaciones se usa para mostrar el progreso de descarga de los modelos.
+- El permiso de superposición es opcional y permite que el "Micrófono flotante" y la palabra de activación permanente abran el panel de dictado directamente desde segundo plano; el "Activador por tecla" se activa en los ajustes de accesibilidad del sistema, solo filtra teclas y nunca lee la pantalla.
+- Los modelos se descargan por Internet y ocupan desde unos pocos MB hasta varios cientos de MB cada uno; una vez descargados, el reconocimiento y la síntesis funcionan sin conexión.
+
+### Preguntas frecuentes
+
+**Configuración como motor de texto a voz predeterminado del sistema**
+
+Toca "Abrir ajustes" en la fila "Motor de texto a voz del sistema" de la pantalla de inicio y elige 3-Macaw Speech como motor preferido en la página del sistema. El motor solo ofrece los idiomas que cubren los modelos de síntesis instalados; si la prueba no suena, descarga primero un modelo de síntesis que cubra el idioma del dispositivo.
+
+**Motivos por los que el indicador del micrófono sigue encendido con la palabra de activación permanente**
+
+Escuchar palabras de activación exige grabar continuamente, y desde Android 12 la barra de estado muestra el indicador del micrófono todo el tiempo; las apps no pueden ocultarlo. Conviene limitar el "Tiempo de escucha" o activar "Escuchar solo mientras se carga" en los ajustes.
+
+**Casos en que falla la descarga de un modelo**
+
+El complemento descarga primero desde GitHub y, si falla, cambia automáticamente a la dirección original; las descargas interrumpidas se reanudan donde se quedaron. Si aun así no se puede descargar, descarga el paquete del modelo en otro dispositivo e impórtalo con "Importar un modelo local" en la pantalla de inicio.
+
+**Motivos de la espera en el primer dictado de un script**
+
+El complemento libera los modelos inactivos, así que el primer dictado posterior debe volver a cargar el modelo, lo que puede tardar unos segundos en teléfonos antiguos. Poner "Liberar modelos inactivos" en "Nunca" en los ajustes evita la espera, a cambio de mantener esa memoria ocupada.
+
+La lista de modelos, cómo configurar cada acceso y más preguntas frecuentes están en la [página del proyecto](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech).

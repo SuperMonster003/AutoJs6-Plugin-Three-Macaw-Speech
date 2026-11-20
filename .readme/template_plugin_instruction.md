@@ -1,13 +1,35 @@
-{{ p_introduction_what }}
+{{ instruction_p_what }}
 
-> {{ p_status_note }}
+### {{ instruction_h3_start }}
 
-### {{ h3_features }}
+{{ placeholder_instruction_start_steps }}
 
-{{ placeholder_features }}
+### {{ instruction_h3_features }}
 
-### {{ h3_usage }}
+{{ placeholder_instruction_features }}
 
-{{ placeholder_usage_steps }}
+### {{ instruction_h3_script }}
 
-{{ p_instruction_docs }}
+{{ instruction_p_script }}
+
+```js
+let wake = speech.wake(["hey macaw", "小六小六"], { thenListen: true });
+wake.on("wake", e => {
+    e.listen.on("final", r => {
+        console.log(r.text);
+        speech.speak(r.text);
+    });
+});
+```
+
+{{ placeholder_instruction_script_notes }}
+
+### {{ instruction_h3_requirements }}
+
+{{ placeholder_instruction_requirements }}
+
+### {{ instruction_h3_faq }}
+
+{{ placeholder_instruction_faq }}
+
+{{ instruction_p_more }}

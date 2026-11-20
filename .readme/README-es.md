@@ -418,6 +418,12 @@ Los planes, las decisiones de diseño y el progreso se registran como lista de v
 
 ******
 
+#### v1.6.2
+
+_2026/11/20_
+
+- `Mejora` La página Historial de versiones ahora se expande y contrae por versión: una versión contraída muestra su fecha y el número de entradas por categoría, una expandida nombra cada categoría una sola vez; todas las versiones se pueden expandir o contraer a la vez y la más reciente se abre expandida; la página lleva el nombre del complemento como subtítulo
+
 #### v1.6.1
 
 _2026/11/17_
@@ -439,13 +445,6 @@ _2026/11/07_
 - `Función` Los scripts pueden gestionar la palabra de activación permanente: speech.resident.get / set leen y escriben las palabras y sus acciones, enable / disable la activan y desactivan, on("hit") recibe cada detección (sea cual sea la acción de la palabra). Si el sistema no permite iniciarla en segundo plano, enable() devuelve { started: false, restartNeeded: true }: el interruptor queda guardado y se aplica la próxima vez que se abra el complemento o al tocar la notificación "Toca para reanudar la palabra de activación permanente"
 - `Función` speech.wake añade la opción background: una sesión de palabra de activación abierta con background: true escucha en segundo plano junto con la palabra de activación permanente, se pausa y cede el micrófono cuando un script u otra app empieza un dictado, comienza una sesión de activación en primer plano o se abre el panel de dictado del complemento, y se reanuda en el orden en que se abrieron cuando eso termina; la nueva sesión ya no falla porque el micrófono esté ocupado. La sesión recibe los eventos paused / resumed (con el motivo listen, wake o plugin). Estas sesiones y la palabra de activación permanente comparten una sola grabación; hasta 4 sesiones de activación en segundo plano a la vez en todo el complemento
 - `Mejora` La búsqueda de actualizaciones ahora lee el índice oficial de complementos de AutoJs6, en las mismas direcciones que el centro de complementos de AutoJs6, y cambia a un espejo cuando no se puede acceder a GitHub; el complemento avisa de una versión nueva cuando ya figura en el índice oficial
-
-#### v1.5.0
-
-_2026/11/05_
-
-- `Aviso` Exportar e importar los ajustes junto con AutoJs6 requiere AutoJs6 6.8.1 o posterior (aún no publicada); con una versión anterior de AutoJs6, esta versión funciona igual que la 1.4.0
-- `Función` Los ajustes del plugin se pueden exportar e importar junto con los de AutoJs6, así que un teléfono nuevo o una reinstalación ya no obliga a configurarlos uno por uno: sensibilidad de fin de frase, detección de actividad de voz, velocidad, liberación de modelos inactivos, descargas en redes de uso medido, el hablante y la voz elegidos para cada modelo, el micrófono flotante y la tecla de activación, las palabras de activación y opciones de la palabra de activación permanente, la apariencia (idioma, modo oscuro, color del tema) y la búsqueda automática de actualizaciones. Los modelos, las voces registradas y los interruptores de funciones como la palabra de activación permanente o la entrada de voz no se incluyen: descárguelos o actívelos de nuevo en el teléfono nuevo. Los ajustes importados se aplican al instante; si Android no deja que el plugin inicie la palabra de activación permanente o el micrófono flotante en segundo plano, se aplican la próxima vez que se abra el plugin
 
 ##### Para más historial de versiones
 

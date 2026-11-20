@@ -185,7 +185,11 @@
     <string name="notification_tool_listen_channel">Solicitudes de voz de las apps</string>
     <string name="notification_tool_listen_text">Una app espera que hables. Toca en menos de un minuto para empezar</string>
     <string name="plugin_description">Reconocimiento de voz sin conexión, detección de palabras de activación, detección de actividad de voz y síntesis de voz neuronal, utilizable como motor TTS del sistema</string>
-    <string name="release_history_title">Historial de versiones</string>
+    <string name="release_history">Historial de versiones</string>
+    <string name="release_history_collapse_all">Contraer todo</string>
+    <string name="release_history_collapsed">Contraído</string>
+    <string name="release_history_expand_all">Expandir todo</string>
+    <string name="release_history_expanded">Expandido</string>
     <string name="release_history_unavailable">No se pudo cargar el historial de versiones</string>
     <string name="resident_blocked">Toca para seguir escuchando: Android no permite volver a abrir el micrófono en segundo plano</string>
     <string name="resident_conflict_message">El sistema solo admite una aplicación con escucha permanente. Desactiva primero %1$s y luego actívala aquí.</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">No se pudieron limpiar los archivos</string>
     <string name="settings_recycle_message">Se eliminan los archivos descargados que ningún modelo necesita, las copias de importación y las instalaciones interrumpidas. Los modelos instalados y las descargas en pausa se conservan.</string>
     <string name="settings_recycle_summary">Eliminar restos de descargas e instalaciones interrumpidas</string>
-    <string name="settings_release_history_summary">Leer el historial de versiones incluido en el complemento</string>
+    <string name="settings_release_history_summary">Consultar el historial de versiones incluido en la aplicación</string>
     <string name="settings_resident">Escuchar la palabra de activación</string>
     <string name="settings_resident_action_broadcast">Enviar una difusión</string>
     <string name="settings_resident_action_notify">Solo notificar</string>

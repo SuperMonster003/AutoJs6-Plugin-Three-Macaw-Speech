@@ -185,8 +185,12 @@
     <string name="notification_tool_listen_channel">앱의 음성 요청</string>
     <string name="notification_tool_listen_text">앱이 음성을 기다리고 있습니다. 1분 안에 탭하여 시작하세요</string>
     <string name="plugin_description">오프라인 음성 인식, 호출어 감지, 음성 구간 감지와 신경망 음성 합성을 제공하며 시스템 TTS 엔진으로 등록 가능</string>
-    <string name="release_history_title">버전 기록</string>
-    <string name="release_history_unavailable">버전 기록을 불러올 수 없습니다</string>
+    <string name="release_history">릴리스 기록</string>
+    <string name="release_history_collapse_all">모두 접기</string>
+    <string name="release_history_collapsed">접힘</string>
+    <string name="release_history_expand_all">모두 펼치기</string>
+    <string name="release_history_expanded">펼쳐짐</string>
+    <string name="release_history_unavailable">릴리스 기록을 불러올 수 없습니다</string>
     <string name="resident_blocked">눌러서 계속 듣기: Android는 백그라운드에서 마이크를 다시 여는 것을 허용하지 않습니다</string>
     <string name="resident_conflict_message">시스템은 상시 듣기 앱을 하나만 지원합니다. 먼저 %1$s 앱에서 끈 뒤 여기서 켜세요.</string>
     <string name="resident_conflict_open">%1$s 설정 열기</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">파일을 정리할 수 없습니다</string>
     <string name="settings_recycle_message">어떤 모델에도 필요 없는 다운로드 파일, 가져오기 사본, 중단된 설치가 삭제됩니다. 설치된 모델과 일시중지된 다운로드는 유지됩니다.</string>
     <string name="settings_recycle_summary">다운로드 잔여물과 중단된 설치 삭제</string>
-    <string name="settings_release_history_summary">플러그인에 포함된 릴리스 기록 보기</string>
+    <string name="settings_release_history_summary">앱에 포함된 릴리스 기록을 확인합니다</string>
     <string name="settings_resident">호출어 듣기</string>
     <string name="settings_resident_action_broadcast">브로드캐스트 전송</string>
     <string name="settings_resident_action_notify">알림만</string>

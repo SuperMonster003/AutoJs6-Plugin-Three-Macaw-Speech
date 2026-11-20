@@ -1,32 +1,68 @@
-3-Macaw Speech uses [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) to run speech recognition, voice activity detection, wake word detection and neural text-to-speech offline on the device. Everything is computed locally and no audio is uploaded.
+3-Macaw Speech runs speech recognition, wake word detection and speech synthesis offline on your phone; once the models are downloaded, all processing stays on the device and no audio is uploaded. It works on its own without AutoJs6 and can also serve as the system text-to-speech engine, voice input and digital assistant. With AutoJs6, scripts can take dictation, transcribe audio files, wait for wake words and read text aloud.
 
-> The `speech` module in scripts needs AutoJs6 6.8.0 (internal build 5456) or later. The system TTS engine, system voice input, speech recognition service, digital assistant and the plugin's own screens do not depend on AutoJs6 and work once the plugin is installed and models are downloaded.
+### Getting started
 
-### Features
+1. Open 3-Macaw Speech and tap "Grant" in the "Microphone permission" row on the home screen.
+2. On the home screen, download the models you need in the "Speech recognition", "Wake words" and "Speech synthesis" groups; models marked "Recommended" are a good place to start.
+3. Tap the "Try it out" button on the home screen to try dictation, wake words and synthesis.
+4. To use it in scripts, enable this plugin in the AutoJs6 "Plugin center".
 
-- Speech recognition: streaming dictation from the microphone (partial and final results in real time) and recognition of audio files (WAV, MP3, AAC, Ogg, FLAC and more, or the sound of a video file), with offline models for Chinese, English, mixed Chinese and English, Japanese, Korean and Cantonese. French, Russian and Korean also have streaming models that show the text while you speak. Version 1.3.0 adds an offline Spanish model (with punctuation) and a streaming model for eight languages that detects the language by itself: Arabic, Indonesian, Thai, Vietnamese, Japanese, Russian, Chinese and English.
-- Automatic punctuation: once a punctuation model is installed, each sentence that a streaming model recognizes gets commas, periods and question marks (Chinese and English), and English text gets its capital letters back; SenseVoice adds its own punctuation and is left as is. Punctuation models are downloaded from the "Punctuation" group on the home screen.
-- Voice activity detection: the built-in silero VAD v5 splits audio into speech segments on its own and also ends dictation sentences automatically.
-- Wake words: type the keyword as plain text (for example `小六小六` or `hey macaw`) without training a model; after waking up, dictation can start automatically.
-- Text-to-speech: several neural Chinese and English voices, synthesized to WAV files or used as the system TTS engine by the AutoJs6 `tts` module and other apps. French, Spanish, German and Russian Piper voices are available too (non-commercial use only). Version 1.3.0 adds the Kokoro v1.0 multilingual voices (English, Spanish, French, Hindi, Italian, Brazilian Portuguese and Chinese) and Arabic and Korean voices (non-commercial use only).
-- System voice input: microphone buttons in other apps, such as 3-Stove Agent, can use the offline recognition; you say one sentence in a bottom sheet and the recognized text goes back to that app.
-- Digital assistant: choose 3-Macaw Speech as the default digital assistant app, then long press the power or Home button, say one sentence, edit the recognized text if needed and hand it to 3-Stove Agent, 3-Stone AI or another app that takes voice commands, or copy it. It also provides a system speech recognition service: on Android 11 and lower, choosing it as the assistant usually makes it the default recognition service too; from Android 12 on, choose it separately in the system's voice input setting (some phones lack this setting), and apps can also name it directly.
-- Trigger entries: open the same dictation sheet without the power button: a Quick Settings tile (also on the lock screen), a home screen widget and an app icon shortcut, a draggable floating microphone (off by default), a key trigger that holds or double presses a volume key (an accessibility service that only filters keys, off by default) and the voice key of a Bluetooth headset. Nothing records until the sheet listens, and only for the few seconds of dictation.
-- Resident wake word (off by default): once on, saying a wake word (`小鹦小鹦` and `Hey Macaw` by default, editable) opens the same dictation sheet, turns the screen on when it is off or locked, and reads the recognized text aloud. While it listens, the microphone indicator stays lit, a notification stays and the battery drains faster (Power saving mode, on by default, does not run the wake word model while it is quiet, which takes much less CPU); a listening time (turn off after 10, 30 or 60 minutes, or always on) and Listen only while charging can be set. When a script, another app or another entry needs the microphone, it steps aside and listens again afterwards. Since 1.6.0 there can be up to 10 wake words, each with its own action: open the dictation sheet, run an AutoJs6 script (also in the background and on the lock screen), send a broadcast to AutoJs6 (to start its tasks triggered by a broadcast), or only post a notification; from AutoJs6 6.8.1 on, scripts can also read and write the wake words, switch the resident wake word and receive its hits with `speech.resident`.
-- Speaker recognition (1.3.0): in Settings > Resident wake word > Speakers, enter a name and read 3 sentences aloud to enroll your voice (several people can enroll, and Try recognition shows the score). With "Only enrolled voices" on, the resident wake word compares the voice first and opens the sheet only when it matches an enrolled person, so other people saying the wake word are ignored; manual entries such as the tile, the widget and the headset key are not affected. Scripts can enroll, verify and identify speakers with `speech.speaker` (AutoJs6 6.8.0 or later). The speaker recognition model is about 26.5 MB; the Speakers page shows how to download it.
-- Audio analysis (1.3.0): file recognition on Try it out can also find speakers (who spoke when, with enrolled voices named, or "Speakers and text" to transcribe what each person says), identify the language (the 99 languages of Whisper) and tag sounds (527 kinds from AudioSet, such as speech, music, animals, vehicles and alarms). Everything runs offline on the phone once the models are downloaded (the screen shows which ones). Scripts can use `speech.diarize`, `speech.detectLanguage` and `speech.tag` (AutoJs6 6.8.0 or later).
-- Audio playback (1.4.0): file recognition on Try it out plays the file with a seek bar, speeds from 0.5x to 2x and 5 second skips. The sentence you hear lights up, a tap on a sentence plays from there, and a lyrics view shows it in large type. The plugin keeps read access to the latest file only, until the result is cleared or another file is picked.
-- Model updates (1.4.0): when a newer version of an installed model is available, its card on the home screen says "Update available (v2)" and one tap updates it. The new version is downloaded and checked before it replaces the old one, so a failed or paused update changes nothing, and what is running finishes with the old version.
-- Loading in advance (1.6.0): the plugin releases a model after it has been idle for a while (a setting), and the next recognition loads it again (about 0.6 to 1.4 s on newer phones, up to 4 s on low-end ones). From AutoJs6 6.8.1 on, calling `speech.prepare()` at the start of a script loads it in advance, so the first dictation starts at once; the `keepLoaded` option of `listen` and `wake` keeps the model after the session ends. The setting "Release idle models" also offers "Never".
-- Plugin tools (AutoJs6 6.8.0 or later): four tools, `speech_listen` (hear one sentence and return the recognized text), `speech_speak` (read a text aloud), `speech_transcribe` (transcribe an audio file on the phone) and `speech_synthesize` (synthesize text to a WAV or M4A file). The MCP Server plugin uses them so that an AI assistant on a computer can listen and speak through the phone, and scripts can call them with `plugins.tools` too. 1.3.0 adds `speech_speaker_verify` (whether a recording is a given enrolled person) and `speech_speaker_identify` (the most similar enrolled person), which return only names and scores. 1.3.0 also adds three analysis tools: `speech_diarize` (find speakers, files of at most 10 minutes), `speech_detect_language` (identify the language) and `speech_tag` (tag sounds).
-- Model management: downloads from a signed model catalog, enabled only after every file passes its SHA-256 check, plus import of local models; models restricted to non-commercial use show their license before the download.
-- Standalone screens: the home screen shows the status and manages the models, Try it out tests dictation, wake words and synthesis directly and turns an audio or video file on the phone into text that you can save as plain text or SRT subtitles, and the settings change the language, night mode, theme color, launcher icon and the recognition and synthesis defaults; the appearance follows AutoJs6 by default.
+### Main features
 
-### Installation and use
+- **Speech recognition**: live dictation from the microphone, plus transcription of audio files and the sound in videos; offline models cover Chinese, English, Japanese, Cantonese and more. After you download a "Punctuation" model, results are punctuated automatically.
+- **Wake words**: type the keyword itself, with no model training; after a wake word is heard, it can go on to take one sentence of dictation.
+- **Speech synthesis**: neural voices read text aloud or save it as audio files; as the system text-to-speech engine, it also reads aloud for the AutoJs6 `tts` module and other apps.
+- **Voice input and digital assistant**: microphone buttons in other apps can use it for offline dictation; as the default digital assistant, long-press the power or Home key, say a sentence, and the text goes to an app that accepts voice commands.
+- **Triggers**: entry points such as the "Quick Settings tile", "Home screen widget and shortcut" and "Floating microphone" all open the same dictation sheet; it does not record at other times.
+- **Resident wake word**: off by default; when on, saying a wake word opens the dictation sheet, and a wake word can also "Send a broadcast" or "Notify only" instead. While it is on, the microphone indicator stays lit and battery use goes up.
+- **Speaker recognition**: enroll your voice on the "Speakers" page, then turn on "Only enrolled voices" so the resident wake word responds only to enrolled people.
+- **File transcription and analysis**: the "File" tab of "Try it out" turns audio into text and can "Save as subtitles"; it can also separate speakers, identify the language and tag sounds.
+- **Model management**: a model is enabled only after each of its files is verified; when a new version is out, update it right on the model card, or use "Import a local model".
+- **Plugin tools**: through the MCP Server plugin or `plugins.tools.call`, listen for a sentence, read text aloud and transcribe audio files.
 
-1. Download the APK that matches the device ABI from [Releases](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech/releases) and install it: most phones need `arm64-v8a`; if unsure, choose `universal`, which works on every device but is larger.
-2. Open 3-Macaw Speech, grant the microphone permission on the home screen and download the models you need in the recognition, wake word and synthesis groups (the models the catalog recommends are a good start, see the model table below). On Android 13 and later the first download also asks to show download progress notifications.
-3. Use it in AutoJs6: update AutoJs6 to 6.8.0 (internal build 5456) or later, enable 3-Macaw Speech in the Plugin Center and call the `speech` module in scripts (see Script API below). The AutoJs6 samples include four ready-to-run scripts under Samples > 3-Macaw Speech.
-4. Use it in other apps: see System TTS setup below for the system TTS engine and the FAQ for system voice input, the speech recognition service and the digital assistant.
+### Using it in scripts
 
-See the [project page](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech) for the full instructions, the model list and the FAQ, and the [AutoJs6 documentation](https://docs.autojs6.com/#/speech) for the script API.
+In AutoJs6 Rhino scripts, these features are available through the global module `speech`; download wake word, speech recognition and speech synthesis models first. The example below listens for a sentence after a wake word, then prints the recognized text and reads it aloud:
+
+```js
+let wake = speech.wake(["hey macaw", "小六小六"], { thenListen: true });
+wake.on("wake", e => {
+    e.listen.on("final", r => {
+        console.log(r.text);
+        speech.speak(r.text);
+    });
+});
+```
+
+- `speech.recognize` transcribes an audio file and `speech.synthesize` writes text to a WAV file; both block and cannot be called on the UI thread, so use `recognizeAsync` and `synthesizeAsync` in UI scripts.
+- Only one dictation or wake session can be open at a time; opening another fails with `SESSION_BUSY` instead of waiting in line.
+- Node.js scripts use the same API through `autojs6:speech`; Bun scripts use `host.speech`, which needs the `speech.control` authorization.
+- See [AutoJs6 docs > speech](https://docs.autojs6.com/#/speech) for the full usage, including speaker recognition, audio analysis and model management.
+
+### Requirements
+
+- Android 7.0 or later. The plugin's own screens, the system text-to-speech engine, voice input and the digital assistant do not need AutoJs6.
+- The `speech` module and the plugin tools need AutoJs6 6.8.0 or later, with this plugin enabled in the "Plugin center".
+- The microphone permission is used for dictation and wake word detection and must be granted to this plugin itself; AutoJs6's microphone permission does not replace it. The notification permission is used to show model download progress.
+- The overlay permission is optional and lets the "Floating microphone" and the resident wake word open the dictation sheet straight from the background; "Key trigger" must be turned on in the system accessibility settings, and it only filters keys and never reads the screen.
+- Models are downloaded over the internet, from a few MB to a few hundred MB each; once downloaded, recognition and synthesis work offline.
+
+### FAQ
+
+**Setting it as the default system text-to-speech engine**
+
+Tap "Open settings" in the "System text-to-speech engine" row on the home screen, then pick 3-Macaw Speech as the preferred engine on the system page. The engine only offers languages covered by installed synthesis models, so if the preview is silent, first download a synthesis model that covers the device language.
+
+**Why the microphone indicator stays on with the resident wake word**
+
+Listening for wake words means recording continuously, and since Android 12 the status bar shows the microphone indicator the whole time; apps cannot hide it. Consider limiting the "Listening time" or turning on "Listen only while charging" in settings.
+
+**When model downloads fail**
+
+The plugin downloads from GitHub first and switches to the upstream address automatically if that fails; interrupted downloads resume where they stopped. If downloads still fail, download the model archive on another device and import it with "Import a local model" on the home screen.
+
+**Why the first dictation in a script takes a moment**
+
+The plugin releases idle models, so the first dictation afterwards has to load the model again, which can take a few seconds on older phones. Setting "Release idle models" to "Never" in settings avoids the wait, at the cost of keeping that memory in use.
+
+See the [project page](https://github.com/SuperMonster003/AutoJs6-Plugin-Three-Macaw-Speech) for the model list, how to set up each entry point and more FAQs.

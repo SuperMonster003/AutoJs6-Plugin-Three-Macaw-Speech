@@ -185,8 +185,12 @@
     <string name="notification_tool_listen_channel">应用的语音请求</string>
     <string name="notification_tool_listen_text">有应用在等你说话, 请在一分钟内点此开始</string>
     <string name="plugin_description">离线语音识别, 唤醒词检测, 语音活动检测与神经网络语音合成, 可注册为系统 TTS 引擎</string>
-    <string name="release_history_title">版本历史</string>
-    <string name="release_history_unavailable">无法加载版本历史</string>
+    <string name="release_history">发行历史</string>
+    <string name="release_history_collapse_all">收起全部</string>
+    <string name="release_history_collapsed">已收起</string>
+    <string name="release_history_expand_all">展开全部</string>
+    <string name="release_history_expanded">已展开</string>
+    <string name="release_history_unavailable">无法加载发行历史</string>
     <string name="resident_blocked">点此继续监听: Android 不允许在后台重新打开麦克风</string>
     <string name="resident_conflict_message">系统只能支持一个常驻监听应用, 需要先关闭 %1$s 才能开启.</string>
     <string name="resident_conflict_open">打开 %1$s 设置</string>
@@ -287,7 +291,7 @@
     <string name="settings_recycle_failed">回收失败</string>
     <string name="settings_recycle_message">将删除不再需要的下载文件, 导入副本与中断的安装. 已安装的模型与暂停的下载会保留.</string>
     <string name="settings_recycle_summary">删除下载残留与中断的安装</string>
-    <string name="settings_release_history_summary">查看插件内置的发行历史</string>
+    <string name="settings_release_history_summary">查看应用内置的发行历史</string>
     <string name="settings_resident">监听唤醒词</string>
     <string name="settings_resident_action_broadcast">发系统广播</string>
     <string name="settings_resident_action_notify">只通知</string>
